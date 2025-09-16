@@ -1,6 +1,6 @@
 # MeMantra
 
-> **Project Summary (≤1 paragraph)**  
+> **Project Summary**  
 > MeMantra is a guided affirmation app that helps users identify negative thought patterns, select or generate targeted mantras, and track what actually works for them over time. It blends CBT-inspired prompts with data-driven recommendations (what helped, when, and why) and delivers mantras via reminders and contextual triggers.
 
 ---
