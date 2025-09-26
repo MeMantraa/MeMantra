@@ -1,0 +1,4 @@
+{
+  "apps/mobile/**/*.{ts,tsx,js,jsx}": ["eslint --fix"],
+  "*.{json,md,yml,yaml}": ["prettier --write"]
+}
