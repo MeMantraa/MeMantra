@@ -34,5 +34,11 @@ export default [
       "react-native/no-inline-styles": "off"
     },
     settings: { react: { version: "detect" } }
+  },
+  {
+    files: ["**/*.test.{ts,tsx,js,jsx}", "**/__tests__/**/*.{ts,tsx,js,jsx}"],
+    languageOptions: {
+      globals: { ...globals.jest }
+    }
   }
 ];
