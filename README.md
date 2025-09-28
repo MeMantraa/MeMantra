@@ -37,11 +37,10 @@ git clone https://github.com/YFrancis10/MeMantra.git
 cd MeMantra
 
 # 2) Install
-npm ci
+pnpm i
 
-# 3) Configure env
-cp .env.example .env
-# Fill in required variables (DB URI, JWT secret, etc.)
+# 3) Run Front-end
+cd apps/mobile
 
-# 4) Run
-npm run dev
+# 4) Start React-Native App
+pnpm run start
