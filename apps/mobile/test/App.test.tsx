@@ -3,7 +3,6 @@ import { render } from '@testing-library/react-native';
 import * as renderer from 'react-test-renderer';
 import App from '../App'; // Adjust import path
 
-// Mock any native dependencies
 jest.mock('expo-status-bar', () => ({
   StatusBar: 'StatusBar',
 }));
