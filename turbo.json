@@ -1,9 +1,16 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "pipeline": {
-    "build": { "dependsOn": ["^build"], "outputs": ["dist/**", "build/**"] },
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "build/**", "ios/build/**", "android/app/build/**"]
+    },
     "dev": { "cache": false, "persistent": true },
     "lint": {},
-    "typecheck": {}
+    "typecheck": {},
+    "test": {
+      "cache": false,
+      "outputs": ["coverage/**", "test-results/**"]
+    }
   }
 }

@@ -141,4 +141,11 @@ vite.config.ts.timestamp-*
 coverage/
 .DS_Store
 node_modules/
-__snapshots__/
+.turbo/cache/4527633f029f2815-meta.json
+.turbo/cache/4527633f029f2815.tar.zst
+
+# Ignore all .cookie files
+*.cookie
+
+# Ignore the entire Turborepo cache directory
+.turbo/
