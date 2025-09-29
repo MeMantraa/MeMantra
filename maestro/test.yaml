@@ -1,0 +1,4 @@
+appId: com.memantra # Replace with your appID
+---
+- launchApp
+- assertVisible: 'Hello MeMantra!'
