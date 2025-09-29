@@ -1,0 +1,79 @@
+name: CI (MeMantra Mobile)
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  mobile-ci:
+    name: Lint • Typecheck • Test • Build
+    runs-on: ubuntu-latest
+    env:
+      CI: true
+      HUSKY: 0
+      PNPM_CACHE_DIR: .pnpm-store
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: |
+            pnpm-lock.yaml
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - name: Restore pnpm store
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.PNPM_CACHE_DIR }}
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
+
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
+
+      # Runs your root script: "turbo run lint"
+      - name: Lint
+        run: pnpm -w lint
+
+      # Runs your root script: "turbo run typecheck"
+      - name: Typecheck
+        run: pnpm -w typecheck
+
+      # Runs your root script: "turbo run test"
+      - name: Test (Jest + Expo)
+        run: pnpm -w test -- --ci --coverage
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-coverage
+          path: |
+            apps/mobile/coverage
+            coverage
+          if-no-files-found: ignore
+
+      # Runs your root script: "turbo run build"
+      - name: Build (Turborepo)
+        run: pnpm -w build
