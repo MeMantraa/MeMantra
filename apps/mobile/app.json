@@ -22,7 +22,7 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.momog221.mobile"
+      "package": "com.memantra"
     },
     "web": {
       "favicon": "./assets/favicon.png"

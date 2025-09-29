@@ -1,4 +1,4 @@
-appId: com.momog221.mobile # Replace with your appID
+appId: com.memantra # Replace with your appID
 ---
 - launchApp
 - assertVisible: 'Hello MeMantra!'
