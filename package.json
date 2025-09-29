@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "turbo run test --continue",
+    "test": "turbo run test --continue -- --coverage",
     "typecheck": "turbo run typecheck",
     "dev:mobile": "pnpm --filter mobile dev",
     "ios": "pnpm --filter mobile ios",

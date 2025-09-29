@@ -53,7 +53,7 @@ jobs:
         run: pnpm -w typecheck
 
       - name: Test (Jest + Expo)
-        run: pnpm -w test -- --ci --coverage
+        run: pnpm -w test -- --coverage
 
       - name: Upload coverage
         if: always()
