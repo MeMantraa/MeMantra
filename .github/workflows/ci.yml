@@ -41,6 +41,13 @@ jobs:
           version: 9
           run_install: false
 
+      - name: Verify pnpm installation
+        run: pnpm --version
+
+      - name: Install pnpm globally (if not found)
+        if: failure()
+        run: npm install -g pnpm@9
+
       - name: Restore pnpm store
         uses: actions/cache@v4
         with:
@@ -52,15 +59,12 @@ jobs:
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
-      # Runs your root script: "turbo run lint"
       - name: Lint
         run: pnpm -w lint
 
-      # Runs your root script: "turbo run typecheck"
       - name: Typecheck
         run: pnpm -w typecheck
 
-      # Runs your root script: "turbo run test"
       - name: Test (Jest + Expo)
         run: pnpm -w test -- --ci --coverage
 
@@ -74,6 +78,5 @@ jobs:
             coverage
           if-no-files-found: ignore
 
-      # Runs your root script: "turbo run build"
       - name: Build (Turborepo)
         run: pnpm -w build
