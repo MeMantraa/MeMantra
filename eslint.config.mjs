@@ -7,10 +7,25 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import rn from 'eslint-plugin-react-native';
 
 export default [
+  {
+    ignores: [
+      '**/node_modules/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/.expo/**',
+      '**/.turbo/**',
+      '**/ios/**',
+      '**/android/**',
+      '**/coverage/**',
+      '**/__snapshots__/**',
+    ],
+  },
+
   js.configs.recommended,
+
   {
     files: [
-      'eslint.config.js',
+      'eslint.config.*',
       'apps/mobile/babel.config.js',
       'apps/mobile/jest.config.js',
       'apps/mobile/jest.setup.js',
@@ -19,18 +34,13 @@ export default [
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'script',
-      globals: {
-        ...globals.node,
-      },
+      globals: { ...globals.node },
     },
-    rules: {
-      'no-undef': 'off',
-    },
+    rules: { 'no-undef': 'off' },
   },
 
   {
-    files: ['**/*.{ts,tsx,js,jsx}'],
-    ignores: ['**/node_modules/**', '**/dist/**', '**/build/**', '.expo/**'],
+    files: ['apps/mobile/**/*.{ts,tsx,js,jsx}'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',
@@ -57,5 +67,12 @@ export default [
       'react-native/no-inline-styles': 'off',
     },
     settings: { react: { version: 'detect' } },
+  },
+
+  {
+    files: ['**/*.{test,spec}.{js,jsx,ts,tsx}', '**/__tests__/**/*.{js,jsx,ts,tsx}'],
+    languageOptions: {
+      globals: { ...globals.jest },
+    },
   },
 ];

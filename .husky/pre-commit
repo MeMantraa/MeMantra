@@ -3,12 +3,14 @@ set -e
 
 export PATH="$PWD/node_modules/.bin:/opt/homebrew/bin:/usr/local/bin:$HOME/.volta/bin:$HOME/.nvm/versions/node/current/bin:$PATH"
 
-
 if ! command -v node >/dev/null 2>&1; then
   echo "Node.js not found in PATH for Git hooks."
   echo "   Run 'which node' in your terminal and add that directory to PATH above."
   exit 127
 fi
 
+# Debugging information
+echo "Current directory: $(pwd)"
+echo "Git root: $(git rev-parse --show-toplevel)"
 
-lint-staged
+npx pnpm lint-staged

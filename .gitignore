@@ -147,5 +147,6 @@ __snapshots__/
 
 # Ignore all .cookie files
 *.cookie
-.turbo/cache/15cedd43abd39676-meta.json
-.turbo/cache/15cedd43abd39676.tar.zst
+
+# Ignore the entire Turborepo cache directory
+.turbo/
