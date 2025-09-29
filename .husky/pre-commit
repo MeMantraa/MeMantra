@@ -11,6 +11,7 @@ fi
 
 # Debugging information
 echo "Current directory: $(pwd)"
+unset GIT_CONFIG_PARAMETERS
 echo "Git root: $(git rev-parse --show-toplevel)"
 
 npx pnpm lint-staged
