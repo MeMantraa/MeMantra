@@ -7,7 +7,7 @@
 
 ## Quick Links
 - **[Project Board](https://github.com/users/YFrancis10/projects/1)**
-- **[Wiki (Table of Contents)](https://github.com/YFrancis10/MeMantra/wiki)**
+- **[Wiki](https://github.com/YFrancis10/MeMantra/wiki)**
 - **Milestones (Iterations):** <ADD LINK TO /milestones>
 - **Latest Release:** <ADD LINK AFTER FIRST TAG>
 - **Issue Tracker:** <ADD LINK TO /issues>
@@ -62,3 +62,30 @@ cp .env.example .env
 # 4) Run frontend
 cd apps/mobile
 pnpm run start
+
+
+```
+
+## Wiki Table of Contents
+- [Meeting Minutes](https://github.com/YFrancis10/MeMantra/wiki/Meeting-Minutes)  
+- [Risks](https://github.com/YFrancis10/MeMantra/wiki/Risks)  
+- [User Consent & EULA](https://github.com/YFrancis10/MeMantra/wiki/User-Consent-&-EULA)  
+- [Legal & Ethical Issues](https://github.com/YFrancis10/MeMantra/wiki/Legal-&-Ethical-Issues)  
+- [Economic Model](https://github.com/YFrancis10/MeMantra/wiki/Economic-Model)  
+- [Budget](https://github.com/YFrancis10/MeMantra/wiki/Budget)  
+- [Personas](https://github.com/YFrancis10/MeMantra/wiki/Personas)  
+- [Diversity Statement](https://github.com/YFrancis10/MeMantra/wiki/Diversity-Statement)  
+- [Overall Architecture & Class Diagrams](https://github.com/YFrancis10/MeMantra/wiki/Overall-Architecture-&-Class-Diagrams)  
+- [Infrastructure & Tools](https://github.com/YFrancis10/MeMantra/wiki/Infrastructure-&-Tools)  
+- [Naming Conventions](https://github.com/YFrancis10/MeMantra/wiki/Naming-Conventions)  
+- [Testing Plan & Continuous Integration](https://github.com/YFrancis10/MeMantra/wiki/Testing-Plan-&-Continuous-Integration)  
+- [Security](https://github.com/YFrancis10/MeMantra/wiki/Security)  
+- [Performance](https://github.com/YFrancis10/MeMantra/wiki/Performance)  
+- [Deployment Plan & Infrastructure](https://github.com/YFrancis10/MeMantra/wiki/Deployment-Plan-&-Infrastructure)  
+- [Missing Knowledge & Independent Learning](https://github.com/YFrancis10/MeMantra/wiki/Missing-Knowledge-&-Independent-Learning)  
+- [Iteration & Release Notes](https://github.com/YFrancis10/MeMantra/wiki/Iteration-&-Release-Notes)  
+- [Overall Summary](https://github.com/YFrancis10/MeMantra/wiki/Overall-Summary) _(later in project)_  
+- [Velocity & Contractor Estimate](https://github.com/YFrancis10/MeMantra/wiki/Velocity-&-Contractor-Estimate) _(later in project)_  
+- [Retrospective](https://github.com/YFrancis10/MeMantra/wiki/Retrospective)  
+- [Breakdown by Individual](https://github.com/YFrancis10/MeMantra/wiki/Breakdown-by-Individual)  
+- [Designs & Mockups](https://github.com/YFrancis10/MeMantra/wiki/Designs-&-Mockups)  
