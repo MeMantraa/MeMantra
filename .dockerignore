@@ -1,0 +1,69 @@
+# Node dependencies and build outputs
+node_modules
+dist
+build
+.next
+out
+.cache
+coverage
+.nyc_output
+.turbo
+.webpack
+.temp
+
+# Package manager caches
+.pnpm-store
+.yarn
+.yarnrc*
+.npm
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Logs and reports
+*.log
+*.tgz
+*.pid
+*.pid.lock
+*.seed
+*.tsbuildinfo
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Version control
+.git
+.gitignore
+
+# Editor / IDE
+.vscode
+.idea
+
+# Tests (optional if you don’t need them in image)
+__tests__/
+test/
+*.spec.js
+*.spec.ts
+
+# Lint / config caches
+.eslintcache
+.stylelintcache
+
+# Docker
+docker-compose.yml
+Dockerfile
+*.Dockerfile
+
+# Optional: OS-level cruft
+*.swp
+*.bak
+
+
+apps/mobile/src
+!apps/mobile/dist

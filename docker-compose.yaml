@@ -1,0 +1,66 @@
+services:
+  # api:
+  #   build:
+  #     context: .
+  #     dockerfile: apps/api/src/dockerfile
+  #   ports:
+  #     - "${API_PORT}:3000"
+  #   environment:
+  #     - DATABASE_URL=${DATABASE_URL}
+  #     - db
+
+  #runs local, containerized db
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - '${DB_PORT}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  #PGAdmin UI or local or remote DB
+  #run with docker compose --profile pgadmin up -d pgadmin
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: memantra_pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    ports:
+      - '5050:80'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    profiles: ['pgadmin']
+
+  #CI-style test runner
+  #run with docker compose --profile tests run --rm pnpm-tests
+  pnpm-tests:
+    image: node:22
+    container_name: memantra_pnpm_tests
+    working_dir: /work
+    # bind-mount the repo so tests run on your code without building an image
+    volumes:
+      - .:/work
+    environment:
+      CI: 'true'
+    entrypoint: ['/bin/sh', '-lc']
+    command: >
+      npm i -g pnpm@9.15.9
+      && pnpm --version
+      && pnpm install --frozen-lockfile
+      && pnpm -w test -- --coverage
+    profiles: ['tests']
+
+volumes:
+  postgres_data:
+  pgadmin_data:
