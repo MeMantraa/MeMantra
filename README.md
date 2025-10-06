@@ -65,7 +65,23 @@ pnpm run start
 
 
 ```
+### Setup (Local backend)
+```bash
+# 1) create .env file in apps/backend folder
 
+# 2) Install dependencies
+pnpm i   # or npm c
+
+# 3) Run backend
+cd apps/backend
+pnpm run start
+
+# Important
+#each time you change the db schema, you need to run this command to migrate them to postgres:
+cd apps/backend
+npm run migrate
+
+```
 ## Wiki Table of Contents
 - [Meeting Minutes](https://github.com/YFrancis10/MeMantra/wiki/Meeting-Minutes)  
 - [Risks](https://github.com/YFrancis10/MeMantra/wiki/Risks)  
