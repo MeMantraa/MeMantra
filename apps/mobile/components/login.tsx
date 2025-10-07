@@ -4,7 +4,6 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'reac
 import logo from '../assets/logo.png';
 
 export default function LoginScreen({ navigation }: any) {
-  // Add navigation prop
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
