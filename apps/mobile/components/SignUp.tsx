@@ -83,7 +83,10 @@ export default function SignUpScreen({ navigation }: any) {
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.loginLink} onPress={handleLoginRedirect}>
-                <Text style={styles.loginText}>Already have an account? Login</Text>
+                <Text style={styles.loginText}>
+                  Already have an account?
+                  <Text style={styles.loginTextNav}> Login</Text>
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -97,7 +100,7 @@ export default function SignUpScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#577E9D',
+    backgroundColor: '#9AA793',
   },
   scrollContent: {
     flexGrow: 1,
@@ -132,7 +135,7 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
   },
   signUpButton: {
-    backgroundColor: '#D8BC72',
+    backgroundColor: '#E6D29C',
     borderRadius: 30,
     padding: 14,
     alignItems: 'center',
@@ -150,5 +153,10 @@ const styles = StyleSheet.create({
   loginText: {
     color: '#fff',
     fontSize: 14,
+  },
+  loginTextNav: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });

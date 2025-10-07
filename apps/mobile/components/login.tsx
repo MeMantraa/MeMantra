@@ -48,7 +48,10 @@ export default function LoginScreen({ navigation }: any) {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.signUpLink} onPress={handleSignUp}>
-              <Text style={styles.signUpText}>New to us? Sign up here</Text>
+              <Text style={styles.signUpText}>
+                New to us?
+                <Text style={styles.signUpNav}> Sign Up</Text>
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -61,7 +64,7 @@ export default function LoginScreen({ navigation }: any) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#577E9D',
+    backgroundColor: '#9AA793',
   },
   inner: {
     flex: 1,
@@ -83,7 +86,7 @@ const styles = StyleSheet.create({
     maxWidth: 400,
   },
   input: {
-    backgroundColor: '#fff',
+    backgroundColor: '#ffffff',
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
@@ -92,14 +95,14 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
   },
   loginButton: {
-    backgroundColor: '#D8BC72',
+    backgroundColor: '#E6D29C',
     borderRadius: 30,
     padding: 14,
     alignItems: 'center',
     marginTop: 8,
   },
   loginButtonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 18,
     fontWeight: '600',
   },
@@ -110,5 +113,10 @@ const styles = StyleSheet.create({
   signUpText: {
     color: '#fff',
     fontSize: 14,
+  },
+  signUpNav: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 });
