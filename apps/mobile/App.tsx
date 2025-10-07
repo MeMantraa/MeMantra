@@ -1,11 +1,14 @@
-import { StatusBar } from 'expo-status-bar';
-import LoginScreen from './screens/loginScreen';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import MainNavigator from './app/index';
 
 export default function App() {
   return (
-    <>
-      <LoginScreen />
-      <StatusBar style="auto" />
-    </>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <NavigationContainer>
+        <MainNavigator />
+      </NavigationContainer>
+    </GestureHandlerRootView>
   );
 }
