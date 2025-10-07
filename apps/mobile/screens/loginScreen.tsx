@@ -1,0 +1,115 @@
+import { StatusBar } from 'expo-status-bar';
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import logo from '../assets/logo.png';
+
+export default function App() {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = () => {
+    console.log('Login pressed', { username, password });
+  };
+
+  const handleSignUp = () => {
+    console.log('Sign up pressed');
+  };
+
+  return (
+    <>
+      <View style={styles.container}>
+        <View style={styles.inner}>
+          <View style={styles.logoContainer}>
+            <Image source={logo} style={styles.logo} resizeMode="contain" />
+          </View>
+
+          {/* Form */}
+          <View style={styles.formContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Username"
+              placeholderTextColor="#999"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor="#999"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+            />
+
+            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
+              <Text style={styles.loginButtonText}>Login</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.signUpLink} onPress={handleSignUp}>
+              <Text style={styles.signUpText}>New to us? Sign up here</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+      <StatusBar style="auto" />
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#577E9D',
+  },
+  inner: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  logoContainer: {
+    marginBottom: 30,
+    marginTop: -35,
+    alignItems: 'center',
+  },
+  logo: {
+    width: 250,
+    height: 250,
+  },
+  formContainer: {
+    width: '100%',
+    maxWidth: 400,
+  },
+  input: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+  },
+  loginButton: {
+    backgroundColor: '#D8BC72',
+    borderRadius: 30,
+    padding: 14,
+    alignItems: 'center',
+    marginTop: 8,
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  signUpLink: {
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  signUpText: {
+    color: '#fff',
+    fontSize: 14,
+  },
+});
