@@ -10,6 +10,7 @@ import {
   ScrollView,
 } from 'react-native';
 import logo from '../assets/logo.png';
+import googleLogo from '../assets/googleLogo.png';
 
 export default function SignUpScreen({ navigation }: any) {
   const [username, setUsername] = useState('');
@@ -88,6 +89,13 @@ export default function SignUpScreen({ navigation }: any) {
                   <Text style={styles.loginTextNav}> Login</Text>
                 </Text>
               </TouchableOpacity>
+
+              <TouchableOpacity style={styles.googleSignUpButton}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Image source={googleLogo} style={styles.googleLogo} />
+                  <Text style={styles.googleSignUpText}>Sign Up with Google</Text>
+                </View>
+              </TouchableOpacity>
             </View>
           </View>
         </ScrollView>
@@ -158,5 +166,23 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: 'bold',
+  },
+  googleSignUpButton: {
+    backgroundColor: '#6D7E68',
+    borderRadius: 30,
+    padding: 12,
+    marginHorizontal: 60,
+    alignItems: 'center',
+    marginTop: 18,
+    borderColor: '#313830',
+  },
+  googleLogo: {
+    marginRight: 10,
+    width: 30,
+    height: 30,
+  },
+  googleSignUpText: {
+    color: '#fff',
+    fontSize: 14,
   },
 });
