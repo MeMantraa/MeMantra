@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import logo from '../assets/logo.png';
 
-export default function SignUpScreen() {
+export default function SignUpScreen({ navigation }: any) {
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -26,7 +26,7 @@ export default function SignUpScreen() {
   };
 
   const handleLoginRedirect = () => {
-    console.log('Navigate to login');
+    navigation.navigate('Login');
   };
 
   return (
@@ -50,7 +50,6 @@ export default function SignUpScreen() {
                 onChangeText={setUsername}
                 autoCapitalize="none"
               />
-
               <TextInput
                 style={styles.input}
                 placeholder="Email"
@@ -60,7 +59,6 @@ export default function SignUpScreen() {
                 autoCapitalize="none"
                 keyboardType="email-address"
               />
-
               <TextInput
                 style={styles.input}
                 placeholder="Password"
@@ -70,7 +68,6 @@ export default function SignUpScreen() {
                 secureTextEntry
                 autoCapitalize="none"
               />
-
               <TextInput
                 style={styles.input}
                 placeholder="Confirm Password"
@@ -125,7 +122,6 @@ const styles = StyleSheet.create({
     width: '100%',
     maxWidth: 400,
   },
-
   input: {
     backgroundColor: '#fff',
     borderRadius: 12,

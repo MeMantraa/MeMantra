@@ -3,7 +3,8 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
 import logo from '../assets/logo.png';
 
-export default function App() {
+export default function LoginScreen({ navigation }: any) {
+  // Add navigation prop
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
@@ -12,7 +13,7 @@ export default function App() {
   };
 
   const handleSignUp = () => {
-    console.log('Sign up pressed');
+    navigation.navigate('Signup'); // Navigate to Signup screen
   };
 
   return (
@@ -23,7 +24,6 @@ export default function App() {
             <Image source={logo} style={styles.logo} resizeMode="contain" />
           </View>
 
-          {/* Form */}
           <View style={styles.formContainer}>
             <TextInput
               style={styles.input}
@@ -33,7 +33,6 @@ export default function App() {
               onChangeText={setUsername}
               autoCapitalize="none"
             />
-
             <TextInput
               style={styles.input}
               placeholder="Password"
