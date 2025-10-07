@@ -5,7 +5,6 @@ import logo from '../assets/logo.png';
 import googleLogo from '../assets/googleLogo.png';
 
 export default function LoginScreen({ navigation }: any) {
-  // Add navigation prop
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
