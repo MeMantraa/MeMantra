@@ -13,15 +13,18 @@ services:
   db:
     image: postgres:17
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-me_mantra_db}
     ports:
-      - '${DB_PORT}:5432'
+      - '${DB_PORT:-5432}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      # Initialize the database with init script
+      - ./backend/database:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-postgres}']
+      test:
+        ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-me_mantra_db}']
       interval: 5s
       timeout: 5s
       retries: 10
@@ -30,11 +33,11 @@ services:
   #run with docker compose --profile pgadmin up -d pgadmin
   pgadmin:
     image: dpage/pgadmin4:8
-    container_name: memantra_pgadmin
+    container_name: memantra_pgadmin_${DEV_TAG:-local}
     restart: unless-stopped
     environment:
-      PGADMIN_EMAIL: ${PGADMIN_EMAIL}
-      PGADMIN_PASSWORD: ${PGADMIN_PASSWORD}
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-admin@xyz.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-password}
       PGADMIN_CONFIG_SERVER_MODE: 'False'
     ports:
       - '5050:80'
@@ -46,21 +49,22 @@ services:
   #run with docker compose --profile tests run --rm pnpm-tests
   pnpm-tests:
     image: node:22
-    container_name: memantra_pnpm_tests
-    working_dir: /work
+    container_name: memantra_pnpm_tests_${DEV_TAG:-local}
+    working_dir: '/app'
     # bind-mount the repo so tests run on your code without building an image
     volumes:
-      - .:/work
+      - .:/app
+      - pnpm_store:/root/.pnpm-store
     environment:
       CI: 'true'
     entrypoint: ['/bin/sh', '-lc']
-    command: >
-      npm i -g pnpm@9.15.9
-      && pnpm --version
-      && pnpm install --frozen-lockfile
-      && pnpm -w test -- --coverage
+    command:
+      [
+        'npm i -g pnpm@9.15.9 && pnpm --version && pnpm install --frozen-lockfile && pnpm -w test -- --coverage',
+      ]
     profiles: ['tests']
 
 volumes:
   postgres_data:
   pgadmin_data:
+  pnpm_store:
