@@ -1,19 +1,54 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  Alert,
+  ActivityIndicator,
+} from 'react-native';
 import logo from '../assets/logo.png';
 import googleLogo from '../assets/googleLogo.png';
+import { authService } from '../services/auth.service';
+import { storage } from '../utils/storage';
 
 export default function LoginScreen({ navigation }: any) {
-  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    console.log('Login pressed', { username, password });
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter both email and password');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await authService.login({ email, password });
+
+      if (response.status === 'success') {
+        //save token with users data
+        await storage.saveToken(response.data.token);
+        await storage.saveUserData(response.data.user);
+
+        Alert.alert('Success', 'Login successful!');
+        //navigate to main screen
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
+      Alert.alert('Login Failed', errorMessage);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSignUp = () => {
-    navigation.navigate('Signup'); // Navigate to Signup screen
+    navigation.navigate('Signup');
   };
 
   return (
@@ -27,11 +62,13 @@ export default function LoginScreen({ navigation }: any) {
           <View style={styles.formContainer}>
             <TextInput
               style={styles.input}
-              placeholder="Username"
+              placeholder="Email"
               placeholderTextColor="#999"
-              value={username}
-              onChangeText={setUsername}
+              value={email}
+              onChangeText={setEmail}
               autoCapitalize="none"
+              keyboardType="email-address"
+              editable={!loading}
             />
             <TextInput
               style={styles.input}
@@ -41,10 +78,19 @@ export default function LoginScreen({ navigation }: any) {
               onChangeText={setPassword}
               secureTextEntry
               autoCapitalize="none"
+              editable={!loading}
             />
 
-            <TouchableOpacity style={styles.loginButton} onPress={handleLogin}>
-              <Text style={styles.loginButtonText}>Login</Text>
+            <TouchableOpacity
+              style={[styles.loginButton, loading && styles.disabledButton]}
+              onPress={handleLogin}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#ffffff" />
+              ) : (
+                <Text style={styles.loginButtonText}>Login</Text>
+              )}
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.signUpLink} onPress={handleSignUp}>
@@ -107,6 +153,9 @@ const styles = StyleSheet.create({
     padding: 14,
     alignItems: 'center',
     marginTop: 8,
+  },
+  disabledButton: {
+    opacity: 0.6,
   },
   loginButtonText: {
     color: '#ffffff',

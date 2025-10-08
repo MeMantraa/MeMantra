@@ -76,6 +76,7 @@ pnpm run start
 ### Setup (Local backend)
 
 ```bash
+#MAKE SURE TO HAVE DATABASE SETUP (Check read me in backend/database)
 # 1) Navigate to backend directory and create .env file with your database configuration
 cd backend
 
