@@ -9,23 +9,31 @@ export const AuthController = {
     try {
       const userData = req.body as RegisterInput;
       
-      //check if user exists
-      const existingUser = await UserModel.findByEmail(userData.email);
-      
-      if (existingUser) {
+      //check if user exists by email
+      const existingUserByEmail = await UserModel.findByEmail(userData.email);
+      if (existingUserByEmail) {
         return res.status(400).json({
           status: 'error',
           message: 'Email already in use',
         });
       }
       
+      //check if username exists
+      const existingUserByUsername = await UserModel.findByUsername(userData.username);
+      if (existingUserByUsername) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Username already taken',
+        });
+      }
+      
       //create new user
       const newUser = await UserModel.create(userData);
       
-      //generate jwt token
+      //generate JWT
       const token = generateToken({
-        userId: newUser.id,
-        email: newUser.email,
+        userId: newUser.user_id,
+        email: newUser.email || '',
       });
       
       return res.status(201).json({
@@ -33,9 +41,9 @@ export const AuthController = {
         message: 'User registered successfully',
         data: {
           user: {
-            id: newUser.id,
+            user_id: newUser.user_id,
+            username: newUser.username,
             email: newUser.email,
-            full_name: newUser.full_name,
           },
           token,
         },
@@ -53,11 +61,11 @@ export const AuthController = {
     try {
       const { email, password } = req.body as LoginInput;
       
-      // Find user by email
+      //find by email
       const user = await UserModel.findByEmail(email);
       
-      // Check if user exists
-      if (!user) {
+      //check if user exists
+      if (!user || !user.password_hash) {
         return res.status(401).json({
           status: 'error',
           message: 'Invalid credentials',
@@ -65,7 +73,7 @@ export const AuthController = {
       }
       
       //check pass
-      const isPasswordValid = await bcrypt.compare(password, user.password);
+      const isPasswordValid = await bcrypt.compare(password, user.password_hash);
       
       if (!isPasswordValid) {
         return res.status(401).json({
@@ -74,13 +82,10 @@ export const AuthController = {
         });
       }
       
-      //update last login
-      await UserModel.updateLastLogin(user.id);
-      
-      //generate jwt token
+      //generate JWT
       const token = generateToken({
-        userId: user.id,
-        email: user.email,
+        userId: user.user_id,
+        email: user.email || '',
       });
       
       return res.status(200).json({
@@ -88,9 +93,9 @@ export const AuthController = {
         message: 'Login successful',
         data: {
           user: {
-            id: user.id,
+            user_id: user.user_id,
+            username: user.username,
             email: user.email,
-            full_name: user.full_name,
           },
           token,
         },
@@ -128,9 +133,9 @@ export const AuthController = {
         status: 'success',
         data: {
           user: {
-            id: user.id,
+            user_id: user.user_id,
+            username: user.username,
             email: user.email,
-            full_name: user.full_name,
           },
         },
       });
