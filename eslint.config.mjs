@@ -27,6 +27,8 @@ export default [
     files: [
       'eslint.config.*',
       'apps/mobile/babel.config.js',
+      'apps/mobile/metro.config.js',     
+      'apps/mobile/tailwind.config.js',  
       'apps/mobile/jest.config.js',
       'apps/mobile/jest.setup.js',
       'apps/mobile/**/.*.js',
