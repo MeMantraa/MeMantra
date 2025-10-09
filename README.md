@@ -78,14 +78,14 @@ pnpm run start
 ```bash
 #MAKE SURE TO HAVE DATABASE SETUP (Check read me in backend/database)
 # 1) Navigate to backend directory and create .env file with your database configuration
-cd backend
+cd apps/backend
 
-# 2) Install dependencies from root
+# 2) Install dependencies from root (if not already done so from frontend setup)
 cd .. #to memantra root folder
 pnpm install
 
 # 3) Run backend
-cd backend
+cd apps/backend
 pnpm run start # or npm run dev
 
 
