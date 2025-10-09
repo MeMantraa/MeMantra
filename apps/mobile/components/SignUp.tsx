@@ -76,19 +76,16 @@ export default function SignUpScreen({ navigation }: any) {
 
   return (
     <>
-      <View style={styles.container}>
-        <ScrollView
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.inner}>
-            <View style={styles.logoContainer}>
-              <Image source={logo} style={styles.logo} />
+      <View className="flex-1 bg-[#9AA793]">
+        <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
+          <View className="flex-1 justify-center items-center p-[24px] pt-[60px] pb-[40px]">
+            <View className="mb-[20px] items-center">
+              <Image source={logo} className="w-[200px] h-[200px]" />
             </View>
 
-            <View style={styles.formContainer}>
+            <View className="w-full max-w-[400px]">
               <TextInput
-                style={styles.input}
+                className="bg-[#fff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
                 placeholder="Username"
                 placeholderTextColor="#999"
                 value={username}
@@ -97,7 +94,7 @@ export default function SignUpScreen({ navigation }: any) {
                 editable={!loading}
               />
               <TextInput
-                style={styles.input}
+                className="bg-[#fff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
                 placeholder="Email"
                 placeholderTextColor="#999"
                 value={email}
@@ -107,7 +104,7 @@ export default function SignUpScreen({ navigation }: any) {
                 editable={!loading}
               />
               <TextInput
-                style={styles.input}
+                className="bg-[#fff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
                 placeholder="Password"
                 placeholderTextColor="#999"
                 value={password}
@@ -117,7 +114,7 @@ export default function SignUpScreen({ navigation }: any) {
                 editable={!loading}
               />
               <TextInput
-                style={styles.input}
+                className="bg-[#fff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
                 placeholder="Confirm Password"
                 placeholderTextColor="#999"
                 value={confirmPassword}
@@ -128,28 +125,23 @@ export default function SignUpScreen({ navigation }: any) {
               />
 
               <TouchableOpacity
-                style={[styles.signUpButton, loading && styles.disabledButton]}
+                className="bg-[#E6D29C] rounded-[30px] p-[14px] items-center mt-[8px]"
                 onPress={handleSignUp}
-                disabled={loading}
               >
-                {loading ? (
-                  <ActivityIndicator color="#ffffff" />
-                ) : (
-                  <Text style={styles.signUpButtonText}>Sign Up</Text>
-                )}
+                <Text className="text-[#fff] text-[18px] font-semibold">Sign Up</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.loginLink} onPress={handleLoginRedirect}>
-                <Text style={styles.loginText}>
+              <TouchableOpacity className="items-center mt-[20px]" onPress={handleLoginRedirect}>
+                <Text className="text-[#fff] text-[14px]">
                   Already have an account?
-                  <Text style={styles.loginTextNav}> Login</Text>
+                  <Text className="text-[#fff] text-[14px] font-bold"> Login</Text>
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity style={styles.googleSignUpButton}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  <Image source={googleLogo} style={styles.googleLogo} />
-                  <Text style={styles.googleSignUpText}>Sign Up with Google</Text>
+              <TouchableOpacity className="bg-[#6D7E68] rounded-[30px] p-[12px] mx-[60px] items-center mt-[18px] ">
+                <View className="flex-row items-center">
+                  <Image source={googleLogo} className="mr-[10px] w-[30px] h-[30px]" />
+                  <Text className="text-[#fff] text-[14px]">Sign Up with Google</Text>
                 </View>
               </TouchableOpacity>
             </View>
@@ -160,88 +152,3 @@ export default function SignUpScreen({ navigation }: any) {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#9AA793',
-  },
-  scrollContent: {
-    flexGrow: 1,
-  },
-  inner: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-    paddingTop: 60,
-    paddingBottom: 40,
-  },
-  logoContainer: {
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  logo: {
-    width: 200,
-    height: 200,
-  },
-  formContainer: {
-    width: '100%',
-    maxWidth: 400,
-  },
-  input: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  signUpButton: {
-    backgroundColor: '#E6D29C',
-    borderRadius: 30,
-    padding: 14,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  disabledButton: {
-    opacity: 0.6,
-  },
-  signUpButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  loginLink: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  loginText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  loginTextNav: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  googleSignUpButton: {
-    backgroundColor: '#6D7E68',
-    borderRadius: 30,
-    padding: 12,
-    marginHorizontal: 60,
-    alignItems: 'center',
-    marginTop: 18,
-    borderColor: '#313830',
-  },
-  googleLogo: {
-    marginRight: 10,
-    width: 30,
-    height: 30,
-  },
-  googleSignUpText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-});

@@ -53,16 +53,16 @@ export default function LoginScreen({ navigation }: any) {
 
   return (
     <>
-      <View style={styles.container}>
-        <View style={styles.inner}>
-          <View style={styles.logoContainer}>
-            <Image source={logo} style={styles.logo} resizeMode="contain" />
+      <View className="flex-1 bg-[#9AA793]">
+        <View className="flex-1 justify-center items-center p-[24px]">
+          <View className="mb-[30px] -mt-[35px] items-center">
+            <Image source={logo} className="w-[250px] h-[250px]" resizeMode="contain" />
           </View>
 
-          <View style={styles.formContainer}>
+          <View className="w-full max-w-[400px]">
             <TextInput
-              style={styles.input}
-              placeholder="Email"
+              className="bg-[#ffffff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
+              placeholder="Username"
               placeholderTextColor="#999"
               value={email}
               onChangeText={setEmail}
@@ -70,8 +70,9 @@ export default function LoginScreen({ navigation }: any) {
               keyboardType="email-address"
               editable={!loading}
             />
+
             <TextInput
-              style={styles.input}
+              className="bg-[#ffffff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
               placeholder="Password"
               placeholderTextColor="#999"
               value={password}
@@ -82,28 +83,23 @@ export default function LoginScreen({ navigation }: any) {
             />
 
             <TouchableOpacity
-              style={[styles.loginButton, loading && styles.disabledButton]}
+              className="bg-[#E6D29C] rounded-[30px] p-[14px] items-center mt-[8px]"
               onPress={handleLogin}
-              disabled={loading}
             >
-              {loading ? (
-                <ActivityIndicator color="#ffffff" />
-              ) : (
-                <Text style={styles.loginButtonText}>Login</Text>
-              )}
+              <Text className="text-[#ffffff] text-[18px] font-semibold">Login</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.signUpLink} onPress={handleSignUp}>
-              <Text style={styles.signUpText}>
+            <TouchableOpacity className="items-center mt-[20px]" onPress={handleSignUp}>
+              <Text className="text-[#fff] text-[14px]">
                 New to us?
-                <Text style={styles.signUpNav}> Sign Up</Text>
+                <Text className="text-[#ffffff] text-[14px] font-bold"> Sign Up</Text>
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.googleSignUpButton}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Image source={googleLogo} style={styles.googleLogo} />
-                <Text style={styles.googleSignUpText}>Sign Up with Google</Text>
+            <TouchableOpacity className="bg-[#6D7E68] rounded-[30px] p-[12px] mx-[60px] items-center mt-[18px] ">
+              <View className="flex-row items-center">
+                <Image source={googleLogo} className="mr-[10px] w-[30px] h-[30px]" />
+                <Text className="text-[#fff] text-[14px]">Sign Up with Google</Text>
               </View>
             </TouchableOpacity>
           </View>
@@ -113,84 +109,3 @@ export default function LoginScreen({ navigation }: any) {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#9AA793',
-  },
-  inner: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  logoContainer: {
-    marginBottom: 30,
-    marginTop: -35,
-    alignItems: 'center',
-  },
-  logo: {
-    width: 250,
-    height: 250,
-  },
-  formContainer: {
-    width: '100%',
-    maxWidth: 400,
-  },
-  input: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  loginButton: {
-    backgroundColor: '#E6D29C',
-    borderRadius: 30,
-    padding: 14,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  disabledButton: {
-    opacity: 0.6,
-  },
-  loginButtonText: {
-    color: '#ffffff',
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  signUpLink: {
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  signUpText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-  signUpNav: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  googleSignUpButton: {
-    backgroundColor: '#6D7E68',
-    borderRadius: 30,
-    padding: 12,
-    marginHorizontal: 60,
-    alignItems: 'center',
-    marginTop: 18,
-    borderColor: '#313830',
-  },
-  googleLogo: {
-    marginRight: 10,
-    width: 30,
-    height: 30,
-  },
-  googleSignUpText: {
-    color: '#fff',
-    fontSize: 14,
-  },
-});
