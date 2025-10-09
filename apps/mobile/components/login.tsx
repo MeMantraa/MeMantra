@@ -1,15 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Alert } from 'react-native';
 import logo from '../assets/logo.png';
 import googleLogo from '../assets/googleLogo.png';
 import { authService } from '../services/auth.service';
@@ -28,7 +19,10 @@ export default function LoginScreen({ navigation }: any) {
 
     setLoading(true);
     try {
-      const response = await authService.login({ email, password });
+      const response = await authService.login({
+        email: email.trim().toLowerCase(),
+        password: password.trim(),
+      });
 
       if (response.status === 'success') {
         //save token with users data
@@ -62,7 +56,7 @@ export default function LoginScreen({ navigation }: any) {
           <View className="w-full max-w-[400px]">
             <TextInput
               className="bg-[#ffffff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
-              placeholder="Username"
+              placeholder="Email"
               placeholderTextColor="#999"
               value={email}
               onChangeText={setEmail}

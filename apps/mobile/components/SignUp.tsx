@@ -1,16 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Image,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import logo from '../assets/logo.png';
 import googleLogo from '../assets/googleLogo.png';
 import { authService } from '../services/auth.service';
@@ -29,7 +19,7 @@ export default function SignUpScreen({ navigation }: any) {
       return;
     }
 
-    if (password !== confirmPassword) {
+    if (password.trim() !== confirmPassword.trim()) {
       Alert.alert('Error', 'Passwords do not match');
       return;
     }
@@ -42,9 +32,9 @@ export default function SignUpScreen({ navigation }: any) {
     setLoading(true);
     try {
       const response = await authService.register({
-        username,
-        email,
-        password,
+        username: username.trim(),
+        email: email.trim().toLowerCase(),
+        password: password.trim(),
       });
 
       if (response.status === 'success') {
