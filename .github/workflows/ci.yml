@@ -54,8 +54,6 @@ jobs:
 
       - name: Test (Jest + Expo)
         run: pnpm -w test -- --coverage
-        env:
-          JWT_SECRET: testjwtsecret
 
       - name: Upload coverage
         if: always()
