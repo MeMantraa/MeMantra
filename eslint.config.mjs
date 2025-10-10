@@ -48,9 +48,6 @@ export default [
       ecmaVersion: 'latest',
       sourceType: 'module',
       parser: tsParser,
-      parserOptions: {
-        project: './apps/backend/tsconfig.json',
-      },
       globals: { ...globals.node, ...globals.es2021 },
     },
     plugins: {
