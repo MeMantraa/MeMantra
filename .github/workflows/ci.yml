@@ -19,12 +19,6 @@ jobs:
     env:
       CI: true
       HUSKY: 0
-      DB_HOST: localhost
-      DB_PORT: 5432
-      DB_USER: testuser
-      DB_PASSWORD: testpassword
-      DB_NAME: testdbname
-      JWT_SECRET: testjwtsecret
 
     steps:
       - name: Checkout
@@ -60,6 +54,8 @@ jobs:
 
       - name: Test (Jest + Expo)
         run: pnpm -w test -- --coverage
+        env:
+          JWT_SECRET: testjwtsecret
 
       - name: Upload coverage
         if: always()
