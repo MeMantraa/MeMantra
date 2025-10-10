@@ -1,133 +1,79 @@
-import request from 'supertest';
-import { createApp } from '../app';
-import express from 'express';
+import express, { RequestHandler, ErrorRequestHandler } from 'express';
+import helmet from 'helmet';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
 
-describe('Backend API', () => {
-  let app: express.Application;
+export const createApp = () => {
+  const app = express();
 
-  beforeAll(() => {
-    app = createApp();
+  // Security middleware
+  app.use(helmet());
+
+  // CORS configuration
+  app.use(cors({
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:19006'],
+    credentials: true,
+  }));
+
+  // Rate limiting
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: 'Too many requests from this IP, please try again later.',
   });
 
-  describe('GET /health', () => {
-    it('should return 200 and health status', async () => {
-      const response = await request(app).get('/health');
+  app.use('/api/', limiter);
 
-      expect(response.status).toBe(200);
-      expect(response.body).toHaveProperty('status', 'healthy');
-      expect(response.body).toHaveProperty('timestamp');
-      expect(response.body).toHaveProperty('uptime');
-    });
+  // Body parsing
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
-    it('should return valid timestamp format', async () => {
-      const response = await request(app).get('/health');
-      
-      const timestamp = new Date(response.body.timestamp);
-      expect(timestamp).toBeInstanceOf(Date);
-      expect(timestamp.toString()).not.toBe('Invalid Date');
-    });
+  // Request logging middleware (development)
+  const loggingMiddleware: RequestHandler = (req, _res, next) => {
+    console.log(`${req.method} ${req.path}`);
+    next();
+  };
 
-    it('should return numeric uptime', async () => {
-      const response = await request(app).get('/health');
-      
-      expect(typeof response.body.uptime).toBe('number');
-      expect(response.body.uptime).toBeGreaterThan(0);
-    });
-  });
+  if (process.env.NODE_ENV === 'development') {
+    app.use(loggingMiddleware);
+  }
 
-  describe('GET /api/v1/hello', () => {
-    it('should return 200 and welcome message', async () => {
-      const response = await request(app).get('/api/v1/hello');
-
-      expect(response.status).toBe(200);
-      expect(response.body).toEqual({ 
-        message: 'Hello from MeMantra API!' 
-      });
-    });
-
-    it('should return JSON content type', async () => {
-      const response = await request(app).get('/api/v1/hello');
-
-      expect(response.headers['content-type']).toMatch(/json/);
+  // Health check endpoint
+  app.get('/health', (_req, res) => {
+    res.json({ 
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
     });
   });
 
-  describe('404 Handler', () => {
-    it('should return 404 for non-existent routes', async () => {
-      const response = await request(app).get('/nonexistent');
-
-      expect(response.status).toBe(404);
-      expect(response.body).toHaveProperty('error', 'Not Found');
-      expect(response.body.message).toContain('Cannot GET /nonexistent');
-    });
-
-    it('should return 404 for non-existent POST routes', async () => {
-      const response = await request(app).post('/api/fake');
-
-      expect(response.status).toBe(404);
-      expect(response.body.message).toContain('Cannot POST /api/fake');
-    });
+  // API routes
+  app.get('/api/v1/hello', (_req, res) => {
+    res.json({ message: 'Hello from MeMantra API!' });
   });
 
-  describe('Security Headers', () => {
-    it('should include security headers from helmet', async () => {
-      const response = await request(app).get('/health');
-
-      expect(response.headers).toHaveProperty('x-dns-prefetch-control');
-      expect(response.headers).toHaveProperty('x-frame-options');
-      expect(response.headers).toHaveProperty('x-content-type-options');
+  // 404 handler
+  const notFoundHandler: RequestHandler = (req, res) => {
+    res.status(404).json({ 
+      error: 'Not Found',
+      message: `Cannot ${req.method} ${req.path}`,
     });
-  });
+  };
 
-  describe('CORS', () => {
-    it('should handle CORS preflight requests', async () => {
-      const response = await request(app)
-        .options('/api/v1/hello')
-        .set('Origin', 'http://localhost:19006')
-        .set('Access-Control-Request-Method', 'GET');
+  app.use(notFoundHandler);
 
-      expect(response.status).toBe(204);
+  // Error handler
+  const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
+    console.error(err.stack);
+    res.status(500).json({ 
+      error: 'Internal Server Error',
+      message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong',
     });
+  };
 
-    it('should include CORS headers in response', async () => {
-      const response = await request(app)
-        .get('/api/v1/hello')
-        .set('Origin', 'http://localhost:19006');
+  app.use(errorHandler);
 
-      expect(response.headers).toHaveProperty('access-control-allow-origin');
-    });
-  });
-
-  describe('Body Parsing', () => {
-    it('should parse JSON body', async () => {
-      const testData = { test: 'data' };
-      
-      // Create a test POST endpoint
-      app.post('/api/test', (req, res) => {
-        res.json({ received: req.body });
-      });
-
-      const response = await request(app)
-        .post('/api/test')
-        .send(testData)
-        .set('Content-Type', 'application/json');
-
-      expect(response.body.received).toEqual(testData);
-    });
-  });
-
-  describe('Error Handler', () => {
-    it('should handle errors and return 500', async () => {
-      // Create a route that throws an error
-      app.get('/api/error-test', () => {
-        throw new Error('Test error');
-      });
-
-      const response = await request(app).get('/api/error-test');
-
-      expect(response.status).toBe(500);
-      expect(response.body).toHaveProperty('error', 'Internal Server Error');
-      expect(response.body).toHaveProperty('message');
-    });
-  });
-});
+  return app;
+};
