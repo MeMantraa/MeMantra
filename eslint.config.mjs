@@ -41,6 +41,30 @@ export default [
     rules: { 'no-undef': 'off' },
   },
 
+  // Backend TypeScript configuration
+  {
+    files: ['apps/backend/**/*.{ts,js}'],
+    languageOptions: {
+      ecmaVersion: 'latest',
+      sourceType: 'module',
+      parser: tsParser,
+      parserOptions: {
+        project: './apps/backend/tsconfig.json',
+      },
+      globals: { ...globals.node, ...globals.es2021 },
+    },
+    plugins: {
+      '@typescript-eslint': tsPlugin,
+    },
+    rules: {
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
+    },
+  },
+
+  // Mobile configuration
   {
     files: ['apps/mobile/**/*.{ts,tsx,js,jsx}'],
     languageOptions: {
