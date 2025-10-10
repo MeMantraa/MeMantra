@@ -1,0 +1,6 @@
+dist/
+src/db/types.ts
+
+*.tmp
+temp/
+uploads/
