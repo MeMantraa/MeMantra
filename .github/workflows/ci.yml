@@ -19,6 +19,7 @@ jobs:
     env:
       CI: true
       HUSKY: 0
+      JWT_SECRET: ${{ secrets.JWT_SECRET }}
 
     steps:
       - name: Checkout

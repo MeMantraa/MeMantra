@@ -4,3 +4,22 @@ src/db/types.ts
 *.tmp
 temp/
 uploads/
+# Node dependencies
+node_modules/
+
+# Build outputs
+dist/
+
+# Environment files
+.env*
+
+# OS files
+.DS_Store
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# TypeScript build info
+*.tsbuildinfo
