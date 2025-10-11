@@ -44,7 +44,7 @@ export const authenticate = async (
       email: decoded.email,
     };
     
-    next();
+    return next();
   } catch (error) {
     return res.status(401).json({
       status: 'error',
