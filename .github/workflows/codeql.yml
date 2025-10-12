@@ -83,16 +83,16 @@ jobs:
             pnpm-lock.yaml
             **/pnpm-lock.yaml
 
-      # Ensure pnpm is installed on the runner (required before using `pnpm`)
+        # Corepack manages pnpm versions bundled with Node
+      - name: Enable Corepack (pnpm)
+        run: corepack enable
+
+        # Ensure pnpm is installed on the runner (required before using `pnpm`)
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           version: 9.15.9
           run_install: false
-
-        # Corepack manages pnpm versions bundled with Node
-      - name: Enable Corepack (pnpm)
-        run: corepack enable
 
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
