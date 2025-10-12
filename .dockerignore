@@ -1,3 +1,13 @@
+# --- recursive ignores to keep context tiny ---
+**/node_modules
+**/.pnpm-store
+**/.turbo
+**/.cache
+**/dist
+**/build
+**/.next
+**/coverage
+
 # Node dependencies and build outputs
 node_modules
 dist
@@ -16,8 +26,6 @@ coverage
 .yarn
 .yarnrc*
 .npm
-package-lock.json
-pnpm-lock.yaml
 yarn.lock
 
 # Logs and reports
