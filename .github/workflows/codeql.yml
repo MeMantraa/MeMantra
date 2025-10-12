@@ -74,25 +74,30 @@ jobs:
       # - name: Setup runtime (example)
       #   uses: actions/setup-example@v1
       # Prepare Node and pnpm so dependency graphs are available to CodeQL, improving analysis quality
-      - name: Setup Node.js
+      - name: Setup Node.js (JS/TS only)
+        if: matrix.language == 'javascript-typescript'
         uses: actions/setup-node@v4
         with:
-          node-version: '22' # Aligns with repo's stated Node LTS
-          cache: 'pnpm' # Speed up installs by caching pnpm store
-          cache-dependency-path: | # Support monorepo lockfiles
-            pnpm-lock.yaml
-            **/pnpm-lock.yaml
+          node-version: '22'
 
-        # Corepack manages pnpm versions bundled with Node
-      - name: Enable Corepack (pnpm)
-        run: corepack enable
-
-        # Ensure pnpm is installed on the runner (required before using `pnpm`)
+      # Ensure pnpm exists before enabling pnpm cache
       - name: Setup pnpm
+        if: matrix.language == 'javascript-typescript'
         uses: pnpm/action-setup@v4
         with:
           version: 9.15.9
           run_install: false
+
+      # Enable pnpm cache after pnpm is on PATH
+      - name: Enable pnpm cache
+        if: matrix.language == 'javascript-typescript'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            **/pnpm-lock.yaml
 
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
