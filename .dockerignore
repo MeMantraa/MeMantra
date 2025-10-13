@@ -26,13 +26,11 @@ coverage
 .yarn
 .yarnrc*
 .npm
-yarn.lock
 
 # Logs and reports
 *.log
 *.tgz
 *.pid
-*.pid.lock
 *.seed
 *.tsbuildinfo
 

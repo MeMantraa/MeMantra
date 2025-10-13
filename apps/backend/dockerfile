@@ -6,19 +6,6 @@ RUN npm i -g pnpm@9.15.9
 #Setting app directory
 WORKDIR /app
 
-#copy package.json and package-lock.json
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-
-COPY apps/backend/package.json apps/backend/package.json
-
-#install dependencies
-RUN pnpm install --frozen-lockfile --prod=false
-
-COPY apps/backend apps/backend
-
-WORKDIR /app/apps/backend
-
-ENV PORT=4000
 EXPOSE 4000
 
-CMD ["pnpm", "start"]
+CMD sh -lc "cd /app && pnpm --version && pnpm install --frozen-lockfile && pnpm --filter ./apps/backend run dev"

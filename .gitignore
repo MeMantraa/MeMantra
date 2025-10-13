@@ -149,3 +149,9 @@ node_modules/
 
 # Ignore the entire Turborepo cache directory
 .turbo/
+
+
+**/node_modules/
+.pnpm-store/
+**/.pnpm-store/
+.pnpm-debug.log
