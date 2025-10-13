@@ -16,10 +16,12 @@
     "test": "jest"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-navigation/native": "^7.1.18",
     "@react-navigation/stack": "^7.4.9",
     "@sentry/react-native": "^7.2.0",
     "expo": "~54.0.13",
+    "axios": "^1.12.2",
     "expo-asset": "^12.0.9",
     "expo-status-bar": "~3.0.8",
     "nativewind": "^4.2.1",
