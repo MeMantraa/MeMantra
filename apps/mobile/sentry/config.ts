@@ -1,8 +1,8 @@
 import * as Sentry from '@sentry/react-native';
 
-declare var __DEV__: boolean;
+declare const __DEV__: boolean;
 
-declare var process: {
+declare const process: {
   env: {
     EXPO_PUBLIC_SENTRY_DSN?: string;
   };
@@ -20,7 +20,7 @@ export const initializeSentry = () => {
   Sentry.init({
     dsn: SENTRY_DSN,
     debug: true, // Enable debug mode to see what's happening
-    tracesSampleRate: 1.0,
+    tracesSampleRate: 1,
 
     enableAutoSessionTracking: true,
     enableNativeCrashHandling: true,
@@ -68,4 +68,4 @@ const startPerformanceTracking = () => {
   trackAppStartup();
 };
 
-export { Sentry, startPerformanceTracking };
+export { startPerformanceTracking, Sentry };
