@@ -1,4 +1,4 @@
 import { initializeSentry } from './config';
 initializeSentry();
 
-export { Sentry, startPerformanceTracking } from './config';
+export { startPerformanceTracking } from './config';
