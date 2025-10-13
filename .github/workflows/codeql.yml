@@ -83,7 +83,7 @@ jobs:
       # Ensure pnpm exists before enabling pnpm cache
       - name: Setup pnpm
         if: matrix.language == 'javascript-typescript'
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061
         with:
           version: 9.15.9
           run_install: false
