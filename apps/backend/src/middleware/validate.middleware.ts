@@ -10,7 +10,7 @@ export const validateRequest = (schema: ZodSchema) => {
         query: req.query,
         params: req.params,
       });
-      next();
+      return next();
     } catch (error) {
       if (error instanceof ZodError) {
         return res.status(400).json({
