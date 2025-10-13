@@ -68,4 +68,5 @@ const startPerformanceTracking = () => {
   trackAppStartup();
 };
 
-export { startPerformanceTracking, Sentry };
+export { startPerformanceTracking };
+export * from '@sentry/react-native';
