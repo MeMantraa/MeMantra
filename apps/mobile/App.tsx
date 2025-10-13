@@ -14,8 +14,9 @@ export default function App() {
     // Only initialize Sentry in production/release mode
     if (!__DEV__) {
       console.log('Production mode: Initializing Sentry...');
-      import('./sentry').then(() => {
-        console.log('Sentry initialized for production');
+      import('./sentry').then(({ startPerformanceTracking }) => {
+        // Start manual performance tracking
+        startPerformanceTracking();
       });
     } else {
       console.log('Development mode: Sentry disabled');
