@@ -155,3 +155,4 @@ node_modules/
 .pnpm-store/
 **/.pnpm-store/
 .pnpm-debug.log
+.pnpm/
