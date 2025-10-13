@@ -33,7 +33,7 @@ export const createApp = () => {
   // Request logging middleware (development)
   const loggingMiddleware: RequestHandler = (req, _res, next) => {
     // Sanitize path to prevent log injection
-    const sanitizedPath = req.path.replace(/[\n\r]/g, "");
+    const sanitizedPath = req.path.replaceAll(/[\n\r]/g, "");
     console.log(`${req.method} ${sanitizedPath}`);
     next();
   };
