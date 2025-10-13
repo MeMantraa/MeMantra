@@ -4,7 +4,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import MainNavigator from './app/index';
 import './global.css';
 
-declare var __DEV__: boolean;
+declare const __DEV__: boolean;
 
 export default function App() {
   // Log the current mode
@@ -12,14 +12,15 @@ export default function App() {
 
   useEffect(() => {
     // Only initialize Sentry in production/release mode
-    if (!__DEV__) {
+
+    if (__DEV__) {
+      console.log('Development mode: Sentry disabled');
+    } else {
       console.log('Production mode: Initializing Sentry...');
       import('./sentry').then(({ startPerformanceTracking }) => {
         // Start manual performance tracking
         startPerformanceTracking();
       });
-    } else {
-      console.log('Development mode: Sentry disabled');
     }
   }, []);
 
