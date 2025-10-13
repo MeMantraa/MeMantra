@@ -4,21 +4,33 @@ import { createStackNavigator } from '@react-navigation/stack';
 // Import your screens
 import LoginScreen from '../components/login';
 import Signup from '../components/SignUp';
-// Import other screens as needed
+import BottomTabNavigator from './bottomTabNavigator';
 
 const Stack = createStackNavigator();
 
+const useAuth = () => {
+  const [isLoggedIn] = React.useState(true); // Removed setIsLoggedIn
+
+  return { isLoggedIn };
+};
+
 export default function MainNavigator() {
+  const { isLoggedIn } = useAuth();
+
   return (
     <Stack.Navigator
-      initialRouteName="Login"
       screenOptions={{
         headerShown: false,
       }}
     >
-      <Stack.Screen name="Login" component={LoginScreen} options={{ headerTitle: 'Login' }} />
-
-      <Stack.Screen name="Signup" component={Signup} options={{ headerTitle: 'Signup' }} />
+      {isLoggedIn ? (
+        <Stack.Screen name="MainApp" component={BottomTabNavigator} />
+      ) : (
+        <>
+          <Stack.Screen name="Login" component={LoginScreen} options={{ headerTitle: 'Login' }} />
+          <Stack.Screen name="Signup" component={Signup} options={{ headerTitle: 'Signup' }} />
+        </>
+      )}
     </Stack.Navigator>
   );
 }
