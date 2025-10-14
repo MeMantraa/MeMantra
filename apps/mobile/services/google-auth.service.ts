@@ -4,21 +4,9 @@ import { makeRedirectUri } from 'expo-auth-session';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const WEB_CLIENT_ID = '837744591033-ju2acrfhaivd2hhc87f5hrhltgp5bu00.apps.googleusercontent.com';
-
-const GOOGLE_CLIENT_ID = {
-  expoClientId: WEB_CLIENT_ID,
-  iosClientId: WEB_CLIENT_ID,
-  androidClientId: WEB_CLIENT_ID,
-  webClientId: WEB_CLIENT_ID,
-};
-
 export const useGoogleAuth = () => {
   const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: GOOGLE_CLIENT_ID.expoClientId,
-    iosClientId: GOOGLE_CLIENT_ID.iosClientId,
-    androidClientId: GOOGLE_CLIENT_ID.androidClientId,
-    webClientId: GOOGLE_CLIENT_ID.webClientId,
+    androidClientId: '837744591033-ju2acrfhaivd2hhc87f5hrhltgp5bu00.apps.googleusercontent.com',
     scopes: ['profile', 'email'],
   });
 
