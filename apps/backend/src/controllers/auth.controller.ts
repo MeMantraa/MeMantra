@@ -147,4 +147,56 @@ export const AuthController = {
       });
     }
   },
+  async googleAuth(req: Request, res: Response) {
+  try {
+    const { email, name, googleId } = req.body;
+    
+    if (!email || !googleId) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Email and Google ID are required',
+      });
+    }
+    
+    // Check if user exists
+    let user = await UserModel.findByEmail(email);
+    
+    if (!user) {
+      // Use Google name as username
+      const username = name ? name.replace(/\s+/g, '').toLowerCase() : email.split('@')[0];
+      
+      user = await UserModel.create({
+        email: email.toLowerCase(),
+        username: username,
+        password: '',
+        google_id: googleId,
+      });
+    }
+    
+    // Generate JWT
+    const token = generateToken({
+      userId: user.user_id,
+      email: user.email || '',
+    });
+    
+    return res.status(200).json({
+      status: 'success',
+      message: 'Google authentication successful',
+      data: {
+        user: {
+          user_id: user.user_id,
+          username: user.username,
+          email: user.email,
+        },
+        token,
+      },
+    });
+  } catch (error) {
+    console.error('Google auth error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Error during Google authentication',
+    });
+  }
+},
 };

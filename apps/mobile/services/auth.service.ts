@@ -12,6 +12,12 @@ export interface RegisterCredentials {
   device_token?: string;
 }
 
+export interface GoogleAuthCredentials {
+  email: string;
+  name: string;
+  googleId: string;
+}
+
 export interface AuthResponse {
   status: string;
   message: string;
@@ -42,6 +48,11 @@ export const authService = {
         Authorization: `Bearer ${token}`,
       },
     });
+    return response.data;
+  },
+
+  async googleAuth(credentials: GoogleAuthCredentials): Promise<AuthResponse> {
+    const response = await apiClient.post<AuthResponse>('/auth/google', credentials);
     return response.data;
   },
 };
