@@ -3,10 +3,20 @@ name: CI (MeMantra Mobile)
 on:
   pull_request:
     branches: [main]
-    paths-ignore: ['**/*.md']
+    paths:
+      - 'apps/mobile/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'turbo.json'
   push:
     branches: [main]
-    paths-ignore: ['**/*.md']
+    paths:
+      - 'apps/mobile/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'turbo.json'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref_name }}
@@ -14,16 +24,20 @@ concurrency:
 
 jobs:
   mobile-ci:
-    name: Lint • Typecheck • Test • Build
+    name: Lint • Typecheck • Test • Build (mobile)
     runs-on: ubuntu-latest
     env:
       CI: true
       HUSKY: 0
-      JWT_SECRET: ${{ secrets.JWT_SECRET }}
+      NODE_ENV: test
+      # Safe default for forked PRs where secrets are not exposed
+      JWT_SECRET: testjwtsecret
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # helps turborepo hashing
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -36,10 +50,19 @@ jobs:
           version: 9.15.9
           run_install: false
 
+      # Use the actual secret if available (not available to forked PRs)
+      - name: Prefer repository JWT secret if present
+        if: ${{ secrets.JWT_SECRET != '' }}
+        run: echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> "$GITHUB_ENV"
+
+      - name: Resolve pnpm store path
+        id: pnpm-store
+        run: echo "STORE_PATH=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+
       - name: Cache pnpm store
         uses: actions/cache@v4
         with:
-          path: ~/.pnpm-store
+          path: ${{ steps.pnpm-store.outputs.STORE_PATH }}
           key: pnpm-store-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
             pnpm-store-${{ runner.os }}-
@@ -47,24 +70,22 @@ jobs:
       - name: Install deps
         run: pnpm install --frozen-lockfile
 
-      - name: Lint
-        run: pnpm -w lint
+      - name: Lint (mobile)
+        run: pnpm --filter ./apps/mobile... lint
 
-      - name: Typecheck
-        run: pnpm -w typecheck
+      - name: Typecheck (mobile)
+        run: pnpm --filter ./apps/mobile... typecheck
 
-      - name: Test (Jest + Expo)
-        run: pnpm -w test -- --coverage
+      - name: Test (mobile)
+        run: pnpm --filter ./apps/mobile... test -- --coverage
 
-      - name: Upload coverage
+      - name: Upload coverage (mobile)
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: mobile-coverage
-          path: |
-            apps/mobile/coverage
-            coverage
+          path: apps/mobile/coverage
           if-no-files-found: ignore
 
-      - name: Build (Turborepo)
-        run: pnpm -w build
+      - name: Build (mobile)
+        run: pnpm --filter ./apps/mobile... build
