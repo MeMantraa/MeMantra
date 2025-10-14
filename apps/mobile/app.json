@@ -30,7 +30,17 @@
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
-    "plugins": ["expo-web-browser"],
+    "plugins": [
+      "expo-web-browser",
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "project": "memantraapp",
+          "organization": "memantra"
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "072863e5-efd5-4b9c-8f68-7edfca4409d0"
