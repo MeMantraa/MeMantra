@@ -65,7 +65,7 @@ export const AuthController = {
       const user = await UserModel.findByEmail(email);
       
       //check if user exists
-      if (!user || !user.password_hash) {
+      if (!user?.password_hash) {
         return res.status(401).json({
           status: 'error',
           message: 'Invalid credentials',

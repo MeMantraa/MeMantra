@@ -57,7 +57,7 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
   next();
 };
 
-export const errorLogger = (err: any, req: Request, res: Response, next: NextFunction) => {
+export const errorLogger = (err: any, req: Request, _res: Response, next: NextFunction) => {
   console.error('\n==================== API ERROR ====================');
   console.error(`[${new Date().toISOString()}]`);
   console.error(`Method: ${req.method}`);

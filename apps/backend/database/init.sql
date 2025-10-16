@@ -9,7 +9,7 @@ CREATE TABLE "User" (
 
 CREATE TABLE "Admin" (
   "admin_id" int PRIMARY KEY,
-  "role" varchar
+  "role" varchar(255)
 );
 
 CREATE TABLE "Mantra" (
