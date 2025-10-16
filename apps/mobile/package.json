@@ -4,8 +4,10 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
+    "run:android": "expo run:android",
+    "run:ios": "expo run:ios",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
     "web": "expo start --web",
     "android:build": "expo run:android",
     "ios:build": "expo run:ios",

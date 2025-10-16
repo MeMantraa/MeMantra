@@ -163,7 +163,7 @@ export const AuthController = {
     
     if (!user) {
       // Use Google name as username
-      const username = name ? name.replace(/\s+/g, '').toLowerCase() : email.split('@')[0];
+      const username = name ? name.replaceAll(/\s+/g, '').toLowerCase() : email.split('@')[0];
       
       user = await UserModel.create({
         email: email.toLowerCase(),
