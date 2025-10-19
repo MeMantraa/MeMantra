@@ -41,7 +41,7 @@ export const verifyToken = (token: string): TokenPayload | null => {
   try {
     const decoded = jwt.verify(token, JWT_SECRET as Secret, { algorithms: ['HS256'] });
     return decoded as TokenPayload;
-  } catch (error) {
+  } catch (_error) {
     return null;
   }
 };

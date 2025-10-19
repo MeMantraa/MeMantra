@@ -5,6 +5,18 @@ import { Ionicons } from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator();
 
+const LibraryIcon = ({ color }: { color: string }) => (
+  <Ionicons name="bookmark-outline" size={28} color={color} />
+);
+
+const HomeIcon = ({ color }: { color: string }) => (
+  <Ionicons name="home-outline" size={28} color={color} />
+);
+
+const LikedIcon = ({ color }: { color: string }) => (
+  <Ionicons name="heart-outline" size={28} color={color} />
+);
+
 export default function BottomTabNavigator() {
   return (
     <Tab.Navigator
@@ -20,21 +32,21 @@ export default function BottomTabNavigator() {
         name="Library"
         component={LibraryScreen}
         options={{
-          tabBarIcon: ({ color }) => <Ionicons name="bookmark-outline" size={28} color={color} />,
+          tabBarIcon: ({ color }) => <LibraryIcon color={color} />,
         }}
       />
       <Tab.Screen
         name="Home"
         component={HomeScreen}
         options={{
-          tabBarIcon: ({ color }) => <Ionicons name="home-outline" size={28} color={color} />,
+          tabBarIcon: ({ color }) => <HomeIcon color={color} />,
         }}
       />
       <Tab.Screen
         name="Liked"
         component={LikedScreen}
         options={{
-          tabBarIcon: ({ color }) => <Ionicons name="heart-outline" size={28} color={color} />,
+          tabBarIcon: ({ color }) => <LikedIcon color={color} />,
         }}
       />
     </Tab.Navigator>
