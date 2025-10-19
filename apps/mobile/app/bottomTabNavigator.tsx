@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator();
 
+// icons def
 const LibraryIcon = ({ color }: { color: string }) => (
   <Ionicons name="bookmark-outline" size={28} color={color} />
 );
@@ -17,6 +18,19 @@ const LikedIcon = ({ color }: { color: string }) => (
   <Ionicons name="heart-outline" size={28} color={color} />
 );
 
+// options def
+const libraryOptions = {
+  tabBarIcon: ({ color }: { color: string }) => <LibraryIcon color={color} />,
+};
+
+const homeOptions = {
+  tabBarIcon: ({ color }: { color: string }) => <HomeIcon color={color} />,
+};
+
+const likedOptions = {
+  tabBarIcon: ({ color }: { color: string }) => <LikedIcon color={color} />,
+};
+
 export default function BottomTabNavigator() {
   return (
     <Tab.Navigator
@@ -28,27 +42,9 @@ export default function BottomTabNavigator() {
         tabBarLabelStyle: styles.tabLabel,
       }}
     >
-      <Tab.Screen
-        name="Library"
-        component={LibraryScreen}
-        options={{
-          tabBarIcon: ({ color }) => <LibraryIcon color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Home"
-        component={HomeScreen}
-        options={{
-          tabBarIcon: ({ color }) => <HomeIcon color={color} />,
-        }}
-      />
-      <Tab.Screen
-        name="Liked"
-        component={LikedScreen}
-        options={{
-          tabBarIcon: ({ color }) => <LikedIcon color={color} />,
-        }}
-      />
+      <Tab.Screen name="Library" component={LibraryScreen} options={libraryOptions} />
+      <Tab.Screen name="Home" component={HomeScreen} options={homeOptions} />
+      <Tab.Screen name="Liked" component={LikedScreen} options={likedOptions} />
     </Tab.Navigator>
   );
 }
