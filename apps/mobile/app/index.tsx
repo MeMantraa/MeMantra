@@ -9,7 +9,7 @@ import BottomTabNavigator from '../components/bottomTabNavigator';
 const Stack = createStackNavigator();
 
 const useAuth = () => {
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [isLoggedIn, setIsLoggedIn] = React.useState(true);
 
   return { isLoggedIn, setIsLoggedIn };
 };
