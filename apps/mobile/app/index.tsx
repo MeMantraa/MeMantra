@@ -3,7 +3,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { ThemeProvider } from '../context/ThemeContext';
 
 // Import your screens
-import Login from '../components/LogIn';
+import Login from '../components/login';
 import Signup from '../components/SignUp';
 import BottomTabNavigator from './bottomTabNavigator';
 
