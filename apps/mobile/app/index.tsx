@@ -2,9 +2,9 @@ import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
 
 // Import your screens
-import LoginScreen from '../components/login';
-import Signup from '../components/SignUp';
-import BottomTabNavigator from './bottomTabNavigator';
+import LoginScreen from '../screens/login';
+import Signup from '../screens/SignUp';
+import BottomTabNavigator from '../components/bottomTabNavigator';
 
 const Stack = createStackNavigator();
 
