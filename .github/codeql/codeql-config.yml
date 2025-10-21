@@ -1,0 +1,19 @@
+name: 'MeMantra CodeQL configuration'
+
+# Use default suite with security + quality queries
+queries:
+  - uses: security-and-quality
+
+# Reduce noise; aligned with your repo structure and ESLint ignores
+paths-ignore:
+  - '**/node_modules/**'
+  - '**/dist/**'
+  - '**/build/**'
+  - '**/coverage/**'
+  - '**/__tests__/**'
+  - '**/*.test.*'
+  - '**/*.spec.*'
+  - '**/.expo/**'
+  - '**/.turbo/**'
+  - '**/ios/**'
+  - '**/android/**'
