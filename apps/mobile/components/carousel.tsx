@@ -1,21 +1,19 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, Text, Dimensions, FlatList, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Mantra } from '../services/mantra.service';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
-interface MantraData {
-  id: string;
-  mantra: string;
-  keyTakeaway: string;
+interface MantraWithState extends Mantra {
   isLiked: boolean;
   isSaved: boolean;
 }
 
 interface MantraCarouselProps {
-  item: MantraData;
-  onLike: (itemId: string) => void;
-  onSave: (itemId: string) => void;
+  item: MantraWithState;
+  onLike: (id: number) => void;
+  onSave: (id: number) => void;
 }
 
 export default function MantraCarousel({ item, onLike, onSave }: MantraCarouselProps) {
@@ -25,12 +23,12 @@ export default function MantraCarousel({ item, onLike, onSave }: MantraCarouselP
     {
       type: 'mantra',
       title: 'Mantra',
-      content: item.mantra,
+      content: item.title,
     },
     {
       type: 'takeaway',
       title: 'Key Takeaway',
-      content: item.keyTakeaway,
+      content: item.key_takeaway,
     },
   ];
 
@@ -45,12 +43,12 @@ export default function MantraCarousel({ item, onLike, onSave }: MantraCarouselP
       style={{ height: SCREEN_HEIGHT }}
       className="justify-center items-center relative bg-[#9AA793] px-6"
     >
-      {/* Quote marks at top */}
+      {/* Quotation marks */}
       <View className="absolute top-32 z-10">
         <Text className="text-white text-5xl opacity-50">" "</Text>
       </View>
 
-      {/* Horizontal Carousel */}
+      {/* Horizontal swiper */}
       <FlatList
         data={horizontalPages}
         horizontal
@@ -59,16 +57,13 @@ export default function MantraCarousel({ item, onLike, onSave }: MantraCarouselP
         snapToAlignment="center"
         decelerationRate="fast"
         onViewableItemsChanged={onHorizontalViewableItemsChanged}
-        viewabilityConfig={{
-          itemVisiblePercentThreshold: 50,
-        }}
-        keyExtractor={(page, index) => `${item.id}-${index}`}
+        viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
+        keyExtractor={(_, index) => `${item.mantra_id}-${index}`}
         renderItem={({ item: page }) => (
           <View style={{ width: SCREEN_WIDTH - 48 }} className="items-center justify-center">
             <View className="w-full rounded-3xl bg-[#9AA793] p-8 items-center justify-center min-h-[400px]">
               {page.type === 'mantra' ? (
                 <>
-                  {/* Mantra text */}
                   <View className="items-center justify-center flex-1">
                     <Text className="text-white text-3xl font-light text-center tracking-wide">
                       {page.content}
@@ -77,12 +72,10 @@ export default function MantraCarousel({ item, onLike, onSave }: MantraCarouselP
                 </>
               ) : (
                 <>
-                  {/* Key Takeaway header */}
                   <View className="mb-6">
                     <Text className="text-[#E6D29C] text-xl font-semibold">{page.title}</Text>
                   </View>
 
-                  {/* Takeaway text */}
                   <View className="items-center justify-center flex-1">
                     <Text className="text-white text-lg text-center leading-[30px]">
                       {page.content}
@@ -95,21 +88,21 @@ export default function MantraCarousel({ item, onLike, onSave }: MantraCarouselP
         )}
       />
 
-      {/* Right side action buttons */}
+      {/* Action buttons */}
       <View className="absolute right-6 bottom-40 items-center space-y-6">
-        {/* Save/Bookmark button */}
+        {/* Save */}
         <TouchableOpacity
           className="items-center justify-center"
-          onPress={() => onSave(item.id)}
+          onPress={() => onSave(item.mantra_id)}
           activeOpacity={0.7}
         >
           <Ionicons name={item.isSaved ? 'bookmark' : 'bookmark-outline'} size={38} color="white" />
         </TouchableOpacity>
 
-        {/* Like button */}
+        {/* Like */}
         <TouchableOpacity
           className="items-center justify-center mt-6"
-          onPress={() => onLike(item.id)}
+          onPress={() => onLike(item.mantra_id)}
           activeOpacity={0.7}
         >
           <Ionicons
@@ -120,8 +113,11 @@ export default function MantraCarousel({ item, onLike, onSave }: MantraCarouselP
         </TouchableOpacity>
       </View>
 
-      {/* Horizontal pagination dots */}
-      <View className="absolute bottom-40 left-0 right-0 flex-row justify-center space-x-2">
+      {/* Pagination dots */}
+      <View
+        style={{ gap: 3 }}
+        className="absolute bottom-40 left-0 right-0 flex-row justify-center"
+      >
         {horizontalPages.map((_, index) => (
           <View
             key={index}
