@@ -19,25 +19,20 @@ export default function HomeScreen() {
   const [feedData, setFeedData] = useState<Mantra[]>([]);
   const [loading, setLoading] = useState(true);
 
-
   useEffect(() => {
     loadMantras();
   }, []);
 
   const loadMantras = async () => {
     try {
-      
       const token = (await storage.getToken()) || 'mock-token';
       const response = await mantraService.getFeedMantras(token);
 
       if (response.status === 'success') {
         setFeedData(response.data);
-      } else {
-        
       }
     } catch (err) {
       console.error('Error fetching mantras:', err);
-      
     } finally {
       setLoading(false);
     }
