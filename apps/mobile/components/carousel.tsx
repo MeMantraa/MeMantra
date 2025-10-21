@@ -1,131 +1,144 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, Dimensions, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, Dimensions, FlatList, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Mantra } from '../services/mantra.service';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
-interface MantraWithState extends Mantra {
-  isLiked: boolean;
-  isSaved: boolean;
-}
-
 interface MantraCarouselProps {
-  item: MantraWithState;
-  onLike: (id: number) => void;
-  onSave: (id: number) => void;
+  item: Mantra;
+  onLike?: (mantraId: number) => void;
+  onSave?: (mantraId: number) => void;
 }
 
 export default function MantraCarousel({ item, onLike, onSave }: MantraCarouselProps) {
-  const [currentHorizontalIndex, setCurrentHorizontalIndex] = useState(0);
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-  const horizontalPages = [
-    {
-      type: 'mantra',
-      title: 'Mantra',
-      content: item.title,
-    },
-    {
-      type: 'takeaway',
-      title: 'Key Takeaway',
-      content: item.key_takeaway,
-    },
-  ];
+  // Filter out pages with no content
+  const pages = [
+    { title: 'Mantra', content: item.title },
+    { title: 'Key Takeaway', content: item.key_takeaway },
+    item.background_author && item.background_description
+      ? {
+          title: 'Background',
+          content: `${item.background_author}\n\n${item.background_description}`,
+        }
+      : null,
+    item.jamie_take ? { title: "Jamie's Take", content: item.jamie_take } : null,
+    item.when_where ? { title: 'When & Where?', content: item.when_where } : null,
+    item.negative_thoughts
+      ? { title: 'Negative Thoughts It Replaces', content: item.negative_thoughts }
+      : null,
+    item.cbt_principles ? { title: 'CBT Principles', content: item.cbt_principles } : null,
+    item.references ? { title: 'References', content: item.references } : null,
+  ].filter((page): page is { title: string; content: string } => page !== null);
 
-  const onHorizontalViewableItemsChanged = useRef(({ viewableItems }: any) => {
-    if (viewableItems.length > 0) {
-      setCurrentHorizontalIndex(viewableItems[0].index || 0);
-    }
+  const onViewableChanged = useRef(({ viewableItems }: any) => {
+    if (viewableItems.length > 0) setCurrentIndex(viewableItems[0].index ?? 0);
   }).current;
+
+  const handleLike = () => {
+    if (onLike) onLike(item.mantra_id);
+  };
+
+  const handleSave = () => {
+    if (onSave) onSave(item.mantra_id);
+  };
 
   return (
     <View
-      style={{ height: SCREEN_HEIGHT }}
-      className="justify-center items-center relative bg-[#9AA793] px-6"
+      style={{ height: SCREEN_HEIGHT, width: SCREEN_WIDTH }}
+      className="justify-center items-center bg-[#9AA793]"
     >
-      {/* Quotation marks */}
       <View className="absolute top-32 z-10">
         <Text className="text-white text-5xl opacity-50">" "</Text>
       </View>
 
-      {/* Horizontal swiper */}
-      <FlatList
-        data={horizontalPages}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        snapToAlignment="center"
-        decelerationRate="fast"
-        onViewableItemsChanged={onHorizontalViewableItemsChanged}
-        viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
-        keyExtractor={(_, index) => `${item.mantra_id}-${index}`}
-        renderItem={({ item: page }) => (
-          <View style={{ width: SCREEN_WIDTH - 48 }} className="items-center justify-center">
-            <View className="w-full rounded-3xl bg-[#9AA793] p-8 items-center justify-center min-h-[400px]">
-              {page.type === 'mantra' ? (
-                <>
-                  <View className="items-center justify-center flex-1">
-                    <Text className="text-white text-3xl font-light text-center tracking-wide">
-                      {page.content}
-                    </Text>
-                  </View>
-                </>
+      {/* Horizontal scroll through pages */}
+      <View
+        style={{ width: SCREEN_WIDTH, height: SCREEN_HEIGHT }}
+        className="justify-center items-center"
+      >
+        <FlatList
+          data={pages}
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          snapToAlignment="center"
+          decelerationRate="fast"
+          onViewableItemsChanged={onViewableChanged}
+          viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
+          keyExtractor={(_, i) => `${item.mantra_id}-${i}`}
+          contentContainerStyle={{ alignItems: 'center' }}
+          style={{ flexGrow: 0 }}
+          renderItem={({ item: page, index }) => (
+            <View style={{ width: SCREEN_WIDTH }} className="justify-center items-center px-6">
+              {index === 0 ? (
+                // First page (Mantra) - centered, no scroll
+                <View
+                  className="w-full max-w-[500px] justify-center items-center"
+                  style={{ height: SCREEN_HEIGHT * 0.5 }}
+                >
+                  <Text className="text-white text-center leading-10 text-3xl font-light tracking-wide">
+                    {page.content}
+                  </Text>
+                </View>
               ) : (
-                <>
+                // Other pages - scrollable
+                <ScrollView
+                  style={{
+                    width: '100%',
+                    maxWidth: 500,
+                    height: SCREEN_HEIGHT * 0.55,
+                  }}
+                  contentContainerStyle={{
+                    paddingVertical: 40,
+                    paddingHorizontal: 24,
+                    paddingBottom: 60,
+                    paddingTop: 0,
+                  }}
+                  showsVerticalScrollIndicator={false}
+                  nestedScrollEnabled={true}
+                >
                   <View className="mb-6">
-                    <Text className="text-[#E6D29C] text-xl font-semibold">{page.title}</Text>
+                    <Text className="text-[#E6D29C] text-2xl font-semibold text-center">
+                      {page.title}
+                    </Text>
                   </View>
 
-                  <View className="items-center justify-center flex-1">
-                    <Text className="text-white text-lg text-center leading-[30px]">
-                      {page.content}
-                    </Text>
-                  </View>
-                </>
+                  <Text className="text-white  leading-7 text-base">{page.content}</Text>
+                </ScrollView>
               )}
             </View>
-          </View>
-        )}
-      />
+          )}
+        />
+      </View>
+
+      {/* Carousel dots */}
+      <View className="absolute bottom-40 left-0 right-0 flex-row justify-center items-center">
+        {pages.map((_, index) => (
+          <View
+            key={index}
+            className={`h-2 rounded-full mx-1 ${
+              index === currentIndex ? 'w-2 bg-white' : 'w-2 bg-white/40'
+            }`}
+          />
+        ))}
+      </View>
 
       {/* Action buttons */}
-      <View className="absolute right-6 bottom-40 items-center space-y-6">
-        {/* Save */}
-        <TouchableOpacity
-          className="items-center justify-center"
-          onPress={() => onSave(item.mantra_id)}
-          activeOpacity={0.7}
-        >
+      <View className="absolute right-6 bottom-40 items-center">
+        <TouchableOpacity activeOpacity={0.7} onPress={handleSave} className="mb-6">
           <Ionicons name={item.isSaved ? 'bookmark' : 'bookmark-outline'} size={38} color="white" />
         </TouchableOpacity>
 
-        {/* Like */}
-        <TouchableOpacity
-          className="items-center justify-center mt-6"
-          onPress={() => onLike(item.mantra_id)}
-          activeOpacity={0.7}
-        >
+        <TouchableOpacity activeOpacity={0.7} onPress={handleLike}>
           <Ionicons
             name={item.isLiked ? 'heart' : 'heart-outline'}
             size={38}
             color={item.isLiked ? '#ff4444' : 'white'}
           />
         </TouchableOpacity>
-      </View>
-
-      {/* Pagination dots */}
-      <View
-        style={{ gap: 3 }}
-        className="absolute bottom-40 left-0 right-0 flex-row justify-center"
-      >
-        {horizontalPages.map((_, index) => (
-          <View
-            key={index}
-            className={`h-2 rounded-full ${
-              index === currentHorizontalIndex ? 'w-2 bg-white' : 'w-2 bg-white/40'
-            }`}
-          />
-        ))}
       </View>
     </View>
   );

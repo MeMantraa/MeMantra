@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   FlatList,
@@ -15,57 +15,78 @@ import { storage } from '../utils/storage';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-interface MantraWithState extends Mantra {
-  isLiked: boolean;
-  isSaved: boolean;
-}
-
 export default function HomeScreen() {
-  const [feedData, setFeedData] = useState<MantraWithState[]>([]);
+  const [feedData, setFeedData] = useState<Mantra[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const verticalListRef = useRef<FlatList>(null);
 
   useEffect(() => {
-    fetchMantras();
+    loadMantras();
   }, []);
 
-  const fetchMantras = async () => {
+  const loadMantras = async () => {
     try {
-      setLoading(true);
       setError(null);
       const token = (await storage.getToken()) || 'mock-token';
       const response = await mantraService.getFeedMantras(token);
 
-      if (response.status === 'success' && response.data) {
-        const formatted = response.data.map((m) => ({
-          ...m,
-          isLiked: m.isLiked ?? false,
-          isSaved: m.isSaved ?? false,
-        }));
-        setFeedData(formatted);
+      if (response.status === 'success') {
+        setFeedData(response.data);
       } else {
-        setError('Failed to load mantras.');
+        setError('Failed to load mantras');
       }
     } catch (err) {
       console.error('Error fetching mantras:', err);
-      Alert.alert('Error', 'Could not load mantras.');
-      setError('Error loading mantras.');
+      setError('Error loading mantras');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleLike = (id: number) => {
-    setFeedData((prev) =>
-      prev.map((item) => (item.mantra_id === id ? { ...item, isLiked: !item.isLiked } : item)),
-    );
+  const handleLike = async (mantraId: number) => {
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      const isCurrentlyLiked = feedData.find((m) => m.mantra_id === mantraId)?.isLiked || false;
+
+      setFeedData((prev) =>
+        prev.map((m) => (m.mantra_id === mantraId ? { ...m, isLiked: !m.isLiked } : m)),
+      );
+
+      if (isCurrentlyLiked) {
+        await mantraService.unlikeMantra(mantraId, token);
+      } else {
+        await mantraService.likeMantra(mantraId, token);
+      }
+    } catch (err) {
+      console.error('Error toggling like:', err);
+      setFeedData((prev) =>
+        prev.map((m) => (m.mantra_id === mantraId ? { ...m, isLiked: !m.isLiked } : m)),
+      );
+      Alert.alert('Error', 'Failed to update like status');
+    }
   };
 
-  const handleSave = (id: number) => {
-    setFeedData((prev) =>
-      prev.map((item) => (item.mantra_id === id ? { ...item, isSaved: !item.isSaved } : item)),
-    );
+  const handleSave = async (mantraId: number) => {
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      const isCurrentlySaved = feedData.find((m) => m.mantra_id === mantraId)?.isSaved || false;
+
+      setFeedData((prev) =>
+        prev.map((m) => (m.mantra_id === mantraId ? { ...m, isSaved: !m.isSaved } : m)),
+      );
+
+      if (isCurrentlySaved) {
+        await mantraService.unsaveMantra(mantraId, token);
+      } else {
+        await mantraService.saveMantra(mantraId, token);
+      }
+    } catch (err) {
+      console.error('Error toggling save:', err);
+      setFeedData((prev) =>
+        prev.map((m) => (m.mantra_id === mantraId ? { ...m, isSaved: !m.isSaved } : m)),
+      );
+      Alert.alert('Error', 'Failed to update save status');
+    }
   };
 
   if (loading) {
@@ -77,16 +98,18 @@ export default function HomeScreen() {
     );
   }
 
-  if (error) {
+  if (feedData.length === 0) {
     return (
       <View className="flex-1 bg-[#9AA793] justify-center items-center px-6">
-        <Ionicons name="alert-circle-outline" size={64} color="#E6D29C" />
-        <Text className="text-white mt-4 text-lg text-center font-semibold">{error}</Text>
+        <Ionicons name="book-outline" size={64} color="#E6D29C" />
+        <Text className="text-white mt-4 text-lg font-semibold text-center">
+          No mantras available
+        </Text>
         <TouchableOpacity
           className="bg-[#E6D29C] rounded-full px-6 py-3 mt-6"
-          onPress={fetchMantras}
+          onPress={loadMantras}
         >
-          <Text className="text-[#6D7E68] font-semibold text-base">Retry</Text>
+          <Text className="text-[#6D7E68] font-semibold text-base">Refresh</Text>
         </TouchableOpacity>
       </View>
     );
@@ -94,22 +117,16 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1 bg-[#9AA793]">
-      {/* Header with icons */}
       <View className="absolute top-5 left-0 right-0 z-10 flex-row justify-between items-center px-6 pt-14 pb-4">
-        {/* Search */}
         <TouchableOpacity className="w-12 h-12 rounded-full bg-[#E6D29C] items-center justify-center">
           <Ionicons name="search-outline" size={24} color="#6D7E68" />
         </TouchableOpacity>
-
-        {/* Profile */}
         <TouchableOpacity className="w-12 h-12 rounded-full bg-[#E6D29C] items-center justify-center">
           <Ionicons name="person-outline" size={24} color="#6D7E68" />
         </TouchableOpacity>
       </View>
 
-      {/* Vertical swipe feed */}
       <FlatList
-        ref={verticalListRef}
         data={feedData}
         renderItem={({ item }) => (
           <MantraCarousel item={item} onLike={handleLike} onSave={handleSave} />
@@ -120,7 +137,6 @@ export default function HomeScreen() {
         snapToAlignment="start"
         decelerationRate="fast"
         snapToInterval={SCREEN_HEIGHT}
-        viewabilityConfig={{ itemVisiblePercentThreshold: 50 }}
       />
     </View>
   );
