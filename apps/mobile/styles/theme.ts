@@ -6,5 +6,6 @@ export const themes = {
     secondary: '#E6D29C',
     primaryDark: '#6D7E68',
     text: '#ffffff',
+    placeholderText: '#999',
   },
 } as const;
