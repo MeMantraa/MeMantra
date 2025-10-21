@@ -18,7 +18,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 export default function HomeScreen() {
   const [feedData, setFeedData] = useState<Mantra[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
 
   useEffect(() => {
     loadMantras();
@@ -26,18 +26,18 @@ export default function HomeScreen() {
 
   const loadMantras = async () => {
     try {
-      setError(null);
+      
       const token = (await storage.getToken()) || 'mock-token';
       const response = await mantraService.getFeedMantras(token);
 
       if (response.status === 'success') {
         setFeedData(response.data);
       } else {
-        setError('Failed to load mantras');
+        
       }
     } catch (err) {
       console.error('Error fetching mantras:', err);
-      setError('Error loading mantras');
+      
     } finally {
       setLoading(false);
     }
