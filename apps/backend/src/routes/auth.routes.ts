@@ -15,4 +15,6 @@ router.post('/login', validateRequest(loginSchema), AuthController.login);
 //api route to get current user profile
 router.get('/me', authenticate, AuthController.getMe);
 
+router.post('/auth/google', AuthController.googleAuth);
+
 export default router;

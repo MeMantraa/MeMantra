@@ -70,6 +70,10 @@ cp .env.example .env
 cd apps/mobile
 pnpm run start
 
+to run in production mode (only in android for now):
+pnpm setup:android
+pnpm run:android
+
 
 ```
 
