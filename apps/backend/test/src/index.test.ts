@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { createApp } from '../app';
+import { createApp } from '../../src/app';
 import express from 'express';
 
 describe('Backend API', () => {
