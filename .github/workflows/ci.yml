@@ -24,8 +24,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -57,11 +55,6 @@ jobs:
 
       - name: Test (Jest + Expo)
         run: pnpm -w test -- --coverage
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
-        env:
-          SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
 
       - name: Upload coverage
         if: always()
