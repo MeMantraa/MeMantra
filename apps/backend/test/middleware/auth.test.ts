@@ -45,8 +45,6 @@ it("when the token is invalid, it should return 401", async () => {
 
     req.headers =  { authorization: 'Bearer invalidtoken' };
 
-    const decoded = { userId: 1, email: 'memantra@memantra.com' };
-
     (verifyToken as jest.Mock).mockReturnValue(null);
     
     await authenticate(req as Request, res as Response, next);

@@ -5,11 +5,13 @@ import logo from '../assets/logo.png';
 import googleLogo from '../assets/googleLogo.png';
 import { authService } from '../services/auth.service';
 import { storage } from '../utils/storage';
+import { useTheme } from '../context/ThemeContext';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { colors } = useTheme();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -47,7 +49,7 @@ export default function LoginScreen({ navigation }: any) {
 
   return (
     <>
-      <View className="flex-1 bg-[#9AA793]">
+      <View className="flex-1" style={{ backgroundColor: colors.primary }}>
         <View className="flex-1 justify-center items-center p-[24px]">
           <View className="mb-[30px] -mt-[35px] items-center">
             <Image source={logo} className="w-[250px] h-[250px]" resizeMode="contain" />
@@ -57,7 +59,7 @@ export default function LoginScreen({ navigation }: any) {
             <TextInput
               className="bg-[#ffffff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
               placeholder="Email"
-              placeholderTextColor="#999"
+              placeholderTextColor={colors.placeholderText}
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
@@ -68,7 +70,7 @@ export default function LoginScreen({ navigation }: any) {
             <TextInput
               className="bg-[#ffffff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
               placeholder="Password"
-              placeholderTextColor="#999"
+              placeholderTextColor={colors.placeholderText}
               value={password}
               onChangeText={setPassword}
               secureTextEntry
@@ -77,7 +79,8 @@ export default function LoginScreen({ navigation }: any) {
             />
 
             <TouchableOpacity
-              className="bg-[#E6D29C] rounded-[30px] p-[14px] items-center mt-[8px]"
+              style={{ backgroundColor: colors.secondary }}
+              className="rounded-[30px] p-[14px] items-center mt-[8px]"
               onPress={handleLogin}
             >
               <Text className="text-[#ffffff] text-[18px] font-semibold">Login</Text>
@@ -90,7 +93,10 @@ export default function LoginScreen({ navigation }: any) {
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity className="bg-[#6D7E68] rounded-[30px] p-[12px] mx-[60px] items-center mt-[18px] ">
+            <TouchableOpacity
+              className="rounded-[30px] p-[12px] mx-[60px] items-center mt-[18px]"
+              style={{ backgroundColor: colors.primaryDark }}
+            >
               <View className="flex-row items-center">
                 <Image source={googleLogo} className="mr-[10px] w-[30px] h-[30px]" />
                 <Text className="text-[#fff] text-[14px]">Sign Up with Google</Text>

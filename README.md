@@ -86,8 +86,8 @@ pnpm install
 
 # 3) Run backend
 cd apps/backend
-pnpm run start # or npm run dev
-
+pnpm build
+pnpm start
 
 
 ```
