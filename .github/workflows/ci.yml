@@ -56,6 +56,19 @@ jobs:
       - name: Test (Jest + Expo)
         run: pnpm -w test -- --coverage
 
+      - name: Run SonarQube analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          npx sonarqube-scanner \
+            -Dsonar.projectKey=MeMantraa_MeMantra \
+            -Dsonar.organization=MeMantraa \
+            -Dsonar.sources=apps/mobile,apps/backend \
+            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/test/**,**/*.test.*,**/*.spec.*,**/.expo/**,**/.turbo/**,**/ios/**,**/android/**,**/coverage/*.html,**/coverage/*.json \
+            -Dsonar.javascript.lcov.reportPaths=apps/mobile/coverage/lcov.info,apps/backend/coverage/lcov.info \
+            -Dsonar.typescript.lcov.reportPaths=apps/mobile/coverage/lcov.info,apps/backend/coverage/lcov.info \
+            -Dsonar.host.url=https://sonarcloud.io
+
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4
