@@ -67,6 +67,13 @@ export const createApp = () => {
     });
   };
 
+  // Test route for triggering errors (only in test environment)
+  if (process.env.NODE_ENV === 'test') {
+    app.get('/test-error', () => {
+      throw new Error('Test error');
+    });
+  }
+  
   app.use(notFoundHandler);
 
   // Error handler
@@ -83,3 +90,4 @@ export const createApp = () => {
 
   return app;
 };
+

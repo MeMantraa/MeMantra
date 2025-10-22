@@ -1,9 +1,9 @@
-import { authenticate } from '../../src/middleware/auth.middleware';
-import { verifyToken } from '../../src/utils/jwt.utils';
+import { authenticate } from '../../../src/middleware/auth.middleware';
+import { verifyToken } from '../../../src/utils/jwt.utils';
 import { Request, Response, NextFunction } from 'express';
 
 // Mock verifyToken so we can control its behavior
-jest.mock('../../src/utils/jwt.utils');
+jest.mock('../../../src/utils/jwt.utils');
 
 describe('Authentication middleware', () => {
 
