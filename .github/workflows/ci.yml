@@ -24,6 +24,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -56,18 +58,10 @@ jobs:
       - name: Test (Jest + Expo)
         run: pnpm -w test -- --coverage
 
-      - name: Run SonarQube analysis
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          npx sonarqube-scanner \
-            -Dsonar.projectKey=MeMantraa_MeMantra \
-            -Dsonar.organization=MeMantraa \
-            -Dsonar.sources=apps/mobile,apps/backend \
-            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/test/**,**/*.test.*,**/*.spec.*,**/.expo/**,**/.turbo/**,**/ios/**,**/android/**,**/coverage/*.html,**/coverage/*.json \
-            -Dsonar.javascript.lcov.reportPaths=apps/mobile/coverage/lcov.info,apps/backend/coverage/lcov.info \
-            -Dsonar.typescript.lcov.reportPaths=apps/mobile/coverage/lcov.info,apps/backend/coverage/lcov.info \
-            -Dsonar.host.url=https://sonarcloud.io
 
       - name: Upload coverage
         if: always()
