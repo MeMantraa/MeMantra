@@ -1,8 +1,9 @@
 import React from 'react';
 import { createStackNavigator } from '@react-navigation/stack';
+import { ThemeProvider } from '../context/ThemeContext';
 
 // Import your screens
-import LoginScreen from '../components/login';
+import Login from '../components/login';
 import Signup from '../components/SignUp';
 import BottomTabNavigator from './bottomTabNavigator';
 
@@ -18,19 +19,21 @@ export default function MainNavigator() {
   const { isLoggedIn } = useAuth();
 
   return (
-    <Stack.Navigator
-      screenOptions={{
-        headerShown: false,
-      }}
-    >
-      {isLoggedIn ? (
-        <Stack.Screen name="MainApp" component={BottomTabNavigator} />
-      ) : (
-        <>
-          <Stack.Screen name="Login" component={LoginScreen} options={{ headerTitle: 'Login' }} />
-          <Stack.Screen name="Signup" component={Signup} options={{ headerTitle: 'Signup' }} />
-        </>
-      )}
-    </Stack.Navigator>
+    <ThemeProvider>
+      <Stack.Navigator
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        {isLoggedIn ? (
+          <Stack.Screen name="MainApp" component={BottomTabNavigator} />
+        ) : (
+          <>
+            <Stack.Screen name="Login" component={Login} options={{ headerTitle: 'Login' }} />
+            <Stack.Screen name="Signup" component={Signup} options={{ headerTitle: 'Signup' }} />
+          </>
+        )}
+      </Stack.Navigator>
+    </ThemeProvider>
   );
 }

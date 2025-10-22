@@ -5,6 +5,7 @@ import logo from '../assets/logo.png';
 import googleLogo from '../assets/googleLogo.png';
 import { authService } from '../services/auth.service';
 import { storage } from '../utils/storage';
+import { useTheme } from '../context/ThemeContext';
 
 export default function SignUpScreen({ navigation }: any) {
   const [username, setUsername] = useState('');
@@ -12,6 +13,7 @@ export default function SignUpScreen({ navigation }: any) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const { colors } = useTheme();
 
   const handleSignUp = async () => {
     if (!username || !email || !password || !confirmPassword) {
@@ -66,7 +68,7 @@ export default function SignUpScreen({ navigation }: any) {
 
   return (
     <>
-      <View className="flex-1 bg-[#9AA793]">
+      <View className="flex-1" style={{ backgroundColor: colors.primary }}>
         <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
           <View className="flex-1 justify-center items-center p-[24px] pt-[60px] pb-[40px]">
             <View className="mb-[20px] items-center">
@@ -77,7 +79,7 @@ export default function SignUpScreen({ navigation }: any) {
               <TextInput
                 className="bg-[#fff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
                 placeholder="Username"
-                placeholderTextColor="#999"
+                placeholderTextColor={colors.placeholderText}
                 value={username}
                 onChangeText={setUsername}
                 autoCapitalize="none"
@@ -86,7 +88,7 @@ export default function SignUpScreen({ navigation }: any) {
               <TextInput
                 className="bg-[#fff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
                 placeholder="Email"
-                placeholderTextColor="#999"
+                placeholderTextColor={colors.placeholderText}
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
@@ -96,7 +98,7 @@ export default function SignUpScreen({ navigation }: any) {
               <TextInput
                 className="bg-[#fff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
                 placeholder="Password"
-                placeholderTextColor="#999"
+                placeholderTextColor={colors.placeholderText}
                 value={password}
                 onChangeText={setPassword}
                 secureTextEntry
@@ -106,7 +108,7 @@ export default function SignUpScreen({ navigation }: any) {
               <TextInput
                 className="bg-[#fff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
                 placeholder="Confirm Password"
-                placeholderTextColor="#999"
+                placeholderTextColor={colors.placeholderText}
                 value={confirmPassword}
                 onChangeText={setConfirmPassword}
                 secureTextEntry
@@ -115,7 +117,8 @@ export default function SignUpScreen({ navigation }: any) {
               />
 
               <TouchableOpacity
-                className="bg-[#E6D29C] rounded-[30px] p-[14px] items-center mt-[8px]"
+                style={{ backgroundColor: colors.secondary }}
+                className="rounded-[30px] p-[14px] items-center mt-[8px]"
                 onPress={handleSignUp}
               >
                 <Text className="text-[#fff] text-[18px] font-semibold">Sign Up</Text>
@@ -128,7 +131,10 @@ export default function SignUpScreen({ navigation }: any) {
                 </Text>
               </TouchableOpacity>
 
-              <TouchableOpacity className="bg-[#6D7E68] rounded-[30px] p-[12px] mx-[60px] items-center mt-[18px] ">
+              <TouchableOpacity
+                className="rounded-[30px] p-[12px] mx-[60px] items-center mt-[18px]"
+                style={{ backgroundColor: colors.primaryDark }}
+              >
                 <View className="flex-row items-center">
                   <Image source={googleLogo} className="mr-[10px] w-[30px] h-[30px]" />
                   <Text className="text-[#fff] text-[14px]">Sign Up with Google</Text>
