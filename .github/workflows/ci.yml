@@ -55,15 +55,21 @@ jobs:
       - name: Typecheck
         run: pnpm -w typecheck
 
-      - name: Test (Jest + Expo)
+      - name: Test and coverage
         run: pnpm -w test -- --coverage
 
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v2
-        with:
-          args: -Dproject.settings=.sonarcloud.properties
+      - name: Run SonarQube analysis
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          npx sonarqube-scanner \
+            -Dsonar.projectKey=MeMantraa_MeMantra \
+            -Dsonar.organization=memantraa \
+            -Dsonar.sources=apps/mobile,apps/backend \
+            -Dsonar.exclusions=**/node_modules/**,**/dist/**,**/build/**,**/coverage/**,**/*.test.*,**/*.spec.*,**/__tests__/**,**/.expo/**,**/.turbo/**,**/ios/**,**/android/** \
+            -Dsonar.javascript.lcov.reportPaths=apps/mobile/coverage/lcov.info,apps/backend/coverage/lcov.info \
+            -Dsonar.typescript.lcov.reportPaths=apps/mobile/coverage/lcov.info,apps/backend/coverage/lcov.info \
+            -Dsonar.host.url=https://sonarcloud.io
 
       - name: Upload coverage
         if: always()
