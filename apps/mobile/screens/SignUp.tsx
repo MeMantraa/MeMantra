@@ -1,10 +1,11 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import logo from '../assets/logo.png';
 import googleLogo from '../assets/googleLogo.png';
 import { authService } from '../services/auth.service';
 import { storage } from '../utils/storage';
+import { useGoogleAuth, fetchGoogleUserInfo } from '../services/google-auth.service';
 import { useTheme } from '../context/ThemeContext';
 
 export default function SignUpScreen({ navigation }: any) {
@@ -13,6 +14,8 @@ export default function SignUpScreen({ navigation }: any) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const { request, response, promptAsync } = useGoogleAuth();
   const { colors } = useTheme();
 
   const handleSignUp = async () => {
@@ -64,6 +67,50 @@ export default function SignUpScreen({ navigation }: any) {
 
   const handleLoginRedirect = () => {
     navigation.navigate('Login');
+  };
+
+  useEffect(() => {
+    handleGoogleResponse();
+  }, [response]);
+
+  //Google response
+  const handleGoogleResponse = async () => {
+    if (response?.type === 'success') {
+      const { authentication } = response;
+      if (authentication?.accessToken) {
+        setLoading(true);
+        try {
+          const userInfo = await fetchGoogleUserInfo(authentication.accessToken);
+
+          const authResponse = await authService.googleAuth({
+            email: userInfo.email,
+            name: userInfo.name,
+            googleId: userInfo.id,
+          });
+
+          if (authResponse.status === 'success') {
+            await storage.saveToken(authResponse.data.token);
+            await storage.saveUserData(authResponse.data.user);
+            Alert.alert('Success', 'Account created with Google!');
+          }
+        } catch (error: any) {
+          console.error('Google auth error:', error);
+          Alert.alert('Error', 'Google authentication failed');
+        } finally {
+          setLoading(false);
+        }
+      }
+    }
+  };
+
+  //Google sign-up
+  const handleGoogleSignUp = async () => {
+    try {
+      await promptAsync();
+    } catch (error) {
+      console.error('Google sign-up error:', error);
+      Alert.alert('Error', 'Failed to initiate Google sign-up');
+    }
   };
 
   return (
@@ -132,7 +179,9 @@ export default function SignUpScreen({ navigation }: any) {
               </TouchableOpacity>
 
               <TouchableOpacity
-                className="rounded-[30px] p-[12px] mx-[60px] items-center mt-[18px]"
+                className="bg-[#6D7E68] rounded-[30px] p-[12px] mx-[60px] items-center mt-[18px]"
+                onPress={handleGoogleSignUp}
+                disabled={!request || loading}
                 style={{ backgroundColor: colors.primaryDark }}
               >
                 <View className="flex-row items-center">
