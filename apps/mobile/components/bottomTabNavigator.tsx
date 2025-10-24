@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import HomeScreen from '../screens/homeScreen';
 
 const Tab = createBottomTabNavigator();
 
@@ -34,6 +35,7 @@ const likedOptions = {
 export default function BottomTabNavigator() {
   return (
     <Tab.Navigator
+      initialRouteName="Home"
       screenOptions={{
         tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: 'white',
@@ -54,14 +56,6 @@ function LibraryScreen() {
   return (
     <View style={styles.screenContainer}>
       <Text>Library Screen</Text>
-    </View>
-  );
-}
-
-function HomeScreen() {
-  return (
-    <View style={styles.screenContainer}>
-      <Text>Home Screen</Text>
     </View>
   );
 }
