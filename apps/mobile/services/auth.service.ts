@@ -51,8 +51,8 @@ export const authService = {
     return response.data;
   },
 
-  async googleAuth(credentials: GoogleAuthCredentials): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse>('/auth/google', credentials);
+  async googleAuth({ idToken }: { idToken: string }): Promise<AuthResponse> {
+    const response = await apiClient.post<AuthResponse>('/auth/google', { idToken });
     return response.data;
   },
 };

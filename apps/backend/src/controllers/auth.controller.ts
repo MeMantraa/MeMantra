@@ -3,6 +3,9 @@ import bcrypt from 'bcryptjs';
 import { UserModel } from '../models/user.model';
 import { generateToken } from '../utils/jwt.utils';
 import { RegisterInput, LoginInput } from '../validators/auth.validator';
+import { OAuth2Client } from 'google-auth-library';
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 
 export const AuthController = {
   async register(req: Request, res: Response) {
@@ -147,38 +150,51 @@ export const AuthController = {
       });
     }
   },
-  async googleAuth(req: Request, res: Response) {
+async googleAuth(req: Request, res: Response) {
   try {
-    const { email, name, googleId } = req.body;
+    const { idToken } = req.body; // <-- frontend should send idToken
     
-    if (!email || !googleId) {
+    if (!idToken) {
       return res.status(400).json({
         status: 'error',
-        message: 'Email and Google ID are required',
+        message: 'Google ID token is required',
       });
     }
-    
-    // Check if user exists
+
+    // Verify Google token
+    const ticket = await client.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID, // include both iOS + Android if needed
+    });
+    const payload = ticket.getPayload();
+
+    if (!payload || !payload.email) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Invalid Google token',
+      });
+    }
+
+    const { email, name, sub: googleId } = payload;
+
+    // Check or create user
     let user = await UserModel.findByEmail(email);
-    
     if (!user) {
-      // Use Google name as username
-      const username = name ? name.replaceAll(/\s+/g, '').toLowerCase() : email.split('@')[0];
-      
+      const username = name ? name.replace(/\s+/g, '').toLowerCase() : email.split('@')[0];
       user = await UserModel.create({
         email: email.toLowerCase(),
-        username: username,
+        username,
         password: '',
         google_id: googleId,
       });
     }
-    
+
     // Generate JWT
     const token = generateToken({
       userId: user.user_id,
       email: user.email || '',
     });
-    
+
     return res.status(200).json({
       status: 'success',
       message: 'Google authentication successful',
@@ -198,5 +214,5 @@ export const AuthController = {
       message: 'Error during Google authentication',
     });
   }
-},
+}
 };
