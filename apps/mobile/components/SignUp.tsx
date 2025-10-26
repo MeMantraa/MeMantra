@@ -5,7 +5,7 @@ import logo from '../assets/logo.png';
 import googleLogo from '../assets/googleLogo.png';
 import { authService } from '../services/auth.service';
 import { storage } from '../utils/storage';
-import { useGoogleAuth, fetchGoogleUserInfo } from '../services/google-auth.service';
+import { useGoogleAuth } from '../services/google-auth.service';
 import { useTheme } from '../context/ThemeContext';
 
 export default function SignUpScreen({ navigation }: any) {
@@ -69,10 +69,6 @@ export default function SignUpScreen({ navigation }: any) {
     navigation.navigate('Login');
   };
 
-  useEffect(() => {
-    handleGoogleResponse();
-  }, [response]);
-
   //Google response
   const handleGoogleResponse = async () => {
     if (response?.type === 'success') {
@@ -97,6 +93,10 @@ export default function SignUpScreen({ navigation }: any) {
       }
     }
   };
+
+  useEffect(() => {
+    handleGoogleResponse();
+  }, [response, handleGoogleResponse]);
 
   //Google sign-up
   const handleGoogleSignUp = async () => {
