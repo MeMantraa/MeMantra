@@ -2,6 +2,8 @@ import React, { useRef, useState } from 'react';
 import { View, Text, Dimensions, FlatList, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Mantra } from '../services/mantra.service';
+import LikeButton from '../components/UI/likeButton';
+import SaveButton from '../components/UI/saveButton';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -128,17 +130,8 @@ export default function MantraCarousel({ item, onLike, onSave }: MantraCarouselP
 
       {/* Action buttons */}
       <View className="absolute right-6 bottom-40 items-center">
-        <TouchableOpacity activeOpacity={0.7} onPress={handleSave} className="mb-6">
-          <Ionicons name={item.isSaved ? 'bookmark' : 'bookmark-outline'} size={38} color="white" />
-        </TouchableOpacity>
-
-        <TouchableOpacity activeOpacity={0.7} onPress={handleLike}>
-          <Ionicons
-            name={item.isLiked ? 'heart' : 'heart-outline'}
-            size={38}
-            color={item.isLiked ? '#ff4444' : 'white'}
-          />
-        </TouchableOpacity>
+        <SaveButton saved={!!item.isSaved} onPress={handleSave} />
+        <LikeButton liked={!!item.isLiked} onPress={handleLike} />
       </View>
     </View>
   );
