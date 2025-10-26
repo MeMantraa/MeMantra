@@ -152,55 +152,58 @@ export const AuthController = {
     }
   },
 
-async googleAuth(req: Request, res: Response) {
-  try {
-    const rawIdToken = req.body?.idToken;
-    if (typeof rawIdToken !== 'string' || rawIdToken.trim() === '') {
-      return res.status(400).json({ status: 'error', message: 'Google ID token is required' });
-    }
-    const idToken = rawIdToken.trim();
+  async googleAuth(req: Request, res: Response) {
+    try {
+      const rawIdToken = req.body?.idToken;
+      if (typeof rawIdToken !== 'string' || rawIdToken.trim() === '') {
+        return res.status(400).json({ status: 'error', message: 'Google ID token is required' });
+      }
+      const idToken = rawIdToken.trim();
 
+      // Delegate actual validity check to Google's verifyIdToken.
+      let ticket;
+      try {
+        ticket = await client.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID });
+      } catch (verifyError) {
+        console.error('Google verify error:', verifyError);
+        // Verification errors should be reported as a 400 (invalid token)
+        return res.status(400).json({ status: 'error', message: 'Invalid Google token' });
+      }
 
-    const jwtRegex = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
-    if (!jwtRegex.test(idToken) || idToken.length > 4096) {
-      return res.status(400).json({ status: 'error', message: 'Invalid Google ID token format' });
-    }
+      const payload = ticket.getPayload();
 
-    const ticket = await client.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID });
-    const payload = ticket.getPayload();
+      if (!payload || !payload.email) {
+        return res.status(400).json({ status: 'error', message: 'Invalid Google token' });
+      }
 
-    if (!payload || !payload.email) {
-      return res.status(400).json({ status: 'error', message: 'Invalid Google token' });
-    }
+      const { email, name, sub: googleId } = payload;
 
-    const { email, name, sub: googleId } = payload;
+      let user = await UserModel.findByEmail(email);
 
-    let user = await UserModel.findByEmail(email);
+      if (!user) {
+        const randomPassword = crypto.randomBytes(16).toString('hex');
+        const passwordHash = await bcrypt.hash(randomPassword, 10);
+        const username = name ? name.replace(/\s+/g, '').toLowerCase() : email.split('@')[0];
 
-    if (!user) {
-      const randomPassword = crypto.randomBytes(16).toString('hex');
-      const passwordHash = await bcrypt.hash(randomPassword, 10);
-      const username = name ? name.replace(/\s+/g, '').toLowerCase() : email.split('@')[0];
+        user = await UserModel.create({
+          email: email.toLowerCase(),
+          username,
+          password: passwordHash,
+          google_id: googleId,
+          auth_provider: 'google',
+        });
+      }
 
-      user = await UserModel.create({
-        email: email.toLowerCase(),
-        username,
-        password: passwordHash,
-        google_id: googleId,
-        auth_provider: 'google',
+      const token = generateToken({ userId: user.user_id, email: user.email || '' });
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Google authentication successful',
+        data: { user: { user_id: user.user_id, username: user.username, email: user.email }, token },
       });
+    } catch (error) {
+      console.error('Google auth error:', error);
+      return res.status(500).json({ status: 'error', message: 'Error during Google authentication' });
     }
-
-    const token = generateToken({ userId: user.user_id, email: user.email || '' });
-
-    return res.status(200).json({
-      status: 'success',
-      message: 'Google authentication successful',
-      data: { user: { user_id: user.user_id, username: user.username, email: user.email }, token },
-    });
-  } catch (error) {
-    console.error('Google auth error:', error);
-    return res.status(500).json({ status: 'error', message: 'Error during Google authentication' });
   }
-}
 };
