@@ -13,9 +13,7 @@ export interface RegisterCredentials {
 }
 
 export interface GoogleAuthCredentials {
-  email: string;
-  name: string;
-  googleId: string;
+  idToken: string;
 }
 
 export interface AuthResponse {
@@ -51,7 +49,7 @@ export const authService = {
     return response.data;
   },
 
-  async googleAuth({ idToken }: { idToken: string }): Promise<AuthResponse> {
+  async googleAuth({ idToken }: GoogleAuthCredentials): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>('/auth/google', { idToken });
     return response.data;
   },

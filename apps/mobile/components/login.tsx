@@ -64,7 +64,6 @@ export default function LoginScreen({ navigation }: any) {
       if (idToken) {
         setLoading(true);
         try {
-          // Send the ID token directly to backend for verification
           const authResponse = await authService.googleAuth({ idToken });
 
           if (authResponse.status === 'success') {
@@ -74,7 +73,7 @@ export default function LoginScreen({ navigation }: any) {
           } else {
             Alert.alert('Error', authResponse.message || 'Google login failed');
           }
-        } catch (error: any) {
+        } catch (error) {
           console.error('Google auth error:', error);
           Alert.alert('Error', 'Google authentication failed');
         } finally {
@@ -84,7 +83,6 @@ export default function LoginScreen({ navigation }: any) {
     }
   };
 
-  // Google sign-in button click handler
   const handleGoogleSignIn = async () => {
     try {
       await promptAsync();

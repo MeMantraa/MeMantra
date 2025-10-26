@@ -152,67 +152,48 @@ export const AuthController = {
   },
 async googleAuth(req: Request, res: Response) {
   try {
-    const { idToken } = req.body; // <-- frontend should send idToken
-    
+    const { idToken } = req.body;
+
     if (!idToken) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Google ID token is required',
-      });
+      return res.status(400).json({ status: 'error', message: 'Google ID token is required' });
     }
 
-    // Verify Google token
-    const ticket = await client.verifyIdToken({
-      idToken,
-      audience: process.env.GOOGLE_CLIENT_ID, // include both iOS + Android if needed
-    });
+    const ticket = await client.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID });
     const payload = ticket.getPayload();
 
     if (!payload || !payload.email) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Invalid Google token',
-      });
+      return res.status(400).json({ status: 'error', message: 'Invalid Google token' });
     }
 
     const { email, name, sub: googleId } = payload;
 
-    // Check or create user
+    // Check if user exists
     let user = await UserModel.findByEmail(email);
+
     if (!user) {
+      const randomPassword = Math.random().toString(36).slice(-10);
+      const passwordHash = await bcrypt.hash(randomPassword, 10);
       const username = name ? name.replace(/\s+/g, '').toLowerCase() : email.split('@')[0];
+
       user = await UserModel.create({
         email: email.toLowerCase(),
         username,
-        password: '',
+        password: passwordHash,
         google_id: googleId,
+        auth_provider: 'google',
       });
     }
 
-    // Generate JWT
-    const token = generateToken({
-      userId: user.user_id,
-      email: user.email || '',
-    });
+    const token = generateToken({ userId: user.user_id, email: user.email || '' });
 
     return res.status(200).json({
       status: 'success',
       message: 'Google authentication successful',
-      data: {
-        user: {
-          user_id: user.user_id,
-          username: user.username,
-          email: user.email,
-        },
-        token,
-      },
+      data: { user: { user_id: user.user_id, username: user.username, email: user.email }, token },
     });
   } catch (error) {
     console.error('Google auth error:', error);
-    return res.status(500).json({
-      status: 'error',
-      message: 'Error during Google authentication',
-    });
+    return res.status(500).json({ status: 'error', message: 'Error during Google authentication' });
   }
 }
 };
