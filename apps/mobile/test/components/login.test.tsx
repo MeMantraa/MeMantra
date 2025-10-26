@@ -43,6 +43,7 @@ jest.mock('../../context/ThemeContext', () => ({
 jest.spyOn(Alert, 'alert');
 
 const mockNavigate = jest.fn();
+const mockReset = jest.fn();
 
 describe('LoginScreen', () => {
   beforeEach(() => {
@@ -50,7 +51,7 @@ describe('LoginScreen', () => {
   });
 
   const setup = () => {
-    return render(<LoginScreen navigation={{ navigate: mockNavigate }} />);
+    return render(<LoginScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />);
   };
 
   it('renders inputs and buttons', () => {
@@ -75,7 +76,6 @@ describe('LoginScreen', () => {
   it('calls authService.login and saves token on success', async () => {
     (authService.login as jest.Mock).mockResolvedValue({
       status: 'success',
-
       data: {
         token: 'fake-token',
         user: { id: 1, username: 'John' },
@@ -159,11 +159,20 @@ describe('LoginScreen', () => {
   it('handles Google sign-in success flow', async () => {
     (useGoogleAuth as jest.Mock).mockReturnValue({
       request: {},
+      response: null,
+      promptAsync: jest.fn(),
+    });
+
+    const { getByText, rerender } = setup();
+
+    fireEvent.press(getByText('Sign In with Google'));
+
+    (useGoogleAuth as jest.Mock).mockReturnValue({
+      request: {},
       response: {
         type: 'success',
         authentication: { idToken: 'google-token' },
       },
-
       promptAsync: jest.fn(),
     });
 
@@ -172,10 +181,7 @@ describe('LoginScreen', () => {
       data: { token: 'google-jwt', user: { id: 2, username: 'GoogleUser' } },
     });
 
-    const { rerender } = setup();
-
-    // Call for re-render with an expected successful Google response
-    rerender(<LoginScreen navigation={{ navigate: mockNavigate }} />);
+    rerender(<LoginScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />);
 
     await waitFor(() => {
       expect(authService.googleAuth).toHaveBeenCalledWith({ idToken: 'google-token' });
@@ -188,20 +194,26 @@ describe('LoginScreen', () => {
   it('handles Google sign-in error response', async () => {
     (useGoogleAuth as jest.Mock).mockReturnValue({
       request: {},
+      response: null,
+      promptAsync: jest.fn(),
+    });
+
+    const { getByText, rerender } = setup();
+
+    fireEvent.press(getByText('Sign In with Google'));
+
+    (useGoogleAuth as jest.Mock).mockReturnValue({
+      request: {},
       response: {
         type: 'success',
         authentication: { idToken: 'google-token' },
       },
-
       promptAsync: jest.fn(),
     });
 
     (authService.googleAuth as jest.Mock).mockRejectedValue(new Error('Google API error'));
 
-    const { rerender } = setup();
-
-    // Call for re-render with an expected Google error response
-    rerender(<LoginScreen navigation={{ navigate: mockNavigate }} />);
+    rerender(<LoginScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />);
 
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'Google authentication failed');
