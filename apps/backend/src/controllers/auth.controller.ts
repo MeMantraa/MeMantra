@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
 import { UserModel } from '../models/user.model';
 import { generateToken } from '../utils/jwt.utils';
@@ -171,7 +172,7 @@ async googleAuth(req: Request, res: Response) {
     let user = await UserModel.findByEmail(email);
 
     if (!user) {
-      const randomPassword = Math.random().toString(36).slice(-10);
+      const randomPassword = crypto.randomBytes(16).toString('hex');
       const passwordHash = await bcrypt.hash(randomPassword, 10);
       const username = name ? name.replace(/\s+/g, '').toLowerCase() : email.split('@')[0];
 
