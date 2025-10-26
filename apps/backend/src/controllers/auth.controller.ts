@@ -155,18 +155,24 @@ export const AuthController = {
   async googleAuth(req: Request, res: Response) {
     try {
       const rawIdToken = req.body?.idToken;
-      if (typeof rawIdToken !== 'string' || rawIdToken.trim() === '') {
+
+      if (rawIdToken == null) {
         return res.status(400).json({ status: 'error', message: 'Google ID token is required' });
       }
-      const idToken = rawIdToken.trim();
+      if (typeof rawIdToken !== 'string') {
+        return res.status(400).json({ status: 'error', message: 'Google ID token must be a string' });
+      }
 
-      // Delegate actual validity check to Google's verifyIdToken.
+      const idToken = rawIdToken.trim();
+      if (idToken.length === 0) {
+        return res.status(400).json({ status: 'error', message: 'Google ID token is required' });
+      }
+
       let ticket;
       try {
         ticket = await client.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID });
       } catch (verifyError) {
         console.error('Google verify error:', verifyError);
-        // Verification errors should be reported as a 400 (invalid token)
         return res.status(400).json({ status: 'error', message: 'Invalid Google token' });
       }
 
