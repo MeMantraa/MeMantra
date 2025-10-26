@@ -15,7 +15,7 @@ import { storage } from '../utils/storage';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }: any) {
   const [feedData, setFeedData] = useState<Mantra[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -84,6 +84,49 @@ export default function HomeScreen() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      if (typeof storage.removeToken === 'function') {
+        await storage.removeToken();
+      } else if (typeof storage.saveToken === 'function') {
+        await storage.saveToken('');
+      }
+
+      if (typeof storage.removeUserData === 'function') {
+        await storage.removeUserData();
+      } else if (typeof storage.saveUserData === 'function') {
+        await storage.saveUserData(null);
+      }
+
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } catch (err) {
+      console.error('Logout error:', err);
+      Alert.alert('Error', 'Failed to log out. Please try again.');
+    }
+  };
+
+  const handleUserPress = () => {
+    Alert.alert(
+      'Account',
+      'Are you sure you want to log out?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Log out',
+          style: 'destructive',
+          onPress: handleLogout,
+        },
+      ],
+      { cancelable: true },
+    );
+  };
+
   if (loading) {
     return (
       <View className="flex-1 bg-[#9AA793] justify-center items-center">
@@ -116,7 +159,10 @@ export default function HomeScreen() {
         <TouchableOpacity className="w-12 h-12 rounded-full bg-[#E6D29C] items-center justify-center">
           <Ionicons name="search-outline" size={24} color="#6D7E68" />
         </TouchableOpacity>
-        <TouchableOpacity className="w-12 h-12 rounded-full bg-[#E6D29C] items-center justify-center">
+        <TouchableOpacity
+          className="w-12 h-12 rounded-full bg-[#E6D29C] items-center justify-center"
+          onPress={handleUserPress}
+        >
           <Ionicons name="person-outline" size={24} color="#6D7E68" />
         </TouchableOpacity>
       </View>
