@@ -3,14 +3,14 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { ThemeProvider } from '../context/ThemeContext';
 
 // Import your screens
-import Login from '../components/login';
-import Signup from '../components/SignUp';
-import BottomTabNavigator from './bottomTabNavigator';
+import Login from '../screens/login';
+import Signup from '../screens/SignUp';
+import BottomTabNavigator from '../components/bottomTabNavigator';
 
 const Stack = createStackNavigator();
 
 const useAuth = () => {
-  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+  const [isLoggedIn, setIsLoggedIn] = React.useState(true);
 
   return { isLoggedIn, setIsLoggedIn };
 };
