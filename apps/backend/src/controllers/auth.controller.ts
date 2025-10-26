@@ -153,11 +153,11 @@ export const AuthController = {
   },
 async googleAuth(req: Request, res: Response) {
   try {
-    const { idToken } = req.body;
-
-    if (!idToken) {
+    const rawIdToken = req.body?.idToken;
+    if (typeof rawIdToken !== 'string' || rawIdToken.trim() === '') {
       return res.status(400).json({ status: 'error', message: 'Google ID token is required' });
     }
+    const idToken = rawIdToken.trim();
 
     const ticket = await client.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID });
     const payload = ticket.getPayload();
@@ -168,7 +168,6 @@ async googleAuth(req: Request, res: Response) {
 
     const { email, name, sub: googleId } = payload;
 
-    // Check if user exists
     let user = await UserModel.findByEmail(email);
 
     if (!user) {
