@@ -1,6 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, Dimensions, FlatList, ScrollView, TouchableOpacity } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, Dimensions, FlatList, ScrollView } from 'react-native';
 import { Mantra } from '../services/mantra.service';
 import LikeButton from '../components/UI/likeButton';
 import SaveButton from '../components/UI/saveButton';
