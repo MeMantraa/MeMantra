@@ -6,6 +6,7 @@ WebBrowser.maybeCompleteAuthSession();
 export const useGoogleAuth = () => {
   const [request, response, promptAsync] = Google.useAuthRequest({
     androidClientId: '837744591033-ju2acrfhaivd2hhc87f5hrhltgp5bu00.apps.googleusercontent.com',
+    iosClientId: '837744591033-vbeh1un6ghnm6t5q86cd5b0ub102m600.apps.googleusercontent.com',
     scopes: ['profile', 'email'],
   });
 
