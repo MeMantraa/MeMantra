@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
-import SignUpScreen from '../../components/SignUp';
+import SignUpScreen from '../../screens/SignUp';
 import { authService } from '../../services/auth.service';
 import { storage } from '../../utils/storage';
 import { useGoogleAuth } from '../../services/google-auth.service';
