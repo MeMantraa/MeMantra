@@ -1,11 +1,11 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import logo from '../assets/logo.png';
 import googleLogo from '../assets/googleLogo.png';
 import { authService } from '../services/auth.service';
 import { storage } from '../utils/storage';
-import { useGoogleSignIn } from '../hooks/handleGoogleAuth';
+import { useGoogleAuth, fetchGoogleUserInfo } from '../services/google-auth.service';
 import { useTheme } from '../context/ThemeContext';
 
 export default function SignUpScreen({ navigation }: any) {
@@ -14,9 +14,9 @@ export default function SignUpScreen({ navigation }: any) {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { colors } = useTheme();
 
-  const { signInWithGoogle, request, loading: googleLoading } = useGoogleSignIn();
+  const { request, response, promptAsync } = useGoogleAuth();
+  const { colors } = useTheme();
 
   const handleSignUp = async () => {
     if (!username || !email || !password || !confirmPassword) {
@@ -43,9 +43,18 @@ export default function SignUpScreen({ navigation }: any) {
       });
 
       if (response.status === 'success') {
+        //save token and data
         await storage.saveToken(response.data.token);
         await storage.saveUserData(response.data.user);
-        Alert.alert('Success', 'Account created successfully!');
+
+        Alert.alert('Success', 'Account created successfully!', [
+          {
+            text: 'OK',
+            onPress: () => {
+              //navigate home
+            },
+          },
+        ]);
       }
     } catch (error: any) {
       console.error('Sign up error:', error);
@@ -56,7 +65,53 @@ export default function SignUpScreen({ navigation }: any) {
     }
   };
 
-  const handleLoginRedirect = () => navigation.navigate('Login');
+  const handleLoginRedirect = () => {
+    navigation.navigate('Login');
+  };
+
+  useEffect(() => {
+    handleGoogleResponse();
+  }, [response]);
+
+  //Google response
+  const handleGoogleResponse = async () => {
+    if (response?.type === 'success') {
+      const { authentication } = response;
+      if (authentication?.accessToken) {
+        setLoading(true);
+        try {
+          const userInfo = await fetchGoogleUserInfo(authentication.accessToken);
+
+          const authResponse = await authService.googleAuth({
+            email: userInfo.email,
+            name: userInfo.name,
+            googleId: userInfo.id,
+          });
+
+          if (authResponse.status === 'success') {
+            await storage.saveToken(authResponse.data.token);
+            await storage.saveUserData(authResponse.data.user);
+            Alert.alert('Success', 'Account created with Google!');
+          }
+        } catch (error: any) {
+          console.error('Google auth error:', error);
+          Alert.alert('Error', 'Google authentication failed');
+        } finally {
+          setLoading(false);
+        }
+      }
+    }
+  };
+
+  //Google sign-up
+  const handleGoogleSignUp = async () => {
+    try {
+      await promptAsync();
+    } catch (error) {
+      console.error('Google sign-up error:', error);
+      Alert.alert('Error', 'Failed to initiate Google sign-up');
+    }
+  };
 
   return (
     <>
@@ -75,7 +130,7 @@ export default function SignUpScreen({ navigation }: any) {
                 value={username}
                 onChangeText={setUsername}
                 autoCapitalize="none"
-                editable={!loading && !googleLoading}
+                editable={!loading}
               />
               <TextInput
                 className="bg-[#fff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
@@ -85,7 +140,7 @@ export default function SignUpScreen({ navigation }: any) {
                 onChangeText={setEmail}
                 autoCapitalize="none"
                 keyboardType="email-address"
-                editable={!loading && !googleLoading}
+                editable={!loading}
               />
               <TextInput
                 className="bg-[#fff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
@@ -95,7 +150,7 @@ export default function SignUpScreen({ navigation }: any) {
                 onChangeText={setPassword}
                 secureTextEntry
                 autoCapitalize="none"
-                editable={!loading && !googleLoading}
+                editable={!loading}
               />
               <TextInput
                 className="bg-[#fff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
@@ -105,14 +160,13 @@ export default function SignUpScreen({ navigation }: any) {
                 onChangeText={setConfirmPassword}
                 secureTextEntry
                 autoCapitalize="none"
-                editable={!loading && !googleLoading}
+                editable={!loading}
               />
 
               <TouchableOpacity
                 style={{ backgroundColor: colors.secondary }}
                 className="rounded-[30px] p-[14px] items-center mt-[8px]"
                 onPress={handleSignUp}
-                disabled={loading || googleLoading}
               >
                 <Text className="text-[#fff] text-[18px] font-semibold">Sign Up</Text>
               </TouchableOpacity>
@@ -125,9 +179,9 @@ export default function SignUpScreen({ navigation }: any) {
               </TouchableOpacity>
 
               <TouchableOpacity
-                className="rounded-[30px] p-[12px] mx-[60px] items-center mt-[18px]"
-                onPress={signInWithGoogle}
-                disabled={!request || loading || googleLoading}
+                className="bg-[#6D7E68] rounded-[30px] p-[12px] mx-[60px] items-center mt-[18px]"
+                onPress={handleGoogleSignUp}
+                disabled={!request || loading}
                 style={{ backgroundColor: colors.primaryDark }}
               >
                 <View className="flex-row items-center">

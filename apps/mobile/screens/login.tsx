@@ -1,11 +1,11 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, Alert } from 'react-native';
 import logo from '../assets/logo.png';
 import googleLogo from '../assets/googleLogo.png';
 import { authService } from '../services/auth.service';
 import { storage } from '../utils/storage';
-import { useGoogleSignIn } from '../hooks/handleGoogleAuth';
+import { useGoogleAuth, fetchGoogleUserInfo } from '../services/google-auth.service';
 import { useTheme } from '../context/ThemeContext';
 
 export default function LoginScreen({ navigation }: any) {
@@ -14,7 +14,8 @@ export default function LoginScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const { colors } = useTheme();
 
-  const { signInWithGoogle, request, loading: googleLoading } = useGoogleSignIn();
+  //Google auth hook
+  const { request, response, promptAsync } = useGoogleAuth();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -43,7 +44,53 @@ export default function LoginScreen({ navigation }: any) {
     }
   };
 
-  const handleSignUp = () => navigation.navigate('Signup');
+  const handleSignUp = () => {
+    navigation.navigate('Signup');
+  };
+
+  useEffect(() => {
+    handleGoogleResponse();
+  }, [response]);
+
+  //Google signin response
+  const handleGoogleResponse = async () => {
+    if (response?.type === 'success') {
+      const { authentication } = response;
+      if (authentication?.accessToken) {
+        setLoading(true);
+        try {
+          const userInfo = await fetchGoogleUserInfo(authentication.accessToken);
+
+          const authResponse = await authService.googleAuth({
+            email: userInfo.email,
+            name: userInfo.name,
+            googleId: userInfo.id,
+          });
+
+          if (authResponse.status === 'success') {
+            await storage.saveToken(authResponse.data.token);
+            await storage.saveUserData(authResponse.data.user);
+            Alert.alert('Success', 'Logged in with Google!');
+          }
+        } catch (error: any) {
+          console.error('Google auth error:', error);
+          Alert.alert('Error', 'Google authentication failed');
+        } finally {
+          setLoading(false);
+        }
+      }
+    }
+  };
+
+  //Google sign-in handler
+  const handleGoogleSignIn = async () => {
+    try {
+      await promptAsync();
+    } catch (error) {
+      console.error('Google sign-in error:', error);
+      Alert.alert('Error', 'Failed to initiate Google sign-in');
+    }
+  };
 
   return (
     <>
@@ -62,7 +109,7 @@ export default function LoginScreen({ navigation }: any) {
               onChangeText={setEmail}
               autoCapitalize="none"
               keyboardType="email-address"
-              editable={!loading && !googleLoading}
+              editable={!loading}
             />
 
             <TextInput
@@ -73,14 +120,13 @@ export default function LoginScreen({ navigation }: any) {
               onChangeText={setPassword}
               secureTextEntry
               autoCapitalize="none"
-              editable={!loading && !googleLoading}
+              editable={!loading}
             />
 
             <TouchableOpacity
               style={{ backgroundColor: colors.secondary }}
               className="rounded-[30px] p-[14px] items-center mt-[8px]"
               onPress={handleLogin}
-              disabled={loading || googleLoading}
             >
               <Text className="text-[#ffffff] text-[18px] font-semibold">Login</Text>
             </TouchableOpacity>
@@ -93,9 +139,9 @@ export default function LoginScreen({ navigation }: any) {
             </TouchableOpacity>
 
             <TouchableOpacity
-              className="rounded-[30px] p-[12px] mx-[60px] items-center mt-[18px]"
-              onPress={signInWithGoogle}
-              disabled={!request || loading || googleLoading}
+              className="bg-[#6D7E68] rounded-[30px] p-[12px] mx-[60px] items-center mt-[18px]"
+              onPress={handleGoogleSignIn}
+              disabled={!request || loading}
               style={{ backgroundColor: colors.primaryDark }}
             >
               <View className="flex-row items-center">
