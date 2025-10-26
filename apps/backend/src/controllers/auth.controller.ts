@@ -151,6 +151,7 @@ export const AuthController = {
       });
     }
   },
+
 async googleAuth(req: Request, res: Response) {
   try {
     const rawIdToken = req.body?.idToken;
@@ -158,6 +159,12 @@ async googleAuth(req: Request, res: Response) {
       return res.status(400).json({ status: 'error', message: 'Google ID token is required' });
     }
     const idToken = rawIdToken.trim();
+
+
+    const jwtRegex = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
+    if (!jwtRegex.test(idToken) || idToken.length > 4096) {
+      return res.status(400).json({ status: 'error', message: 'Invalid Google ID token format' });
+    }
 
     const ticket = await client.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID });
     const payload = ticket.getPayload();
