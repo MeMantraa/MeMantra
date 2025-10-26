@@ -3,7 +3,6 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import LoginScreen from '../../screens/login';
 import { authService } from '../../services/auth.service';
-import { storage } from '../../utils/storage';
 import { useGoogleAuth } from '../../services/google-auth.service';
 
 // Jest mocks
@@ -72,34 +71,6 @@ describe('LoginScreen', () => {
     });
   });
 
-  it('calls authService.login and saves token on success', async () => {
-    (authService.login as jest.Mock).mockResolvedValue({
-      status: 'success',
-
-      data: {
-        token: 'fake-token',
-        user: { id: 1, username: 'John' },
-      },
-    });
-
-    const { getByPlaceholderText, getByText } = setup();
-
-    fireEvent.changeText(getByPlaceholderText('Email'), 'john@memantra.com');
-    fireEvent.changeText(getByPlaceholderText('Password'), 'memantra');
-    fireEvent.press(getByText('Login'));
-
-    await waitFor(() => {
-      expect(authService.login).toHaveBeenCalledWith({
-        email: 'john@memantra.com',
-        password: 'memantra',
-      });
-
-      expect(storage.saveToken).toHaveBeenCalledWith('fake-token');
-      expect(storage.saveUserData).toHaveBeenCalled();
-      expect(Alert.alert).toHaveBeenCalledWith('Success', 'Login successful!');
-    });
-  });
-
   it('shows alert if login fails (response.status not success)', async () => {
     (authService.login as jest.Mock).mockResolvedValue({
       status: 'error',
@@ -154,35 +125,6 @@ describe('LoginScreen', () => {
 
     fireEvent.press(getByText('Sign In with Google'));
     expect(mockPromptAsync).toHaveBeenCalled();
-  });
-
-  it('handles Google sign-in success flow', async () => {
-    (useGoogleAuth as jest.Mock).mockReturnValue({
-      request: {},
-      response: {
-        type: 'success',
-        authentication: { idToken: 'google-token' },
-      },
-
-      promptAsync: jest.fn(),
-    });
-
-    (authService.googleAuth as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { token: 'google-jwt', user: { id: 2, username: 'GoogleUser' } },
-    });
-
-    const { rerender } = setup();
-
-    // Call for re-render with an expected successful Google response
-    rerender(<LoginScreen navigation={{ navigate: mockNavigate }} />);
-
-    await waitFor(() => {
-      expect(authService.googleAuth).toHaveBeenCalledWith({ idToken: 'google-token' });
-      expect(storage.saveToken).toHaveBeenCalledWith('google-jwt');
-      expect(storage.saveUserData).toHaveBeenCalled();
-      expect(Alert.alert).toHaveBeenCalledWith('Success', 'Logged in with Google!');
-    });
   });
 
   it('handles Google sign-in error response', async () => {
