@@ -4,6 +4,8 @@ CREATE TABLE "User" (
   "email" varchar,
   "password_hash" varchar,
   "device_token" varchar,
+  "google_id" varchar UNIQUE,
+  "auth_provider" varchar DEFAULT 'local',
   "created_at" timestamp
 );
 

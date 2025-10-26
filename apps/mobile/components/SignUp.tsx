@@ -5,7 +5,7 @@ import logo from '../assets/logo.png';
 import googleLogo from '../assets/googleLogo.png';
 import { authService } from '../services/auth.service';
 import { storage } from '../utils/storage';
-import { useGoogleAuth, fetchGoogleUserInfo } from '../services/google-auth.service';
+import { useGoogleAuth } from '../services/google-auth.service';
 import { useTheme } from '../context/ThemeContext';
 
 export default function SignUpScreen({ navigation }: any) {
@@ -69,29 +69,20 @@ export default function SignUpScreen({ navigation }: any) {
     navigation.navigate('Login');
   };
 
-  useEffect(() => {
-    handleGoogleResponse();
-  }, [response]);
-
   //Google response
   const handleGoogleResponse = async () => {
     if (response?.type === 'success') {
-      const { authentication } = response;
-      if (authentication?.accessToken) {
+      const idToken = response.authentication?.idToken;
+      if (idToken) {
         setLoading(true);
         try {
-          const userInfo = await fetchGoogleUserInfo(authentication.accessToken);
-
-          const authResponse = await authService.googleAuth({
-            email: userInfo.email,
-            name: userInfo.name,
-            googleId: userInfo.id,
-          });
-
+          const authResponse = await authService.googleAuth({ idToken });
           if (authResponse.status === 'success') {
             await storage.saveToken(authResponse.data.token);
             await storage.saveUserData(authResponse.data.user);
             Alert.alert('Success', 'Account created with Google!');
+          } else {
+            Alert.alert('Error', authResponse.message || 'Google login failed');
           }
         } catch (error: any) {
           console.error('Google auth error:', error);
@@ -102,6 +93,10 @@ export default function SignUpScreen({ navigation }: any) {
       }
     }
   };
+
+  useEffect(() => {
+    handleGoogleResponse();
+  }, [response, handleGoogleResponse]);
 
   //Google sign-up
   const handleGoogleSignUp = async () => {
