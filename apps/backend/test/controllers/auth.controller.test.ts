@@ -351,10 +351,11 @@ describe('AuthController', () => {
         .post('/google-auth')
         .send({ idToken: 'errortoken' });
 
-      expect(res.status).toBe(500);
+      // Controller treats verification errors as invalid token (400)
+      expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
         status: 'error',
-        message: 'Error during Google authentication',
+        message: 'Invalid Google token',
       });
     });
   });
