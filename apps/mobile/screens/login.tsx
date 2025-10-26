@@ -5,7 +5,7 @@ import logo from '../assets/logo.png';
 import googleLogo from '../assets/googleLogo.png';
 import { authService } from '../services/auth.service';
 import { storage } from '../utils/storage';
-import { useGoogleAuth, fetchGoogleUserInfo } from '../services/google-auth.service';
+import { useGoogleAuth } from '../services/google-auth.service';
 import { useTheme } from '../context/ThemeContext';
 
 export default function LoginScreen({ navigation }: any) {
@@ -14,9 +14,10 @@ export default function LoginScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const { colors } = useTheme();
 
-  //Google auth hook
+  // Google auth hook
   const { request, response, promptAsync } = useGoogleAuth();
 
+  // Regular login handler
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter both email and password');
@@ -34,6 +35,8 @@ export default function LoginScreen({ navigation }: any) {
         await storage.saveToken(response.data.token);
         await storage.saveUserData(response.data.user);
         Alert.alert('Success', 'Login successful!');
+      } else {
+        Alert.alert('Login Failed', response.message || 'Please try again.');
       }
     } catch (error: any) {
       console.error('Login error:', error);
@@ -48,31 +51,29 @@ export default function LoginScreen({ navigation }: any) {
     navigation.navigate('Signup');
   };
 
+  // 👇 Google Sign-In response handler
   useEffect(() => {
     handleGoogleResponse();
   }, [response]);
 
-  //Google signin response
   const handleGoogleResponse = async () => {
     if (response?.type === 'success') {
       const { authentication } = response;
-      if (authentication?.accessToken) {
+      const idToken = authentication?.idToken;
+
+      if (idToken) {
         setLoading(true);
         try {
-          const userInfo = await fetchGoogleUserInfo(authentication.accessToken);
-
-          const authResponse = await authService.googleAuth({
-            email: userInfo.email,
-            name: userInfo.name,
-            googleId: userInfo.id,
-          });
+          const authResponse = await authService.googleAuth({ idToken });
 
           if (authResponse.status === 'success') {
             await storage.saveToken(authResponse.data.token);
             await storage.saveUserData(authResponse.data.user);
             Alert.alert('Success', 'Logged in with Google!');
+          } else {
+            Alert.alert('Error', authResponse.message || 'Google login failed');
           }
-        } catch (error: any) {
+        } catch (error) {
           console.error('Google auth error:', error);
           Alert.alert('Error', 'Google authentication failed');
         } finally {
@@ -82,7 +83,6 @@ export default function LoginScreen({ navigation }: any) {
     }
   };
 
-  //Google sign-in handler
   const handleGoogleSignIn = async () => {
     try {
       await promptAsync();

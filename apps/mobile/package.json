@@ -4,6 +4,7 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
+    "setup:android": "expo prebuild --clean && cd android && gradlew clean",
     "run:android": "expo run:android",
     "run:ios": "expo run:ios",
     "android": "expo start --android",
