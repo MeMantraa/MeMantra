@@ -93,19 +93,23 @@ describe('SignUpScreen', () => {
     });
   });
 
-  it('shows alert if password too short', async () => {
-    const { getByPlaceholderText, getByText } = setup();
+  it('shows alert if password is too short', async () => {
+    const { getByPlaceholderText, getByText } = render(
+      <SignUpScreen navigation={{ navigate: jest.fn() }} />,
+    );
 
     fireEvent.changeText(getByPlaceholderText('Username'), 'John');
     fireEvent.changeText(getByPlaceholderText('Email'), 'john@memantra.com');
-    fireEvent.changeText(getByPlaceholderText('Password'), 'memantra');
-    fireEvent.changeText(getByPlaceholderText('Confirm Password'), 'memantra');
+    fireEvent.changeText(getByPlaceholderText('Password'), '123');
+    fireEvent.changeText(getByPlaceholderText('Confirm Password'), '123');
+
     fireEvent.press(getByText('Sign Up'));
 
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith(
-        'Sign Up Failed',
-        expect.stringContaining('Sign up failed. Please try again'),
+        'Error',
+
+        'Password must be at least 8 characters',
       );
     });
   });
@@ -187,5 +191,63 @@ describe('SignUpScreen', () => {
     fireEvent.press(getByText('Sign Up with Google'));
 
     expect(mockPromptAsync).toHaveBeenCalled();
+  });
+
+  it('shows alert if Google sign-up throws during promptAsync', async () => {
+    const mockPromptAsync = jest.fn().mockRejectedValue(new Error('Google failed'));
+
+    (useGoogleAuth as jest.Mock).mockReturnValue({
+      request: true,
+      response: null,
+      promptAsync: mockPromptAsync,
+    });
+
+    const { getByText } = render(<SignUpScreen navigation={{ navigate: jest.fn() }} />);
+
+    fireEvent.press(getByText(/Sign Up with Google/i));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to initiate Google sign-up');
+    });
+  });
+
+  it('shows error alert if Google authentication fails', async () => {
+    const fakeResponse = {
+      type: 'success',
+      authentication: { idToken: 'fake-token' },
+    };
+
+    (useGoogleAuth as jest.Mock).mockReturnValue({
+      request: true,
+      response: fakeResponse,
+      promptAsync: jest.fn(),
+    });
+
+    (authService.googleAuth as jest.Mock).mockResolvedValue({
+      status: 'error',
+      message: 'Google login failed',
+    });
+
+    const { rerender } = render(<SignUpScreen navigation={{ navigate: jest.fn() }} />);
+
+    rerender(<SignUpScreen navigation={{ navigate: jest.fn() }} />);
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Google login failed');
+    });
+  });
+
+  it('does nothing if idToken is missing in Google response', async () => {
+    const fakeResponse = { type: 'success', authentication: {} };
+
+    (useGoogleAuth as jest.Mock).mockReturnValue({
+      request: true,
+      response: fakeResponse,
+      promptAsync: jest.fn(),
+    });
+
+    render(<SignUpScreen navigation={{ navigate: jest.fn() }} />);
+
+    await waitFor(() => expect(Alert.alert).not.toHaveBeenCalled());
   });
 });
