@@ -120,7 +120,9 @@ export default function HomeScreen({ navigation }: any) {
         {
           text: 'Log out',
           style: 'destructive',
-          onPress: handleLogout,
+          onPress: () => {
+            void handleLogout();
+          },
         },
       ],
       { cancelable: true },
