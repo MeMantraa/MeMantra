@@ -1,0 +1,185 @@
+import React from 'react';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { Alert } from 'react-native';
+import LoginScreen from '../../screens/login';
+import { authService } from '../../services/auth.service';
+import { useGoogleAuth } from '../../services/google-auth.service';
+
+jest.mock('../../services/auth.service', () => ({
+  authService: {
+    login: jest.fn(),
+    googleAuth: jest.fn(),
+  },
+}));
+
+jest.mock('../../utils/storage', () => ({
+  storage: {
+    saveToken: jest.fn(),
+    saveUserData: jest.fn(),
+  },
+}));
+
+jest.mock('../../services/google-auth.service', () => ({
+  useGoogleAuth: jest.fn(() => ({
+    request: {},
+    response: null,
+    promptAsync: jest.fn(),
+  })),
+}));
+
+jest.mock('../../context/ThemeContext', () => ({
+  useTheme: jest.fn(() => ({
+    colors: {
+      primary: '#000',
+      secondary: '#333',
+      primaryDark: '#111',
+      placeholderText: '#ccc',
+    },
+  })),
+}));
+
+jest.spyOn(Alert, 'alert');
+
+const mockNavigate = jest.fn();
+
+describe('LoginScreen', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  const setup = () => {
+    return render(<LoginScreen navigation={{ navigate: mockNavigate }} />);
+  };
+
+  it('renders inputs and buttons', () => {
+    const { getByPlaceholderText, getByText } = setup();
+
+    expect(getByPlaceholderText('Email')).toBeTruthy();
+    expect(getByPlaceholderText('Password')).toBeTruthy();
+    expect(getByText('Login')).toBeTruthy();
+    expect(getByText('Sign In with Google')).toBeTruthy();
+  });
+
+  it('shows alert if fields are empty', async () => {
+    const { getByText } = setup();
+
+    fireEvent.press(getByText('Login'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Please enter both email and password');
+    });
+  });
+
+  it('shows alert if login fails (response.status not success)', async () => {
+    (authService.login as jest.Mock).mockResolvedValue({
+      status: 'error',
+      message: 'Invalid credentials',
+    });
+
+    const { getByPlaceholderText, getByText } = setup();
+
+    fireEvent.changeText(getByPlaceholderText('Email'), 'john@memantra.com');
+    fireEvent.changeText(getByPlaceholderText('Password'), 'wrongmemantra');
+    fireEvent.press(getByText('Login'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Login Failed', 'Invalid credentials');
+    });
+  });
+
+  it('shows alert when login throws error', async () => {
+    (authService.login as jest.Mock).mockRejectedValue({
+      response: { data: { message: 'Network error' } },
+    });
+
+    const { getByPlaceholderText, getByText } = setup();
+
+    fireEvent.changeText(getByPlaceholderText('Email'), 'john@memantra.com');
+    fireEvent.changeText(getByPlaceholderText('Password'), 'memantra');
+    fireEvent.press(getByText('Login'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Login Failed', 'Network error');
+    });
+  });
+
+  it('navigates to Signup when pressing "Sign Up"', () => {
+    const { getByText } = setup();
+
+    fireEvent.press(getByText('New to us? Sign Up'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('Signup');
+  });
+
+  it('calls promptAsync when pressing "Sign In with Google"', async () => {
+    const mockPromptAsync = jest.fn();
+
+    (useGoogleAuth as jest.Mock).mockReturnValue({
+      request: {},
+      response: null,
+      promptAsync: mockPromptAsync,
+    });
+
+    const { getByText } = setup();
+
+    fireEvent.press(getByText('Sign In with Google'));
+    expect(mockPromptAsync).toHaveBeenCalled();
+  });
+
+  it('navigates to MainApp on successful login', async () => {
+    (authService.login as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { token: 'abc123', user: { id: 1, name: 'John' } },
+    });
+
+    const { getByPlaceholderText, getByText } = setup();
+
+    fireEvent.changeText(getByPlaceholderText('Email'), 'john@memantra.com');
+    fireEvent.changeText(getByPlaceholderText('Password'), 'memantra');
+    fireEvent.press(getByText('Login'));
+
+    await waitFor(() => {
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+  });
+
+  it('navigates to MainApp on successful Google login', async () => {
+    (useGoogleAuth as jest.Mock).mockReturnValue({
+      request: {},
+      response: { type: 'success', authentication: { idToken: 'google-token' } },
+      promptAsync: jest.fn(),
+    });
+
+    (authService.googleAuth as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { token: 'google-token', user: { id: 2, name: 'Jane' } },
+    });
+
+    setup();
+
+    await waitFor(() => {
+      expect(Alert.alert).not.toHaveBeenCalled();
+    });
+  });
+  it('handles Google sign-in error response', async () => {
+    (useGoogleAuth as jest.Mock).mockReturnValue({
+      request: {},
+      response: {
+        type: 'success',
+        authentication: { idToken: 'google-token' },
+      },
+
+      promptAsync: jest.fn(),
+    });
+
+    (authService.googleAuth as jest.Mock).mockRejectedValue(new Error('Google API error'));
+
+    const { rerender } = setup();
+
+    rerender(<LoginScreen navigation={{ navigate: mockNavigate }} />);
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Google authentication failed');
+    });
+  });
+});
