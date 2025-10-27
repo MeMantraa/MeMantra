@@ -39,7 +39,7 @@ export default function MainNavigator() {
             backgroundColor: '#ffffff',
           }}
         >
-          <ActivityIndicator size="large" color="#6D7E68" />
+          <ActivityIndicator size="large" color="#6D7E68" testID="loading-indicator" />
         </View>
       </ThemeProvider>
     );
