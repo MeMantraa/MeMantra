@@ -149,3 +149,6 @@ node_modules/
 
 # Ignore the entire Turborepo cache directory
 .turbo/
+
+# Claude
+CLAUDE.md
