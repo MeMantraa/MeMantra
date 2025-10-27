@@ -1,5 +1,6 @@
 {
   "expo": {
+    "scheme": "memantra",
     "name": "mobile",
     "slug": "mobile",
     "version": "1.0.0",
@@ -14,7 +15,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.memantra"
+      "bundleIdentifier": "com.memantra.mobile"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,13 +24,14 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.memantra"
+      "package": "com.memantra.mobile"
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "bundler": "metro"
     },
     "plugins": [
+      "expo-web-browser",
       [
         "@sentry/react-native/expo",
         {
@@ -38,6 +40,11 @@
           "organization": "memantra"
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "072863e5-efd5-4b9c-8f68-7edfca4409d0"
+      }
+    }
   }
 }

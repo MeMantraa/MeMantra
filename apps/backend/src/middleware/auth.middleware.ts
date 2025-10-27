@@ -45,7 +45,7 @@ export const authenticate = async (
     };
     
     return next();
-  } catch (error) {
+  } catch {
     return res.status(401).json({
       status: 'error',
       message: 'Authentication failed',

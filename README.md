@@ -70,6 +70,10 @@ cp .env.example .env
 cd apps/mobile
 pnpm run start
 
+to run in production mode (only in android for now):
+pnpm setup:android
+pnpm run:android
+
 
 ```
 
@@ -86,8 +90,8 @@ pnpm install
 
 # 3) Run backend
 cd apps/backend
-pnpm run start # or npm run dev
-
+pnpm build
+pnpm start
 
 
 ```

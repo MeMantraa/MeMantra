@@ -26,6 +26,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -50,16 +52,17 @@ jobs:
       - name: Typecheck
         run: pnpm -w typecheck
 
-      - name: Test (Jest + Expo)
+      - name: Test and coverage
         run: pnpm -w test -- --coverage
 
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mobile-coverage
+          name: coverage-reports
           path: |
             apps/mobile/coverage
+            apps/backend/coverage
             coverage
           if-no-files-found: ignore
 
