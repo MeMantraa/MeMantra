@@ -201,4 +201,94 @@ describe('HomeScreen - Full Coverage', () => {
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to log out. Please try again.');
     });
   });
+
+  // New tests to increase branch coverage
+
+  it('shows activity indicator while fetching (loading state)', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token-pending');
+    // Keep the promise pending so loading state remains true
+    (mantraService.getFeedMantras as jest.Mock).mockImplementation(() => new Promise(() => {}));
+
+    const { getByText } = setup();
+
+    // Immediately the loading view should be visible
+    expect(getByText('Loading mantras...')).toBeTruthy();
+  });
+
+  it('calls unlikeMantra and unsaveMantra when items are already liked/saved', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token-unlike-unsave');
+
+    const sample = [
+      { mantra_id: 1, title: 'SavedItem', isLiked: false, isSaved: true },
+      { mantra_id: 2, title: 'LikedItem', isLiked: true, isSaved: false },
+    ];
+
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: sample,
+    });
+    (mantraService.unlikeMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+    (mantraService.unsaveMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+
+    const { getByTestId, getByText } = setup();
+
+    await waitFor(() => {
+      expect(getByText('SavedItem')).toBeTruthy();
+      expect(getByText('LikedItem')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('like-2'));
+    await waitFor(() =>
+      expect(mantraService.unlikeMantra).toHaveBeenCalledWith(2, 'token-unlike-unsave'),
+    );
+
+    fireEvent.press(getByTestId('save-1'));
+    await waitFor(() =>
+      expect(mantraService.unsaveMantra).toHaveBeenCalledWith(1, 'token-unlike-unsave'),
+    );
+  });
+
+  it('uses saveToken/saveUserData fallback when removeToken/removeUserData are not available', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token-fallback');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({ status: 'success', data: [] });
+
+    // Backup original functions to restore after test
+    const originalRemoveToken = (storage as any).removeToken;
+    const originalRemoveUserData = (storage as any).removeUserData;
+    const originalSaveToken = (storage as any).saveToken;
+    const originalSaveUserData = (storage as any).saveUserData;
+
+    try {
+      // Simulate absence of removeToken/removeUserData
+      (storage as any).removeToken = undefined;
+      (storage as any).removeUserData = undefined;
+      (storage as any).saveToken = jest.fn().mockResolvedValue(undefined);
+      (storage as any).saveUserData = jest.fn().mockResolvedValue(undefined);
+
+      const { findAllByRole } = setup();
+      const buttons = await findAllByRole('button');
+      const profileBtn = buttons[1];
+
+      fireEvent.press(profileBtn);
+      const alertArgs = (Alert.alert as jest.Mock).mock.calls[0];
+      const logoutBtn = alertArgs[2].find((b: any) => b.text === 'Log out');
+
+      await act(async () => logoutBtn.onPress());
+
+      await waitFor(() => {
+        expect((storage as any).saveToken).toHaveBeenCalledWith('');
+        expect((storage as any).saveUserData).toHaveBeenCalledWith(null);
+        expect(mockReset).toHaveBeenCalledWith({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        });
+      });
+    } finally {
+      // restore originals
+      (storage as any).removeToken = originalRemoveToken;
+      (storage as any).removeUserData = originalRemoveUserData;
+      (storage as any).saveToken = originalSaveToken;
+      (storage as any).saveUserData = originalSaveUserData;
+    }
+  });
 });
