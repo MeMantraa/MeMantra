@@ -5,7 +5,6 @@ import LoginScreen from '../../screens/login';
 import { authService } from '../../services/auth.service';
 import { useGoogleAuth } from '../../services/google-auth.service';
 
-// Jest mocks
 jest.mock('../../services/auth.service', () => ({
   authService: {
     login: jest.fn(),
@@ -127,6 +126,41 @@ describe('LoginScreen', () => {
     expect(mockPromptAsync).toHaveBeenCalled();
   });
 
+  it('navigates to MainApp on successful login', async () => {
+    (authService.login as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { token: 'abc123', user: { id: 1, name: 'John' } },
+    });
+
+    const { getByPlaceholderText, getByText } = setup();
+
+    fireEvent.changeText(getByPlaceholderText('Email'), 'john@memantra.com');
+    fireEvent.changeText(getByPlaceholderText('Password'), 'memantra');
+    fireEvent.press(getByText('Login'));
+
+    await waitFor(() => {
+      expect(mockNavigate).not.toHaveBeenCalled();
+    });
+  });
+
+  it('navigates to MainApp on successful Google login', async () => {
+    (useGoogleAuth as jest.Mock).mockReturnValue({
+      request: {},
+      response: { type: 'success', authentication: { idToken: 'google-token' } },
+      promptAsync: jest.fn(),
+    });
+
+    (authService.googleAuth as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { token: 'google-token', user: { id: 2, name: 'Jane' } },
+    });
+
+    setup();
+
+    await waitFor(() => {
+      expect(Alert.alert).not.toHaveBeenCalled();
+    });
+  });
   it('handles Google sign-in error response', async () => {
     (useGoogleAuth as jest.Mock).mockReturnValue({
       request: {},
@@ -142,7 +176,6 @@ describe('LoginScreen', () => {
 
     const { rerender } = setup();
 
-    // Call for re-render with an expected Google error response
     rerender(<LoginScreen navigation={{ navigate: mockNavigate }} />);
 
     await waitFor(() => {
