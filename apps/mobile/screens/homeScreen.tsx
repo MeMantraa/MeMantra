@@ -127,39 +127,18 @@ export default function HomeScreen({ navigation }: any) {
     );
   };
 
-  if (loading) {
-    return (
-      <View className="flex-1 bg-[#9AA793] justify-center items-center">
-        <ActivityIndicator size="large" color="#E6D29C" />
-        <Text className="text-white mt-4 text-base">Loading mantras...</Text>
-      </View>
-    );
-  }
-
-  if (feedData.length === 0) {
-    return (
-      <View className="flex-1 bg-[#9AA793] justify-center items-center px-6">
-        <Ionicons name="book-outline" size={64} color="#E6D29C" />
-        <Text className="text-white mt-4 text-lg font-semibold text-center">
-          No mantras available
-        </Text>
-        <TouchableOpacity
-          className="bg-[#E6D29C] rounded-full px-6 py-3 mt-6"
-          onPress={loadMantras}
-        >
-          <Text className="text-[#6D7E68] font-semibold text-base">Refresh</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   return (
     <View className="flex-1 bg-[#9AA793]">
+      {/* Header is rendered for all states (loading / empty / feed) */}
       <View className="absolute top-5 left-0 right-0 z-10 flex-row justify-between items-center px-6 pt-14 pb-4">
-        <TouchableOpacity className="w-12 h-12 rounded-full bg-[#E6D29C] items-center justify-center">
+        <TouchableOpacity
+          accessibilityRole="button"
+          className="w-12 h-12 rounded-full bg-[#E6D29C] items-center justify-center"
+        >
           <Ionicons name="search-outline" size={24} color="#6D7E68" />
         </TouchableOpacity>
         <TouchableOpacity
+          accessibilityRole="button"
           className="w-12 h-12 rounded-full bg-[#E6D29C] items-center justify-center"
           onPress={handleUserPress}
         >
@@ -167,18 +146,38 @@ export default function HomeScreen({ navigation }: any) {
         </TouchableOpacity>
       </View>
 
-      <FlatList
-        data={feedData}
-        renderItem={({ item }) => (
-          <MantraCarousel item={item} onLike={handleLike} onSave={handleSave} />
-        )}
-        keyExtractor={(item) => item.mantra_id.toString()}
-        pagingEnabled
-        showsVerticalScrollIndicator={false}
-        snapToAlignment="start"
-        decelerationRate="fast"
-        snapToInterval={SCREEN_HEIGHT}
-      />
+      {loading ? (
+        <View className="flex-1 bg-[#9AA793] justify-center items-center">
+          <ActivityIndicator size="large" color="#E6D29C" />
+          <Text className="text-white mt-4 text-base">Loading mantras...</Text>
+        </View>
+      ) : feedData.length === 0 ? (
+        <View className="flex-1 bg-[#9AA793] justify-center items-center px-6">
+          <Ionicons name="book-outline" size={64} color="#E6D29C" />
+          <Text className="text-white mt-4 text-lg font-semibold text-center">
+            No mantras available
+          </Text>
+          <TouchableOpacity
+            className="bg-[#E6D29C] rounded-full px-6 py-3 mt-6"
+            onPress={loadMantras}
+          >
+            <Text className="text-[#6D7E68] font-semibold text-base">Refresh</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <FlatList
+          data={feedData}
+          renderItem={({ item }) => (
+            <MantraCarousel item={item} onLike={handleLike} onSave={handleSave} />
+          )}
+          keyExtractor={(item) => item.mantra_id.toString()}
+          pagingEnabled
+          showsVerticalScrollIndicator={false}
+          snapToAlignment="start"
+          decelerationRate="fast"
+          snapToInterval={SCREEN_HEIGHT}
+        />
+      )}
     </View>
   );
 }
