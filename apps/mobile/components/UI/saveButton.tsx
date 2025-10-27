@@ -10,6 +10,7 @@ type SaveButtonProps = {
 const SaveButton: React.FC<SaveButtonProps> = ({ saved, onPress }) => {
   return (
     <TouchableOpacity
+      testID="save-button"
       activeOpacity={0.7}
       onPress={onPress}
       className="items-center justify-center mb-6"

@@ -11,7 +11,12 @@ type LikeButtonProps = {
 const LikeButton: React.FC<LikeButtonProps> = ({ liked, onPress }) => {
   const { colors } = useTheme();
   return (
-    <TouchableOpacity activeOpacity={0.7} onPress={onPress} className="items-center justify-center">
+    <TouchableOpacity
+      testID="like-button"
+      activeOpacity={0.7}
+      onPress={onPress}
+      className="items-center justify-center"
+    >
       <Ionicons
         name={liked ? 'heart' : 'heart-outline'}
         size={38}
