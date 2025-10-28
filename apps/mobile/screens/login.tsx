@@ -14,10 +14,8 @@ export default function LoginScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const { colors } = useTheme();
 
-  // Google auth hook
   const { request, response, promptAsync } = useGoogleAuth();
 
-  // Regular login handler
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter both email and password');
@@ -34,7 +32,11 @@ export default function LoginScreen({ navigation }: any) {
       if (response.status === 'success') {
         await storage.saveToken(response.data.token);
         await storage.saveUserData(response.data.user);
-        Alert.alert('Success', 'Login successful!');
+
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainApp' }],
+        });
       } else {
         Alert.alert('Login Failed', response.message || 'Please try again.');
       }
@@ -51,7 +53,6 @@ export default function LoginScreen({ navigation }: any) {
     navigation.navigate('Signup');
   };
 
-  // 👇 Google Sign-In response handler
   useEffect(() => {
     handleGoogleResponse();
   }, [response]);
@@ -69,7 +70,11 @@ export default function LoginScreen({ navigation }: any) {
           if (authResponse.status === 'success') {
             await storage.saveToken(authResponse.data.token);
             await storage.saveUserData(authResponse.data.user);
-            Alert.alert('Success', 'Logged in with Google!');
+
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'MainApp' }],
+            });
           } else {
             Alert.alert('Error', authResponse.message || 'Google login failed');
           }
@@ -127,6 +132,7 @@ export default function LoginScreen({ navigation }: any) {
               style={{ backgroundColor: colors.secondary }}
               className="rounded-[30px] p-[14px] items-center mt-[8px]"
               onPress={handleLogin}
+              disabled={loading}
             >
               <Text className="text-[#ffffff] text-[18px] font-semibold">Login</Text>
             </TouchableOpacity>
