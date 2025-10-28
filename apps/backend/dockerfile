@@ -1,11 +1,23 @@
+# apps/backend/dockerfile
 FROM node:22
 
-#install pnpm globally
+# Install pnpm globally
 RUN npm i -g pnpm@9.15.9
 
-#Setting app directory
 WORKDIR /app
 
-EXPOSE 4000
+# Copy only necessary files for faster build cache
+COPY ../../pnpm-lock.yaml ../../package.json ../../pnpm-workspace.yaml ./
+RUN pnpm fetch
 
-CMD sh -lc "cd /app && pnpm --version && pnpm install --frozen-lockfile && pnpm --filter ./apps/backend run dev"
+# Copy the monorepo (backend + shared packages)
+COPY ../../ .
+
+# Install deps for the whole workspace (cached on next build)
+RUN pnpm -w install --frozen-lockfile
+
+# Move into backend app
+WORKDIR /app/apps/backend
+
+EXPOSE 4000
+CMD ["pnpm", "run", "dev"]
