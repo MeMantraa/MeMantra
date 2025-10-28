@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import MantraCarousel from '../components/carousel';
 import { mantraService, Mantra } from '../services/mantra.service';
 import { storage } from '../utils/storage';
+import { useLikes } from '../context/LikedMantrasContext';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -19,8 +20,13 @@ export default function HomeScreen({ navigation }: any) {
   const [feedData, setFeedData] = useState<Mantra[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // 👇 Global likes context
+  const { isLiked, likeMantra, unlikeMantra } = useLikes();
+
   useEffect(() => {
     loadMantras();
+    // When like-state changes elsewhere, you could also refresh here if desired.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadMantras = async () => {
@@ -29,7 +35,12 @@ export default function HomeScreen({ navigation }: any) {
       const response = await mantraService.getFeedMantras(token);
 
       if (response.status === 'success') {
-        setFeedData(response.data);
+        // Sync incoming data with current global liked map
+        const withLikes = response.data.map((m) => ({
+          ...m,
+          isLiked: isLiked(m.mantra_id),
+        }));
+        setFeedData(withLikes);
       }
     } catch (err) {
       console.error('Error fetching mantras:', err);
@@ -41,22 +52,43 @@ export default function HomeScreen({ navigation }: any) {
   const handleLike = async (mantraId: number) => {
     try {
       const token = (await storage.getToken()) || 'mock-token';
-      const isCurrentlyLiked = feedData.find((m) => m.mantra_id === mantraId)?.isLiked || false;
+      const target = feedData.find((m) => m.mantra_id === mantraId);
+      if (!target) return;
 
+      const wasLiked = !!target.isLiked;
+
+      // Optimistic UI update on the feed list
       setFeedData((prev) =>
         prev.map((m) => (m.mantra_id === mantraId ? { ...m, isLiked: !m.isLiked } : m)),
       );
 
-      if (isCurrentlyLiked) {
+      // Update global liked context immediately
+      if (wasLiked) {
+        unlikeMantra(mantraId);
         await mantraService.unlikeMantra(mantraId, token);
       } else {
+        likeMantra({ ...target, isLiked: true });
         await mantraService.likeMantra(mantraId, token);
       }
     } catch (err) {
       console.error('Error toggling like:', err);
+
+      // Revert feed UI
       setFeedData((prev) =>
         prev.map((m) => (m.mantra_id === mantraId ? { ...m, isLiked: !m.isLiked } : m)),
       );
+
+      // Best-effort revert of global context (optional but keeps things consistent)
+      const nowLikedInFeed = feedData.find((m) => m.mantra_id === mantraId)?.isLiked;
+      if (nowLikedInFeed) {
+        // it ended up liked -> revert to unlike
+        unlikeMantra(mantraId);
+      } else {
+        // it ended up unliked -> revert to like (need mantra object)
+        const original = feedData.find((m) => m.mantra_id === mantraId);
+        if (original) likeMantra({ ...original, isLiked: true });
+      }
+
       Alert.alert('Error', 'Failed to update like status');
     }
   };
@@ -113,17 +145,8 @@ export default function HomeScreen({ navigation }: any) {
       'Account',
       'Are you sure you want to log out?',
       [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Log out',
-          style: 'destructive',
-          onPress: () => {
-            void handleLogout();
-          },
-        },
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Log out', style: 'destructive', onPress: () => void handleLogout() },
       ],
       { cancelable: true },
     );
