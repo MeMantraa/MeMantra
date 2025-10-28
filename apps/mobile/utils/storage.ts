@@ -31,6 +31,9 @@ export const storage = {
   },
 
   async clearAll(): Promise<void> {
-    await AsyncStorage.multiRemove([AUTH_TOKEN_KEY, USER_DATA_KEY]);
+    await Promise.all([
+      AsyncStorage.removeItem(AUTH_TOKEN_KEY),
+      AsyncStorage.removeItem(USER_DATA_KEY),
+    ]);
   },
 };
