@@ -1,3 +1,27 @@
-#!/usr/bin/env bash
-echo hook ok
-exit 0
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+set -euo pipefail
+
+# Ensure local binaries take precedence regardless of shell setup
+export PATH="$PWD/node_modules/.bin:$PATH"
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "❌ Node.js must be available to run Git hooks."
+  echo "   See README.md for environment setup instructions."
+  exit 127
+fi
+
+run_pnpm() {
+  if command -v pnpm >/dev/null 2>&1; then
+    pnpm "$@"
+  elif command -v corepack >/dev/null 2>&1; then
+    corepack pnpm "$@"
+  else
+    npx --yes pnpm "$@"
+  fi
+}
+
+unset GIT_CONFIG_PARAMETERS
+
+run_pnpm exec lint-staged
