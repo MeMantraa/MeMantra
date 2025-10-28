@@ -7,16 +7,16 @@ services:
     ports:
       - '${API_PORT:-4000}:4000'
     env_file:
-      - .env
+      - ./apps/backend/.env
     environment:
       NODE_ENV: development
       CI: '1'
       HUSKY: '0'
       DB_HOST: db
       DB_PORT: ${DB_PORT:-5432}
-      DB_USER: ${POSTGRES_USER:-postgres}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      DB_NAME: ${POSTGRES_DB:-me_mantra_db}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-me_mantra_db}
       JWT_SECRET: ${JWT_SECRET:-change-me}
       PNPM_HOME: /root/.local/share/pnpm
       PNPM_CONFIG_STORE_DIR: /root/.local/share/pnpm/store
@@ -33,9 +33,9 @@ services:
   db:
     image: postgres:17
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      POSTGRES_DB: ${POSTGRES_DB:-me_mantra_db}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:-postgres}
+      DB_NAME: ${DB_NAME:-me_mantra_db}
     ports:
       - '${DB_PORT:-5432}:5432'
     volumes:
@@ -43,8 +43,7 @@ services:
       # Initialize the database with init script
       - ./apps/backend/database:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test:
-        ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-me_mantra_db}']
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-me_mantra_db}']
       interval: 5s
       timeout: 5s
       retries: 10
