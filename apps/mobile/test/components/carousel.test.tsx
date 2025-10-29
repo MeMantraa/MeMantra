@@ -4,32 +4,33 @@ import { View, FlatList } from 'react-native';
 import MantraCarousel from '../../components/carousel';
 import type { Mantra } from '../../services/mantra.service';
 
-declare var require: any;
+jest.mock('../../components/UI/saveButton', () => {
+  const ReactActual = jest.requireActual('react');
+  const RN = jest.requireActual('react-native');
+  return {
+    __esModule: true,
+    default: (props: any) =>
+      ReactActual.createElement(
+        RN.TouchableOpacity,
+        { testID: 'save-button', onPress: props.onPress, accessible: true },
+        ReactActual.createElement(RN.Text, null, 'Save'),
+      ),
+  };
+});
 
-// Mock SaveButton
-jest.mock('../../components/UI/saveButton', () =>
-  jest.fn((props) => {
-    const _React = require('react');
-    const { TouchableOpacity, Text } = require('react-native');
-    return (
-      <TouchableOpacity testID="save-button" onPress={props.onPress}>
-        <Text>Save</Text>
-      </TouchableOpacity>
-    );
-  }),
-);
-
-jest.mock('../../components/UI/likeButton', () =>
-  jest.fn((props) => {
-    const _React = require('react');
-    const { TouchableOpacity, Text } = require('react-native');
-    return (
-      <TouchableOpacity testID="like-button" onPress={props.onPress}>
-        <Text>Like</Text>
-      </TouchableOpacity>
-    );
-  }),
-);
+jest.mock('../../components/UI/likeButton', () => {
+  const ReactActual = jest.requireActual('react');
+  const RN = jest.requireActual('react-native');
+  return {
+    __esModule: true,
+    default: (props: any) =>
+      ReactActual.createElement(
+        RN.TouchableOpacity,
+        { testID: 'like-button', onPress: props.onPress, accessible: true },
+        ReactActual.createElement(RN.Text, null, 'Like'),
+      ),
+  };
+});
 
 describe('MantraCarousel', () => {
   const mockItem: Mantra = {
@@ -81,8 +82,8 @@ describe('MantraCarousel', () => {
       <MantraCarousel item={mockItem} onLike={onLike} onSave={onSave} />,
     );
 
-    fireEvent(getByTestId('like-button'), 'click');
-    fireEvent(getByTestId('save-button'), 'click');
+    fireEvent.press(getByTestId('like-button'));
+    fireEvent.press(getByTestId('save-button'));
 
     expect(onLike).toHaveBeenCalledWith(mockItem.mantra_id);
     expect(onSave).toHaveBeenCalledWith(mockItem.mantra_id);
@@ -123,6 +124,7 @@ describe('MantraCarousel', () => {
 
   it('does not call onLike or onSave when callbacks are not provided', () => {
     const { getByTestId } = render(<MantraCarousel item={mockItem} />);
+    // pressing mock buttons should be safe even if callbacks are undefined
     fireEvent.press(getByTestId('like-button'));
     fireEvent.press(getByTestId('save-button'));
   });
