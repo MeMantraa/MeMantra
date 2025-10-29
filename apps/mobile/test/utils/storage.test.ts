@@ -52,4 +52,13 @@ describe('storage utility', () => {
     await storage.clearAll();
     expect(mockMultiRemove).toHaveBeenCalledWith(['@auth_token', '@user_data']);
   });
+
+  it('returns null if no user data is stored', async () => {
+    mockGetItem.mockResolvedValueOnce(null);
+
+    const result = await storage.getUserData();
+
+    expect(mockGetItem).toHaveBeenCalledWith('@user_data');
+    expect(result).toBeNull();
+  });
 });

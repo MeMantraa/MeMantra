@@ -291,4 +291,138 @@ describe('HomeScreen - Full Coverage', () => {
       (storage as any).saveUserData = originalSaveUserData;
     }
   });
+
+  it('uses fallback token when getToken returns null', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue(null);
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [],
+    });
+
+    const { getByText } = setup();
+
+    await waitFor(() => {
+      expect(mantraService.getFeedMantras).toHaveBeenCalledWith('mock-token');
+    });
+  });
+
+  it('uses fallback token and likes a mantra not previously liked', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue(null);
+    const sample = [{ mantra_id: 20, title: 'LikeTest', isLiked: false, isSaved: false }];
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: sample,
+    });
+    (mantraService.likeMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+
+    const { getByTestId } = setup();
+
+    await waitFor(() => getByTestId('like-20'));
+
+    fireEvent.press(getByTestId('like-20'));
+
+    await waitFor(() => {
+      expect(mantraService.likeMantra).toHaveBeenCalledWith(20, 'mock-token');
+    });
+  });
+
+  it('unlikes a mantra already liked', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue(null);
+    const sample = [{ mantra_id: 21, title: 'UnlikeTest', isLiked: true, isSaved: false }];
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: sample,
+    });
+    (mantraService.unlikeMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+
+    const { getByTestId } = setup();
+
+    await waitFor(() => getByTestId('like-21'));
+
+    fireEvent.press(getByTestId('like-21'));
+
+    await waitFor(() => {
+      expect(mantraService.unlikeMantra).toHaveBeenCalledWith(21, 'mock-token');
+    });
+  });
+
+  it('reverts isLiked state and shows alert if likeMantra fails', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token-error');
+    const sample = [{ mantra_id: 22, title: 'LikeFail', isLiked: false, isSaved: false }];
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: sample,
+    });
+    (mantraService.likeMantra as jest.Mock).mockRejectedValue(new Error('fail'));
+
+    const { getByTestId } = setup();
+
+    await waitFor(() => getByTestId('like-22'));
+
+    fireEvent.press(getByTestId('like-22'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to update like status');
+    });
+  });
+
+  it('uses fallback token and saves a mantra not previously saved', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue(null);
+    const sample = [{ mantra_id: 30, title: 'SaveTest', isLiked: false, isSaved: false }];
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: sample,
+    });
+    (mantraService.saveMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+
+    const { getByTestId } = setup();
+
+    await waitFor(() => getByTestId('save-30'));
+
+    fireEvent.press(getByTestId('save-30'));
+
+    await waitFor(() => {
+      expect(mantraService.saveMantra).toHaveBeenCalledWith(30, 'mock-token');
+    });
+  });
+
+  it('unsaves a mantra already saved', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue(null);
+    const sample = [{ mantra_id: 31, title: 'UnsaveTest', isLiked: false, isSaved: true }];
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: sample,
+    });
+    (mantraService.unsaveMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+
+    const { getByTestId } = setup();
+
+    await waitFor(() => getByTestId('save-31'));
+
+    fireEvent.press(getByTestId('save-31'));
+
+    await waitFor(() => {
+      expect(mantraService.unsaveMantra).toHaveBeenCalledWith(31, 'mock-token');
+    });
+  });
+
+  it('reverts isSaved state and shows alert if saveMantra fails', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token-error');
+    const sample = [{ mantra_id: 32, title: 'SaveFail', isLiked: false, isSaved: false }];
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: sample,
+    });
+    (mantraService.saveMantra as jest.Mock).mockRejectedValue(new Error('fail'));
+
+    const { getByTestId } = setup();
+
+    await waitFor(() => getByTestId('save-32'));
+
+    fireEvent.press(getByTestId('save-32'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to update save status');
+    });
+  });
 });
