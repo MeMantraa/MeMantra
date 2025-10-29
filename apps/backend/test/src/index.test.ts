@@ -29,10 +29,10 @@ describe('Server', () => {
 
     expect(mockedCreateApp).toHaveBeenCalled();
     expect(listenMock).toHaveBeenCalledWith(
-      4000,
+      '4000',
       expect.any(Function)
     );
   });
-  
+
 });
 
