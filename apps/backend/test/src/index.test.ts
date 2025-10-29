@@ -41,7 +41,7 @@ describe('Server', () => {
     });
 
     expect(listenMock).toHaveBeenCalledWith(
-      '3000',
+      3000,
       expect.any(Function)
     );
   });
