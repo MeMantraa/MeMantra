@@ -2,25 +2,37 @@ import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { View, FlatList } from 'react-native';
 import MantraCarousel from '../../components/carousel';
+import type { Mantra } from '../../services/mantra.service';
 
+declare var require: any;
+
+// Mock SaveButton
 jest.mock('../../components/UI/saveButton', () =>
-  jest.fn(({ onPress }) => (
-    <button testID="save-button" onClick={onPress}>
-      Save
-    </button>
-  )),
+  jest.fn((props) => {
+    const _React = require('react');
+    const { TouchableOpacity, Text } = require('react-native');
+    return (
+      <TouchableOpacity testID="save-button" onPress={props.onPress}>
+        <Text>Save</Text>
+      </TouchableOpacity>
+    );
+  }),
 );
 
 jest.mock('../../components/UI/likeButton', () =>
-  jest.fn(({ onPress }) => (
-    <button testID="like-button" onClick={onPress}>
-      Like
-    </button>
-  )),
+  jest.fn((props) => {
+    const _React = require('react');
+    const { TouchableOpacity, Text } = require('react-native');
+    return (
+      <TouchableOpacity testID="like-button" onPress={props.onPress}>
+        <Text>Like</Text>
+      </TouchableOpacity>
+    );
+  }),
 );
 
 describe('MantraCarousel', () => {
-  const mockItem = {
+  const mockItem: Mantra = {
     mantra_id: 1,
     title: 'Be present',
     key_takeaway: 'Focus on the moment',
@@ -33,6 +45,8 @@ describe('MantraCarousel', () => {
     references: 'Reference text',
     isLiked: true,
     isSaved: false,
+    created_at: new Date().toISOString(),
+    is_active: true,
   };
 
   it('renders mantra title and all valid pages', () => {
@@ -50,7 +64,6 @@ describe('MantraCarousel', () => {
 
   it('renders correct number of carousel dots', () => {
     const { UNSAFE_getAllByType } = render(<MantraCarousel item={mockItem} />);
-
     const dots = UNSAFE_getAllByType(View).filter(
       (v) =>
         typeof v.props.className === 'string' &&
@@ -68,16 +81,25 @@ describe('MantraCarousel', () => {
       <MantraCarousel item={mockItem} onLike={onLike} onSave={onSave} />,
     );
 
-    fireEvent.press(getByTestId('like-button'));
-    fireEvent.press(getByTestId('save-button'));
+    fireEvent(getByTestId('like-button'), 'click');
+    fireEvent(getByTestId('save-button'), 'click');
 
     expect(onLike).toHaveBeenCalledWith(mockItem.mantra_id);
     expect(onSave).toHaveBeenCalledWith(mockItem.mantra_id);
   });
 
   it('handles missing optional fields gracefully', () => {
-    const minimalItem = { mantra_id: 2, title: 'Stay calm', key_takeaway: 'Breathe deeply' };
-    const { getByText, queryByText } = render(<MantraCarousel item={minimalItem as any} />);
+    const minimalItem = {
+      mantra_id: 2,
+      title: 'Stay calm',
+      key_takeaway: 'Breathe deeply',
+      created_at: new Date().toISOString(),
+      is_active: true,
+      isLiked: false,
+      isSaved: false,
+    } as Mantra;
+
+    const { getByText, queryByText } = render(<MantraCarousel item={minimalItem} />);
 
     expect(getByText('Stay calm')).toBeTruthy();
     expect(getByText('Key Takeaway')).toBeTruthy();
