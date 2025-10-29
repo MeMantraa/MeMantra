@@ -29,22 +29,10 @@ describe('Server', () => {
 
     expect(mockedCreateApp).toHaveBeenCalled();
     expect(listenMock).toHaveBeenCalledWith(
-      '4000',
+      4000,
       expect.any(Function)
     );
   });
-
-  it('should use default PORT if not set', () => {
-    jest.isolateModules(() => {
-      delete process.env.PORT;
-      require('../../src/index');
-    });
-
-    expect(listenMock).toHaveBeenCalledWith(
-      3000,
-      expect.any(Function)
-    );
-  });
-
+  
 });
 

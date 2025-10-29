@@ -124,7 +124,7 @@ describe('MantraCarousel', () => {
 
   it('does not call onLike or onSave when callbacks are not provided', () => {
     const { getByTestId } = render(<MantraCarousel item={mockItem} />);
-    // pressing mock buttons should be safe even if callbacks are undefined
+
     fireEvent.press(getByTestId('like-button'));
     fireEvent.press(getByTestId('save-button'));
   });
