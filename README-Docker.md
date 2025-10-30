@@ -47,6 +47,17 @@
    ```bash
    docker compose --profile pgadmin up -d
    ```
+   - Server mode is enabled. Login with the credentials in `apps/backend/.env` (`PGADMIN_DEFAULT_EMAIL`, `PGADMIN_DEFAULT_PASSWORD`). If you previously ran pgAdmin in desktop mode, remove the old volume once so it re‑initializes:
+     ```bash
+     docker compose --profile pgadmin down -v
+     docker compose --profile pgadmin up -d
+     ```
+   - After login, register a server with:
+     - Host: `db`
+     - Port: `5432`
+     - Database: value of `POSTGRES_DB`
+     - Username: value of `POSTGRES_USER`
+     - Password: value of `POSTGRES_PASSWORD`
 4. **Verify everything is running:**
 
    ```bash
