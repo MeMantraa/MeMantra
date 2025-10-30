@@ -5,7 +5,7 @@ services:
       dockerfile: ./apps/backend/dockerfile
     working_dir: /app/apps/backend
     ports:
-      - '${API_PORT:-4000}:4000'
+      - '${API_PORT:-4000}:3000'
     env_file:
       - ./apps/backend/.env
     environment:
@@ -38,9 +38,10 @@ services:
   db:
     image: postgres:17
     environment:
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      DB_NAME: ${DB_NAME:-me_mantra_db}
+      # Source DB_* vars to control Postgres, keeping image-required POSTGRES_* keys
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-me_mantra_db}
     ports:
       - '${DB_PORT:-5432}:5432'
     volumes:

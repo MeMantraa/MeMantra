@@ -7,6 +7,5 @@ RUN npm i -g pnpm@9.15.0
 # Work from backend app directory (code is bind-mounted at runtime)
 WORKDIR /app/apps/backend
 
-EXPOSE 4000
+EXPOSE 3000
 CMD ["pnpm", "run", "dev"]
-

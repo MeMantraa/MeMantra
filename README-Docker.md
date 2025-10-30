@@ -49,9 +49,9 @@
 
    - You Should see:
    - postgres:17 Up (healthy) 0.0.0.0:5432->5432/tcp
-   - dpage/pgadmin4:8 Up 0.0.0.0:5050->80/tcp
+   - dpage/pgadmin4:8 Up 0.0.0.0:5051->80/tcp
 
-   - If using pgAdmin, open (http://localhost:5050), and follow the next steps.
+   - If using pgAdmin, open (http://localhost:5051), and follow the next steps.
 
 5. **Connecting in PGAdmin**
    - Once inside pgAdmin:
