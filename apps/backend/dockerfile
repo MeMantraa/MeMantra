@@ -1,23 +1,12 @@
 # apps/backend/dockerfile
-FROM node:22
+FROM node:22-bookworm-slim
 
 # Install pnpm globally
-RUN npm i -g pnpm@9.15.9
+RUN npm i -g pnpm@9.15.0
 
-WORKDIR /app
-
-# Copy only necessary files for faster build cache
-COPY ../../pnpm-lock.yaml ../../package.json ../../pnpm-workspace.yaml ./
-RUN pnpm fetch
-
-# Copy the monorepo (backend + shared packages)
-COPY ../../ .
-
-# Install deps for the whole workspace (cached on next build)
-RUN pnpm -w install --frozen-lockfile
-
-# Move into backend app
+# Work from backend app directory (code is bind-mounted at runtime)
 WORKDIR /app/apps/backend
 
 EXPOSE 4000
 CMD ["pnpm", "run", "dev"]
+

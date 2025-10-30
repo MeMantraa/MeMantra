@@ -35,6 +35,8 @@
    docker compose up -d
    ```
 
+   - On first run, the backend container installs only backend workspace dependencies inside Docker volumes (not on your host). The pnpm store is bind-mounted to `./.pnpm-store` to keep Docker VM usage low on macOS/Windows.
+
 3. **(Optional) Start PGAdmin in your browser**
    ```bash
    docker compose --profile pgadmin up -d
@@ -82,6 +84,20 @@
    docker compose down -v
    docker compose up -d
    ```
+
+8. **Reclaiming Space (safe housekeeping)**
+   - Remove unused images/containers/networks:
+     ```bash
+     docker system prune -af
+     ```
+   - Remove unused volumes (clears DB and node_modules volumes):
+     ```bash
+     docker volume prune -f
+     ```
+   - Clear build cache:
+     ```bash
+     docker builder prune -af
+     ```
 
 7. **(NOT FUNCTIONAL YET) Run Tests inside Container**
    ```bash

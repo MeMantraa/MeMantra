@@ -20,11 +20,16 @@ services:
       JWT_SECRET: ${JWT_SECRET:-change-me}
       PNPM_HOME: /root/.local/share/pnpm
       PNPM_CONFIG_STORE_DIR: /root/.local/share/pnpm/store
+    entrypoint: ['/bin/sh', '-lc']
+    command:
+      [
+        'pnpm --version && pnpm -w install --frozen-lockfile --filter ./apps/backend... && pnpm run dev',
+      ]
     volumes:
       - .:/app:delegated
       - root_node_modules:/app/node_modules
       - backend_node_modules:/app/apps/backend/node_modules
-      - pnpm_store:/root/.local/share/pnpm/store
+      - ./.pnpm-store:/root/.local/share/pnpm/store
     depends_on:
       db:
         condition: service_healthy
@@ -73,7 +78,7 @@ services:
     # bind-mount the repo so tests run on your code without building an image
     volumes:
       - .:/app
-      - pnpm_store:/root/.pnpm-store
+      - ./.pnpm-store:/root/.pnpm-store
     environment:
       CI: 'true'
     entrypoint: ['/bin/sh', '-lc']
@@ -86,6 +91,5 @@ services:
 volumes:
   postgres_data:
   pgadmin_data:
-  pnpm_store:
   root_node_modules:
   backend_node_modules:
