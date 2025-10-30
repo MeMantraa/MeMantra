@@ -16,9 +16,10 @@ services:
       PNPM_HOME: /root/.local/share/pnpm
       PNPM_CONFIG_STORE_DIR: /root/.local/share/pnpm/store
     entrypoint: [ '/bin/sh', '-lc' ]
-    command: [ 'pnpm --version && pnpm fetch --prefer-offline || true && if [ ! -x /app/apps/backend/node_modules/.bin/nodemon ]; then echo "Installing backend deps (missing nodemon)…"; pnpm -w install --frozen-lockfile --prefer-offline --no-optional --filter backend...; else echo "Deps present, skipping install"; fi && pnpm run dev' ]
+    command: [ 'pnpm --version && pnpm fetch --prefer-offline || true && if [ ! -x node_modules/.bin/nodemon ]; then echo "Installing backend deps (filtered by name)…"; pnpm -w install --frozen-lockfile --prefer-offline --no-optional --filter backend...; else echo "Deps present, skipping install"; fi && pnpm run dev' ]
     volumes:
       - .:/app:delegated
+      - root_node_modules:/app/node_modules
       - backend_node_modules:/app/apps/backend/node_modules
       - pnpm_store:/root/.local/share/pnpm/store
     logging:
@@ -52,7 +53,6 @@ services:
   #run with docker compose --profile pgadmin up -d pgadmin
   pgadmin:
     image: dpage/pgadmin4:8
-    container_name: memantra_pgadmin_${DEV_TAG:-local}
     restart: unless-stopped
     env_file:
       - ./apps/backend/.env
@@ -83,5 +83,9 @@ services:
 volumes:
   postgres_data:
   pgadmin_data:
+  root_node_modules:
   backend_node_modules:
   pnpm_store:
+networks:
+  default:
+    name: memantra_default
