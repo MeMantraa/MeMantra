@@ -20,10 +20,15 @@
    ```
 
    - Make sure these are set:
-   - POSTGRES_USER=postgres (Change from default)
-   - POSTGRES_PASSWORD=postgres (Change from default)
-   - POSTGRES_DB=me_mantra_db (keep as is)
-   - DB_PORT=5432 (keep as is)
+   - In `apps/backend/.env` (single source of truth used by both API and DB):
+     - DB_HOST=db (Compose overrides this for the container)
+     - DB_PORT=5432
+     - DB_NAME=me_mantra_db
+     - DB_USER=postgres
+     - DB_PASSWORD=postgres
+     - POSTGRES_USER=postgres
+     - POSTGRES_PASSWORD=postgres
+     - POSTGRES_DB=me_mantra_db
 
    - pgAdmin (optional):
    - PGADMIN_DEFAULT_EMAIL=admin@example.com (Change from default)
@@ -36,6 +41,7 @@
    ```
 
    - On first run, the backend container installs only backend workspace dependencies inside Docker volumes (not on your host). The pnpm store is bind-mounted to `./.pnpm-store` to keep Docker VM usage low on macOS/Windows.
+   - The Postgres container reads `POSTGRES_*` from `apps/backend/.env`. If you later change these, remove the DB volume to reinitialize: `docker compose down -v`.
 
 3. **(Optional) Start PGAdmin in your browser**
    ```bash

@@ -13,17 +13,12 @@ services:
       CI: '1'
       HUSKY: '0'
       DB_HOST: db
-      DB_PORT: ${DB_PORT:-5432}
-      DB_USER: ${DB_USER:-postgres}
-      DB_PASSWORD: ${DB_PASSWORD:-postgres}
-      DB_NAME: ${DB_NAME:-me_mantra_db}
-      JWT_SECRET: ${JWT_SECRET:-change-me}
       PNPM_HOME: /root/.local/share/pnpm
       PNPM_CONFIG_STORE_DIR: /root/.local/share/pnpm/store
     entrypoint: ['/bin/sh', '-lc']
     command:
       [
-        'pnpm --version && pnpm -w install --frozen-lockfile --filter ./apps/backend... && pnpm run dev',
+        'pnpm --version && pnpm -w install --frozen-lockfile --filter backend... && pnpm run dev',
       ]
     volumes:
       - .:/app:delegated
@@ -37,11 +32,9 @@ services:
   #runs local, containerized db
   db:
     image: postgres:17
-    environment:
-      # Source DB_* vars to control Postgres, keeping image-required POSTGRES_* keys
-      POSTGRES_USER: ${DB_USER:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
-      POSTGRES_DB: ${DB_NAME:-me_mantra_db}
+    env_file:
+      - ./apps/backend/.env
+    environment: {}
     ports:
       - '${DB_PORT:-5432}:5432'
     volumes:
@@ -49,7 +42,7 @@ services:
       # Initialize the database with init script
       - ./apps/backend/database:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-me_mantra_db}']
+      test: ['CMD-SHELL', 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"']
       interval: 5s
       timeout: 5s
       retries: 10
