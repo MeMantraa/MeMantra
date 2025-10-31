@@ -19,5 +19,6 @@ module.exports = {
     '!<rootDir>/**/jest.setup.js',
     '!<rootDir>/**/tailwind.config.js',
     '!<rootDir>/**/babel.config.js',
+    '!<rootDir>/**/sentry/**',
   ],
 };

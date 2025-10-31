@@ -351,7 +351,6 @@ describe('AuthController', () => {
         .post('/google-auth')
         .send({ idToken: 'errortoken' });
 
-      // Controller treats verification errors as invalid token (400)
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
         status: 'error',
@@ -359,4 +358,132 @@ describe('AuthController', () => {
       });
     });
   });
+
+  it('should handle unexpected errors during Google auth and return 500', async () => {
+  const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+  mockVerifyIdToken.mockResolvedValue({
+    getPayload: () => ({ email: 'test@google.com', name: 'Test User', sub: 'googleid123' }),
+  });
+
+  (UserModel.findByEmail as jest.Mock).mockRejectedValue(new Error('DB failure'));
+
+  const res = await request(app)
+    .post('/google-auth')
+    .send({ idToken: 'validtoken' });
+
+  expect(res.status).toBe(500);
+  expect(res.body).toMatchObject({
+    status: 'error',
+    message: 'Error during Google authentication',
+  });
+  expect(consoleErrorSpy).toHaveBeenCalledWith(
+    'Google auth error:',
+    expect.any(Error)
+  );
+
+  consoleErrorSpy.mockRestore();
+});
+
+it('should generate token with empty email if newUser.email is missing', async () => {
+  (UserModel.findByEmail as jest.Mock).mockResolvedValue(null);
+  (UserModel.findByUsername as jest.Mock).mockResolvedValue(null);
+  (UserModel.create as jest.Mock).mockResolvedValue({
+    user_id: 10,
+    username: 'userNoEmail',
+    email: undefined,
+  });
+  (jwtUtils.generateToken as jest.Mock).mockReturnValue('jwt-token');
+
+  const res = await request(app)
+    .post('/register')
+    .send({ username: 'userNoEmail', email: '', password: 'pass1234' });
+
+  expect(res.status).toBe(201);
+  expect(res.body.data.token).toBe('jwt-token');
+
+  expect(jwtUtils.generateToken).toHaveBeenCalledWith({
+    userId: 10,
+    email: '', 
+  });
+});
+
+it('should generate username from email if name is missing', async () => {
+  mockVerifyIdToken.mockResolvedValue({
+    getPayload: () => ({
+      email: 'testemail@domain.com',
+      name: undefined,
+      sub: 'googleid789',
+    }),
+  });
+  (UserModel.findByEmail as jest.Mock).mockResolvedValue(null);
+  (bcrypt.hash as jest.Mock).mockResolvedValue('hashedpw');
+  (UserModel.create as jest.Mock).mockImplementation((userData) => Promise.resolve(userData));
+  (jwtUtils.generateToken as jest.Mock).mockReturnValue('jwt-token');
+
+  const res = await request(app)
+    .post('/google-auth')
+    .send({ idToken: 'validtoken' });
+
+  expect(res.status).toBe(200);
+
+  expect(res.body.data.user.username).toBe('testemail');
+});
+
+it('should generate token with empty email if existing user has no email', async () => {
+  mockVerifyIdToken.mockResolvedValue({
+    getPayload: () => ({
+      email: 'someemail@domain.com',
+      name: 'User Name',
+      sub: 'googleid999',
+    }),
+  });
+  (UserModel.findByEmail as jest.Mock).mockResolvedValue({
+    user_id: 20,
+    username: 'existingUser',
+    email: undefined, 
+  });
+  (jwtUtils.generateToken as jest.Mock).mockReturnValue('jwt-token');
+
+  
+  const res = await request(app)
+    .post('/google-auth')
+    .send({ idToken: 'validtoken' });
+
+  expect(res.status).toBe(200);
+  expect(jwtUtils.generateToken).toHaveBeenCalledWith({
+    userId: 20,
+    email: '', 
+  });
+});
+
+it('should generate token with empty email if user.email is missing on login', async () => {
+  (UserModel.findByEmail as jest.Mock).mockResolvedValue({
+    user_id: 42,
+    username: 'userNoEmail',
+    email: undefined,    
+    password_hash: 'hashedpass',
+  });
+
+  (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+  (jwtUtils.generateToken as jest.Mock).mockReturnValue('jwt-token');
+
+  const res = await request(app)
+    .post('/login')
+    .send({ email: 'user@example.com', password: 'correctpass' });
+
+  expect(res.status).toBe(200);
+  expect(res.body.status).toBe('success');
+  expect(res.body.message).toBe('Login successful');
+  expect(res.body.data.token).toBe('jwt-token');
+
+  expect(res.body.data.user.user_id).toBe(42);
+  expect(res.body.data.user.username).toBe('userNoEmail');
+
+  expect(jwtUtils.generateToken).toHaveBeenCalledWith({
+    userId: 42,
+    email: '',
+  });
+});
+
 });
