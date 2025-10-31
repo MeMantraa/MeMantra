@@ -2,32 +2,30 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+
 import HomeScreen from '../screens/homeScreen';
+import LikedScreen from '../screens/likedScreen'; // real liked screen
 
 const Tab = createBottomTabNavigator();
 
-// icons def
+// icons
 const LibraryIcon = ({ color }: { color: string }) => (
   <Ionicons name="bookmark-outline" size={28} color={color} />
 );
-
 const HomeIcon = ({ color }: { color: string }) => (
   <Ionicons name="home-outline" size={28} color={color} />
 );
-
 const LikedIcon = ({ color }: { color: string }) => (
   <Ionicons name="heart-outline" size={28} color={color} />
 );
 
-// options def
+// screen options
 const libraryOptions = {
   tabBarIcon: ({ color }: { color: string }) => <LibraryIcon color={color} />,
 };
-
 const homeOptions = {
   tabBarIcon: ({ color }: { color: string }) => <HomeIcon color={color} />,
 };
-
 const likedOptions = {
   tabBarIcon: ({ color }: { color: string }) => <LikedIcon color={color} />,
 };
@@ -51,19 +49,11 @@ export default function BottomTabNavigator() {
   );
 }
 
-// Placeholder screens
+// Temporary placeholder for Library (replace with your real screen when ready)
 function LibraryScreen() {
   return (
     <View style={styles.screenContainer}>
       <Text>Library Screen</Text>
-    </View>
-  );
-}
-
-function LikedScreen() {
-  return (
-    <View style={styles.screenContainer}>
-      <Text>Liked Screen</Text>
     </View>
   );
 }

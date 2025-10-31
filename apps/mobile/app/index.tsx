@@ -2,9 +2,10 @@ import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { ThemeProvider } from '../context/ThemeContext';
+import { LikesProvider } from '../context/LikedMantrasContext';
 import { storage } from '../utils/storage';
 
-// Import your screens
+// Screens
 import Login from '../screens/login';
 import Signup from '../screens/SignUp';
 import BottomTabNavigator from '../components/bottomTabNavigator';
@@ -28,36 +29,44 @@ export default function MainNavigator() {
     checkAuth();
   }, []);
 
+  // Show loading spinner while checking token
   if (isLoggedIn === null) {
     return (
       <ThemeProvider>
-        <View
-          style={{
-            flex: 1,
-            justifyContent: 'center',
-            alignItems: 'center',
-            backgroundColor: '#ffffff',
-          }}
-        >
-          <ActivityIndicator size="large" color="#6D7E68" testID="loading-indicator" />
-        </View>
+        <LikesProvider>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: '#ffffff',
+            }}
+          >
+            <ActivityIndicator size="large" color="#6D7E68" testID="loading-indicator" />
+          </View>
+        </LikesProvider>
       </ThemeProvider>
     );
   }
 
+  // Once auth is known, render navigation
   return (
     <ThemeProvider>
-      <Stack.Navigator
-        initialRouteName={isLoggedIn ? 'MainApp' : 'Login'}
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
-        {/* Always register MainApp so Login can navigate to it */}
-        <Stack.Screen name="MainApp" component={BottomTabNavigator} />
-        <Stack.Screen name="Login" component={Login} options={{ headerTitle: 'Login' }} />
-        <Stack.Screen name="Signup" component={Signup} options={{ headerTitle: 'Signup' }} />
-      </Stack.Navigator>
+      <LikesProvider>
+        <Stack.Navigator
+          initialRouteName={isLoggedIn ? 'MainApp' : 'Login'}
+          screenOptions={{
+            headerShown: false,
+          }}
+        >
+          {/* Main tab navigation (Home, Liked, etc.) */}
+          <Stack.Screen name="MainApp" component={BottomTabNavigator} />
+
+          {/* Auth screens */}
+          <Stack.Screen name="Login" component={Login} options={{ headerTitle: 'Login' }} />
+          <Stack.Screen name="Signup" component={Signup} options={{ headerTitle: 'Signup' }} />
+        </Stack.Navigator>
+      </LikesProvider>
     </ThemeProvider>
   );
 }
