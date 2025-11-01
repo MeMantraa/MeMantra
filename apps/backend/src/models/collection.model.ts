@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { Collection, NewCollection, CollectionUpdate } from '../types/database.types';
+import { Collection, CollectionUpdate } from '../types/database.types';
 import { Mantra } from '../types/database.types';
 
 export const CollectionModel = {
