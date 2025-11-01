@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { Like, NewLike } from '../types/database.types';
+import { Like } from '../types/database.types';
 import { Mantra } from '../types/database.types';
 
 export const LikeModel = {
