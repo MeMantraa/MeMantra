@@ -80,4 +80,29 @@ it("when the token is invalid, it should return 401", async () => {
 
   });
 
+  it("should return 401 with 'Authentication failed' if verifyToken throws", async () => {
+
+  req.headers = { authorization: 'Bearer sometoken' };
+
+  (verifyToken as jest.Mock).mockImplementation(() => {
+
+    throw new Error('Token parse error');
+
+  });
+
+  await authenticate(req as Request, res as Response, next);
+
+  expect(res.status).toHaveBeenCalledWith(401);
+
+  expect(res.json).toHaveBeenCalledWith({
+
+    status: 'error',
+    message: 'Authentication failed',
+
+  });
+
+  expect(next).not.toHaveBeenCalled();
+
+});
+
 });

@@ -16,7 +16,7 @@
     "dev": "expo start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "jest"
+    "test": "jest --coverage"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
