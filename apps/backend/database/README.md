@@ -1,5 +1,54 @@
-## Prerequisites
+# Database Setup Guide
 
+## Shared Hosted Database (Neon PostgreSQL)
+
+We've migrated the local database to use a shared hosted PostgreSQL (Neon) instance.
+
+### Connection Details
+
+Add this to your `.env` file (in the `apps/backend/` folder):
+
+```env
+DATABASE_URL=postgresql://neondb_owner:YOURPASSWORD@ep-lucky-poetry-ahqok66j-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+```
+
+**Replace `YOURPASSWORD` with the password provided by Aman.**
+
+### Configuration Notes
+
+Follow the guide from `env.example` to uncomment the local DB section and update your `.env` accordingly.
+
+### Verify Connection
+
+To verify and test the connection (be inside your backend folder):
+
+```bash
+npx tsx src/config/db.config.ts
+```
+
+You should see: `Connected to Neon DB successfully!`
+
+### Usage
+
+Use the model functions inside `apps/backend/src/models` to interact with the database.
+
+**Example:** Check `seed.ts` for how to create users, insert mantras, and validate the seeded data.
+
+
+### For an Easy Interface (UI) to check the database and manage:
+
+You can manage the Neon DB through:
+
+- **Neon Web UI**
+- **pgAdmin** (using the same connection URL)
+
+Credentials and details will be shared privately along with the password.
+
+---
+
+## Local PostgreSQL Setup (Older Version)
+
+Credentials and login details will be shared privately along with the password.
 1. **Install PostgreSQL**
    - Download PostgreSQL from [official website](https://www.postgresql.org/download/)
    - During installation:
