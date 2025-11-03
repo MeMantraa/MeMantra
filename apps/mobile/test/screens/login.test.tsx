@@ -41,6 +41,10 @@ jest.mock('../../context/ThemeContext', () => ({
 jest.spyOn(Alert, 'alert');
 
 const mockNavigate = jest.fn();
+const mockReset = jest.fn();
+const mockNavigation = { navigate: mockNavigate, reset: mockReset };
+
+const setup = () => render(<LoginScreen navigation={mockNavigation} />);
 
 describe('LoginScreen', () => {
   beforeEach(() => {
