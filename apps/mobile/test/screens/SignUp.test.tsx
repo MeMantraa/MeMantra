@@ -43,14 +43,14 @@ jest.mock('../../context/ThemeContext', () => ({
 jest.spyOn(Alert, 'alert');
 
 const mockNavigate = jest.fn();
-
+const mockReset = jest.fn();
 describe('SignUpScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   const setup = () => {
-    return render(<SignUpScreen navigation={{ navigate: mockNavigate }} />);
+    return render(<SignUpScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />);
   };
 
   it('renders all input fields and buttons', () => {
@@ -202,7 +202,9 @@ describe('SignUpScreen', () => {
       promptAsync: mockPromptAsync,
     });
 
-    const { getByText } = render(<SignUpScreen navigation={{ navigate: jest.fn() }} />);
+    const { getByText } = render(
+      <SignUpScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />,
+    );
 
     fireEvent.press(getByText(/Sign Up with Google/i));
 
@@ -228,9 +230,11 @@ describe('SignUpScreen', () => {
       message: 'Google login failed',
     });
 
-    const { rerender } = render(<SignUpScreen navigation={{ navigate: jest.fn() }} />);
+    const { rerender } = render(
+      <SignUpScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />,
+    );
 
-    rerender(<SignUpScreen navigation={{ navigate: jest.fn() }} />);
+    rerender(<SignUpScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />);
 
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'Google login failed');
@@ -246,7 +250,7 @@ describe('SignUpScreen', () => {
       promptAsync: jest.fn(),
     });
 
-    render(<SignUpScreen navigation={{ navigate: jest.fn() }} />);
+    render(<SignUpScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />);
 
     await waitFor(() => expect(Alert.alert).not.toHaveBeenCalled());
   });
@@ -271,7 +275,7 @@ describe('SignUpScreen', () => {
       },
     });
 
-    render(<SignUpScreen navigation={{ navigate: jest.fn() }} />);
+    render(<SignUpScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />);
 
     await waitFor(() => {
       expect(storage.saveToken).toHaveBeenCalledWith('google-token');
@@ -296,7 +300,7 @@ describe('SignUpScreen', () => {
 
     (authService.googleAuth as jest.Mock).mockRejectedValue(new Error('Something went wrong'));
 
-    render(<SignUpScreen navigation={{ navigate: jest.fn() }} />);
+    render(<SignUpScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />);
 
     await waitFor(() => {
       expect(consoleErrorSpy).toHaveBeenCalledWith('Google auth error:', expect.any(Error));
@@ -321,7 +325,7 @@ describe('SignUpScreen', () => {
       message: '',
     });
 
-    render(<SignUpScreen navigation={{ navigate: jest.fn() }} />);
+    render(<SignUpScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />);
 
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'Google login failed');

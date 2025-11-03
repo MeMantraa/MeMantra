@@ -52,7 +52,7 @@ describe('LoginScreen', () => {
   });
 
   const setup = () => {
-    return render(<LoginScreen navigation={{ navigate: mockNavigate }} />);
+    return render(<LoginScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />);
   };
 
   it('renders inputs and buttons', () => {
