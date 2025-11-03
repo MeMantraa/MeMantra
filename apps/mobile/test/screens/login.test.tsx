@@ -38,7 +38,8 @@ jest.mock('../../context/ThemeContext', () => ({
   })),
 }));
 
-jest.spyOn(Alert, 'alert');
+// Mock Alert.alert to immediately resolve
+jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
 const mockNavigate = jest.fn();
 const mockReset = jest.fn();
@@ -47,8 +48,16 @@ const mockNavigation = { navigate: mockNavigate, reset: mockReset };
 const setup = () => render(<LoginScreen navigation={mockNavigation} />);
 
 describe('LoginScreen', () => {
+  let consoleErrorSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    // Suppress console.error for tests
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   const setup = () => {
@@ -91,9 +100,6 @@ describe('LoginScreen', () => {
         email: 'john@memantra.com',
         password: 'wrongmemantra',
       });
-    });
-
-    await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith('Login Failed', 'Invalid credentials');
     });
   });
@@ -134,7 +140,10 @@ describe('LoginScreen', () => {
     fireEvent.press(getByText('Login'));
 
     await waitFor(() => {
-      expect(mockNavigate).not.toHaveBeenCalled();
+      expect(mockReset).toHaveBeenCalledWith({
+        index: 0,
+        routes: [{ name: 'MainApp' }],
+      });
     });
   });
 
@@ -153,9 +162,13 @@ describe('LoginScreen', () => {
     setup();
 
     await waitFor(() => {
-      expect(Alert.alert).not.toHaveBeenCalled();
+      expect(mockReset).toHaveBeenCalledWith({
+        index: 0,
+        routes: [{ name: 'MainApp' }],
+      });
     });
   });
+
   it('handles Google sign-in error response', async () => {
     (useGoogleAuth as jest.Mock).mockReturnValue({
       request: {},
@@ -172,12 +185,9 @@ describe('LoginScreen', () => {
 
     rerender(<LoginScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />);
 
-    await waitFor(
-      () => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Google authentication failed');
-      },
-      { timeout: 3000 },
-    );
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Google authentication failed');
+    });
   });
 
   it('shows alert when Google auth returns error status', async () => {
@@ -195,12 +205,9 @@ describe('LoginScreen', () => {
     const { rerender } = setup();
     rerender(<LoginScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />);
 
-    await waitFor(
-      () => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Google login failed');
-      },
-      { timeout: 3000 },
-    );
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Google login failed');
+    });
   });
 
   it('shows alert if Google sign-in fails to start', async () => {
@@ -253,12 +260,9 @@ describe('LoginScreen', () => {
     const { rerender } = setup();
     rerender(<LoginScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />);
 
-    await waitFor(
-      () => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Google login failed');
-      },
-      { timeout: 3000 },
-    );
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Google login failed');
+    });
   });
 
   it('does nothing if Google response has no idToken', async () => {

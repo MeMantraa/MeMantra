@@ -40,13 +40,23 @@ jest.mock('../../context/ThemeContext', () => ({
   })),
 }));
 
-jest.spyOn(Alert, 'alert');
+// Mock Alert.alert to immediately resolve
+jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
 const mockNavigate = jest.fn();
 const mockReset = jest.fn();
+
 describe('SignUpScreen', () => {
+  let consoleErrorSpy: jest.SpyInstance;
+
   beforeEach(() => {
     jest.clearAllMocks();
+    // Suppress console.error for tests
+    consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
   });
 
   const setup = () => {
@@ -59,7 +69,6 @@ describe('SignUpScreen', () => {
     expect(getByPlaceholderText('Username')).toBeTruthy();
     expect(getByPlaceholderText('Email')).toBeTruthy();
     expect(getByPlaceholderText('Password')).toBeTruthy();
-
     expect(getByPlaceholderText('Confirm Password')).toBeTruthy();
     expect(getByText('Sign Up')).toBeTruthy();
     expect(getByText('Sign Up with Google')).toBeTruthy();
@@ -79,11 +88,8 @@ describe('SignUpScreen', () => {
     const { getByPlaceholderText, getByText } = setup();
 
     fireEvent.changeText(getByPlaceholderText('Username'), 'John');
-
     fireEvent.changeText(getByPlaceholderText('Email'), 'john@memantra.com');
-
     fireEvent.changeText(getByPlaceholderText('Password'), 'memantra');
-
     fireEvent.changeText(getByPlaceholderText('Confirm Password'), 'memantra1');
 
     fireEvent.press(getByText('Sign Up'));
@@ -106,18 +112,13 @@ describe('SignUpScreen', () => {
     fireEvent.press(getByText('Sign Up'));
 
     await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        'Error',
-
-        'Password must be at least 8 characters',
-      );
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Password must be at least 8 characters');
     });
   });
 
   it('calls authService.register and saves token on success', async () => {
     (authService.register as jest.Mock).mockResolvedValue({
       status: 'success',
-
       data: {
         token: 'fake-token',
         user: { id: 1, username: 'John' },
@@ -138,14 +139,11 @@ describe('SignUpScreen', () => {
         email: 'john@memantra.com',
         password: 'memantra',
       });
-
       expect(storage.saveToken).toHaveBeenCalledWith('fake-token');
       expect(storage.saveUserData).toHaveBeenCalled();
-
       expect(Alert.alert).toHaveBeenCalledWith(
         'Success',
         'Account created successfully!',
-
         expect.any(Array),
       );
     });
@@ -289,8 +287,6 @@ describe('SignUpScreen', () => {
       type: 'success',
       authentication: { idToken: 'fake-token' },
     };
-
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
 
     (useGoogleAuth as jest.Mock).mockReturnValue({
       request: true,
