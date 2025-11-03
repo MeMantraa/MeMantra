@@ -87,6 +87,13 @@ describe('LoginScreen', () => {
     fireEvent.press(getByText('Login'));
 
     await waitFor(() => {
+      expect(authService.login).toHaveBeenCalledWith({
+        email: 'john@memantra.com',
+        password: 'wrongmemantra',
+      });
+    });
+
+    await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith('Login Failed', 'Invalid credentials');
     });
   });
