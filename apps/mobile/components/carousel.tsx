@@ -51,8 +51,8 @@ export default function MantraCarousel({ item, onLike, onSave }: MantraCarouselP
       style={{ height: SCREEN_HEIGHT, width: SCREEN_WIDTH }}
       className="justify-center items-center bg-[#9AA793]"
     >
-      <View className="absolute top-32 z-10">
-        <Text className="text-white text-5xl opacity-50">" "</Text>
+      <View className="absolute top-36 z-11">
+        <Text className="text-white text-6xl opacity-50">" "</Text>
       </View>
 
       {/* Horizontal scroll through pages */}

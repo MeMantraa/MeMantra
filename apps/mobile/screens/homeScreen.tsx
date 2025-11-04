@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import MantraCarousel from '../components/carousel';
 import { mantraService, Mantra } from '../services/mantra.service';
 import { storage } from '../utils/storage';
+import SearchBar from '../components/UI/searchBar';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -108,6 +109,12 @@ export default function HomeScreen({ navigation }: any) {
     }
   };
 
+  //TODO: Implement search functionality
+  const handleSearch = (query: string) => {
+    console.log('Searching for:', query);
+    // TODO: Implement your search logic
+  };
+
   const handleUserPress = () => {
     Alert.alert(
       'Account',
@@ -133,12 +140,7 @@ export default function HomeScreen({ navigation }: any) {
     <View className="flex-1 bg-[#9AA793]">
       {/* Header is rendered for all states (loading / empty / feed) */}
       <View className="absolute top-5 left-0 right-0 z-10 flex-row justify-between items-center px-6 pt-14 pb-4">
-        <TouchableOpacity
-          accessibilityRole="button"
-          className="w-12 h-12 rounded-full bg-[#E6D29C] items-center justify-center"
-        >
-          <Ionicons name="search-outline" size={24} color="#6D7E68" />
-        </TouchableOpacity>
+        <SearchBar onSearch={handleSearch} placeholder="Search mantras..." />
         <TouchableOpacity
           accessibilityRole="button"
           className="w-12 h-12 rounded-full bg-[#E6D29C] items-center justify-center"
