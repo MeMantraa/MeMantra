@@ -165,6 +165,9 @@ importers:
       jest:
         specifier: ^29.6.1
         version: 29.7.0(@types/node@24.5.2)(ts-node@10.9.2(@types/node@24.5.2)(typescript@5.9.3))
+      kysely-codegen:
+        specifier: ^0.19.0
+        version: 0.19.0(kysely@0.28.7)(pg@8.16.3)(typescript@5.9.3)
       nodemon:
         specifier: ^3.1.10
         version: 3.1.10
@@ -4313,6 +4316,18 @@ packages:
       }
     engines: { node: '>=4' }
 
+  cosmiconfig@9.0.0:
+    resolution:
+      {
+        integrity: sha512-itvL5h8RETACmOTFc4UfIyB2RfEHi71Ax6E/PivVxq9NseKbOWpeyHEOIbmAw1rs8Ak0VursQNww7lf7YtUwzg==,
+      }
+    engines: { node: '>=14' }
+    peerDependencies:
+      typescript: '>=4.9.5'
+    peerDependenciesMeta:
+      typescript:
+        optional: true
+
   create-jest@29.7.0:
     resolution:
       {
@@ -4608,6 +4623,13 @@ packages:
       }
     engines: { node: ^14.15.0 || ^16.10.0 || >=18.0.0 }
 
+  diff@3.5.0:
+    resolution:
+      {
+        integrity: sha512-A46qtFgd+g7pDZinpnwiRJtxbC1hpgf0uzP3iG89scHk0AUC7A1TGxf5OiiOUv/JMZR8GOt8hL900hV0bOy5xA==,
+      }
+    engines: { node: '>=0.3.1' }
+
   diff@4.0.2:
     resolution:
       {
@@ -4646,6 +4668,13 @@ packages:
     resolution:
       {
         integrity: sha512-zIHwmZPRshsCdpMDyVsqGmgyP0yT8GAgXUnkdAoJisxvf33k7yO6OuoKmcTGuXPWSsm8Oh88nZicRLA9Y0rUeA==,
+      }
+    engines: { node: '>=12' }
+
+  dotenv-expand@12.0.3:
+    resolution:
+      {
+        integrity: sha512-uc47g4b+4k/M/SeaW1y4OApx+mtLWl92l5LMPP0GNXctZqELk+YGgOPIIC5elYmUH4OuoK3JLhuRUYegeySiFA==,
       }
     engines: { node: '>=12' }
 
@@ -4759,6 +4788,13 @@ packages:
         integrity: sha512-ObFo8v4rQJAE59M69QzwloxPZtd33TpYEIjtKD1rrFDcM1Gd7IkDxEBU+HriziN6HSHQnBJi8Dmy+JWkav5HKA==,
       }
     engines: { node: '>=8' }
+
+  env-paths@2.2.1:
+    resolution:
+      {
+        integrity: sha512-+h1lkLKhZMTYjog1VEpJNG7NZJWcuc2DDk/qsqSTRRCOXiLjeQ1d1/udrUGhqMxUgAlwKNZ0cf2uqan5GLuS2A==,
+      }
+    engines: { node: '>=6' }
 
   environment@1.1.0:
     resolution:
@@ -5617,6 +5653,13 @@ packages:
       }
     engines: { node: '>=6' }
 
+  git-diff@2.0.6:
+    resolution:
+      {
+        integrity: sha512-/Iu4prUrydE3Pb3lCBMbcSNIf81tgGt0W1ZwknnyF62t3tHmtiJTRj0f+1ZIhp3+Rh0ktz1pJVoa7ZXUCskivA==,
+      }
+    engines: { node: '>= 4.8.0' }
+
   glob-parent@5.1.2:
     resolution:
       {
@@ -6023,6 +6066,13 @@ packages:
         integrity: sha512-4gd7VpWNQNB4UKKCFFVcp1AVv+FMOgs9NKzjHKusc8jTMhd5eL1NqQqOpE0KzMds804/yHlglp3uxgluOqAPLw==,
       }
     engines: { node: '>= 0.4' }
+
+  interpret@1.4.0:
+    resolution:
+      {
+        integrity: sha512-agE4QfB2Lkp9uICn7BAqoscw4SZP9kTE2hxiFI3jBPmXJfdqiahTbUuKGsMoN2GtqL9AxhYioAcVvgsb1HvRbA==,
+      }
+    engines: { node: '>= 0.10' }
 
   invariant@2.2.4:
     resolution:
@@ -6983,6 +7033,44 @@ packages:
       }
     engines: { node: '>=6' }
 
+  kysely-codegen@0.19.0:
+    resolution:
+      {
+        integrity: sha512-ZpdQQnpfY0kh45CA6yPA9vdFsBE+b06Fx7QVcbL5rX//yjbA0yYGZGhnH7GTd4P4BY/HIv5uAfuOD83JVZf95w==,
+      }
+    engines: { node: '>=20.0.0' }
+    hasBin: true
+    peerDependencies:
+      '@libsql/kysely-libsql': '>=0.3.0 <0.5.0'
+      '@tediousjs/connection-string': '>=0.5.0 <0.6.0'
+      better-sqlite3: '>=7.6.2 <13.0.0'
+      kysely: '>=0.27.0 <1.0.0'
+      kysely-bun-sqlite: '>=0.3.2 <1.0.0'
+      kysely-bun-worker: '>=1.2.0 <2.0.0'
+      mysql2: '>=2.3.3 <4.0.0'
+      pg: '>=8.8.0 <9.0.0'
+      tarn: '>=3.0.0 <4.0.0'
+      tedious: '>=18.0.0 <20.0.0'
+    peerDependenciesMeta:
+      '@libsql/kysely-libsql':
+        optional: true
+      '@tediousjs/connection-string':
+        optional: true
+      better-sqlite3:
+        optional: true
+      kysely-bun-sqlite:
+        optional: true
+      kysely-bun-worker:
+        optional: true
+      mysql2:
+        optional: true
+      pg:
+        optional: true
+      tarn:
+        optional: true
+      tedious:
+        optional: true
+
   kysely@0.28.7:
     resolution:
       {
@@ -7345,6 +7433,13 @@ packages:
         integrity: sha512-9ie8ItPR6tjY5uYJh8K/Zrv/RMZ5VOlOWvtZdEHYSTFKZfIBPQa9tOAEeAWhd+AnIneLJ22w5fjOYtoutpWq5w==,
       }
     engines: { node: '>=18' }
+
+  loglevel@1.9.2:
+    resolution:
+      {
+        integrity: sha512-HgMmCqIJSAKqo68l0rS2AanEWfkxaZ5wNiEFb5ggm08lDs9Xl2KxBlX3PTcaD2chBM1gXAYf491/M2Rv8Jwayg==,
+      }
+    engines: { node: '>= 0.6.0' }
 
   loose-envify@1.4.0:
     resolution:
@@ -8377,6 +8472,13 @@ packages:
       }
     engines: { node: '>=10.4.0' }
 
+  pluralize@8.0.0:
+    resolution:
+      {
+        integrity: sha512-Nc3IT5yHzflTfbjgqWcCPpo7DaKy4FnpB0l/zCAW0Tc7jxAiuqSxHasntB3D7887LSrA93kDJ9IXovxJYxyLCA==,
+      }
+    engines: { node: '>=4' }
+
   pngjs@3.4.0:
     resolution:
       {
@@ -8926,6 +9028,13 @@ packages:
       }
     engines: { node: '>=8.10.0' }
 
+  rechoir@0.6.2:
+    resolution:
+      {
+        integrity: sha512-HFM8rkZ+i3zrV+4LQjwQ0W+ez98pApMGM3HUrN04j3CqzPOzl9nmP15Y8YXNm8QHGv/eacOVEjqhmWpkRV0NAw==,
+      }
+    engines: { node: '>= 0.10' }
+
   redent@3.0.0:
     resolution:
       {
@@ -9337,6 +9446,21 @@ packages:
         integrity: sha512-ObmnIF4hXNg1BqhnHmgbDETF8dLPCggZWBjkQfhZpbszZnYur5DUljTcCHii5LC3J5E0yeO/1LIMyH+UvHQgyw==,
       }
     engines: { node: '>= 0.4' }
+
+  shelljs.exec@1.1.8:
+    resolution:
+      {
+        integrity: sha512-vFILCw+lzUtiwBAHV8/Ex8JsFjelFMdhONIsgKNLgTzeRckp2AOYRQtHJE/9LhNvdMmE27AGtzWx0+DHpwIwSw==,
+      }
+    engines: { node: '>= 4.0.0' }
+
+  shelljs@0.8.5:
+    resolution:
+      {
+        integrity: sha512-TiwcRcrkhHvbrZbnRcFYMLl30Dfov3HKqzp5tO5b4pt6G/SezKcYhmDg15zXVBswHmctSAQKznqNW2LO5tTDow==,
+      }
+    engines: { node: '>=4' }
+    hasBin: true
 
   side-channel-list@1.0.0:
     resolution:
@@ -13831,6 +13955,15 @@ snapshots:
       js-yaml: 3.14.1
       parse-json: 4.0.0
 
+  cosmiconfig@9.0.0(typescript@5.9.3):
+    dependencies:
+      env-paths: 2.2.1
+      import-fresh: 3.3.1
+      js-yaml: 4.1.0
+      parse-json: 5.2.0
+    optionalDependencies:
+      typescript: 5.9.3
+
   create-jest@29.7.0(@types/node@24.5.2)(ts-node@10.9.2(@types/node@24.5.2)(typescript@5.9.3)):
     dependencies:
       '@jest/types': 29.6.3
@@ -13977,6 +14110,8 @@ snapshots:
 
   diff-sequences@29.6.3: {}
 
+  diff@3.5.0: {}
+
   diff@4.0.2: {}
 
   dlv@1.1.3: {}
@@ -13992,6 +14127,10 @@ snapshots:
       webidl-conversions: 7.0.0
 
   dotenv-expand@11.0.7:
+    dependencies:
+      dotenv: 16.4.7
+
+  dotenv-expand@12.0.3:
     dependencies:
       dotenv: 16.4.7
 
@@ -14039,6 +14178,8 @@ snapshots:
   entities@6.0.1: {}
 
   env-editor@0.4.2: {}
+
+  env-paths@2.2.1: {}
 
   environment@1.1.0: {}
 
@@ -14756,6 +14897,14 @@ snapshots:
 
   getenv@2.0.0: {}
 
+  git-diff@2.0.6:
+    dependencies:
+      chalk: 2.4.2
+      diff: 3.5.0
+      loglevel: 1.9.2
+      shelljs: 0.8.5
+      shelljs.exec: 1.1.8
+
   glob-parent@5.1.2:
     dependencies:
       is-glob: 4.0.3
@@ -14999,6 +15148,8 @@ snapshots:
       es-errors: 1.3.0
       hasown: 2.0.2
       side-channel: 1.1.0
+
+  interpret@1.4.0: {}
 
   invariant@2.2.4:
     dependencies:
@@ -16042,6 +16193,23 @@ snapshots:
 
   kleur@3.0.3: {}
 
+  kysely-codegen@0.19.0(kysely@0.28.7)(pg@8.16.3)(typescript@5.9.3):
+    dependencies:
+      chalk: 4.1.2
+      cosmiconfig: 9.0.0(typescript@5.9.3)
+      dotenv: 17.2.3
+      dotenv-expand: 12.0.3
+      git-diff: 2.0.6
+      kysely: 0.28.7
+      micromatch: 4.0.8
+      minimist: 1.2.8
+      pluralize: 8.0.0
+      zod: 4.1.12
+    optionalDependencies:
+      pg: 8.16.3
+    transitivePeerDependencies:
+      - typescript
+
   kysely@0.28.7: {}
 
   lan-network@0.1.7: {}
@@ -16218,6 +16386,8 @@ snapshots:
       slice-ansi: 7.1.2
       strip-ansi: 7.1.2
       wrap-ansi: 9.0.2
+
+  loglevel@1.9.2: {}
 
   loose-envify@1.4.0:
     dependencies:
@@ -16986,6 +17156,8 @@ snapshots:
       base64-js: 1.5.1
       xmlbuilder: 15.1.1
 
+  pluralize@8.0.0: {}
+
   pngjs@3.4.0: {}
 
   possible-typed-array-names@1.1.0: {}
@@ -17335,6 +17507,10 @@ snapshots:
     dependencies:
       picomatch: 2.3.1
 
+  rechoir@0.6.2:
+    dependencies:
+      resolve: 1.22.10
+
   redent@3.0.0:
     dependencies:
       indent-string: 4.0.0
@@ -17624,6 +17800,14 @@ snapshots:
   shebang-regex@3.0.0: {}
 
   shell-quote@1.8.3: {}
+
+  shelljs.exec@1.1.8: {}
+
+  shelljs@0.8.5:
+    dependencies:
+      glob: 7.2.3
+      interpret: 1.4.0
+      rechoir: 0.6.2
 
   side-channel-list@1.0.0:
     dependencies:
