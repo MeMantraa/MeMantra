@@ -102,12 +102,12 @@ export default function MantraCarousel({ item, onLike, onSave }: MantraCarouselP
                   nestedScrollEnabled={true}
                 >
                   <View className="mb-6">
-                    <Text className="text-[#E6D29C] text-2xl font-semibold text-center">
+                    <Text className="text-[#E6D29C] text-3xl font-semibold text-center">
                       {page.title}
                     </Text>
                   </View>
 
-                  <Text className="text-white  leading-7 text-base">{page.content}</Text>
+                  <Text className="text-white  leading-7 text-lg">{page.content}</Text>
                 </ScrollView>
               )}
             </View>

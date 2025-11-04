@@ -1,6 +1,7 @@
 import React from 'react';
-import { TouchableOpacity } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../context/ThemeContext';
 
 type SaveButtonProps = {
   saved: boolean;
@@ -8,6 +9,8 @@ type SaveButtonProps = {
 };
 
 const SaveButton: React.FC<SaveButtonProps> = ({ saved, onPress }) => {
+  const { colors } = useTheme();
+
   return (
     <TouchableOpacity
       testID="save-button"
@@ -15,7 +18,17 @@ const SaveButton: React.FC<SaveButtonProps> = ({ saved, onPress }) => {
       onPress={onPress}
       className="items-center justify-center mb-6"
     >
-      <Ionicons name={saved ? 'bookmark' : 'bookmark-outline'} size={38} color="white" />
+      <View
+        className="w-[55px] h-[55px] rounded-full items-center justify-center"
+        style={{ backgroundColor: colors.primaryDark }}
+      >
+        <Ionicons
+          name={saved ? 'bookmark' : 'bookmark-outline'}
+          size={35}
+          color="white"
+          style={{ marginTop: 2 }}
+        />
+      </View>
     </TouchableOpacity>
   );
 };

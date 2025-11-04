@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity } from 'react-native';
+import { TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 
@@ -10,6 +10,7 @@ type LikeButtonProps = {
 
 const LikeButton: React.FC<LikeButtonProps> = ({ liked, onPress }) => {
   const { colors } = useTheme();
+
   return (
     <TouchableOpacity
       testID="like-button"
@@ -17,11 +18,17 @@ const LikeButton: React.FC<LikeButtonProps> = ({ liked, onPress }) => {
       onPress={onPress}
       className="items-center justify-center"
     >
-      <Ionicons
-        name={liked ? 'heart' : 'heart-outline'}
-        size={38}
-        color={liked ? colors.secondary : colors.text}
-      />
+      <View
+        className="w-[55px] h-[55px] rounded-full items-center justify-center"
+        style={{ backgroundColor: colors.primaryDark }}
+      >
+        <Ionicons
+          name={liked ? 'heart' : 'heart-outline'}
+          size={35}
+          color={liked ? colors.secondary : '#F5E6D3'}
+          style={{ marginTop: 2 }}
+        />
+      </View>
     </TouchableOpacity>
   );
 };
