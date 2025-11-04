@@ -9,7 +9,7 @@ import { UserModel } from '../models/user.model';
 import { MantraModel } from '../models/mantra.model';
 import { db } from '../db';
 
-async function seedDatabase() {
+export async function seedDatabase() {
   console.log('Starting database seed to populate...\n');
 
   try {
@@ -149,6 +149,6 @@ async function seedDatabase() {
   }
 }
 
-// Run the seed function
-seedDatabase();
-
+if (require.main === module) {
+  seedDatabase();
+}
