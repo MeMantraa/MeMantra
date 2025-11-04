@@ -30,9 +30,16 @@ describe('seedDatabase script', () => {
   let processExitSpy: jest.SpyInstance;
   let consoleErrorSpy: jest.SpyInstance;
   let consoleLogSpy: jest.SpyInstance;
+  const originalEnv = process.env;
 
   beforeEach(() => {
     jest.clearAllMocks();
+    
+    // Set up environment variable for tests
+    process.env = { 
+      ...originalEnv, 
+      SEED_ADMIN_PASSWORD: 'TestPassword123!' 
+    };
     
     // Set up spies before each test
     processExitSpy = jest.spyOn(process, 'exit').mockImplementation((() => {
@@ -44,6 +51,7 @@ describe('seedDatabase script', () => {
   });
 
   afterEach(() => {
+    process.env = originalEnv;
     processExitSpy.mockRestore();
     consoleErrorSpy.mockRestore();
     consoleLogSpy.mockRestore();
@@ -62,7 +70,6 @@ describe('seedDatabase script', () => {
     (MantraModel.findById as jest.Mock).mockResolvedValue(mockMantra);
     (MantraModel.findAll as jest.Mock).mockResolvedValue([mockMantra]);
 
-    // Create a mock chain that supports both mantra queries and count queries
     const mockSelectFrom = jest.fn((table: string) => {
       if (table === 'Mantra') {
         return {
@@ -72,7 +79,6 @@ describe('seedDatabase script', () => {
           select: jest.fn().mockReturnThis(),
         };
       }
-      // For User and Mantra count queries
       return {
         select: jest.fn().mockReturnThis(),
         executeTakeFirst: jest.fn().mockResolvedValue({ count: '1' }),
@@ -81,7 +87,6 @@ describe('seedDatabase script', () => {
 
     (db.selectFrom as jest.Mock).mockImplementation(mockSelectFrom);
 
-    // Import the function and call it
     const { seedDatabase } = await import('../../src/scripts/seed');
     await seedDatabase();
 
@@ -108,17 +113,15 @@ describe('seedDatabase script', () => {
     (UserModel.create as jest.Mock).mockResolvedValue(mockAdmin);
     (db.insertInto as jest.Mock).mockReturnValue(mockInsertChain);
     
-    // Create a mock chain that returns null for mantra check (not found)
     const mockSelectFrom = jest.fn((table: string) => {
       if (table === 'Mantra') {
         return {
           where: jest.fn().mockReturnThis(),
           selectAll: jest.fn().mockReturnThis(),
-          executeTakeFirst: jest.fn().mockResolvedValue(null), // No existing mantra
+          executeTakeFirst: jest.fn().mockResolvedValue(null),
           select: jest.fn().mockReturnThis(),
         };
       }
-      // For User and Mantra count queries
       return {
         select: jest.fn().mockReturnThis(),
         executeTakeFirst: jest.fn().mockResolvedValue({ count: '1' }),
@@ -131,7 +134,6 @@ describe('seedDatabase script', () => {
     (MantraModel.findById as jest.Mock).mockResolvedValue(mockMantra);
     (MantraModel.findAll as jest.Mock).mockResolvedValue([mockMantra]);
 
-    // Import the function and call it
     const { seedDatabase } = await import('../../src/scripts/seed');
     await seedDatabase();
 
@@ -139,6 +141,7 @@ describe('seedDatabase script', () => {
       expect.objectContaining({
         username: 'admin',
         email: 'admin@memantra.com',
+        password: 'TestPassword123!',
       })
     );
     expect(db.insertInto).toHaveBeenCalledWith('Admin');
@@ -154,11 +157,20 @@ describe('seedDatabase script', () => {
   it('should handle errors and exit with code 1', async () => {
     (UserModel.findByEmail as jest.Mock).mockRejectedValue(new Error('DB error'));
 
-    // Import the function and call it
     const { seedDatabase } = await import('../../src/scripts/seed');
     await seedDatabase();
 
     expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Seed failed with error:'));
+    expect(processExitSpy).toHaveBeenCalledWith(1);
+  });
+
+  it('should throw error if SEED_ADMIN_PASSWORD is not set', async () => {
+    delete process.env.SEED_ADMIN_PASSWORD;
+
+    const { seedDatabase } = await import('../../src/scripts/seed');
+    await seedDatabase();
+
+    expect(consoleErrorSpy).toHaveBeenCalled();
     expect(processExitSpy).toHaveBeenCalledWith(1);
   });
 });

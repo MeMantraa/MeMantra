@@ -13,9 +13,19 @@ export async function seedDatabase() {
   console.log('Starting database seed to populate...\n');
 
   try {
+    // Get admin credentials from environment variables
+    const adminEmail = process.env.SEED_ADMIN_EMAIL || 'admin@memantra.com';
+    const adminUsername = process.env.SEED_ADMIN_USERNAME || 'admin';
+    const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+
+    // Validate required environment variables
+    if (!adminPassword) {
+      throw new Error('SEED_ADMIN_PASSWORD environment variable is required');
+    }
+
     // Check and create admin user
     console.log('Checking for existing admin...');
-    let admin = await UserModel.findByEmail('admin@memantra.com');
+    let admin = await UserModel.findByEmail(adminEmail);
     
     if (admin) {
       console.log('Admin already exists, using existing admin');
@@ -23,9 +33,9 @@ export async function seedDatabase() {
     } else {
       console.log('Creating admin user...');
       admin = await UserModel.create({
-        username: 'admin',
-        email: 'admin@memantra.com',
-        password: 'AdminPassword123!',
+        username: adminUsername,
+        email: adminEmail,
+        password: adminPassword,
       });
       console.log(`Admin created with ID: ${admin.user_id}`);
 
@@ -137,8 +147,8 @@ export async function seedDatabase() {
 
     console.log('Database seeding completed successfully.\n');
     console.log('Admin credentials:');
-    console.log('  Email: admin@memantra.com');
-    console.log('  Password: AdminPassword123!\n');
+    console.log(`  Email: ${adminEmail}`);
+    console.log('  Password: [CONFIGURED IN ENV]\n');
 
     process.exit(0);
 
