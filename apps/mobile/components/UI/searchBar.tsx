@@ -85,13 +85,14 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, placeholder = 'Search..
             placeholderTextColor={colors.primaryDark}
             style={{
               color: colors.primaryDark,
-              paddingVertical: 0,
+              paddingVertical: 12,
+              paddingHorizontal: 0,
               height: 48,
+              lineHeight: 20,
             }}
             className="flex-1 ml-2 text-base"
             returnKeyType="search"
             onSubmitEditing={handleSearch}
-            textAlignVertical="center" // Android
           />
           <TouchableOpacity
             onPress={collapseSearchBar}
