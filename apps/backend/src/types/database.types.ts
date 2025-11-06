@@ -127,6 +127,10 @@ export type Collection = Selectable<CollectionTable>;
 export type NewCollection = Insertable<CollectionTable>;
 export type CollectionUpdate = Updateable<CollectionTable>;
 
+export type CollectionMantra = Selectable<CollectionMantraTable>;
+export type NewCollectionMantra = Insertable<CollectionMantraTable>;
+export type CollectionMantraUpdate = Updateable<CollectionMantraTable>;
+
 export type Reminder = Selectable<ReminderTable>;
 export type NewReminder = Insertable<ReminderTable>;
 export type ReminderUpdate = Updateable<ReminderTable>;
