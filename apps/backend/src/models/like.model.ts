@@ -1,6 +1,5 @@
 import { db } from '../db';
-import { Like } from '../types/database.types';
-import { Mantra } from '../types/database.types';
+import { Like, Mantra } from '../types/database.types';
 
 export const LikeModel = {
   // User likes a mantra
