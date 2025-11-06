@@ -25,11 +25,17 @@ export const generateToken = (payload: TokenPayload): string => {
   const algorithm: Algorithm = 'HS256';
 
   const envExpires = process.env.JWT_EXPIRES_IN;
-  const resolvedExpires: SignOptions['expiresIn'] = envExpires
-    ? Number.isFinite(Number(envExpires))
-      ? Number(envExpires)
-      : (envExpires as unknown as SignOptions['expiresIn'])
-    : ('1d' as unknown as SignOptions['expiresIn']);
+  
+  // Compute expiresIn in a separate statement to avoid nested ternary (SonarQube)
+  let resolvedExpires: SignOptions['expiresIn'];
+
+  if (!envExpires) {
+    resolvedExpires = '1d';
+  } else if (!Number.isNaN(Number(envExpires)) && Number.isFinite(Number(envExpires))) {
+    resolvedExpires = Number(envExpires);
+  } else {
+    resolvedExpires = envExpires as SignOptions['expiresIn'];
+  }
 
   return jwt.sign(payload, JWT_SECRET as Secret, {
     expiresIn: resolvedExpires,
