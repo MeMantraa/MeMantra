@@ -13,7 +13,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function App() {
   const [appIsReady, setAppIsReady] = useState(false);
-  const [isSplashVisible, setSplashVisible] = useState(true);
+  const [isSplashVisible, setIsSplashVisible] = useState(true);
   const fadeAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -58,7 +58,7 @@ export default function App() {
 
     animation.start(() => {
       if (isMounted) {
-        setSplashVisible(false);
+        setIsSplashVisible(false);
       }
     });
 
