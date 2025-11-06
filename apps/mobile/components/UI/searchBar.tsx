@@ -28,7 +28,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, placeholder = 'Search..
         inputRef.current?.focus();
       }
     });
-  }, [isExpanded]);
+  }, [isExpanded, animatedWidth]);
 
   useEffect(() => {
     if (!searchQuery.trim()) return;
