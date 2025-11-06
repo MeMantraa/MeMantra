@@ -219,6 +219,9 @@ importers:
       expo-auth-session:
         specifier: ~7.0.8
         version: 7.0.8(expo@54.0.13(@babel/core@7.28.4)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0))(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
+      expo-splash-screen:
+        specifier: ^31.0.10
+        version: 31.0.10(expo@54.0.13(@babel/core@7.28.4)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0))
       expo-status-bar:
         specifier: ~3.0.8
         version: 3.0.8(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
@@ -5246,6 +5249,14 @@ packages:
         integrity: sha512-J3JlpzNXOkkr4BbapTrcv6klBQcw6NzrBBVIU7qkNE2eU3U1on9rp27wi0+cihjG/QgxSIqQVkrga5z3HWnH0A==,
       }
     engines: { node: '>=20.16.0' }
+
+  expo-splash-screen@31.0.10:
+    resolution:
+      {
+        integrity: sha512-i6g9IK798mae4yvflstQ1HkgahIJ6exzTCTw4vEdxV0J2SwiW3Tj+CwRjf0te7Zsb+7dDQhBTmGZwdv00VER2A==,
+      }
+    peerDependencies:
+      expo: '*'
 
   expo-status-bar@3.0.8:
     resolution:
@@ -14646,6 +14657,13 @@ snapshots:
       react-native: 0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0)
 
   expo-server@1.0.1: {}
+
+  expo-splash-screen@31.0.10(expo@54.0.13(@babel/core@7.28.4)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)):
+    dependencies:
+      '@expo/prebuild-config': 54.0.5(expo@54.0.13(@babel/core@7.28.4)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0))
+      expo: 54.0.13(@babel/core@7.28.4)(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0)
+    transitivePeerDependencies:
+      - supports-color
 
   expo-status-bar@3.0.8(react-native@0.81.4(@babel/core@7.28.4)(@types/react@19.1.13)(react@19.1.0))(react@19.1.0):
     dependencies:
