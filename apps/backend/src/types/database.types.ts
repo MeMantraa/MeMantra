@@ -17,10 +17,14 @@ export interface Database {
 //table interfaces
 export interface UserTable {
   user_id: Generated<number>;
+  first_name: string | null;
+  last_name: string | null;
   username: string | null;
   email: string | null;
   password_hash: string | null;
   device_token: string | null;
+  google_id: string | null;
+  auth_provider: string | null;
   created_at: string | null;
 }
 
@@ -47,8 +51,11 @@ export interface MantraTable {
 
 export interface CategoryTable {
   category_id: Generated<number>;
-  name: string | null;
+  name: string;
   description: string | null;
+  category_type: string | null;
+  image_url: string | null;
+  is_active: boolean | null;
 }
 
 export interface MantraCategoryTable {
@@ -74,6 +81,8 @@ export interface CollectionTable {
 export interface CollectionMantraTable {
   collection_id: number;
   mantra_id: number;
+  added_at: string | null;
+  added_by: number | null;
 }
 
 export interface ReminderTable {
