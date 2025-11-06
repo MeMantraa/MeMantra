@@ -4,11 +4,10 @@ import SearchBar from '../../../components/UI/searchBar';
 import { useTheme } from '../../../context/ThemeContext';
 import { Animated } from 'react-native';
 
-jest.spyOn(Animated, 'timing').mockImplementation((value, config) => {
+jest.spyOn(Animated, 'timing').mockImplementation((value, config: any) => {
   return {
     start: (test?: () => void) => {
-      value.setValue(config.toValue);
-
+      (value as Animated.Value).setValue(config.toValue as number);
       if (test) test();
     },
   } as any;
