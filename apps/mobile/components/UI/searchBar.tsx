@@ -6,7 +6,7 @@ import { useTheme } from '../../context/ThemeContext';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 type SearchBarProps = {
-  onSearch?: (query: string) => void;
+  onSearch: (query: string) => void;
   placeholder?: string;
 };
 
@@ -17,42 +17,40 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, placeholder = 'Search..
   const animatedWidth = useRef(new Animated.Value(48)).current;
   const inputRef = useRef<TextInput>(null);
 
-  const expandSearchBar = () => {
-    setIsExpanded(true);
+  //expand/collapse animation
+  useEffect(() => {
     Animated.timing(animatedWidth, {
-      toValue: SCREEN_WIDTH - 90, //TODO: adjust based on design
+      toValue: isExpanded ? SCREEN_WIDTH - 90 : 48,
       duration: 200,
       useNativeDriver: false,
     }).start(() => {
-      inputRef.current?.focus();
+      if (isExpanded) {
+        inputRef.current?.focus();
+      }
     });
+  }, [isExpanded]);
+
+  useEffect(() => {
+    if (!searchQuery.trim()) return;
+    const delayDebounce = setTimeout(() => {
+      onSearch(searchQuery.trim());
+    }, 500);
+    return () => clearTimeout(delayDebounce);
+  }, [searchQuery, onSearch]);
+
+  const handleToggle = () => {
+    if (isExpanded) {
+      setSearchQuery('');
+      inputRef.current?.blur();
+    }
+    setIsExpanded(!isExpanded);
   };
 
-  const collapseSearchBar = () => {
-    setIsExpanded(false);
-    setSearchQuery('');
-    Animated.timing(animatedWidth, {
-      toValue: 48,
-      duration: 200,
-      useNativeDriver: false,
-    }).start();
-    inputRef.current?.blur();
-  };
-
-  const handleSearch = () => {
-    if (onSearch && searchQuery.trim()) {
+  const handleSubmit = () => {
+    if (searchQuery.trim()) {
       onSearch(searchQuery.trim());
     }
   };
-
-  useEffect(() => {
-    if (searchQuery.trim() && onSearch) {
-      const delayDebounce = setTimeout(() => {
-        onSearch(searchQuery.trim());
-      }, 500);
-      return () => clearTimeout(delayDebounce);
-    }
-  }, [searchQuery, onSearch]);
 
   return (
     <Animated.View
@@ -68,7 +66,8 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, placeholder = 'Search..
       }}
     >
       <TouchableOpacity
-        onPress={isExpanded ? handleSearch : expandSearchBar}
+        testID="search-toggle-button"
+        onPress={isExpanded ? handleSubmit : handleToggle}
         className="items-center justify-center"
         style={{ width: 24, height: 24 }}
       >
@@ -78,6 +77,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, placeholder = 'Search..
       {isExpanded && (
         <>
           <TextInput
+            testID="search-input"
             ref={inputRef}
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -92,10 +92,11 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, placeholder = 'Search..
             }}
             className="flex-1 ml-2 text-base"
             returnKeyType="search"
-            onSubmitEditing={handleSearch}
+            onSubmitEditing={handleSubmit}
           />
           <TouchableOpacity
-            onPress={collapseSearchBar}
+            testID="search-close-button"
+            onPress={handleToggle}
             className="items-center justify-center ml-2"
             style={{ width: 24, height: 24 }}
           >
