@@ -126,9 +126,11 @@ export async function seedDatabase() {
     console.log('3. Testing findAll function...');
     const allMantras = await MantraModel.findAll();
     console.log(`   Total mantras in database: ${allMantras.length}`);
-    allMantras.forEach((mantra, index) => {
-      console.log(`   ${index + 1}. ${mantra.title}`);
-    });
+    let counter = 1;
+      for (const mantra of allMantras) {
+        console.log(`   ${counter}. ${mantra.title}`);
+        counter++;
+      }
     console.log('');
 
     // Test 4: Database counts

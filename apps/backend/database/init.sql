@@ -17,7 +17,7 @@ CREATE TABLE "User" (
 
 CREATE TABLE "Admin" (
   "admin_id" int PRIMARY KEY,
-  "role" varchar(255)
+  "role" VARCHAR2(255)
 );
 
 CREATE TABLE "Mantra" (
