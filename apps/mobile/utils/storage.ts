@@ -21,7 +21,7 @@ export const storage = {
     await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
   },
 
-  async getUserData(): Promise<any | null> {
+  async getUserData(): Promise<any> {
     const data = await AsyncStorage.getItem(USER_DATA_KEY);
     return data ? JSON.parse(data) : null;
   },
