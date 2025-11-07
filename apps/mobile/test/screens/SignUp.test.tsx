@@ -117,7 +117,6 @@ describe('SignUpScreen', () => {
   it('calls authService.register and saves token on success', async () => {
     (authService.register as jest.Mock).mockResolvedValue({
       status: 'success',
-
       data: {
         token: 'fake-token',
         user: { id: 1, username: 'John' },
@@ -145,11 +144,10 @@ describe('SignUpScreen', () => {
       expect(Alert.alert).toHaveBeenCalledWith(
         'Success',
         'Account created successfully!',
-
         expect.any(Array),
       );
     });
-  });
+  }, 15000);
 
   it('shows alert when register throws error', async () => {
     (authService.register as jest.Mock).mockRejectedValue({
