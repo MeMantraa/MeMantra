@@ -1,5 +1,6 @@
 import { db } from '../db';
 import { Collection, CollectionUpdate, Mantra } from '../types/database.types';
+import { CollectionMantraModel } from './collectionMantra.model';
 
 export const CollectionModel = {
   // Create a new collection
@@ -49,11 +50,8 @@ export const CollectionModel = {
 
   // Delete a collection
   async delete(collectionId: number): Promise<boolean> {
-    // First, remove all mantras from the collection
-    await db
-      .deleteFrom('CollectionMantra')
-      .where('collection_id', '=', collectionId)
-      .execute();
+    // First, remove all mantras from the collection using CollectionMantraModel
+    await CollectionMantraModel.removeAllFromCollection(collectionId);
 
     // Then delete the collection itself
     const result = await db
@@ -64,26 +62,14 @@ export const CollectionModel = {
     return result.numDeletedRows > 0;
   },
 
-  // Add a mantra to a collection
-  async addMantra(collectionId: number, mantraId: number): Promise<void> {
-    await db
-      .insertInto('CollectionMantra')
-      .values({
-        collection_id: collectionId,
-        mantra_id: mantraId,
-      })
-      .execute();
+  // Add a mantra to a collection (with user tracking)
+  async addMantra(collectionId: number, mantraId: number, userId: number): Promise<void> {
+    await CollectionMantraModel.add(collectionId, mantraId, userId);
   },
 
   // Remove a mantra from a collection
   async removeMantra(collectionId: number, mantraId: number): Promise<boolean> {
-    const result = await db
-      .deleteFrom('CollectionMantra')
-      .where('collection_id', '=', collectionId)
-      .where('mantra_id', '=', mantraId)
-      .executeTakeFirst();
-
-    return result.numDeletedRows > 0;
+    return await CollectionMantraModel.remove(collectionId, mantraId);
   },
 
   // Get all mantras in a collection (with JOIN)
@@ -125,25 +111,12 @@ export const CollectionModel = {
 
   // Check if a mantra is in a collection
   async isMantraInCollection(collectionId: number, mantraId: number): Promise<boolean> {
-    const result = await db
-      .selectFrom('CollectionMantra')
-      .where('collection_id', '=', collectionId)
-      .where('mantra_id', '=', mantraId)
-      .selectAll()
-      .executeTakeFirst();
-
-    return !!result;
+    return await CollectionMantraModel.exists(collectionId, mantraId);
   },
 
   // Count mantras in a collection
   async countMantrasInCollection(collectionId: number): Promise<number> {
-    const result = await db
-      .selectFrom('CollectionMantra')
-      .where('collection_id', '=', collectionId)
-      .select((eb) => eb.fn.count('mantra_id').as('count'))
-      .executeTakeFirst();
-
-    return Number(result?.count || 0);
+    return await CollectionMantraModel.countMantras(collectionId);
   },
 
   // Get all collections that contain a specific mantra

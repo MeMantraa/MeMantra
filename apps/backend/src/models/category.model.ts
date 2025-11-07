@@ -31,6 +31,27 @@ export const CategoryModel = {
       .execute();
   },
 
+  // Get all active categories only
+  async findAllActive(): Promise<Category[]> {
+    return await db
+      .selectFrom('Category')
+      .where('is_active', '=', true)
+      .selectAll()
+      .orderBy('name', 'asc')
+      .execute();
+  },
+
+  // Find categories by type
+  async findByType(categoryType: string): Promise<Category[]> {
+    return await db
+      .selectFrom('Category')
+      .where('category_type', '=', categoryType)
+      .where('is_active', '=', true)
+      .selectAll()
+      .orderBy('name', 'asc')
+      .execute();
+  },
+
   // Find category by name
   async findByName(name: string): Promise<Category | undefined> {
     return await db
@@ -85,6 +106,36 @@ export const CategoryModel = {
       .execute();
 
     return categories;
+  },
+
+  // Update category details
+  async update(categoryId: number, updates: Partial<Pick<Category, 'name' | 'description' | 'category_type' | 'image_url' | 'is_active'>>): Promise<Category | undefined> {
+    return await db
+      .updateTable('Category')
+      .set(updates)
+      .where('category_id', '=', categoryId)
+      .returningAll()
+      .executeTakeFirst();
+  },
+
+  // Soft delete a category (set is_active to false)
+  async softDelete(categoryId: number): Promise<Category | undefined> {
+    return await db
+      .updateTable('Category')
+      .set({ is_active: false })
+      .where('category_id', '=', categoryId)
+      .returningAll()
+      .executeTakeFirst();
+  },
+
+  // Reactivate a category (set is_active to true)
+  async reactivate(categoryId: number): Promise<Category | undefined> {
+    return await db
+      .updateTable('Category')
+      .set({ is_active: true })
+      .where('category_id', '=', categoryId)
+      .returningAll()
+      .executeTakeFirst();
   },
 };
 
