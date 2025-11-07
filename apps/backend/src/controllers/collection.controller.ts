@@ -71,7 +71,14 @@ export const CollectionController = {
       const { id } = req.params;
       const result = await CollectionModel.getCollectionWithMantras(Number(id));
 
-      if (!result || !verifyOwnership(res, result.collection, userId)) return;
+      if (!result) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Collection not found',
+        });
+      }
+
+      if (!verifyOwnership(res, result.collection, userId)) return;
 
       return res.status(200).json({
         status: 'success',
