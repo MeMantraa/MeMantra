@@ -35,7 +35,6 @@
     "@typescript-eslint/parser": "^8.44.1",
     "babel-preset-expo": "^54.0.3",
     "esbuild": "0.25.10",
-    "esbuild-windows-64": "0.15.18",
     "eslint": "^9.36.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react": "^7.37.5",
