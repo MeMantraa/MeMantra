@@ -8,7 +8,7 @@
      - Install all offered components, including pgAdmin 4
 
 2. **Install Docker Desktop**
-   - Download Docker Desktop (includes Docker Compose) from [official website] (https://www.docker.com/products/docker-desktop/)
+   - Download Docker Desktop (includes Docker Compose) from [official website](https://www.docker.com/products/docker-desktop/)
 
 ## Container Setup Steps
 
