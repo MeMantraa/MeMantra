@@ -2,156 +2,120 @@ import { Request, Response } from 'express';
 import { ReminderModel } from '../models/reminder.model';
 import { CreateReminderInput, UpdateReminderInput } from '../validators/reminder.validator';
 
+// --- Utility helpers ---
+const handleError = (res: Response, message: string, error?: any, status = 500) => {
+  console.error(message, error);
+  return res.status(status).json({ status: 'error', message });
+};
+
+const requireAuth = (req: Request, res: Response): number | undefined => {
+  const userId = req.user?.userId;
+  if (!userId) {
+    res.status(401).json({ status: 'error', message: 'Authentication required' });
+    return;
+  }
+  return userId;
+};
+
+const verifyOwnership = (res: Response, reminder: any, userId: number): boolean => {
+  if (!reminder) {
+    res.status(404).json({ status: 'error', message: 'Reminder not found' });
+    return false;
+  }
+
+  if (reminder.user_id !== userId) {
+    res.status(403).json({ status: 'error', message: 'Access denied' });
+    return false;
+  }
+
+  return true;
+};
+
+const validateFutureTime = (res: Response, time: string | Date): boolean => {
+  const reminderTime = new Date(time);
+  if (reminderTime <= new Date()) {
+    res.status(400).json({
+      status: 'error',
+      message: 'Reminder time must be in the future',
+    });
+    return false;
+  }
+  return true;
+};
+
+// --- Controller ---
+
 export const ReminderController = {
-  // GET /api/reminders - Get all user's reminders
+  // GET /api/reminders
   async getUserReminders(req: Request, res: Response) {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
     try {
-      const userId = req.user?.userId;
-
-      if (!userId) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
       const reminders = await ReminderModel.findByUserId(userId);
-
-      return res.status(200).json({
-        status: 'success',
-        data: { reminders },
-      });
+      return res.status(200).json({ status: 'success', data: { reminders } });
     } catch (error) {
-      console.error('Get user reminders error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error retrieving reminders',
-      });
+      return handleError(res, 'Error retrieving reminders', error);
     }
   },
 
-  // GET /api/reminders/active - Get active reminders
+  // GET /api/reminders/active
   async getActiveReminders(req: Request, res: Response) {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
     try {
-      const userId = req.user?.userId;
-
-      if (!userId) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
       const reminders = await ReminderModel.findActiveByUserId(userId);
-
-      return res.status(200).json({
-        status: 'success',
-        data: { reminders },
-      });
+      return res.status(200).json({ status: 'success', data: { reminders } });
     } catch (error) {
-      console.error('Get active reminders error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error retrieving active reminders',
-      });
+      return handleError(res, 'Error retrieving active reminders', error);
     }
   },
 
-  // GET /api/reminders/upcoming - Get upcoming reminders
+  // GET /api/reminders/upcoming
   async getUpcomingReminders(req: Request, res: Response) {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
     try {
-      const userId = req.user?.userId;
-      const { hours = '24' } = req.query;
-
-      if (!userId) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
-      const reminders = await ReminderModel.findUpcoming(userId, Number(hours));
+      const hours = Number(req.query.hours ?? 24);
+      const reminders = await ReminderModel.findUpcoming(userId, hours);
 
       return res.status(200).json({
         status: 'success',
-        data: { reminders, hoursAhead: Number(hours) },
+        data: { reminders, hoursAhead: hours },
       });
     } catch (error) {
-      console.error('Get upcoming reminders error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error retrieving upcoming reminders',
-      });
+      return handleError(res, 'Error retrieving upcoming reminders', error);
     }
   },
 
-  // GET /api/reminders/:id - Get single reminder
+  // GET /api/reminders/:id
   async getReminderById(req: Request, res: Response) {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
     try {
-      const { id } = req.params;
-      const userId = req.user?.userId;
+      const reminder = await ReminderModel.findById(Number(req.params.id));
+      if (!verifyOwnership(res, reminder, userId)) return;
 
-      if (!userId) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
-      const reminder = await ReminderModel.findById(Number(id));
-
-      if (!reminder) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Reminder not found',
-        });
-      }
-
-      // Check if reminder belongs to user
-      if (reminder.user_id !== userId) {
-        return res.status(403).json({
-          status: 'error',
-          message: 'Access denied',
-        });
-      }
-
-      return res.status(200).json({
-        status: 'success',
-        data: { reminder },
-      });
+      return res.status(200).json({ status: 'success', data: { reminder } });
     } catch (error) {
-      console.error('Get reminder by ID error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error retrieving reminder',
-      });
+      return handleError(res, 'Error retrieving reminder', error);
     }
   },
 
-  // POST /api/reminders - Create new reminder
+  // POST /api/reminders
   async createReminder(req: Request, res: Response) {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
     try {
-      const reminderData = req.body as CreateReminderInput;
-      const userId = req.user?.userId;
-
-      if (!userId) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
-      // Validate that the time is in the future
-      const reminderTime = new Date(reminderData.time);
-      if (reminderTime <= new Date()) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Reminder time must be in the future',
-        });
-      }
+      const data = req.body as CreateReminderInput;
+      if (!validateFutureTime(res, data.time)) return;
 
       const newReminder = await ReminderModel.create({
-        ...reminderData,
+        ...data,
         user_id: userId,
       });
 
@@ -161,55 +125,22 @@ export const ReminderController = {
         data: { reminder: newReminder },
       });
     } catch (error) {
-      console.error('Create reminder error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error creating reminder',
-      });
+      return handleError(res, 'Error creating reminder', error);
     }
   },
 
-  // PUT /api/reminders/:id - Update reminder
+  // PUT /api/reminders/:id
   async updateReminder(req: Request, res: Response) {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
     try {
       const { id } = req.params;
       const updateData = req.body as UpdateReminderInput;
-      const userId = req.user?.userId;
+      const reminder = await ReminderModel.findById(Number(id));
 
-      if (!userId) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
-      const existingReminder = await ReminderModel.findById(Number(id));
-
-      if (!existingReminder) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Reminder not found',
-        });
-      }
-
-      // Check if reminder belongs to user
-      if (existingReminder.user_id !== userId) {
-        return res.status(403).json({
-          status: 'error',
-          message: 'Access denied',
-        });
-      }
-
-      // Validate that the new time is in the future if provided
-      if (updateData.time) {
-        const reminderTime = new Date(updateData.time);
-        if (reminderTime <= new Date()) {
-          return res.status(400).json({
-            status: 'error',
-            message: 'Reminder time must be in the future',
-          });
-        }
-      }
+      if (!verifyOwnership(res, reminder, userId)) return;
+      if (updateData.time && !validateFutureTime(res, updateData.time)) return;
 
       const updatedReminder = await ReminderModel.update(Number(id), updateData);
 
@@ -219,84 +150,41 @@ export const ReminderController = {
         data: { reminder: updatedReminder },
       });
     } catch (error) {
-      console.error('Update reminder error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error updating reminder',
-      });
+      return handleError(res, 'Error updating reminder', error);
     }
   },
 
-  // DELETE /api/reminders/:id - Delete reminder
+  // DELETE /api/reminders/:id
   async deleteReminder(req: Request, res: Response) {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
     try {
-      const { id } = req.params;
-      const userId = req.user?.userId;
+      const reminder = await ReminderModel.findById(Number(req.params.id));
+      if (!verifyOwnership(res, reminder, userId)) return;
 
-      if (!userId) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
-      const existingReminder = await ReminderModel.findById(Number(id));
-
-      if (!existingReminder) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Reminder not found',
-        });
-      }
-
-      // Check if reminder belongs to user
-      if (existingReminder.user_id !== userId) {
-        return res.status(403).json({
-          status: 'error',
-          message: 'Access denied',
-        });
-      }
-
-      await ReminderModel.delete(Number(id));
+      await ReminderModel.delete(Number(req.params.id));
 
       return res.status(200).json({
         status: 'success',
         message: 'Reminder deleted successfully',
       });
     } catch (error) {
-      console.error('Delete reminder error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error deleting reminder',
-      });
+      return handleError(res, 'Error deleting reminder', error);
     }
   },
 
-  // GET /api/reminders/frequency/:frequency - Get reminders by frequency
+  // GET /api/reminders/frequency
   async getRemindersByFrequency(req: Request, res: Response) {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
     try {
       const { frequency } = req.query;
-      const userId = req.user?.userId;
-
-      if (!userId) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
       const reminders = await ReminderModel.findByFrequency(userId, frequency as string);
-
-      return res.status(200).json({
-        status: 'success',
-        data: { reminders },
-      });
+      return res.status(200).json({ status: 'success', data: { reminders } });
     } catch (error) {
-      console.error('Get reminders by frequency error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error retrieving reminders by frequency',
-      });
+      return handleError(res, 'Error retrieving reminders by frequency', error);
     }
   },
 };

@@ -2,94 +2,97 @@ import { Request, Response } from 'express';
 import { CollectionModel } from '../models/collection.model';
 import { CreateCollectionInput, UpdateCollectionInput } from '../validators/collection.validator';
 
+// --- Utility helpers ---
+const handleError = (res: Response, message: string, error?: any, status = 500) => {
+  console.error(message, error);
+  return res.status(status).json({ status: 'error', message });
+};
+
+const requireAuth = (req: Request, res: Response): number | undefined => {
+  const userId = req.user?.userId;
+  if (!userId) {
+    res.status(401).json({
+      status: 'error',
+      message: 'Authentication required',
+    });
+    return;
+  }
+  return userId;
+};
+
+const verifyOwnership = (
+  res: Response,
+  collection: any,
+  userId: number
+): boolean => {
+  if (!collection) {
+    res.status(404).json({
+      status: 'error',
+      message: 'Collection not found',
+    });
+    return false;
+  }
+
+  if (collection.user_id !== userId) {
+    res.status(403).json({
+      status: 'error',
+      message: 'Access denied',
+    });
+    return false;
+  }
+
+  return true;
+};
+
+// --- Controller ---
 export const CollectionController = {
-  // GET /api/collections - Get user's collections
+  // GET /api/collections
   async getUserCollections(req: Request, res: Response) {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
     try {
-      const userId = req.user?.userId;
-
-      if (!userId) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
       const collections = await CollectionModel.findByUserId(userId);
-
       return res.status(200).json({
         status: 'success',
         data: { collections },
       });
     } catch (error) {
-      console.error('Get user collections error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error retrieving collections',
-      });
+      return handleError(res, 'Error retrieving collections', error);
     }
   },
 
-  // GET /api/collections/:id - Get collection with mantras
+  // GET /api/collections/:id
   async getCollectionById(req: Request, res: Response) {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
     try {
       const { id } = req.params;
-      const userId = req.user?.userId;
-
-      if (!userId) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
       const result = await CollectionModel.getCollectionWithMantras(Number(id));
 
-      if (!result) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Collection not found',
-        });
-      }
-
-      // Check if collection belongs to user
-      if (result.collection.user_id !== userId) {
-        return res.status(403).json({
-          status: 'error',
-          message: 'Access denied',
-        });
-      }
+      if (!result || !verifyOwnership(res, result.collection, userId)) return;
 
       return res.status(200).json({
         status: 'success',
         data: result,
       });
     } catch (error) {
-      console.error('Get collection by ID error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error retrieving collection',
-      });
+      return handleError(res, 'Error retrieving collection', error);
     }
   },
 
-  // POST /api/collections - Create new collection
+  // POST /api/collections
   async createCollection(req: Request, res: Response) {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
     try {
-      const collectionData = req.body as CreateCollectionInput;
-      const userId = req.user?.userId;
-
-      if (!userId) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
+      const data = req.body as CreateCollectionInput;
       const newCollection = await CollectionModel.create(
         userId,
-        collectionData.name,
-        collectionData.description
+        data.name,
+        data.description
       );
 
       return res.status(201).json({
@@ -98,46 +101,26 @@ export const CollectionController = {
         data: { collection: newCollection },
       });
     } catch (error) {
-      console.error('Create collection error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error creating collection',
-      });
+      return handleError(res, 'Error creating collection', error);
     }
   },
 
-  // PUT /api/collections/:id - Update collection
+  // PUT /api/collections/:id
   async updateCollection(req: Request, res: Response) {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
     try {
       const { id } = req.params;
       const updateData = req.body as UpdateCollectionInput;
-      const userId = req.user?.userId;
-
-      if (!userId) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
       const existingCollection = await CollectionModel.findById(Number(id));
 
-      if (!existingCollection) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Collection not found',
-        });
-      }
+      if (!verifyOwnership(res, existingCollection, userId)) return;
 
-      // Check if collection belongs to user
-      if (existingCollection.user_id !== userId) {
-        return res.status(403).json({
-          status: 'error',
-          message: 'Access denied',
-        });
-      }
-
-      const updatedCollection = await CollectionModel.update(Number(id), updateData);
+      const updatedCollection = await CollectionModel.update(
+        Number(id),
+        updateData
+      );
 
       return res.status(200).json({
         status: 'success',
@@ -145,43 +128,20 @@ export const CollectionController = {
         data: { collection: updatedCollection },
       });
     } catch (error) {
-      console.error('Update collection error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error updating collection',
-      });
+      return handleError(res, 'Error updating collection', error);
     }
   },
 
-  // DELETE /api/collections/:id - Delete collection
+  // DELETE /api/collections/:id
   async deleteCollection(req: Request, res: Response) {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
     try {
       const { id } = req.params;
-      const userId = req.user?.userId;
+      const collection = await CollectionModel.findById(Number(id));
 
-      if (!userId) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
-      const existingCollection = await CollectionModel.findById(Number(id));
-
-      if (!existingCollection) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Collection not found',
-        });
-      }
-
-      // Check if collection belongs to user
-      if (existingCollection.user_id !== userId) {
-        return res.status(403).json({
-          status: 'error',
-          message: 'Access denied',
-        });
-      }
+      if (!verifyOwnership(res, collection, userId)) return;
 
       await CollectionModel.delete(Number(id));
 
@@ -190,43 +150,20 @@ export const CollectionController = {
         message: 'Collection deleted successfully',
       });
     } catch (error) {
-      console.error('Delete collection error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error deleting collection',
-      });
+      return handleError(res, 'Error deleting collection', error);
     }
   },
 
-  // POST /api/collections/:id/mantras/:mantraId - Add mantra to collection
+  // POST /api/collections/:id/mantras/:mantraId
   async addMantraToCollection(req: Request, res: Response) {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
     try {
       const { id, mantraId } = req.params;
-      const userId = req.user?.userId;
-
-      if (!userId) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
       const collection = await CollectionModel.findById(Number(id));
 
-      if (!collection) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Collection not found',
-        });
-      }
-
-      // Check if collection belongs to user
-      if (collection.user_id !== userId) {
-        return res.status(403).json({
-          status: 'error',
-          message: 'Access denied',
-        });
-      }
+      if (!verifyOwnership(res, collection, userId)) return;
 
       await CollectionModel.addMantra(Number(id), Number(mantraId), userId);
 
@@ -235,43 +172,20 @@ export const CollectionController = {
         message: 'Mantra added to collection successfully',
       });
     } catch (error) {
-      console.error('Add mantra to collection error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error adding mantra to collection',
-      });
+      return handleError(res, 'Error adding mantra to collection', error);
     }
   },
 
-  // DELETE /api/collections/:id/mantras/:mantraId - Remove mantra from collection
+  // DELETE /api/collections/:id/mantras/:mantraId
   async removeMantraFromCollection(req: Request, res: Response) {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
     try {
       const { id, mantraId } = req.params;
-      const userId = req.user?.userId;
-
-      if (!userId) {
-        return res.status(401).json({
-          status: 'error',
-          message: 'Authentication required',
-        });
-      }
-
       const collection = await CollectionModel.findById(Number(id));
 
-      if (!collection) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Collection not found',
-        });
-      }
-
-      // Check if collection belongs to user
-      if (collection.user_id !== userId) {
-        return res.status(403).json({
-          status: 'error',
-          message: 'Access denied',
-        });
-      }
+      if (!verifyOwnership(res, collection, userId)) return;
 
       await CollectionModel.removeMantra(Number(id), Number(mantraId));
 
@@ -280,11 +194,7 @@ export const CollectionController = {
         message: 'Mantra removed from collection successfully',
       });
     } catch (error) {
-      console.error('Remove mantra from collection error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error removing mantra from collection',
-      });
+      return handleError(res, 'Error removing mantra from collection', error);
     }
   },
 };
