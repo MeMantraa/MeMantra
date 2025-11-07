@@ -13,10 +13,6 @@ function setupAppWithUser(userId?: number, email?: string) {
     next();
   });
   app.get('/likes/popular', LikeController.getMostLikedMantras);
-  app.use((req, _res, next) => {
-    if (userId) req.user = { userId, email: email ?? '' };
-    next();
-  });
   app.post('/likes/:mantraId', LikeController.likeMantra);
   app.delete('/likes/:mantraId', LikeController.unlikeMantra);
   app.get('/likes/mantras', LikeController.getLikedMantras);
