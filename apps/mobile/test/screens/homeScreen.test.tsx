@@ -156,12 +156,9 @@ describe('HomeScreen - Full Coverage', () => {
     (storage.getToken as jest.Mock).mockResolvedValue('token-x');
     (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({ status: 'success', data: [] });
 
-    const { findAllByRole } = setup();
+    const { getByTestId } = setup();
+    fireEvent.press(getByTestId('profile-btn'));
 
-    const buttons = await findAllByRole('button');
-    const profileBtn = buttons[1];
-
-    fireEvent.press(profileBtn);
     expect(Alert.alert).toHaveBeenCalled();
 
     const alertArgs = (Alert.alert as jest.Mock).mock.calls[0];
@@ -186,9 +183,10 @@ describe('HomeScreen - Full Coverage', () => {
 
     const { findAllByRole } = setup();
     const buttons = await findAllByRole('button');
-    const profileBtn = buttons[1];
-
-    fireEvent.press(profileBtn);
+    expect(buttons.length).toBeGreaterThan(0);
+    const profileBtn = buttons.find((btn) => btn.props.accessibilityRole === 'button');
+    expect(profileBtn).toBeTruthy();
+    fireEvent.press(profileBtn!);
 
     const alertArgs = (Alert.alert as jest.Mock).mock.calls[0];
     const logoutBtn = alertArgs[2].find((b: any) => b.text === 'Log out');
@@ -265,11 +263,9 @@ describe('HomeScreen - Full Coverage', () => {
       (storage as any).saveToken = jest.fn().mockResolvedValue(undefined);
       (storage as any).saveUserData = jest.fn().mockResolvedValue(undefined);
 
-      const { findAllByRole } = setup();
-      const buttons = await findAllByRole('button');
-      const profileBtn = buttons[1];
+      const { getByTestId } = setup();
+      fireEvent.press(getByTestId('profile-btn'));
 
-      fireEvent.press(profileBtn);
       const alertArgs = (Alert.alert as jest.Mock).mock.calls[0];
       const logoutBtn = alertArgs[2].find((b: any) => b.text === 'Log out');
 

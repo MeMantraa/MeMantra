@@ -175,6 +175,7 @@ export default function HomeScreen({ navigation }: any) {
       <View className="absolute top-5 left-0 right-0 z-10 flex-row justify-between items-center px-6 pt-14 pb-4">
         <SearchBar onSearch={handleSearch} placeholder="Search mantras..." />
         <TouchableOpacity
+          testID="profile-btn"
           accessibilityRole="button"
           className="w-12 h-12 rounded-full bg-[#E6D29C] items-center justify-center"
           onPress={handleUserPress}

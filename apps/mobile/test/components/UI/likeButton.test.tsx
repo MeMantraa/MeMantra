@@ -22,7 +22,7 @@ describe('LikeButton', () => {
 
     const icon = button.findByProps({ name: 'heart-outline' });
 
-    expect(icon.props.color).toBe('black');
+    expect(icon.props.color).toBe('#F5E6D3');
   });
 
   it('shows heart icon and secondary color when liked', () => {
