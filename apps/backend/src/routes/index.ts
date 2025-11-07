@@ -1,9 +1,33 @@
 import { Router } from 'express';
 import authRoutes from './auth.routes';
+import mantraRoutes from './mantra.routes';
+import categoryRoutes from './category.routes';
+import collectionRoutes from './collection.routes';
+import likeRoutes from './like.routes';
+import reminderRoutes from './reminder.routes';
+import recommendationRoutes from './recommendation.routes';
 
 const router = Router();
 
-//auth routes
+// Auth routes
 router.use('/auth', authRoutes);
+
+// Mantra routes
+router.use('/mantras', mantraRoutes);
+
+// Category routes
+router.use('/categories', categoryRoutes);
+
+// Collection routes
+router.use('/collections', collectionRoutes);
+
+// Like routes
+router.use('/likes', likeRoutes);
+
+// Reminder routes
+router.use('/reminders', reminderRoutes);
+
+// Recommendation routes
+router.use('/recommendations', recommendationRoutes);
 
 export default router;
