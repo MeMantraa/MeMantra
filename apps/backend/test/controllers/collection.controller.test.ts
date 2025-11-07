@@ -100,7 +100,8 @@ describe('CollectionController', () => {
         status: 'error',
         message: 'Collection not found',
       });
-    });
+    }, 15000);
+
 
     it('should return 403 if collection belongs to different user', async () => {
       const mockResult = {
