@@ -57,5 +57,8 @@
   "dependencies": {
     "google-auth-library": "^10.4.2",
     "react-native-worklets": "^0.6.0"
+  },
+  "optionalDependencies": {
+    "esbuild-windows-64": "0.15.18"
   }
 }
