@@ -1,6 +1,7 @@
 import { CollectionModel } from '../../src/models/collection.model';
 import { db } from '../../src/db';
 import { Collection, CollectionUpdate, Mantra } from '../../src/types/database.types';
+import { CollectionMantraModel } from '../../src/models/collectionMantra.model';
 
 jest.mock('../../src/db', () => ({
   db: {
@@ -8,6 +9,16 @@ jest.mock('../../src/db', () => ({
     selectFrom: jest.fn(),
     updateTable: jest.fn(),
     deleteFrom: jest.fn(),
+  },
+}));
+
+jest.mock('../../src/models/collectionMantra.model', () => ({
+  CollectionMantraModel: {
+    add: jest.fn(),
+    remove: jest.fn(),
+    exists: jest.fn(),
+    countMantras: jest.fn(),
+    removeAllFromCollection: jest.fn(),
   },
 }));
 
@@ -189,41 +200,31 @@ describe('CollectionModel', () => {
 
   describe('delete', () => {
     it('should delete collection and its mantras', async () => {
-      const deleteMantrasMock = {
-        where: jest.fn().mockReturnThis(),
-        execute: jest.fn().mockResolvedValue(undefined),
-      };
+      (CollectionMantraModel.removeAllFromCollection as jest.Mock).mockResolvedValue(3);
 
       const deleteCollectionMock = {
         where: jest.fn().mockReturnThis(),
         executeTakeFirst: jest.fn().mockResolvedValue({ numDeletedRows: BigInt(1) }),
       };
 
-      (db.deleteFrom as jest.Mock)
-        .mockReturnValueOnce(deleteMantrasMock)
-        .mockReturnValueOnce(deleteCollectionMock);
+      (db.deleteFrom as jest.Mock).mockReturnValue(deleteCollectionMock);
 
       const result = await CollectionModel.delete(1);
 
-      expect(db.deleteFrom).toHaveBeenCalledWith('CollectionMantra');
+      expect(CollectionMantraModel.removeAllFromCollection).toHaveBeenCalledWith(1);
       expect(db.deleteFrom).toHaveBeenCalledWith('Collection');
       expect(result).toBe(true);
     });
 
     it('should return false if collection not found', async () => {
-      const deleteMantrasMock = {
-        where: jest.fn().mockReturnThis(),
-        execute: jest.fn().mockResolvedValue(undefined),
-      };
+      (CollectionMantraModel.removeAllFromCollection as jest.Mock).mockResolvedValue(0);
 
       const deleteCollectionMock = {
         where: jest.fn().mockReturnThis(),
         executeTakeFirst: jest.fn().mockResolvedValue({ numDeletedRows: BigInt(0) }),
       };
 
-      (db.deleteFrom as jest.Mock)
-        .mockReturnValueOnce(deleteMantrasMock)
-        .mockReturnValueOnce(deleteCollectionMock);
+      (db.deleteFrom as jest.Mock).mockReturnValue(deleteCollectionMock);
 
       const result = await CollectionModel.delete(999);
 
@@ -232,46 +233,27 @@ describe('CollectionModel', () => {
   });
 
   describe('addMantra', () => {
-    it('should add mantra to collection', async () => {
-      const mockChain = {
-        values: jest.fn().mockReturnThis(),
-        execute: jest.fn().mockResolvedValue(undefined),
-      };
+    it('should add mantra to collection with user tracking', async () => {
+      (CollectionMantraModel.add as jest.Mock).mockResolvedValue(undefined);
 
-      (db.insertInto as jest.Mock).mockReturnValue(mockChain);
+      await CollectionModel.addMantra(1, 2, 3);
 
-      await CollectionModel.addMantra(1, 2);
-
-      expect(db.insertInto).toHaveBeenCalledWith('CollectionMantra');
-      expect(mockChain.values).toHaveBeenCalledWith({
-        collection_id: 1,
-        mantra_id: 2,
-      });
+      expect(CollectionMantraModel.add).toHaveBeenCalledWith(1, 2, 3);
     });
   });
 
   describe('removeMantra', () => {
     it('should remove mantra from collection and return true', async () => {
-      const mockChain = {
-        where: jest.fn().mockReturnThis(),
-        executeTakeFirst: jest.fn().mockResolvedValue({ numDeletedRows: BigInt(1) }),
-      };
-
-      (db.deleteFrom as jest.Mock).mockReturnValue(mockChain);
+      (CollectionMantraModel.remove as jest.Mock).mockResolvedValue(true);
 
       const result = await CollectionModel.removeMantra(1, 2);
 
-      expect(db.deleteFrom).toHaveBeenCalledWith('CollectionMantra');
+      expect(CollectionMantraModel.remove).toHaveBeenCalledWith(1, 2);
       expect(result).toBe(true);
     });
 
     it('should return false if mantra not in collection', async () => {
-      const mockChain = {
-        where: jest.fn().mockReturnThis(),
-        executeTakeFirst: jest.fn().mockResolvedValue({ numDeletedRows: BigInt(0) }),
-      };
-
-      (db.deleteFrom as jest.Mock).mockReturnValue(mockChain);
+      (CollectionMantraModel.remove as jest.Mock).mockResolvedValue(false);
 
       const result = await CollectionModel.removeMantra(1, 2);
 
@@ -387,27 +369,16 @@ describe('CollectionModel', () => {
 
   describe('isMantraInCollection', () => {
     it('should return true if mantra is in collection', async () => {
-      const mockChain = {
-        where: jest.fn().mockReturnThis(),
-        selectAll: jest.fn().mockReturnThis(),
-        executeTakeFirst: jest.fn().mockResolvedValue({ collection_id: 1, mantra_id: 2 }),
-      };
-
-      (db.selectFrom as jest.Mock).mockReturnValue(mockChain);
+      (CollectionMantraModel.exists as jest.Mock).mockResolvedValue(true);
 
       const result = await CollectionModel.isMantraInCollection(1, 2);
 
+      expect(CollectionMantraModel.exists).toHaveBeenCalledWith(1, 2);
       expect(result).toBe(true);
     });
 
     it('should return false if mantra is not in collection', async () => {
-      const mockChain = {
-        where: jest.fn().mockReturnThis(),
-        selectAll: jest.fn().mockReturnThis(),
-        executeTakeFirst: jest.fn().mockResolvedValue(undefined),
-      };
-
-      (db.selectFrom as jest.Mock).mockReturnValue(mockChain);
+      (CollectionMantraModel.exists as jest.Mock).mockResolvedValue(false);
 
       const result = await CollectionModel.isMantraInCollection(1, 2);
 
@@ -417,27 +388,16 @@ describe('CollectionModel', () => {
 
   describe('countMantrasInCollection', () => {
     it('should return count of mantras in collection', async () => {
-      const mockChain = {
-        where: jest.fn().mockReturnThis(),
-        select: jest.fn().mockReturnThis(),
-        executeTakeFirst: jest.fn().mockResolvedValue({ count: '5' }),
-      };
-
-      (db.selectFrom as jest.Mock).mockReturnValue(mockChain);
+      (CollectionMantraModel.countMantras as jest.Mock).mockResolvedValue(5);
 
       const result = await CollectionModel.countMantrasInCollection(1);
 
+      expect(CollectionMantraModel.countMantras).toHaveBeenCalledWith(1);
       expect(result).toBe(5);
     });
 
     it('should return 0 if collection is empty', async () => {
-      const mockChain = {
-        where: jest.fn().mockReturnThis(),
-        select: jest.fn().mockReturnThis(),
-        executeTakeFirst: jest.fn().mockResolvedValue({ count: '0' }),
-      };
-
-      (db.selectFrom as jest.Mock).mockReturnValue(mockChain);
+      (CollectionMantraModel.countMantras as jest.Mock).mockResolvedValue(0);
 
       const result = await CollectionModel.countMantrasInCollection(1);
 

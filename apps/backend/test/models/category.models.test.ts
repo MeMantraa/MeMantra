@@ -7,6 +7,7 @@ jest.mock('../../src/db', () => ({
     insertInto: jest.fn(),
     selectFrom: jest.fn(),
     deleteFrom: jest.fn(),
+    updateTable: jest.fn(),
   },
 }));
 
@@ -24,7 +25,10 @@ describe('CategoryModel', () => {
       const mockCategory: Category = {
           category_id: 1,
           name: 'Motivation',
-          description: null
+          description: null,
+          category_type: null,
+          image_url: null,
+          is_active: null,
       };
 
       const mockChain = {
@@ -64,7 +68,10 @@ describe('CategoryModel', () => {
       const mockCategory: Category = {
           category_id: 1,
           name: 'Motivation',
-          description: null
+          description: null,
+          category_type: null,
+          image_url: null,
+          is_active: null,
       };
 
       const mockChain = {
@@ -102,15 +109,24 @@ describe('CategoryModel', () => {
       const mockCategories: Category[] = [
         {
             category_id: 1, name: 'Focus',
-            description: null
+            description: null,
+            category_type: null,
+            image_url: null,
+            is_active: null,
         },
         {
             category_id: 2, name: 'Motivation',
-            description: null
+            description: null,
+            category_type: null,
+            image_url: null,
+            is_active: null,
         },
         {
             category_id: 3, name: 'Stress',
-            description: null
+            description: null,
+            category_type: null,
+            image_url: null,
+            is_active: null,
         },
       ];
 
@@ -151,7 +167,10 @@ describe('CategoryModel', () => {
       const mockCategory: Category = {
           category_id: 1,
           name: 'Motivation',
-          description: null
+          description: null,
+          category_type: null,
+          image_url: null,
+          is_active: null,
       };
 
       const mockChain = {
@@ -287,6 +306,260 @@ describe('CategoryModel', () => {
       expect(mockChain.innerJoin).toHaveBeenCalledWith('MantraCategory', 'Category.category_id', 'MantraCategory.category_id');
       expect(mockChain.where).toHaveBeenCalledWith('MantraCategory.mantra_id', '=', 1);
       expect(result).toEqual(mockCategories);
+    });
+  });
+
+  describe('findAllActive', () => {
+    it('should return only active categories ordered by name', async () => {
+      const mockCategories: Category[] = [
+        {
+          category_id: 1,
+          name: 'Anxiety',
+          description: 'Anxiety related',
+          category_type: 'emotion',
+          image_url: null,
+          is_active: true,
+        },
+        {
+          category_id: 2,
+          name: 'Motivation',
+          description: null,
+          category_type: 'emotion',
+          image_url: null,
+          is_active: true,
+        },
+      ];
+
+      const mockChain = {
+        where: jest.fn().mockReturnThis(),
+        selectAll: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue(mockCategories),
+      };
+
+      (db.selectFrom as jest.Mock).mockReturnValue(mockChain);
+
+      const result = await CategoryModel.findAllActive();
+
+      expect(db.selectFrom).toHaveBeenCalledWith('Category');
+      expect(mockChain.where).toHaveBeenCalledWith('is_active', '=', true);
+      expect(mockChain.orderBy).toHaveBeenCalledWith('name', 'asc');
+      expect(result).toEqual(mockCategories);
+      expect(result).toHaveLength(2);
+    });
+
+    it('should return empty array if no active categories exist', async () => {
+      const mockChain = {
+        where: jest.fn().mockReturnThis(),
+        selectAll: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue([]),
+      };
+
+      (db.selectFrom as jest.Mock).mockReturnValue(mockChain);
+
+      const result = await CategoryModel.findAllActive();
+
+      expect(result).toEqual([]);
+      expect(result).toHaveLength(0);
+    });
+  });
+
+  describe('findByType', () => {
+    it('should return active categories filtered by type', async () => {
+      const mockCategories: Category[] = [
+        {
+          category_id: 5,
+          name: 'Cognitive Reframing',
+          description: 'CBT technique',
+          category_type: 'cbt',
+          image_url: null,
+          is_active: true,
+        },
+        {
+          category_id: 8,
+          name: 'Exposure Therapy',
+          description: null,
+          category_type: 'cbt',
+          image_url: null,
+          is_active: true,
+        },
+      ];
+
+      const mockChain = {
+        where: jest.fn().mockReturnThis(),
+        selectAll: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue(mockCategories),
+      };
+
+      (db.selectFrom as jest.Mock).mockReturnValue(mockChain);
+
+      const result = await CategoryModel.findByType('cbt');
+
+      expect(db.selectFrom).toHaveBeenCalledWith('Category');
+      expect(mockChain.where).toHaveBeenCalledWith('category_type', '=', 'cbt');
+      expect(mockChain.where).toHaveBeenCalledWith('is_active', '=', true);
+      expect(mockChain.orderBy).toHaveBeenCalledWith('name', 'asc');
+      expect(result).toEqual(mockCategories);
+      expect(result).toHaveLength(2);
+    });
+
+    it('should return empty array if no categories match type', async () => {
+      const mockChain = {
+        where: jest.fn().mockReturnThis(),
+        selectAll: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue([]),
+      };
+
+      (db.selectFrom as jest.Mock).mockReturnValue(mockChain);
+
+      const result = await CategoryModel.findByType('nonexistent');
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('update', () => {
+    it('should update category details', async () => {
+      const updates = {
+        name: 'Updated Name',
+        description: 'Updated description',
+        category_type: 'context',
+      };
+
+      const mockUpdatedCategory: Category = {
+        category_id: 1,
+        name: 'Updated Name',
+        description: 'Updated description',
+        category_type: 'context',
+        image_url: null,
+        is_active: true,
+      };
+
+      const mockChain = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returningAll: jest.fn().mockReturnThis(),
+        executeTakeFirst: jest.fn().mockResolvedValue(mockUpdatedCategory),
+      };
+
+      (db.updateTable as jest.Mock).mockReturnValue(mockChain);
+
+      const result = await CategoryModel.update(1, updates);
+
+      expect(db.updateTable).toHaveBeenCalledWith('Category');
+      expect(mockChain.set).toHaveBeenCalledWith(updates);
+      expect(mockChain.where).toHaveBeenCalledWith('category_id', '=', 1);
+      expect(result).toEqual(mockUpdatedCategory);
+    });
+
+    it('should return undefined if category not found', async () => {
+      const updates = { name: 'New Name' };
+
+      const mockChain = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returningAll: jest.fn().mockReturnThis(),
+        executeTakeFirst: jest.fn().mockResolvedValue(undefined),
+      };
+
+      (db.updateTable as jest.Mock).mockReturnValue(mockChain);
+
+      const result = await CategoryModel.update(999, updates);
+
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('softDelete', () => {
+    it('should soft delete category by setting is_active to false', async () => {
+      const mockDeactivatedCategory: Category = {
+        category_id: 1,
+        name: 'Motivation',
+        description: null,
+        category_type: 'emotion',
+        image_url: null,
+        is_active: false,
+      };
+
+      const mockChain = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returningAll: jest.fn().mockReturnThis(),
+        executeTakeFirst: jest.fn().mockResolvedValue(mockDeactivatedCategory),
+      };
+
+      (db.updateTable as jest.Mock).mockReturnValue(mockChain);
+
+      const result = await CategoryModel.softDelete(1);
+
+      expect(db.updateTable).toHaveBeenCalledWith('Category');
+      expect(mockChain.set).toHaveBeenCalledWith({ is_active: false });
+      expect(mockChain.where).toHaveBeenCalledWith('category_id', '=', 1);
+      expect(result).toEqual(mockDeactivatedCategory);
+      expect(result?.is_active).toBe(false);
+    });
+
+    it('should return undefined if category not found', async () => {
+      const mockChain = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returningAll: jest.fn().mockReturnThis(),
+        executeTakeFirst: jest.fn().mockResolvedValue(undefined),
+      };
+
+      (db.updateTable as jest.Mock).mockReturnValue(mockChain);
+
+      const result = await CategoryModel.softDelete(999);
+
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('reactivate', () => {
+    it('should reactivate category by setting is_active to true', async () => {
+      const mockReactivatedCategory: Category = {
+        category_id: 1,
+        name: 'Motivation',
+        description: null,
+        category_type: 'emotion',
+        image_url: null,
+        is_active: true,
+      };
+
+      const mockChain = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returningAll: jest.fn().mockReturnThis(),
+        executeTakeFirst: jest.fn().mockResolvedValue(mockReactivatedCategory),
+      };
+
+      (db.updateTable as jest.Mock).mockReturnValue(mockChain);
+
+      const result = await CategoryModel.reactivate(1);
+
+      expect(db.updateTable).toHaveBeenCalledWith('Category');
+      expect(mockChain.set).toHaveBeenCalledWith({ is_active: true });
+      expect(mockChain.where).toHaveBeenCalledWith('category_id', '=', 1);
+      expect(result).toEqual(mockReactivatedCategory);
+      expect(result?.is_active).toBe(true);
+    });
+
+    it('should return undefined if category not found', async () => {
+      const mockChain = {
+        set: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        returningAll: jest.fn().mockReturnThis(),
+        executeTakeFirst: jest.fn().mockResolvedValue(undefined),
+      };
+
+      (db.updateTable as jest.Mock).mockReturnValue(mockChain);
+
+      const result = await CategoryModel.reactivate(999);
+
+      expect(result).toBeUndefined();
     });
   });
 });
