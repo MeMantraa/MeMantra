@@ -1,0 +1,9 @@
+{
+  "dialectName": "postgres",
+  "url": "env(DATABASE_URL)",
+  "outFile": "./src/types/database.types.ts",
+  "camelCase": false,
+  "excludePattern": "",
+  "includePattern": "",
+  "logLevel": "info"
+}

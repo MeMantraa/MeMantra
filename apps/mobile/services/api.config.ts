@@ -42,6 +42,9 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       console.log('Unauthorized access');
     }
-    return Promise.reject(error);
+    return Promise.reject(
+      // Ensure we always reject with an Error (SonarQube)
+      error instanceof Error ? error : new Error(JSON.stringify(error)),
+    );
   },
 );

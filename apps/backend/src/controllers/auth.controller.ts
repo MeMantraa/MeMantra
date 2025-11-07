@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { UserModel } from '../models/user.model';
 import { generateToken } from '../utils/jwt.utils';
@@ -172,7 +172,7 @@ export const AuthController = {
 
       const payload = ticket.getPayload();
 
-      if (!payload || !payload.email) {
+      if (!payload?.email) {
         return res.status(400).json({ status: 'error', message: 'Invalid Google token' });
       }
 
@@ -183,8 +183,7 @@ export const AuthController = {
       if (!user) {
         const randomPassword = crypto.randomBytes(16).toString('hex');
         const passwordHash = await bcrypt.hash(randomPassword, 10);
-        const username = name ? name.replace(/\s+/g, '').toLowerCase() : email.split('@')[0];
-
+        const username = name ? name.replaceAll(' ', '').toLowerCase() : email.split('@')[0];
         user = await UserModel.create({
           email: email.toLowerCase(),
           username,

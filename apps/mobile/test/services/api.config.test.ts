@@ -81,7 +81,7 @@ describe('api.config', () => {
     expect(handler.fulfilled(response)).toBe(response);
 
     const error = { response: { status: 401 } };
-    await expect(handler.rejected(error)).rejects.toEqual(error);
+    await expect(handler.rejected(error)).rejects.toThrow(JSON.stringify(error));
 
     consoleSpy.mockRestore();
   });

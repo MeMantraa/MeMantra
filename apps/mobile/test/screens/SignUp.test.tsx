@@ -43,14 +43,14 @@ jest.mock('../../context/ThemeContext', () => ({
 jest.spyOn(Alert, 'alert');
 
 const mockNavigate = jest.fn();
-
+const mockReset = jest.fn();
 describe('SignUpScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
   });
 
   const setup = () => {
-    return render(<SignUpScreen navigation={{ navigate: mockNavigate }} />);
+    return render(<SignUpScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />);
   };
 
   it('renders all input fields and buttons', () => {
@@ -202,7 +202,9 @@ describe('SignUpScreen', () => {
       promptAsync: mockPromptAsync,
     });
 
-    const { getByText } = render(<SignUpScreen navigation={{ navigate: jest.fn() }} />);
+    const { getByText } = render(
+      <SignUpScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />,
+    );
 
     fireEvent.press(getByText(/Sign Up with Google/i));
 
@@ -228,9 +230,11 @@ describe('SignUpScreen', () => {
       message: 'Google login failed',
     });
 
-    const { rerender } = render(<SignUpScreen navigation={{ navigate: jest.fn() }} />);
+    const { rerender } = render(
+      <SignUpScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />,
+    );
 
-    rerender(<SignUpScreen navigation={{ navigate: jest.fn() }} />);
+    rerender(<SignUpScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />);
 
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'Google login failed');
@@ -246,8 +250,85 @@ describe('SignUpScreen', () => {
       promptAsync: jest.fn(),
     });
 
-    render(<SignUpScreen navigation={{ navigate: jest.fn() }} />);
+    render(<SignUpScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />);
 
     await waitFor(() => expect(Alert.alert).not.toHaveBeenCalled());
+  });
+
+  it('saves token and user data on successful Google authentication', async () => {
+    const fakeResponse = {
+      type: 'success',
+      authentication: { idToken: 'fake-token' },
+    };
+
+    (useGoogleAuth as jest.Mock).mockReturnValue({
+      request: true,
+      response: fakeResponse,
+      promptAsync: jest.fn(),
+    });
+
+    (authService.googleAuth as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: {
+        token: 'google-token',
+        user: { id: 1, username: 'GoogleUser' },
+      },
+    });
+
+    render(<SignUpScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />);
+
+    await waitFor(() => {
+      expect(storage.saveToken).toHaveBeenCalledWith('google-token');
+      expect(storage.saveUserData).toHaveBeenCalledWith({ id: 1, username: 'GoogleUser' });
+      expect(Alert.alert).toHaveBeenCalledWith('Success', 'Account created with Google!');
+    });
+  });
+
+  it('shows alert when Google authentication throws an error', async () => {
+    const fakeResponse = {
+      type: 'success',
+      authentication: { idToken: 'fake-token' },
+    };
+
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    (useGoogleAuth as jest.Mock).mockReturnValue({
+      request: true,
+      response: fakeResponse,
+      promptAsync: jest.fn(),
+    });
+
+    (authService.googleAuth as jest.Mock).mockRejectedValue(new Error('Something went wrong'));
+
+    render(<SignUpScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />);
+
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Google auth error:', expect.any(Error));
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Google authentication failed');
+    });
+  });
+
+  it('shows fallback alert if Google auth returns error without message', async () => {
+    const fakeResponse = {
+      type: 'success',
+      authentication: { idToken: 'fake-token' },
+    };
+
+    (useGoogleAuth as jest.Mock).mockReturnValue({
+      request: true,
+      response: fakeResponse,
+      promptAsync: jest.fn(),
+    });
+
+    (authService.googleAuth as jest.Mock).mockResolvedValue({
+      status: 'error',
+      message: '',
+    });
+
+    render(<SignUpScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />);
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Google login failed');
+    });
   });
 });

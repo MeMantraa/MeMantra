@@ -7,12 +7,12 @@ import SaveButton from '../components/UI/saveButton';
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface MantraCarouselProps {
-  item: Mantra;
-  onLike?: (mantraId: number) => void;
-  onSave?: (mantraId: number) => void;
+  readonly item: Mantra;
+  readonly onLike?: (mantraId: number) => void;
+  readonly onSave?: (mantraId: number) => void;
 }
 
-export default function MantraCarousel({ item, onLike, onSave }: MantraCarouselProps) {
+export default function MantraCarousel({ item, onLike, onSave }: Readonly<MantraCarouselProps>) {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Filter out pages with no content
@@ -117,11 +117,11 @@ export default function MantraCarousel({ item, onLike, onSave }: MantraCarouselP
 
       {/* Carousel dots */}
       <View className="absolute bottom-40 left-0 right-0 flex-row justify-center items-center">
-        {pages.map((_, index) => (
+        {pages.map((page) => (
           <View
-            key={index}
+            key={`${item.mantra_id}-${page.title}`} // Use a stable, unique key (SonarQube)
             className={`h-2 rounded-full mx-1 ${
-              index === currentIndex ? 'w-2 bg-white' : 'w-2 bg-white/40'
+              pages.indexOf(page) === currentIndex ? 'w-2 bg-white' : 'w-2 bg-white/40'
             }`}
           />
         ))}

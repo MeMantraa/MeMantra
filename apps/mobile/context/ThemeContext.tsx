@@ -1,5 +1,5 @@
 // src/context/ThemeContext.tsx
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useMemo } from 'react';
 import { themes, ThemeName } from '../styles/theme';
 
 type ThemeContextType = {
@@ -21,11 +21,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     console.log('Only one theme available for now');
   };
 
-  return (
-    <ThemeContext.Provider value={{ theme, colors: themes[theme], toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  // Ensure stable reference for Context value (SonarQube)
+  const contextValue = useMemo(() => ({ theme, colors: themes[theme], toggleTheme }), [theme]);
+
+  return <ThemeContext.Provider value={contextValue}>{children}</ThemeContext.Provider>;
 };
 
 export const useTheme = () => useContext(ThemeContext);

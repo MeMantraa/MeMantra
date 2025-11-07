@@ -24,11 +24,7 @@ describe('db.config', () => {
     jest.resetModules();
     process.env = {
       ...originalEnv,
-      DB_HOST: 'localhost',
-      DB_PORT: '5432',
-      DB_USER: 'testuser',
-      DB_PASSWORD: 'testpass',
-      DB_NAME: 'testdb',
+      DATABASE_URL: 'postgres://user:pass@host:5432/dbname',
     };
     poolConfigs.length = 0;
     mockRelease.mockReset();
@@ -39,18 +35,15 @@ describe('db.config', () => {
     process.env = originalEnv;
   });
 
-  it('configures pool using env variables and reports successful connection', async () => {
+  it('configures pool using DATABASE_URL and reports successful connection to Neon', async () => {
     mockConnect.mockResolvedValue({ release: mockRelease });
 
     const { pool, testConnection } = require('../../src/config/db.config');
 
     expect(pool).toBeDefined();
     expect(poolConfigs[0]).toMatchObject({
-      host: 'localhost',
-      port: 5432,
-      user: 'testuser',
-      password: 'testpass',
-      database: 'testdb',
+      connectionString: 'postgres://user:pass@host:5432/dbname',
+      ssl: { rejectUnauthorized: false },
     });
 
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => undefined);
@@ -59,7 +52,7 @@ describe('db.config', () => {
     expect(result).toBe(true);
     expect(mockConnect).toHaveBeenCalled();
     expect(mockRelease).toHaveBeenCalled();
-    expect(consoleSpy).toHaveBeenCalledWith('Successfully connected to the database');
+    expect(consoleSpy).toHaveBeenCalledWith('Successfully connected to the Neon hosted shared database');
 
     consoleSpy.mockRestore();
   });

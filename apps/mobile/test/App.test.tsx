@@ -1,7 +1,10 @@
+/* global require */
+
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import * as renderer from 'react-test-renderer';
 import App from '../App';
+import * as expo from 'expo';
 
 // Mock CSS imports
 jest.mock('../global.css', () => ({}));
@@ -23,6 +26,11 @@ jest.mock('expo-status-bar', () => ({
   StatusBar: 'StatusBar',
 }));
 
+// Keep the registerRootComponent mock
+jest.mock('expo', () => ({
+  registerRootComponent: jest.fn(),
+}));
+
 describe('App Component', () => {
   test('renders without crashing', () => {
     expect(() => render(<App />)).not.toThrow();
@@ -38,5 +46,13 @@ describe('App Component', () => {
       const tree = renderer.create(<App />).toJSON();
       expect(tree).toMatchSnapshot();
     });
+  });
+});
+
+describe('index.ts', () => {
+  it('registers the App with Expo', () => {
+    // Re-import the module to trigger registration
+    require('../index');
+    expect(expo.registerRootComponent).toHaveBeenCalledWith(App);
   });
 });

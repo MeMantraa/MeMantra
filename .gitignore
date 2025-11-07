@@ -144,7 +144,7 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 coverage/
-.DS_Store
+.DS_Stores
 node_modules/
 .turbo/cache/4527633f029f2815-meta.json
 .turbo/cache/4527633f029f2815.tar.zst
@@ -160,3 +160,6 @@ pnpm-lock.yaml
 **/.pnpm-store/
 .pnpm-debug.log
 .pnpm/
+
+# Claude files
+CLAUDE.md
