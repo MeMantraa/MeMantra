@@ -179,21 +179,24 @@ describe('HomeScreen - Full Coverage', () => {
 
   it('handles logout failure gracefully', async () => {
     (storage.getToken as jest.Mock).mockResolvedValue('t');
+
     (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({ status: 'success', data: [] });
 
-    const { findAllByRole } = setup();
-    const buttons = await findAllByRole('button');
-    expect(buttons.length).toBeGreaterThan(0);
-    const profileBtn = buttons.find((btn) => btn.props.accessibilityRole === 'button');
-    expect(profileBtn).toBeTruthy();
-    fireEvent.press(profileBtn!);
+    const { getByTestId } = setup();
+
+    const profileBtn = getByTestId('profile-btn');
+
+    fireEvent.press(profileBtn);
 
     const alertArgs = (Alert.alert as jest.Mock).mock.calls[0];
-    const logoutBtn = alertArgs[2].find((b: any) => b.text === 'Log out');
+
+    const buttonsConfig = alertArgs[2] || [];
+
+    const logoutBtn = buttonsConfig.find((b: any) => b.text === 'Log out');
 
     (storage.removeToken as jest.Mock).mockRejectedValueOnce(new Error('logout fail'));
 
-    await act(async () => logoutBtn.onPress());
+    await act(async () => logoutBtn?.onPress && logoutBtn.onPress());
 
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to log out. Please try again.');

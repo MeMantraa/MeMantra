@@ -4,30 +4,16 @@ import { View, FlatList } from 'react-native';
 import MantraCarousel from '../../components/carousel';
 import type { Mantra } from '../../services/mantra.service';
 
-jest.mock('../../components/UI/saveButton', () => {
+jest.mock('../../components/UI/iconButton', () => {
   const ReactActual = jest.requireActual('react');
   const RN = jest.requireActual('react-native');
   return {
     __esModule: true,
-    default: (props: any) =>
+    default: ({ type, onPress }: any) =>
       ReactActual.createElement(
         RN.TouchableOpacity,
-        { testID: 'save-button', onPress: props.onPress, accessible: true },
-        ReactActual.createElement(RN.Text, null, 'Save'),
-      ),
-  };
-});
-
-jest.mock('../../components/UI/likeButton', () => {
-  const ReactActual = jest.requireActual('react');
-  const RN = jest.requireActual('react-native');
-  return {
-    __esModule: true,
-    default: (props: any) =>
-      ReactActual.createElement(
-        RN.TouchableOpacity,
-        { testID: 'like-button', onPress: props.onPress, accessible: true },
-        ReactActual.createElement(RN.Text, null, 'Like'),
+        { testID: `${type}-button`, onPress, accessible: true },
+        ReactActual.createElement(RN.Text, null, type),
       ),
   };
 });

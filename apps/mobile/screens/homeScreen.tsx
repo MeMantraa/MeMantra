@@ -148,6 +148,7 @@ export default function HomeScreen({ navigation }: any) {
         <TouchableOpacity
           className="bg-[#E6D29C] rounded-full px-6 py-3 mt-6"
           onPress={loadMantras}
+          accessibilityRole="button"
         >
           <Text className="text-[#6D7E68] font-semibold text-base">Refresh</Text>
         </TouchableOpacity>
@@ -175,7 +176,7 @@ export default function HomeScreen({ navigation }: any) {
       {/* Header */}
       <View className="absolute top-5 left-0 right-0 z-10 flex-row justify-between items-center px-6 pt-14 pb-4">
         <SearchBar onSearch={handleSearch} placeholder="Search mantras..." />
-        <IconButton type="profile" onPress={handleUserPress} />
+        <IconButton type="profile" onPress={handleUserPress} testID="profile-btn" />
       </View>
 
       {/* Main content */}
