@@ -105,7 +105,9 @@ describe('IconButton Component', () => {
   });
 
   it('renders default icon for unknown type', () => {
-    const { UNSAFE_getByType } = render(<IconButton type="unknown" onPress={mockOnPress} />);
+    const { UNSAFE_getByType } = render(
+      <IconButton type={'unknown' as any} onPress={mockOnPress} />,
+    );
 
     const icon = UNSAFE_getByType(Ionicons);
 
