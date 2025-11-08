@@ -156,12 +156,9 @@ describe('HomeScreen - Full Coverage', () => {
     (storage.getToken as jest.Mock).mockResolvedValue('token-x');
     (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({ status: 'success', data: [] });
 
-    const { findAllByRole } = setup();
+    const { getByTestId } = setup();
+    fireEvent.press(getByTestId('profile-btn'));
 
-    const buttons = await findAllByRole('button');
-    const profileBtn = buttons[1];
-
-    fireEvent.press(profileBtn);
     expect(Alert.alert).toHaveBeenCalled();
 
     const alertArgs = (Alert.alert as jest.Mock).mock.calls[0];
@@ -182,20 +179,24 @@ describe('HomeScreen - Full Coverage', () => {
 
   it('handles logout failure gracefully', async () => {
     (storage.getToken as jest.Mock).mockResolvedValue('t');
+
     (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({ status: 'success', data: [] });
 
-    const { findAllByRole } = setup();
-    const buttons = await findAllByRole('button');
-    const profileBtn = buttons[1];
+    const { getByTestId } = setup();
+
+    const profileBtn = getByTestId('profile-btn');
 
     fireEvent.press(profileBtn);
 
     const alertArgs = (Alert.alert as jest.Mock).mock.calls[0];
-    const logoutBtn = alertArgs[2].find((b: any) => b.text === 'Log out');
+
+    const buttonsConfig = alertArgs[2] || [];
+
+    const logoutBtn = buttonsConfig.find((b: any) => b.text === 'Log out');
 
     (storage.removeToken as jest.Mock).mockRejectedValueOnce(new Error('logout fail'));
 
-    await act(async () => logoutBtn.onPress());
+    await act(async () => logoutBtn?.onPress && logoutBtn.onPress());
 
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to log out. Please try again.');
@@ -265,11 +266,9 @@ describe('HomeScreen - Full Coverage', () => {
       (storage as any).saveToken = jest.fn().mockResolvedValue(undefined);
       (storage as any).saveUserData = jest.fn().mockResolvedValue(undefined);
 
-      const { findAllByRole } = setup();
-      const buttons = await findAllByRole('button');
-      const profileBtn = buttons[1];
+      const { getByTestId } = setup();
+      fireEvent.press(getByTestId('profile-btn'));
 
-      fireEvent.press(profileBtn);
       const alertArgs = (Alert.alert as jest.Mock).mock.calls[0];
       const logoutBtn = alertArgs[2].find((b: any) => b.text === 'Log out');
 

@@ -1,8 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { View, Text, Dimensions, FlatList, ScrollView } from 'react-native';
 import { Mantra } from '../services/mantra.service';
-import LikeButton from '../components/UI/likeButton';
-import SaveButton from '../components/UI/saveButton';
+import IconButton from '../components/UI/iconButton';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -51,8 +50,8 @@ export default function MantraCarousel({ item, onLike, onSave }: Readonly<Mantra
       style={{ height: SCREEN_HEIGHT, width: SCREEN_WIDTH }}
       className="justify-center items-center bg-[#9AA793]"
     >
-      <View className="absolute top-32 z-10">
-        <Text className="text-white text-5xl opacity-50">" "</Text>
+      <View className="absolute top-36 z-11">
+        <Text className="text-white text-6xl opacity-50">" "</Text>
       </View>
 
       {/* Horizontal scroll through pages */}
@@ -102,12 +101,12 @@ export default function MantraCarousel({ item, onLike, onSave }: Readonly<Mantra
                   nestedScrollEnabled={true}
                 >
                   <View className="mb-6">
-                    <Text className="text-[#E6D29C] text-2xl font-semibold text-center">
+                    <Text className="text-[#E6D29C] text-3xl font-semibold text-center">
                       {page.title}
                     </Text>
                   </View>
 
-                  <Text className="text-white  leading-7 text-base">{page.content}</Text>
+                  <Text className="text-white  leading-7 text-lg">{page.content}</Text>
                 </ScrollView>
               )}
             </View>
@@ -129,8 +128,8 @@ export default function MantraCarousel({ item, onLike, onSave }: Readonly<Mantra
 
       {/* Action buttons */}
       <View className="absolute right-6 bottom-40 items-center">
-        <SaveButton saved={!!item.isSaved} onPress={handleSave} />
-        <LikeButton liked={!!item.isLiked} onPress={handleLike} />
+        <IconButton type="save" active={!!item.isSaved} onPress={handleSave} className="mb-6" />
+        <IconButton type="like" active={!!item.isLiked} onPress={handleLike} />
       </View>
     </View>
   );
