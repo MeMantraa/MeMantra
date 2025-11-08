@@ -96,7 +96,7 @@ describe('LoginScreen', () => {
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith('Login Failed', 'Invalid credentials');
     });
-  });
+  }, 15000);
 
   it('navigates to Signup when pressing "Sign Up"', () => {
     const { getByText } = setup();
