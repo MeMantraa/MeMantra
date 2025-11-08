@@ -20,7 +20,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, placeholder = 'Search..
   //expand/collapse animation
   useEffect(() => {
     Animated.timing(animatedWidth, {
-      toValue: isExpanded ? SCREEN_WIDTH - 90 : 48,
+      toValue: isExpanded ? SCREEN_WIDTH - 95 : 48,
       duration: 200,
       useNativeDriver: false,
     }).start(() => {

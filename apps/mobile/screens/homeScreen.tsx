@@ -13,6 +13,7 @@ import MantraCarousel from '../components/carousel';
 import { mantraService, Mantra } from '../services/mantra.service';
 import { storage } from '../utils/storage';
 import SearchBar from '../components/UI/searchBar';
+import IconButton from '../components/UI/iconButton';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -171,17 +172,10 @@ export default function HomeScreen({ navigation }: any) {
 
   return (
     <View className="flex-1 bg-[#9AA793]">
-      {/* Header is rendered for all states (loading / empty / feed) */}
+      {/* Header */}
       <View className="absolute top-5 left-0 right-0 z-10 flex-row justify-between items-center px-6 pt-14 pb-4">
         <SearchBar onSearch={handleSearch} placeholder="Search mantras..." />
-        <TouchableOpacity
-          testID="profile-btn"
-          accessibilityRole="button"
-          className="w-12 h-12 rounded-full bg-[#E6D29C] items-center justify-center"
-          onPress={handleUserPress}
-        >
-          <Ionicons name="person-outline" size={24} color="#6D7E68" />
-        </TouchableOpacity>
+        <IconButton type="profile" onPress={handleUserPress} />
       </View>
 
       {/* Main content */}

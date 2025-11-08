@@ -1,8 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { View, Text, Dimensions, FlatList, ScrollView } from 'react-native';
 import { Mantra } from '../services/mantra.service';
-import LikeButton from '../components/UI/likeButton';
-import SaveButton from '../components/UI/saveButton';
+import IconButton from '../components/UI/iconButton';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -129,8 +128,8 @@ export default function MantraCarousel({ item, onLike, onSave }: Readonly<Mantra
 
       {/* Action buttons */}
       <View className="absolute right-6 bottom-40 items-center">
-        <SaveButton saved={!!item.isSaved} onPress={handleSave} />
-        <LikeButton liked={!!item.isLiked} onPress={handleLike} />
+        <IconButton type="save" active={!!item.isSaved} onPress={handleSave} className="mb-6" />
+        <IconButton type="like" active={!!item.isLiked} onPress={handleLike} />
       </View>
     </View>
   );
