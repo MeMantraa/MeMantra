@@ -29,6 +29,7 @@
     "expo": "~54.0.13",
     "expo-asset": "^12.0.9",
     "expo-auth-session": "~7.0.8",
+    "expo-splash-screen": "^31.0.10",
     "expo-status-bar": "~3.0.8",
     "expo-web-browser": "~15.0.8",
     "nativewind": "^4.2.1",

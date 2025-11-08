@@ -8,11 +8,6 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.memantra.mobile"
@@ -20,7 +15,7 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#8E9A86"
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -38,6 +33,18 @@
           "url": "https://sentry.io/",
           "project": "memantraapp",
           "organization": "memantra"
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#8E9A86",
+          "image": "./assets/logo.png",
+          "dark": {
+            "image": "./assets/logo.png",
+            "backgroundColor": "#8E9A86"
+          },
+          "imageWidth": 200
         }
       ]
     ],
