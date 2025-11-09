@@ -1,17 +1,27 @@
 #!/bin/sh
-set -e
+. "$(dirname "$0")/_/husky.sh"
 
-export PATH="$PWD/node_modules/.bin:/opt/homebrew/bin:/usr/local/bin:$HOME/.volta/bin:$HOME/.nvm/versions/node/current/bin:$PATH"
+set -euo pipefail
+
+# Ensure local binaries take precedence regardless of shell setup
+export PATH="$PWD/node_modules/.bin:$PATH"
 
 if ! command -v node >/dev/null 2>&1; then
-  echo "Node.js not found in PATH for Git hooks."
-  echo "   Run 'which node' in your terminal and add that directory to PATH above."
+  echo "❌ Node.js must be available to run Git hooks."
+  echo "   See README.md for environment setup instructions."
   exit 127
 fi
 
-# Debugging information
-echo "Current directory: $(pwd)"
-unset GIT_CONFIG_PARAMETERS
-echo "Git root: $(git rev-parse --show-toplevel)"
+run_pnpm() {
+  if command -v pnpm >/dev/null 2>&1; then
+    pnpm "$@"
+  elif command -v corepack >/dev/null 2>&1; then
+    corepack pnpm "$@"
+  else
+    npx --yes pnpm "$@"
+  fi
+}
 
-npx pnpm lint-staged
+unset GIT_CONFIG_PARAMETERS
+
+run_pnpm exec lint-staged

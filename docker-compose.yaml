@@ -1,0 +1,91 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: ./apps/backend/dockerfile
+    working_dir: /app/apps/backend
+    ports:
+      - '${API_PORT:-4000}:3000'
+    env_file:
+      - ./apps/backend/.env
+    environment:
+      NODE_ENV: development
+      CI: '1'
+      HUSKY: '0'
+      DB_HOST: db
+      PNPM_HOME: /root/.local/share/pnpm
+      PNPM_CONFIG_STORE_DIR: /root/.local/share/pnpm/store
+    entrypoint: [ '/bin/sh', '-lc' ]
+    command: [ 'pnpm --version && pnpm fetch --prefer-offline || true && if [ ! -x node_modules/.bin/nodemon ]; then echo "Installing backend deps (filtered by name)…"; pnpm -w install --frozen-lockfile --prefer-offline --no-optional --filter backend...; else echo "Deps present, skipping install"; fi && pnpm run dev' ]
+    volumes:
+      - .:/app:delegated
+      - root_node_modules:/app/node_modules
+      - backend_node_modules:/app/apps/backend/node_modules
+      - pnpm_store:/root/.local/share/pnpm/store
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    depends_on:
+      db:
+        condition: service_healthy
+
+  #runs local, containerized db
+  db:
+    image: postgres:17
+    env_file:
+      - ./apps/backend/.env
+    environment: {}
+    ports:
+      - '${DB_PORT:-5432}:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Initialize the database with init script
+      - ./apps/backend/database:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: [ 'CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-me_mantra_db}' ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  #PGAdmin UI or local or remote DB
+  #run with docker compose --profile pgadmin up -d pgadmin
+  pgadmin:
+    image: dpage/pgadmin4:8
+    restart: unless-stopped
+    env_file:
+      - ./apps/backend/.env
+    environment:
+      PGADMIN_CONFIG_SERVER_MODE: 'True'
+    ports:
+      - '5051:80'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    profiles: [ 'pgadmin' ]
+
+  #CI-style test runner
+  #run with docker compose --profile tests run --rm pnpm-tests
+  pnpm-tests:
+    image: node:22
+    container_name: memantra_pnpm_tests_${DEV_TAG:-local}
+    working_dir: '/app'
+    # bind-mount the repo so tests run on your code without building an image
+    volumes:
+      - .:/app
+      - pnpm_store:/root/.pnpm-store
+    environment:
+      CI: 'true'
+    entrypoint: [ '/bin/sh', '-lc' ]
+    command: [ 'npm i -g pnpm@9.15.9 && pnpm --version && pnpm install --frozen-lockfile && pnpm -w test -- --coverage' ]
+    profiles: [ 'tests' ]
+
+volumes:
+  postgres_data:
+  pgadmin_data:
+  root_node_modules:
+  backend_node_modules:
+  pnpm_store:
+networks:
+  default:
+    name: memantra_default

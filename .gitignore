@@ -1,3 +1,8 @@
+package-lock.json
+package.json
+pnpm-lock.yaml
+lock.yaml
+
 # Logs
 logs
 *.log
@@ -149,6 +154,12 @@ node_modules/
 
 # Ignore the entire Turborepo cache directory
 .turbo/
+pnpm-lock.yaml
+**/node_modules/
+.pnpm-store/
+**/.pnpm-store/
+.pnpm-debug.log
+.pnpm/
 
 # Claude files
 CLAUDE.md
