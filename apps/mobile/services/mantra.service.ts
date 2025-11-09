@@ -3,9 +3,12 @@ import { apiClient } from './api.config';
 /**
  * CONFIGURATION
  * --------------
- * Set USE_MOCK_DATA = false later when backend is ready.
+ * Toggle between mock data (for local development/tests) and the real backend.
+ * Defaults to the real backend unless the EXPO_PUBLIC_USE_MOCK_MANTRA_SERVICE
+ * environment variable is explicitly set to "true".
  */
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA =
+  (process.env.EXPO_PUBLIC_USE_MOCK_MANTRA_SERVICE ?? '').toLowerCase() === 'true';
 
 /**
  * TYPES
@@ -24,6 +27,7 @@ export interface Mantra {
   cbt_principles?: string;
   references?: string;
   created_at: string;
+  created_by?: number | null;
   is_active: boolean;
   isLiked?: boolean;
   isSaved?: boolean;
@@ -34,6 +38,51 @@ export interface MantraResponse {
   message?: string;
   data: Mantra[];
 }
+
+type BackendMantra = Omit<Mantra, 'isLiked' | 'isSaved' | 'title' | 'key_takeaway'> & {
+  title: string | null;
+  key_takeaway: string | null;
+  created_at: string | null;
+  is_active: boolean | null;
+  background_author?: string | null;
+  background_description?: string | null;
+  jamie_take?: string | null;
+  when_where?: string | null;
+  negative_thoughts?: string | null;
+  cbt_principles?: string | null;
+  references?: string | null;
+};
+
+interface BackendMantraListResponse {
+  status: string;
+  message?: string;
+  data: {
+    mantras: BackendMantra[];
+    pagination?: {
+      limit: number;
+      offset: number;
+      count: number;
+    };
+  };
+}
+
+const transformBackendMantra = (mantra: BackendMantra): Mantra => ({
+  mantra_id: mantra.mantra_id,
+  title: mantra.title ?? '',
+  key_takeaway: mantra.key_takeaway ?? '',
+  background_author: mantra.background_author ?? undefined,
+  background_description: mantra.background_description ?? undefined,
+  jamie_take: mantra.jamie_take ?? undefined,
+  when_where: mantra.when_where ?? undefined,
+  negative_thoughts: mantra.negative_thoughts ?? undefined,
+  cbt_principles: mantra.cbt_principles ?? undefined,
+  references: mantra.references ?? undefined,
+  created_at: mantra.created_at ?? new Date().toISOString(),
+  created_by: mantra.created_by ?? null,
+  is_active: mantra.is_active ?? true,
+  isLiked: false,
+  isSaved: false,
+});
 
 /**
  * MOCK DATA
@@ -163,10 +212,15 @@ const mockMantraService = {
  */
 const realMantraService = {
   async getFeedMantras(token: string): Promise<MantraResponse> {
-    const response = await apiClient.get<MantraResponse>('/mantras/feed', {
+    const response = await apiClient.get<BackendMantraListResponse>('/mantras', {
       headers: { Authorization: `Bearer ${token}` },
     });
-    return response.data;
+
+    return {
+      status: response.data.status,
+      message: response.data.message,
+      data: response.data.data.mantras.map(transformBackendMantra),
+    };
   },
 
   async likeMantra(mantraId: number, token: string) {

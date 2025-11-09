@@ -37,4 +37,33 @@ describe('mantraService (mock implementation)', () => {
     const unsavedMantra = response.data.find((m) => m.mantra_id === 2);
     expect(unsavedMantra?.isSaved).toBe(false);
   });
+
+  it('creates a new mantra via the admin helper', async () => {
+    const createResponse = await mantraService.createMantra(
+      {
+        title: 'New Admin Mantra',
+        key_takeaway: 'A fresh description',
+      },
+      'token',
+    );
+
+    expect(createResponse.status).toBe('success');
+    expect(createResponse.data.mantra.title).toBe('New Admin Mantra');
+
+    const response = await mantraService.getFeedMantras('token');
+    const created = response.data.find((m) => m.title === 'New Admin Mantra');
+    expect(created).toBeTruthy();
+    expect(created?.key_takeaway).toBe('A fresh description');
+  });
+
+  it('deletes an existing mantra via the admin helper', async () => {
+    const initialResponse = await mantraService.getFeedMantras('token');
+    const targetId = initialResponse.data[0].mantra_id;
+
+    const deleteResponse = await mantraService.deleteMantra(targetId, 'token');
+    expect(deleteResponse.status).toBe('success');
+
+    const updatedResponse = await mantraService.getFeedMantras('token');
+    expect(updatedResponse.data.find((m) => m.mantra_id === targetId)).toBeUndefined();
+  });
 });
