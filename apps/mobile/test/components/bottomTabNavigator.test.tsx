@@ -1,5 +1,5 @@
 import React from 'react';
-import { render } from '@testing-library/react-native';
+import { render, waitFor } from '@testing-library/react-native';
 import BottomTabNavigator from '../../components/bottomTabNavigator';
 
 jest.mock('@expo/vector-icons', () => {
@@ -16,6 +16,18 @@ jest.mock('../../screens/homeScreen', () => {
   const { Text } = jest.requireActual('react-native');
   return () => React.createElement(Text, null, 'Mock Home Screen');
 });
+
+jest.mock('../../screens/adminScreen', () => {
+  const React = jest.requireActual('react');
+  const { Text } = jest.requireActual('react-native');
+  return () => React.createElement(Text, null, 'Admin Screen');
+});
+
+jest.mock('../../utils/storage', () => ({
+  storage: {
+    getUserData: jest.fn(),
+  },
+}));
 
 jest.mock('@react-navigation/bottom-tabs', () => {
   const React = jest.requireActual('react');
@@ -41,8 +53,19 @@ jest.mock('@react-navigation/bottom-tabs', () => {
 });
 
 describe('BottomTabNavigator', () => {
-  it('renders all tab screens and their icons', () => {
-    const { getByText } = render(<BottomTabNavigator />);
+  const { storage } = require('../../utils/storage') as {
+    storage: { getUserData: jest.Mock };
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    storage.getUserData.mockResolvedValue(null);
+  });
+
+  it('renders default tab screens and their icons for non-admin users', async () => {
+    const { getByText, queryByText } = render(<BottomTabNavigator />);
+
+    await waitFor(() => expect(storage.getUserData).toHaveBeenCalled());
 
     expect(getByText('Library')).toBeTruthy();
     expect(getByText('bookmark-outline-white')).toBeTruthy();
@@ -54,5 +77,17 @@ describe('BottomTabNavigator', () => {
     expect(getByText('Liked')).toBeTruthy();
     expect(getByText('heart-outline-white')).toBeTruthy();
     expect(getByText('Liked Screen')).toBeTruthy();
+
+    expect(queryByText('Admin')).toBeNull();
+  });
+
+  it('includes admin tab when the user email matches an admin email', async () => {
+    storage.getUserData.mockResolvedValue({ email: 'admin@memantra.com' });
+
+    const { getByText } = render(<BottomTabNavigator />);
+
+    await waitFor(() => expect(getByText('Admin')).toBeTruthy());
+    expect(getByText('construct-outline-white')).toBeTruthy();
+    expect(getByText('Admin Screen')).toBeTruthy();
   });
 });
