@@ -46,7 +46,8 @@
           },
           "imageWidth": 200
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "extra": {
       "eas": {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
+import type { RootStackParamList } from '../types/navigation';
 import { ThemeProvider } from '../context/ThemeContext';
 import { storage } from '../utils/storage';
 
@@ -9,7 +10,7 @@ import Login from '../screens/login';
 import Signup from '../screens/SignUp';
 import BottomTabNavigator from '../components/bottomTabNavigator';
 
-const Stack = createStackNavigator();
+const Stack = createStackNavigator<RootStackParamList>();
 
 export default function MainNavigator() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
