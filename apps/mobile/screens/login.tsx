@@ -16,6 +16,20 @@ export default function LoginScreen({ navigation }: any) {
 
   const { request, response, promptAsync } = useGoogleAuth();
 
+  //redirect if user already logged in
+  useEffect(() => {
+    const checkIfLoggedIn = async () => {
+      const token = await storage.getToken();
+      if (token) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'MainApp' }],
+        });
+      }
+    };
+    checkIfLoggedIn();
+  }, [navigation]);
+
   const handleLogin = async () => {
     if (!email || !password) {
       Alert.alert('Error', 'Please enter both email and password');

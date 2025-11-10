@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import logo from '../assets/logo.png';
 import googleLogo from '../assets/googleLogo.png';
@@ -70,29 +70,33 @@ export default function SignUpScreen({ navigation }: any) {
   };
 
   //Google response
-  const handleGoogleResponse = async () => {
+  const handleGoogleResponse = useCallback(async () => {
     if (response?.type === 'success') {
       const idToken = response.authentication?.idToken;
-      if (idToken) {
-        setLoading(true);
-        try {
-          const authResponse = await authService.googleAuth({ idToken });
-          if (authResponse.status === 'success') {
-            await storage.saveToken(authResponse.data.token);
-            await storage.saveUserData(authResponse.data.user);
-            Alert.alert('Success', 'Account created with Google!');
-          } else {
-            Alert.alert('Error', authResponse.message || 'Google login failed');
-          }
-        } catch (error: any) {
-          console.error('Google auth error:', error);
-          Alert.alert('Error', 'Google authentication failed');
-        } finally {
-          setLoading(false);
+      if (!idToken) return;
+
+      setLoading(true);
+      try {
+        const authResponse = await authService.googleAuth({ idToken });
+        if (authResponse.status === 'success') {
+          await storage.saveToken(authResponse.data.token);
+          await storage.saveUserData(authResponse.data.user);
+
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'MainApp' }],
+          });
+        } else {
+          Alert.alert('Error', authResponse.message || 'Google login failed');
         }
+      } catch (error: any) {
+        console.error('Google auth error:', error);
+        Alert.alert('Error', 'Google authentication failed');
+      } finally {
+        setLoading(false);
       }
     }
-  };
+  }, [response, navigation]);
 
   useEffect(() => {
     handleGoogleResponse();
