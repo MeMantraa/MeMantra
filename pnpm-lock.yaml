@@ -307,12 +307,6 @@ importers:
         specifier: ~5.9.2
         version: 5.9.2
 
-  backend:
-    dependencies:
-      google-auth-library:
-        specifier: ^10.4.2
-        version: 10.4.2
-
 packages:
 
   '@0no-co/graphql.web@1.2.0':
@@ -1006,7 +1000,6 @@ packages:
   '@esbuild/win32-x64@0.25.10':
     resolution: {integrity: sha512-9KpxSVFCu0iK1owoez6aC/s/EdUQLDN3adTxGCqxMVhrPDj6bt5dbrHDXUuq+Bs2vATFBBrQS5vdQ/Ed2P+nbw==}
     engines: {node: '>=18'}
-    cpu: [x64]
     os: [win32]
 
   '@eslint-community/eslint-utils@4.9.0':
@@ -3271,10 +3264,7 @@ packages:
     engines: {node: '>=20.16.0'}
 
   expo-splash-screen@31.0.10:
-    resolution:
-      {
-        integrity: sha512-i6g9IK798mae4yvflstQ1HkgahIJ6exzTCTw4vEdxV0J2SwiW3Tj+CwRjf0te7Zsb+7dDQhBTmGZwdv00VER2A==,
-      }
+    resolution: {integrity: sha512-i6g9IK798mae4yvflstQ1HkgahIJ6exzTCTw4vEdxV0J2SwiW3Tj+CwRjf0te7Zsb+7dDQhBTmGZwdv00VER2A==}
     peerDependencies:
       expo: '*'
 

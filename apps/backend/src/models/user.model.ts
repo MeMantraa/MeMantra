@@ -65,4 +65,35 @@ export const UserModel = {
     
     return user;
   },
+
+  async findAll(): Promise<User[]> {
+  const users = await db
+    .selectFrom('User')
+    .selectAll()
+    .orderBy('created_at', 'desc')
+    .execute();
+  
+  return users;
+},
+
+async update(id: number, updates: Partial<User>): Promise<User | undefined> {
+  const user = await db
+    .updateTable('User')
+    .set(updates)
+    .where('user_id', '=', id)
+    .returningAll()
+    .executeTakeFirst();
+  
+  return user;
+},
+
+async delete(id: number): Promise<boolean> {
+  const result = await db
+    .deleteFrom('User')
+    .where('user_id', '=', id)
+    .executeTakeFirst();
+  
+  return result.numDeletedRows > 0;
+},
 };
+

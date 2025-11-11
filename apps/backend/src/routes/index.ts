@@ -6,6 +6,7 @@ import collectionRoutes from './collection.routes';
 import likeRoutes from './like.routes';
 import reminderRoutes from './reminder.routes';
 import recommendationRoutes from './recommendation.routes';
+import userRoutes from './user.routes';
 
 const router = Router();
 
@@ -29,5 +30,8 @@ router.use('/reminders', reminderRoutes);
 
 // Recommendation routes
 router.use('/recommendations', recommendationRoutes);
+
+// User routes
+router.use('/users', userRoutes);
 
 export default router;
