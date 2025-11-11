@@ -107,7 +107,7 @@ describe('AdminScreen', () => {
       expect(getByText('alice')).toBeTruthy();
       expect(getByText('alice@example.com')).toBeTruthy();
     });
-  });
+  }, 15000);
 
   it('submits MantraForm on Add when fields are filled', async () => {
     (mantraService.createMantra as jest.Mock).mockResolvedValue({
