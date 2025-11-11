@@ -5,6 +5,35 @@
 
 ---
 
+# RELEASE 1
+
+## Release 1 Presentation/Demo
+
+(insert link here when ready)
+
+## Release 1 powerpoint slides
+
+(make the google slides view-only and paste it here)
+
+## Important files (Release 1)
+
+### Top 5 files
+
+| File path with clickable link                                                                                        | Purpose (1 line description)                                                     |
+| -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| [apps/backend/src/app.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/app.ts)                   | Configures Express app with security middleware, API routes, and error handling. |
+| [apps/backend/database/init.sql](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/database/init.sql)     | Defines the complete PostgreSQL database schema.                                 |
+| [apps/backend/src/db/index.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/db/index.ts)         | Establishes the type-safe Kysely database connection.                            |
+| [apps/backend/src/routes/index.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/routes/index.ts) | Route registry that maps API resources to respective controllers                 |
+| [docker-compose.yaml](https://github.com/MeMantraa/MeMantra/blob/main/docker-compose.yaml)                           | Orchestrates the development environment                                         |
+
+### Top 5 Tests
+
+| File path with clickable link | Purpose (1 line description) |
+| ----------------------------- | ---------------------------- |
+
+---
+
 ## Quick Links
 
 - **[Project Board](https://github.com/users/YFrancis10/projects/1)**
