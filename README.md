@@ -31,6 +31,11 @@
 
 | File path with clickable link | Purpose (1 line description) |
 | ----------------------------- | ---------------------------- |
+| [apps/backend/test/controllers/auth.controller.test.ts](https://github.com/YFrancis10/MeMantra/blob/doc-enhanced-documentation/apps/backend/test/controllers/auth.controller.test.ts) | Exercises register/login/me/googleAuth endpoints covering conflicts, hashing, and JWT issuance so account access stays reliable. |
+| [apps/backend/test/controllers/recommendation.controller.test.ts](https://github.com/YFrancis10/MeMantra/blob/doc-enhanced-documentation/apps/backend/test/controllers/recommendation.controller.test.ts) | Validates every recommendation feed (basic, detailed, recent, stats) enforces auth, pagination, and error handling for personalized content. |
+| [apps/backend/test/controllers/mantra.controller.test.ts](https://github.com/YFrancis10/MeMantra/blob/doc-enhanced-documentation/apps/backend/test/controllers/mantra.controller.test.ts) | Confirms mantra discovery, search, and CRUD endpoints honor pagination, category filters, and not-found flows that power the mantra library. |
+| [apps/mobile/test/screens/login.test.tsx](https://github.com/YFrancis10/MeMantra/blob/doc-enhanced-documentation/apps/mobile/test/screens/login.test.tsx) | Guards the React Native login screen against empty submissions, surfaces backend errors, and wires Google sign-in plus navigation. |
+| [apps/mobile/test/services/auth.service.test.ts](https://github.com/YFrancis10/MeMantra/blob/doc-enhanced-documentation/apps/mobile/test/services/auth.service.test.ts) | Ensures the mobile auth service calls `/auth/login`, `/auth/register`, `/auth/me`, and `/auth/google` with proper payloads/headers and returns parsed data. |
 
 ---
 
