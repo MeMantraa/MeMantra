@@ -27,10 +27,23 @@
 | [apps/backend/src/routes/index.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/routes/index.ts) | Route registry that maps API resources to respective controllers                 |
 | [docker-compose.yaml](https://github.com/MeMantraa/MeMantra/blob/main/docker-compose.yaml)                           | Orchestrates the development environment                                         |
 
+| File path with clickable link                                                                                        | Purpose (1 line description)                                                     |
+| -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| [apps/backend/src/app.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/app.ts)                   | Configures Express app with security middleware, API routes, and error handling. |
+| [apps/backend/database/init.sql](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/database/init.sql)     | Defines the complete PostgreSQL database schema.                                 |
+| [apps/backend/src/db/index.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/db/index.ts)         | Establishes the type-safe Kysely database connection.                            |
+| [apps/backend/src/routes/index.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/routes/index.ts) | Route registry that maps API resources to respective controllers                 |
+| [docker-compose.yaml](https://github.com/MeMantraa/MeMantra/blob/main/docker-compose.yaml)                           | Orchestrates the development environment                                         |
+
 ### Top 5 Tests
 
-| File path with clickable link | Purpose (1 line description) |
-| ----------------------------- | ---------------------------- |
+| File path with clickable link                                                                                                                                                                             | Purpose (1 line description)                                                                                                                                |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [apps/backend/test/controllers/auth.controller.test.ts](https://github.com/YFrancis10/MeMantra/blob/doc-enhanced-documentation/apps/backend/test/controllers/auth.controller.test.ts)                     | Exercises register/login/me/googleAuth endpoints covering conflicts, hashing, and JWT issuance so account access stays reliable.                            |
+| [apps/backend/test/controllers/recommendation.controller.test.ts](https://github.com/YFrancis10/MeMantra/blob/doc-enhanced-documentation/apps/backend/test/controllers/recommendation.controller.test.ts) | Validates every recommendation feed (basic, detailed, recent, stats) enforces auth, pagination, and error handling for personalized content.                |
+| [apps/backend/test/controllers/mantra.controller.test.ts](https://github.com/YFrancis10/MeMantra/blob/doc-enhanced-documentation/apps/backend/test/controllers/mantra.controller.test.ts)                 | Confirms mantra discovery, search, and CRUD endpoints honor pagination, category filters, and not-found flows that power the mantra library.                |
+| [apps/mobile/test/screens/login.test.tsx](https://github.com/YFrancis10/MeMantra/blob/doc-enhanced-documentation/apps/mobile/test/screens/login.test.tsx)                                                 | Guards the React Native login screen against empty submissions, surfaces backend errors, and wires Google sign-in plus navigation.                          |
+| [apps/mobile/test/services/auth.service.test.ts](https://github.com/YFrancis10/MeMantra/blob/doc-enhanced-documentation/apps/mobile/test/services/auth.service.test.ts)                                   | Ensures the mobile auth service calls `/auth/login`, `/auth/register`, `/auth/me`, and `/auth/google` with proper payloads/headers and returns parsed data. |
 
 ---
 
@@ -87,7 +100,31 @@ Add video links (YouTube/Drive/Zoom) for each release:
 
 ## Local Development Quick Start
 
+## Repository Layout
+
+| Path                    | Notes                                                                                |
+| ----------------------- | ------------------------------------------------------------------------------------ |
+| `apps/mobile`           | Expo app (screens, components, services, NativeWind styles, Jest + Maestro tests).   |
+| `apps/backend`          | Express API, Kysely models, validators, database docs, Jest tests.                   |
+| `apps/backend/database` | SQL schema, reset scripts, and DB onboarding guide.                                  |
+| `docs/`                 | Docker guides, prototypes, diagrams, and supplemental docs created for this request. |
+| `maestro/`              | E2E scripts (`test.yaml`).                                                           |
+| `docker-compose.yaml`   | Local stack (backend + Postgres + optional pgAdmin + containerized tests).           |
+| `turbo.json`            | Pipeline definitions for `build`, `test`, `lint`, `dev`, etc.                        |
+
+---
+
+## Local Development Quick Start
+
 ### Prerequisites
+
+- Node.js 22 LTS + pnpm `9.15.9` (install via `corepack enable && corepack prepare pnpm@9.15.9 --activate`)
+- Watchman (macOS) & Xcode CLT for iOS, Android SDK/Emulator for Android
+- Expo CLI (`npm i -g expo` optional but handy)
+- PostgreSQL (local or hosted Neon). Docker Desktop is recommended for running the Compose stack.
+- Git + curl + openssl (for scripts/tests)
+
+### Bootstrap the monorepo
 
 - Node.js 22 LTS + pnpm `9.15.9` (install via `corepack enable && corepack prepare pnpm@9.15.9 --activate`)
 - Watchman (macOS) & Xcode CLT for iOS, Android SDK/Emulator for Android
@@ -123,7 +160,32 @@ pnpm --filter mobile ios    # run on iOS simulator
 pnpm --filter mobile android
 pnpm --filter mobile test   # jest + RTL
 pnpm --filter mobile typecheck
+pnpm install          # installs all workspaces via Turbo
+cp apps/backend/.env.example apps/backend/.env
+# fill in DB + OAuth credentials (see Environment Configuration below)
 ```
+
+### Make sure Postgres is reachable
+
+- **Local DB:** start PostgreSQL and load `apps/backend/database/init.sql`.
+- **Hosted Neon:** paste the shared `DATABASE_URL` into `apps/backend/.env`.
+- **Dockerized:** run `docker compose up -d` to boot backend + Postgres.
+
+---
+
+## App Runtimes
+
+### Mobile app (Expo)
+
+```bash
+pnpm dev:mobile         # expo start
+pnpm --filter mobile ios    # run on iOS simulator
+pnpm --filter mobile android
+pnpm --filter mobile test   # jest + RTL
+pnpm --filter mobile typecheck
+```
+
+### Backend API
 
 ### Backend API
 
@@ -133,6 +195,30 @@ pnpm --filter backend build
 pnpm --filter backend start    # runs dist build
 pnpm --filter backend test     # Jest + Supertest
 pnpm --filter backend typecheck
+```
+
+---
+
+## Tooling & Scripts
+
+| Scope   | Command                                                                  | Description                                                  |
+| ------- | ------------------------------------------------------------------------ | ------------------------------------------------------------ |
+| Root    | `pnpm dev`                                                               | Runs all `dev` pipelines (mobile + backend when configured). |
+| Root    | `pnpm lint` / `pnpm test` / `pnpm typecheck`                             | Turbo fan-out across workspaces.                             |
+| Backend | `pnpm --filter backend db:generate-types`                                | Runs `kysely-codegen` against the configured DB.             |
+| Backend | `pnpm --filter backend build && pnpm --filter backend start`             | Production build.                                            |
+| Mobile  | `pnpm --filter mobile setup:android && pnpm --filter mobile run:android` | Clean native build for Android.                              |
+| Mobile  | `pnpm --filter mobile web`                                               | Launch web/devtools view.                                    |
+| Repo    | `maestro test maestro/test.yaml`                                         | Run E2E smoke using the Maestro script.                      |
+
+---
+
+pnpm --filter backend dev # nodemon + ts-node
+pnpm --filter backend build
+pnpm --filter backend start # runs dist build
+pnpm --filter backend test # Jest + Supertest
+pnpm --filter backend typecheck
+
 ```
 
 ---
@@ -175,3 +261,4 @@ pnpm --filter backend typecheck
 - [Retrospective](https://github.com/YFrancis10/MeMantra/wiki/Retrospective)
 - [Breakdown by Individual](https://github.com/YFrancis10/MeMantra/wiki/Breakdown-by-Individual)
 - [Designs & Mockups](https://github.com/YFrancis10/MeMantra/wiki/Designs-&-Mockups)
+```
