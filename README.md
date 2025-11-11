@@ -27,14 +27,6 @@
 | [apps/backend/src/routes/index.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/routes/index.ts) | Route registry that maps API resources to respective controllers                 |
 | [docker-compose.yaml](https://github.com/MeMantraa/MeMantra/blob/main/docker-compose.yaml)                           | Orchestrates the development environment                                         |
 
-| File path with clickable link                                                                                        | Purpose (1 line description)                                                     |
-| -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| [apps/backend/src/app.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/app.ts)                   | Configures Express app with security middleware, API routes, and error handling. |
-| [apps/backend/database/init.sql](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/database/init.sql)     | Defines the complete PostgreSQL database schema.                                 |
-| [apps/backend/src/db/index.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/db/index.ts)         | Establishes the type-safe Kysely database connection.                            |
-| [apps/backend/src/routes/index.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/routes/index.ts) | Route registry that maps API resources to respective controllers                 |
-| [docker-compose.yaml](https://github.com/MeMantraa/MeMantra/blob/main/docker-compose.yaml)                           | Orchestrates the development environment                                         |
-
 ### Top 5 Tests
 
 | File path with clickable link                                                                                                                                                                             | Purpose (1 line description)                                                                                                                                |
@@ -100,22 +92,6 @@ Add video links (YouTube/Drive/Zoom) for each release:
 
 ## Local Development Quick Start
 
-## Repository Layout
-
-| Path                    | Notes                                                                                |
-| ----------------------- | ------------------------------------------------------------------------------------ |
-| `apps/mobile`           | Expo app (screens, components, services, NativeWind styles, Jest + Maestro tests).   |
-| `apps/backend`          | Express API, Kysely models, validators, database docs, Jest tests.                   |
-| `apps/backend/database` | SQL schema, reset scripts, and DB onboarding guide.                                  |
-| `docs/`                 | Docker guides, prototypes, diagrams, and supplemental docs created for this request. |
-| `maestro/`              | E2E scripts (`test.yaml`).                                                           |
-| `docker-compose.yaml`   | Local stack (backend + Postgres + optional pgAdmin + containerized tests).           |
-| `turbo.json`            | Pipeline definitions for `build`, `test`, `lint`, `dev`, etc.                        |
-
----
-
-## Local Development Quick Start
-
 ### Prerequisites
 
 - Node.js 22 LTS + pnpm `9.15.9` (install via `corepack enable && corepack prepare pnpm@9.15.9 --activate`)
@@ -160,32 +136,7 @@ pnpm --filter mobile ios    # run on iOS simulator
 pnpm --filter mobile android
 pnpm --filter mobile test   # jest + RTL
 pnpm --filter mobile typecheck
-pnpm install          # installs all workspaces via Turbo
-cp apps/backend/.env.example apps/backend/.env
-# fill in DB + OAuth credentials (see Environment Configuration below)
 ```
-
-### Make sure Postgres is reachable
-
-- **Local DB:** start PostgreSQL and load `apps/backend/database/init.sql`.
-- **Hosted Neon:** paste the shared `DATABASE_URL` into `apps/backend/.env`.
-- **Dockerized:** run `docker compose up -d` to boot backend + Postgres.
-
----
-
-## App Runtimes
-
-### Mobile app (Expo)
-
-```bash
-pnpm dev:mobile         # expo start
-pnpm --filter mobile ios    # run on iOS simulator
-pnpm --filter mobile android
-pnpm --filter mobile test   # jest + RTL
-pnpm --filter mobile typecheck
-```
-
-### Backend API
 
 ### Backend API
 
@@ -219,22 +170,6 @@ pnpm --filter backend start # runs dist build
 pnpm --filter backend test # Jest + Supertest
 pnpm --filter backend typecheck
 
-```
-
----
-
-## Tooling & Scripts
-
-| Scope   | Command                                                                  | Description                                                  |
-| ------- | ------------------------------------------------------------------------ | ------------------------------------------------------------ |
-| Root    | `pnpm dev`                                                               | Runs all `dev` pipelines (mobile + backend when configured). |
-| Root    | `pnpm lint` / `pnpm test` / `pnpm typecheck`                             | Turbo fan-out across workspaces.                             |
-| Backend | `pnpm --filter backend db:generate-types`                                | Runs `kysely-codegen` against the configured DB.             |
-| Backend | `pnpm --filter backend build && pnpm --filter backend start`             | Production build.                                            |
-| Mobile  | `pnpm --filter mobile setup:android && pnpm --filter mobile run:android` | Clean native build for Android.                              |
-| Mobile  | `pnpm --filter mobile web`                                               | Launch web/devtools view.                                    |
-| Repo    | `maestro test maestro/test.yaml`                                         | Run E2E smoke using the Maestro script.                      |
-
 ---
 
 ## Wiki Table of Contents
@@ -261,4 +196,4 @@ pnpm --filter backend typecheck
 - [Retrospective](https://github.com/YFrancis10/MeMantra/wiki/Retrospective)
 - [Breakdown by Individual](https://github.com/YFrancis10/MeMantra/wiki/Breakdown-by-Individual)
 - [Designs & Mockups](https://github.com/YFrancis10/MeMantra/wiki/Designs-&-Mockups)
-```
+
