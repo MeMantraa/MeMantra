@@ -258,14 +258,26 @@ const AdminScreen: React.FC = () => {
   const confirmDeleteMantra = (mantraId: number, title: string) => {
     Alert.alert('Delete Mantra', `Delete "${title}"?`, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => handleDeleteMantra(mantraId) },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          void handleDeleteMantra(mantraId);
+        },
+      },
     ]);
   };
 
   const confirmDeleteUser = (userId: number, username: string) => {
     Alert.alert('Delete User', `Delete "${username}"?`, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Delete', style: 'destructive', onPress: () => handleDeleteUser(userId) },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          void handleDeleteUser(userId);
+        },
+      },
     ]);
   };
 

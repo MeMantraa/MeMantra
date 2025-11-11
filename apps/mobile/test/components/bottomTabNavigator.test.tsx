@@ -52,14 +52,12 @@ jest.mock('@react-navigation/bottom-tabs', () => {
   };
 });
 
-describe('BottomTabNavigator', () => {
-  const { storage } = require('../../utils/storage') as {
-    storage: { getUserData: jest.Mock };
-  };
+import { storage } from '../../utils/storage';
 
+describe('BottomTabNavigator', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    storage.getUserData.mockResolvedValue(null);
+    (storage.getUserData as jest.Mock).mockResolvedValue(null);
   });
 
   it('renders default tab screens and their icons for non-admin users', async () => {
@@ -82,7 +80,7 @@ describe('BottomTabNavigator', () => {
   });
 
   it('includes admin tab when the user email matches an admin email', async () => {
-    storage.getUserData.mockResolvedValue({ email: 'admin@memantra.com' });
+    (storage.getUserData as jest.Mock).mockResolvedValue({ email: 'admin@memantra.com' });
 
     const { getByText } = render(<BottomTabNavigator />);
 
