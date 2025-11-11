@@ -275,7 +275,7 @@ describe('AdminScreen (extended coverage)', () => {
     fireEvent.press(getByText('Delete'));
 
     // Simulate pressing "Delete" on the alert dialog
-    const deleteCallback = Alert.alert.mock.calls[0][2][1].onPress;
+    const deleteCallback = (Alert.alert as jest.Mock).mock.calls[0][2][1].onPress;
     deleteCallback();
 
     await waitFor(() => {
@@ -337,7 +337,7 @@ describe('AdminScreen (extended coverage)', () => {
     fireEvent.press(getByText('Delete'));
 
     // Simulate pressing "Delete" on the alert dialog
-    const deleteCallback = Alert.alert.mock.calls[0][2][1].onPress;
+    const deleteCallback = (Alert.alert as jest.Mock).mock.calls[0][2][1].onPress;
     deleteCallback();
 
     await waitFor(() => {

@@ -1,5 +1,3 @@
-import { jest } from '@jest/globals';
-
 // ---- Mock Setup ----
 const INITIAL_USERS = [
   {
