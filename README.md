@@ -102,14 +102,6 @@ Add video links (YouTube/Drive/Zoom) for each release:
 
 ### Bootstrap the monorepo
 
-- Node.js 22 LTS + pnpm `9.15.9` (install via `corepack enable && corepack prepare pnpm@9.15.9 --activate`)
-- Watchman (macOS) & Xcode CLT for iOS, Android SDK/Emulator for Android
-- Expo CLI (`npm i -g expo` optional but handy)
-- PostgreSQL (local or hosted Neon). Docker Desktop is recommended for running the Compose stack.
-- Git + curl + openssl (for scripts/tests)
-
-### Bootstrap the monorepo
-
 ```bash
 git clone https://github.com/YFrancis10/MeMantra.git
 cd MeMantra
