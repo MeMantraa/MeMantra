@@ -9,11 +9,11 @@
 
 ## Release 1 Presentation/Demo
 
-(insert link here when ready)
+[Release 1 Video](https://drive.google.com/file/d/1zlSbubmLPZzgIaNzuCQcqTayMiFuy-BO/view)
 
-## Release 1 powerpoint slides
+## Release 1 Slides
 
-(make the google slides view-only and paste it here)
+[Google Slides](https://docs.google.com/presentation/d/1B_yGGz45U3VtYcofy7UCkZXOGydh3oSp_TiewtZS_YI/edit?slide=id.g2c6345cecf5_0_45#slide=id.g2c6345cecf5_0_45)
 
 ## Important files (Release 1)
 
