@@ -9,7 +9,7 @@
 
 ## Release 1 Presentation/Demo
 
-[Release 1 Video](https://drive.google.com/file/d/1zlSbubmLPZzgIaNzuCQcqTayMiFuy-BO/view)
+[Release 1 Demo](https://drive.google.com/file/d/1zlSbubmLPZzgIaNzuCQcqTayMiFuy-BO/view)
 
 ## Release 1 Slides
 
@@ -69,7 +69,7 @@ We use **GitHub Actions** to maintain quality and stability:
 
 Add video links (YouTube/Drive/Zoom) for each release:
 
-- **Release 1 Demo:** _coming soon_
+- [Release 1 Demo](https://drive.google.com/file/d/1zlSbubmLPZzgIaNzuCQcqTayMiFuy-BO/view)
 - **Release 2 Demo:** _coming soon_
 - **Release 3 (Release 1) Demo:** _coming soon_
 - **Final Release Demo:** _coming soon_
