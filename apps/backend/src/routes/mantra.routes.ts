@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { MantraController } from '../controllers/mantra.controller';
 import { validateRequest } from '../middleware/validate.middleware';
 import { authenticate } from '../middleware/auth.middleware';
+import { requireAdmin } from '../middleware/admin.middleware';
 import {
   createMantraSchema,
   updateMantraSchema,
@@ -12,34 +13,47 @@ import {
 
 const router = Router();
 
-// Public routes
+
+
+// Feed route (
 router.get(
-  '/',
-  validateRequest(mantraQuerySchema),
-  MantraController.getAllMantras
+  '/feed',
+  authenticate,
+  MantraController.getFeedMantras
 );
 
+// Popular mantras
 router.get(
   '/popular',
   MantraController.getPopularMantras
 );
 
+// Category filter
 router.get(
   '/category/:categoryId',
   validateRequest(categoryIdSchema),
   MantraController.getMantrasByCategory
 );
 
+// List all mantras (public)
+router.get(
+  '/',
+  validateRequest(mantraQuerySchema),
+  MantraController.getAllMantras
+);
+
+// Get single mantra by ID 
 router.get(
   '/:id',
   validateRequest(mantraIdSchema),
   MantraController.getMantraById
 );
 
-// Protected routes (require authentication)
+// Protected routes (require authentication + admin)
 router.post(
   '/',
   authenticate,
+  requireAdmin,
   validateRequest(createMantraSchema),
   MantraController.createMantra
 );
@@ -47,6 +61,7 @@ router.post(
 router.put(
   '/:id',
   authenticate,
+  requireAdmin,
   validateRequest(mantraIdSchema),
   validateRequest(updateMantraSchema),
   MantraController.updateMantra
@@ -55,6 +70,7 @@ router.put(
 router.delete(
   '/:id',
   authenticate,
+  requireAdmin,
   validateRequest(mantraIdSchema),
   MantraController.deleteMantra
 );

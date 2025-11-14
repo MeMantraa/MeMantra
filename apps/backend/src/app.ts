@@ -3,7 +3,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import apiRoutes from './routes';
-import {errorLogger } from './middleware/logger.middleware';
+import { requestLogger, errorLogger } from './middleware/logger.middleware';
 
 export const createApp = () => {
   const app = express();
@@ -28,20 +28,12 @@ export const createApp = () => {
 
   app.use('/api/', limiter);
 
-  // Body parsing
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // Request logging middleware (development)
-  const loggingMiddleware: RequestHandler = (req, _res, next) => {
-    // Sanitize path to prevent log injection
-    const sanitizedPath = req.path.replaceAll(/[\n\r]/g, "");
-    console.log(`${req.method} ${sanitizedPath}`);
-    next();
-  };
 
   if (process.env.NODE_ENV === 'development') {
-    app.use(loggingMiddleware);
+    app.use(requestLogger);
   }
 
   // Health check endpoint
@@ -69,8 +61,9 @@ export const createApp = () => {
 
   app.use(notFoundHandler);
 
-  // Error handler
   app.use(errorLogger);
+
+  // Error handler
   const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     console.error(err.stack);
     res.status(500).json({ 

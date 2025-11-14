@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { MantraModel } from '../models/mantra.model';
 import { CreateMantraInput, UpdateMantraInput, MantraQueryInput } from '../validators/mantra.validator';
+import { db } from '../db';
 
 export const MantraController = {
   // GET /api/mantras - List all mantras with optional search and pagination
@@ -199,4 +200,53 @@ export const MantraController = {
       });
     }
   },
+
+  // GET /api/mantras/feed - Get mantras with user's like/save status
+async getFeedMantras(req: Request, res: Response) {
+  try {
+    const userId = req.user?.userId;
+    const limit = Number(req.query.limit) || 50;
+    const offset = Number(req.query.offset) || 0;
+
+    const mantras = await MantraModel.findAll(limit, offset);
+
+    // Get user's liked and saved mantras
+    let likedMantraIds: number[] = [];
+    let savedMantraIds: number[] = [];
+
+    if (userId) {
+      const liked = await db
+        .selectFrom('Like')
+        .where('user_id', '=', userId)
+        .select('mantra_id')
+        .execute();
+      likedMantraIds = liked.map(l => l.mantra_id).filter((id): id is number => id !== null);
+
+      const saved = await db
+        .selectFrom('Collection')
+        .innerJoin('CollectionMantra', 'Collection.collection_id', 'CollectionMantra.collection_id')
+        .where('Collection.user_id', '=', userId)
+        .select('CollectionMantra.mantra_id')
+        .execute();
+      savedMantraIds = saved.map(s => s.mantra_id).filter((id): id is number => id !== null);
+    }
+
+    const mantrasWithStatus = mantras.map(mantra => ({
+      ...mantra,
+      isLiked: likedMantraIds.includes(mantra.mantra_id),
+      isSaved: savedMantraIds.includes(mantra.mantra_id),
+    }));
+
+    return res.status(200).json({
+      status: 'success',
+      data: mantrasWithStatus,
+    });
+  } catch (error) {
+    console.error('Get feed mantras error:', error);
+    return res.status(500).json({
+      status: 'error',
+      message: 'Error retrieving feed mantras',
+    });
+  }
+},
 };

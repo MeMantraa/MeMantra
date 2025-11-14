@@ -8,6 +8,7 @@ export const MantraModel = {
       .insertInto('Mantra')
       .values({
         ...mantraData,
+        is_active: true,
         created_at: new Date().toISOString(),
       })
       .returningAll()

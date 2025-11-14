@@ -31,6 +31,56 @@ jest.mock('expo', () => ({
   registerRootComponent: jest.fn(),
 }));
 
+jest.mock('react-native/Libraries/Animated/Animated', () => {
+  const Animated = jest.requireActual('react-native/Libraries/Animated/Animated');
+
+  class MockAnimatedValue {
+    private _value: number;
+
+    constructor(value: number) {
+      this._value = value;
+    }
+
+    setValue(value: number) {
+      this._value = value;
+    }
+
+    addListener() {
+      return 'listener';
+    }
+
+    removeAllListeners() {}
+
+    stopAnimation(callback?: (value: number) => void) {
+      if (callback) {
+        callback(this._value);
+      }
+    }
+  }
+
+  return {
+    ...Animated,
+    Value: MockAnimatedValue,
+    timing: jest.fn(() => ({
+      start: (cb?: () => void) => cb?.(),
+      stop: jest.fn(),
+    })),
+  };
+});
+
+beforeAll(() => {
+  jest.useFakeTimers();
+});
+
+afterEach(() => {
+  jest.runOnlyPendingTimers();
+  jest.clearAllMocks();
+});
+
+afterAll(() => {
+  jest.useRealTimers();
+});
+
 describe('App Component', () => {
   test('renders without crashing', () => {
     expect(() => render(<App />)).not.toThrow();
