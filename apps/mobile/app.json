@@ -38,6 +38,13 @@
           },
           "imageWidth": 200
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#8E9A86"
+        }
       ]
     ],
     "extra": {
