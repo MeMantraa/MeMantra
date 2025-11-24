@@ -23,6 +23,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -172,7 +174,7 @@ export const notificationService = {
   async scheduleLocalNotification(
     title: string,
     body: string,
-    data?: object,
+    data?: Record<string, unknown>,
     trigger: Notifications.NotificationTriggerInput | null = null,
   ): Promise<string> {
     const notificationId = await Notifications.scheduleNotificationAsync({

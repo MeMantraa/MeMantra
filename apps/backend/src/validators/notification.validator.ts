@@ -33,7 +33,7 @@ export const sendNotificationSchema = z.object({
   body: z.object({
     title: z.string().min(1, 'Title is required').max(100, 'Title too long'),
     body: z.string().min(1, 'Body is required').max(500, 'Body too long'),
-    data: z.record(z.any()).optional(),
+    data: z.record(z.string(), z.any()).optional(),
   }),
 });
 
@@ -43,7 +43,7 @@ export const sendBulkNotificationSchema = z.object({
     userIds: z.array(z.number().int().positive()).min(1, 'At least one user ID required'),
     title: z.string().min(1, 'Title is required').max(100, 'Title too long'),
     body: z.string().min(1, 'Body is required').max(500, 'Body too long'),
-    data: z.record(z.any()).optional(),
+    data: z.record(z.string(), z.any()).optional(),
   }),
 });
 
