@@ -209,7 +209,7 @@ export const MantraController = {
       const limit = Number(req.query.limit) || 50;
       const offset = Number(req.query.offset) || 0;
 
-      const mantras = await MantraModel.findAll(limit, offset);
+      const mantras = await MantraModel.findWithLikeCount(limit, offset);
 
       // Get user's liked and saved mantras
       let likedMantraIds: number[] = [];

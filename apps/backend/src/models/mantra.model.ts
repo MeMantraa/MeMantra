@@ -90,7 +90,7 @@ export const MantraModel = {
   },
 
   // Get mantras with like count (advanced join + aggregation)
-  async findWithLikeCount(limit = 50): Promise<Array<Mantra & { like_count: number }>> {
+  async findWithLikeCount(limit = 50, offset = 0): Promise<Array<Mantra & { like_count: number }>> {
     const results = await db
       .selectFrom('Mantra')
       .leftJoin('Like', 'Mantra.mantra_id', 'Like.mantra_id')
@@ -112,13 +112,14 @@ export const MantraModel = {
         (eb) => eb.fn.count('Like.like_id').as('like_count'),
       ])
       .groupBy('Mantra.mantra_id')
-      .orderBy('like_count', 'desc')
+      .orderBy('created_at', 'desc') 
       .limit(limit)
+      .offset(offset)  
       .execute();
 
     return results.map((result) => ({
       ...result,
       like_count: Number(result.like_count),
     })) as Array<Mantra & { like_count: number }>;
-  },
+  }
 };

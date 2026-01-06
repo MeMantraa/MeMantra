@@ -25,6 +25,12 @@ import { likeService } from '../services/like.service';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+type MantraWithInteractions = Mantra & {
+  isLiked?: boolean;
+  isSaved?: boolean;
+  like_count?: number;
+};
+
 export default function HomeScreen({ navigation }: any) {
   const [feedData, setFeedData] = useState<Mantra[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,22 +79,32 @@ export default function HomeScreen({ navigation }: any) {
   const handleLike = async (mantraId: number) => {
     try {
       const token = (await storage.getToken()) || 'mock-token';
-      const isCurrentlyLiked = feedData.find((m) => m.mantra_id === mantraId)?.isLiked || false;
+      
+      setFeedData(prev => prev.map(mantra => {
+        if (mantra.mantra_id !== mantraId) return mantra;
+        
+        const mantraTyped = mantra as MantraWithInteractions;
+        const newIsLiked = !mantraTyped.isLiked;
+        const currentLikeCount = mantraTyped.like_count || 0;
+        
+        return {
+          ...mantra,
+          isLiked: newIsLiked,
+          like_count: newIsLiked 
+            ? currentLikeCount + 1 
+            : Math.max(0, currentLikeCount - 1)
+        };
+      }));
 
-      setFeedData((prev) =>
-        prev.map((m) => (m.mantra_id === mantraId ? { ...m, isLiked: !m.isLiked } : m)),
-      );
-
-      if (isCurrentlyLiked) {
+      const mantra = feedData.find(m => m.mantra_id === mantraId) as MantraWithInteractions;
+      if (mantra?.isLiked) {
         await likeService.unlikeMantra(mantraId, token);
       } else {
         await likeService.likeMantra(mantraId, token);
       }
+      
     } catch (err) {
       console.error('Error toggling like:', err);
-      setFeedData((prev) =>
-        prev.map((m) => (m.mantra_id === mantraId ? { ...m, isLiked: !m.isLiked } : m)),
-      );
       Alert.alert('Error', 'Failed to update like status');
     }
   };

@@ -7,8 +7,14 @@ import { useTheme } from '../context/ThemeContext';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
+type MantraWithInteractions = Mantra & {
+  isLiked?: boolean;
+  isSaved?: boolean;
+  like_count?: number;
+};
+
 interface MantraCarouselProps {
-  readonly item: Mantra;
+  readonly item: MantraWithInteractions;
   readonly onLike?: (mantraId: number) => void;
   readonly onSave?: (mantraId: number) => void;
   readonly showButtons?: boolean;
@@ -156,8 +162,31 @@ export default function MantraCarousel({
       {/* Action buttons */}
       {showButtons && (
         <View className="absolute right-6 bottom-40 items-center">
-          <IconButton type="save" active={!!item.isSaved} onPress={handleSave} className="mb-6" />
-          <IconButton type="like" active={!!item.isLiked} onPress={handleLike} />
+          <IconButton 
+            type="save" 
+            active={!!item.isSaved} 
+            onPress={handleSave} 
+            className="mb-6" 
+          />
+          <View className="items-center">
+            <IconButton 
+              type="like" 
+              active={!!item.isLiked} 
+              onPress={handleLike}
+            />
+            
+            <AppText 
+              style={{ 
+                color: item.isLiked ? colors.secondary : colors.text,
+                fontSize: 12,
+                marginTop: 4,
+                fontWeight: '600'
+              }}
+              className="text-center"
+            >
+              {item.like_count}
+            </AppText>
+          </View>
         </View>
       )}
     </View>
