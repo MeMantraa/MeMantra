@@ -164,14 +164,14 @@ const mockMantraService = {
   },
 
   async likeMantra(mantraId: number, _token: string) {
-    mockUserState.likedMantras.add(mantraId);
-    return { status: 'success', message: 'Liked successfully' };
-  },
+  mockUserState.likedMantras.add(mantraId);
+  return { status: 'success', message: 'Liked successfully' };
+},
 
-  async unlikeMantra(mantraId: number, _token: string) {
-    mockUserState.likedMantras.delete(mantraId);
-    return { status: 'success', message: 'Unliked successfully' };
-  },
+async unlikeMantra(mantraId: number, _token: string) {
+  mockUserState.likedMantras.delete(mantraId);
+  return { status: 'success', message: 'Unliked successfully' };
+},
 
   async saveMantra(mantraId: number, _token: string) {
     mockUserState.savedMantras.add(mantraId);
@@ -272,12 +272,17 @@ const mockMantraService = {
  * To be used once backend endpoints exist.
  */
 const realMantraService = {
-  async getFeedMantras(token: string): Promise<MantraResponse> {
-    const response = await apiClient.get<MantraResponse>('/mantras/feed', {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data;
-  },
+  async getFeedMantras(_token: string): Promise<MantraResponse> {
+  await new Promise((resolve) => setTimeout(resolve, 600));
+  return {
+    status: 'success',
+    data: mockMantras.map((m) => ({
+      ...m,
+      isLiked: mockUserState.likedMantras.has(m.mantra_id),
+      isSaved: mockUserState.savedMantras.has(m.mantra_id),
+    })),
+  };
+},
 
   async likeMantra(mantraId: number, token: string) {
   const response = await apiClient.post(
