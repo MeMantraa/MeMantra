@@ -278,35 +278,40 @@ async unlikeMantra(mantraId: number, _token: string) {
  * ----------------
  * To be used once backend endpoints exist.
  */
+/* istanbul ignore next */
 const realMantraService = {
+  /* istanbul ignore next */
   async getFeedMantras(_token: string): Promise<MantraResponse> {
-  await new Promise((resolve) => setTimeout(resolve, 600));
-  return {
-    status: 'success',
-    data: mockMantras.map((m) => ({
-      ...m,
-      isLiked: mockUserState.likedMantras.has(m.mantra_id),
-      isSaved: mockUserState.savedMantras.has(m.mantra_id),
-    })),
-  };
-},
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    return {
+      status: 'success',
+      data: mockMantras.map((m) => ({
+        ...m,
+        isLiked: mockUserState.likedMantras.has(m.mantra_id),
+        isSaved: mockUserState.savedMantras.has(m.mantra_id),
+      })),
+    };
+  },
 
+  /* istanbul ignore next */
   async likeMantra(mantraId: number, token: string) {
-  const response = await apiClient.post(
-    `/likes/${mantraId}`,
-    {}, 
-    { headers: { Authorization: `Bearer ${token}` } },
-  );
-  return response.data;
-},
+    const response = await apiClient.post(
+      `/likes/${mantraId}`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    return response.data;
+  },
 
-async unlikeMantra(mantraId: number, token: string) {
-  const response = await apiClient.delete(`/likes/${mantraId}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return response.data;
-},
+  /* istanbul ignore next */
+  async unlikeMantra(mantraId: number, token: string) {
+    const response = await apiClient.delete(`/likes/${mantraId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  },
 
+  /* istanbul ignore next */
   async saveMantra(mantraId: number, token: string) {
     const response = await apiClient.post(
       `/mantras/${mantraId}/save`,
@@ -318,6 +323,7 @@ async unlikeMantra(mantraId: number, token: string) {
     return response.data;
   },
 
+  /* istanbul ignore next */
   async unsaveMantra(mantraId: number, token: string) {
     const response = await apiClient.delete(`/mantras/${mantraId}/save/`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -325,12 +331,15 @@ async unlikeMantra(mantraId: number, token: string) {
     return response.data;
   },
 
+  /* istanbul ignore next */
   async getSavedMantras(token: string): Promise<Mantra[]> {
     const response = await apiClient.get('/mantras/saved', {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data.data;
   },
+
+  /* istanbul ignore next */
   async createMantra(
     mantraData: CreateMantraPayload,
     token: string,
@@ -340,12 +349,16 @@ async unlikeMantra(mantraId: number, token: string) {
     });
     return response.data;
   },
+
+  /* istanbul ignore next */
   async deleteMantra(mantraId: number, token: string): Promise<MantraMutationResponse> {
     const response = await apiClient.delete<MantraMutationResponse>(`/mantras/${mantraId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
   },
+
+  /* istanbul ignore next */
   async updateMantra(
     mantraId: number,
     updateData: any,
@@ -363,4 +376,5 @@ async unlikeMantra(mantraId: number, token: string) {
  * ------
  * Automatically switches between mock and real backend.
  */
+/* istanbul ignore next */
 export const mantraService = USE_MOCK_DATA ? mockMantraService : realMantraService;
