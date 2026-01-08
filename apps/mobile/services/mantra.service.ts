@@ -5,7 +5,7 @@ import { apiClient } from './api.config';
  * --------------
  * Set USE_MOCK_DATA = false later when backend is ready.
  */
-const USE_MOCK_DATA = false;
+const USE_MOCK_DATA = true;
 
 /**
  * TYPES
@@ -151,6 +151,13 @@ const mockUserState = {
 
 /* istanbul ignore next */
 const mockMantraService = {
+  // Reset function for tests
+  resetMockState() {
+    mockUserState.likedMantras.clear();
+    mockUserState.savedMantras.clear();
+    mockMantras = [...INITIAL_MOCK_MANTRAS];
+  },
+
   async getFeedMantras(_token: string): Promise<MantraResponse> {
     await new Promise((resolve) => setTimeout(resolve, 600));
     return {

@@ -164,7 +164,10 @@ import { mantraService } from '../../services/mantra.service';
 describe('mantraService (mock implementation)', () => {
   beforeEach(() => {
     resetState();
-    jest.resetModules();
+    // Reset the mock service's internal state
+    if ('resetMockState' in mantraService) {
+      (mantraService as any).resetMockState();
+    }
   });
 
   it('returns mock mantra data with success status', async () => {
