@@ -280,22 +280,22 @@ const realMantraService = {
   },
 
   async likeMantra(mantraId: number, token: string) {
-    const response = await apiClient.post(
-      `/mantras/like`,
-      { mantra_id: mantraId },
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
-    return response.data;
-  },
+  const response = await apiClient.request({
+    method: 'POST',
+    url: `/likes/${mantraId}`,
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+},
 
-  async unlikeMantra(mantraId: number, token: string) {
-    const response = await apiClient.delete(`/mantras/like/${mantraId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    return response.data;
-  },
+async unlikeMantra(mantraId: number, token: string) {
+  const response = await apiClient.request({
+    method: 'DELETE',
+    url: `/likes/${mantraId}`,
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  return response.data;
+},
 
   async saveMantra(mantraId: number, token: string) {
     const response = await apiClient.post(
