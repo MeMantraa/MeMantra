@@ -162,27 +162,25 @@ export default function MantraCarousel({
       {/* Action buttons */}
       {showButtons && (
         <View className="absolute right-6 bottom-40 items-center">
+          {/* Save Button - unchanged */}
           <IconButton 
             type="save" 
             active={!!item.isSaved} 
             onPress={handleSave} 
             className="mb-6" 
           />
+          
+          {/* Like Button Wrapper */}
           <View className="items-center">
             <IconButton 
               type="like" 
               active={!!item.isLiked} 
-              onPress={handleLike}
+              onPress={handleLike} 
             />
-            
+            {/* THE NEW LIKE COUNT TEXT */}
             <AppText 
-              style={{ 
-                color: item.isLiked ? colors.secondary : colors.text,
-                fontSize: 12,
-                marginTop: 4,
-                fontWeight: '600'
-              }}
-              className="text-center"
+              style={{ color: colors.text }} 
+              className="text-xs font-medium mt-1"
             >
               {item.like_count}
             </AppText>

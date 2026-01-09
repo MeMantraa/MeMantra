@@ -27,6 +27,7 @@ export interface Mantra {
   is_active: boolean;
   isLiked?: boolean;
   isSaved?: boolean;
+  like_count: number;
 }
 
 export interface MantraResponse {
@@ -87,6 +88,7 @@ const INITIAL_MOCK_MANTRAS: Mantra[] = [
     is_active: true,
     isLiked: false,
     isSaved: false,
+    like_count: 5,
   },
   {
     mantra_id: 2,
@@ -110,6 +112,7 @@ const INITIAL_MOCK_MANTRAS: Mantra[] = [
     is_active: true,
     isLiked: false,
     isSaved: false,
+    like_count: 19,
   },
   {
     mantra_id: 3,
@@ -133,6 +136,7 @@ const INITIAL_MOCK_MANTRAS: Mantra[] = [
     is_active: true,
     isLiked: false,
     isSaved: false,
+    like_count: 7,
   },
 ];
 
@@ -160,10 +164,12 @@ const mockMantraService = {
 
   async getFeedMantras(_token: string): Promise<MantraResponse> {
     await new Promise((resolve) => setTimeout(resolve, 600));
+    
     return {
       status: 'success',
       data: mockMantras.map((m) => ({
         ...m,
+        like_count: m.like_count ?? 0, 
         isLiked: mockUserState.likedMantras.has(m.mantra_id),
         isSaved: mockUserState.savedMantras.has(m.mantra_id),
       })),
@@ -219,6 +225,7 @@ async unlikeMantra(mantraId: number, _token: string) {
       is_active: mantraData.is_active ?? true,
       isLiked: false,
       isSaved: false,
+      like_count: 0,
     };
 
     mockMantras = [newMantra, ...mockMantras];
@@ -287,6 +294,7 @@ const realMantraService = {
       status: 'success',
       data: mockMantras.map((m) => ({
         ...m,
+        like_count: m.like_count ?? 0,
         isLiked: mockUserState.likedMantras.has(m.mantra_id),
         isSaved: mockUserState.savedMantras.has(m.mantra_id),
       })),

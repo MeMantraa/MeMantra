@@ -80,31 +80,45 @@ export default function HomeScreen({ navigation }: any) {
     try {
       const token = (await storage.getToken()) || 'mock-token';
       
-      setFeedData(prev => prev.map(mantra => {
-        if (mantra.mantra_id !== mantraId) return mantra;
-        
-        const mantraTyped = mantra as MantraWithInteractions;
-        const newIsLiked = !mantraTyped.isLiked;
-        const currentLikeCount = mantraTyped.like_count || 0;
-        
-        return {
-          ...mantra,
-          isLiked: newIsLiked,
-          like_count: newIsLiked 
-            ? currentLikeCount + 1 
-            : Math.max(0, currentLikeCount - 1)
-        };
-      }));
-
-      const mantra = feedData.find(m => m.mantra_id === mantraId) as MantraWithInteractions;
-      if (mantra?.isLiked) {
-        await likeService.unlikeMantra(mantraId, token);
-      } else {
-        await likeService.likeMantra(mantraId, token);
-      }
+      const targetMantra = feedData.find((m) => m.mantra_id === mantraId);
+      if (!targetMantra) return;
       
+      const isCurrentlyLiked = targetMantra.isLiked;
+
+      setFeedData((prev) =>
+        prev.map((m) => {
+          if (m.mantra_id === mantraId) {
+            return { 
+              ...m, 
+              isLiked: !m.isLiked,
+              like_count: isCurrentlyLiked ? m.like_count - 1 : m.like_count + 1
+            };
+          }
+          return m;
+        })
+      );
+
+      if (isCurrentlyLiked) {
+        await mantraService.unlikeMantra(mantraId, token);
+      } else {
+        await mantraService.likeMantra(mantraId, token);
+      }
     } catch (err) {
       console.error('Error toggling like:', err);
+      
+      setFeedData((prev) =>
+        prev.map((m) => {
+          if (m.mantra_id === mantraId) {
+            const originalIsLiked = !m.isLiked; 
+            return { 
+              ...m, 
+              isLiked: originalIsLiked,
+              like_count: originalIsLiked ? m.like_count + 1 : m.like_count - 1 
+            };
+          }
+          return m;
+        })
+      );
       Alert.alert('Error', 'Failed to update like status');
     }
   };

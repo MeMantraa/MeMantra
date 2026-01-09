@@ -17,7 +17,7 @@ export const MantraController = {
       if (search) {
         mantras = await MantraModel.search(search, limitNum);
       } else {
-        mantras = await MantraModel.findAll(limitNum, offsetNum);
+        mantras = await MantraModel.findWithLikeCount(limitNum, offsetNum);
       }
 
       return res.status(200).json({

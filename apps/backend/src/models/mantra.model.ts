@@ -119,7 +119,7 @@ export const MantraModel = {
 
     return results.map((result) => ({
       ...result,
-      like_count: Number(result.like_count),
+      like_count: Number(result.like_count ?? 0),
     })) as Array<Mantra & { like_count: number }>;
   }
 };
