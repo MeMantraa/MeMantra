@@ -182,7 +182,7 @@ describe('ChatList', () => {
       const conversations: Conversation[] = [
         {
           ...mockConversations[0],
-          last_message: null,
+          last_message: null as unknown as string,
         },
       ];
 
@@ -197,7 +197,7 @@ describe('ChatList', () => {
       const conversations: Conversation[] = [
         {
           ...mockConversations[0],
-          last_message: undefined,
+          last_message: undefined as unknown as string,
         },
       ];
 
