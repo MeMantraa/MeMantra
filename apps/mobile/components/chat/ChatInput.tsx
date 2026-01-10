@@ -70,7 +70,11 @@ const ChatInput: React.FC<ChatInputProps> = ({
                   {displayText}
                 </AppText>
               </View>
-              <TouchableOpacity onPress={onCancelReply} style={styles.cancelButton}>
+              <TouchableOpacity
+                onPress={onCancelReply}
+                style={styles.cancelButton}
+                testID="cancel-reply-button"
+              >
                 <Ionicons name="close-circle" size={24} color={colors.secondary} />
               </TouchableOpacity>
             </View>
@@ -113,6 +117,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           ]}
           onPress={handleSend}
           disabled={disabled || !message.trim()}
+          testID="send-button"
         >
           <Ionicons
             name="send"
