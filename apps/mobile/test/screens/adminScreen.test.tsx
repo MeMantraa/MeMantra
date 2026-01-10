@@ -135,6 +135,14 @@ describe('AdminScreen', () => {
 
     const { getByPlaceholderText, getByText } = render(<AdminScreen />);
 
+    // Wait for initial data load to complete
+    await waitFor(
+      () => {
+        expect(getByText('Admin Controls')).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
+
     fireEvent.changeText(getByPlaceholderText('Title *'), 'Test Mantra');
     fireEvent.changeText(getByPlaceholderText('Key Takeaway *'), 'Take a deep breath');
     fireEvent.press(getByText('Add Mantra'));
@@ -146,7 +154,7 @@ describe('AdminScreen', () => {
       );
       expect(Alert.alert).toHaveBeenCalledWith('Success', 'Mantra created successfully');
     });
-  });
+  }, 30000);
 
   it('shows alert when mantra fields are missing', async () => {
     const { getByText } = render(<AdminScreen />);
