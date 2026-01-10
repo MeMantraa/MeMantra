@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
-import Swipeable from 'react-native-gesture-handler/Swipeable';
+import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Reanimated from 'react-native-reanimated';
 import { useTheme } from '../../context/ThemeContext';
 import AppText from '../UI/textWrapper';
 import { useNavigation } from '@react-navigation/native';
@@ -28,7 +29,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   const { colors } = useTheme();
   const navigation = useNavigation<any>();
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const swipeableRef = useRef<Swipeable>(null);
+  const swipeableRef = useRef<React.ComponentRef<typeof Swipeable>>(null);
 
   const formatTime = (isoString: string) => {
     const date = new Date(isoString);
@@ -143,9 +144,9 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   }
 
   const renderLeftActions = () => (
-    <View style={styles.swipeActionContainer}>
+    <Reanimated.View style={styles.swipeActionContainer}>
       <AppText style={styles.swipeActionText}>Reply</AppText>
-    </View>
+    </Reanimated.View>
   );
 
   //
