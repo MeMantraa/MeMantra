@@ -12,6 +12,7 @@ export interface Database {
   CollectionMantra: CollectionMantraTable;
   Reminder: ReminderTable;
   RecommendationLog: RecommendationLogTable;
+  Rating: RatingTable;
 }
 
 //table interfaces
@@ -102,6 +103,16 @@ export interface RecommendationLogTable {
   reason: string | null;
 }
 
+export interface RatingTable {
+  rating_id: Generated<number>;
+  user_id: number;
+  mantra_id: number;
+  rating: number;
+  review_text: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
 //types for type safe operations (typescript ting)
 export type User = Selectable<UserTable>;
 export type NewUser = Insertable<UserTable>;
@@ -138,3 +149,7 @@ export type ReminderUpdate = Updateable<ReminderTable>;
 export type RecommendationLog = Selectable<RecommendationLogTable>;
 export type NewRecommendationLog = Insertable<RecommendationLogTable>;
 export type RecommendationLogUpdate = Updateable<RecommendationLogTable>;
+
+export type Rating = Selectable<RatingTable>;
+export type NewRating = Insertable<RatingTable>;
+export type RatingUpdate = Updateable<RatingTable>;
