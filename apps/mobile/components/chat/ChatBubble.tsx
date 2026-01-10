@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
-import { Swipeable } from 'react-native-gesture-handler';
+import Swipeable from 'react-native-gesture-handler/Swipeable';
 import { useTheme } from '../../context/ThemeContext';
 import AppText from '../UI/textWrapper';
 import { useNavigation } from '@react-navigation/native';
@@ -485,4 +485,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default ChatBubble;
+export { ChatBubble };

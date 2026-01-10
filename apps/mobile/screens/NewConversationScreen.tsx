@@ -49,15 +49,15 @@ export default function NewConversationScreen({ navigation }: any) {
   };
 
   const filterUsers = () => {
-    if (!searchText.trim()) {
-      setFilteredUsers(users);
-    } else {
+    if (searchText.trim()) {
       const filtered = users.filter(
         (user) =>
           user.username?.toLowerCase().includes(searchText.toLowerCase()) ||
           user.email?.toLowerCase().includes(searchText.toLowerCase()),
       );
       setFilteredUsers(filtered);
+    } else {
+      setFilteredUsers(users);
     }
   };
 

@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import ChatBubble from '../../../components/chat/ChatBubble';
+import { ChatBubble } from '../../../components/chat/ChatBubble';
 import { Message } from '../../../types/chat.types';
 import { useNavigation } from '@react-navigation/native';
 

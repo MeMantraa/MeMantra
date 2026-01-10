@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { View, FlatList, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
-import ChatBubble from '../components/chat/ChatBubble';
+import { ChatBubble } from '../components/chat/ChatBubble';
 import ChatInput from '../components/chat/ChatInput';
 import { Message, Conversation } from '../types/chat.types';
 import { chatService } from '../services/chat.service';
@@ -121,42 +121,54 @@ export default function ConversationScreen({ route, navigation }: any) {
     }
   };
 
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <View style={styles.centerContainer}>
+          <AppText style={{ color: colors.text }}>Loading messages...</AppText>
+        </View>
+      );
+    }
+
+    if (messages.length === 0) {
+      return (
+        <View style={styles.centerContainer}>
+          <AppText style={{ color: colors.text, textAlign: 'center' }}>
+            No messages yet.{'\n'}Start the conversation!
+          </AppText>
+        </View>
+      );
+    }
+
+    return (
+      <FlatList
+        ref={flatListRef}
+        data={messages}
+        keyExtractor={(item) => item.message_id.toString()}
+        contentContainerStyle={styles.messagesList}
+        renderItem={({ item }) => (
+          <ChatBubble
+            message={item}
+            isOwnMessage={item.sender_id === currentUserId}
+            onSwipeReply={handleSwipeReply}
+            replyToMessage={getReplyToMessage(item.reply_to_message_id)}
+            onReaction={handleReaction}
+            currentUserId={currentUserId}
+          />
+        )}
+        onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
+        onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
+      />
+    );
+  };
+
   return (
     <KeyboardAvoidingView
       style={[styles.container, { backgroundColor: colors.primary }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-      {loading ? (
-        <View style={styles.centerContainer}>
-          <AppText style={{ color: colors.text }}>Loading messages...</AppText>
-        </View>
-      ) : messages.length === 0 ? (
-        <View style={styles.centerContainer}>
-          <AppText style={{ color: colors.text, textAlign: 'center' }}>
-            No messages yet.{'\n'}Start the conversation!
-          </AppText>
-        </View>
-      ) : (
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          keyExtractor={(item) => item.message_id.toString()}
-          contentContainerStyle={styles.messagesList}
-          renderItem={({ item }) => (
-            <ChatBubble
-              message={item}
-              isOwnMessage={item.sender_id === currentUserId}
-              onSwipeReply={handleSwipeReply}
-              replyToMessage={getReplyToMessage(item.reply_to_message_id)}
-              onReaction={handleReaction}
-              currentUserId={currentUserId}
-            />
-          )}
-          onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
-          onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
-        />
-      )}
+      {renderContent()}
 
       <ChatInput onSend={handleSend} replyingTo={replyingTo} onCancelReply={handleCancelReply} />
     </KeyboardAvoidingView>
