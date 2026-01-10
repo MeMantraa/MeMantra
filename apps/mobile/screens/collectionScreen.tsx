@@ -73,9 +73,7 @@ export default function CollectionsScreen({ navigation }: any) {
       await collectionService.deleteCollection(collection.collection_id, token);
 
       // Remove from local state
-      setCollections((prev) =>
-        prev.filter((c) => c.collection_id !== collection.collection_id),
-      );
+      setCollections((prev) => prev.filter((c) => c.collection_id !== collection.collection_id));
 
       Alert.alert('Success', 'Collection deleted successfully');
     } catch (err) {

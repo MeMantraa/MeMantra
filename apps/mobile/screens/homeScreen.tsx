@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   FlatList,
@@ -24,7 +24,7 @@ import CollectionsSheet from '../components/collectionsSheet';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-export default function HomeScreen({ navigation }: any) {
+export default function HomeScreen({ navigation, route }: any) {
   const [feedData, setFeedData] = useState<Mantra[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSavedPopup, setShowSavedPopup] = useState(false);
@@ -34,6 +34,9 @@ export default function HomeScreen({ navigation }: any) {
   const [currentMantraId, setCurrentMantraId] = useState<number | null>(null);
 
   const { colors } = useTheme();
+
+  //scroll back to a specific mantra after sharing
+  const listRef = useRef<FlatList<Mantra>>(null);
   const { setSavedMantras } = useSavedMantras();
 
   useEffect(() => {
@@ -55,6 +58,23 @@ export default function HomeScreen({ navigation }: any) {
       setLoading(false);
     }
   };
+
+  //When coming back from ShareMantra screen, jump back to the mantra shared
+  useEffect(() => {
+    const returnToMantraId = route?.params?.returnToMantraId as number | undefined;
+    if (!returnToMantraId) return;
+    if (!feedData.length) return;
+
+    const idx = feedData.findIndex((m) => m.mantra_id === returnToMantraId);
+    if (idx < 0) return;
+
+    // clear param so it doesn't keep jumping
+    navigation.setParams({ returnToMantraId: undefined });
+
+    requestAnimationFrame(() => {
+      listRef.current?.scrollToIndex({ index: idx, animated: false });
+    });
+  }, [route?.params?.returnToMantraId, feedData.length]);
 
   const loadCollections = async () => {
     try {
@@ -120,6 +140,14 @@ export default function HomeScreen({ navigation }: any) {
       );
       Alert.alert('Error', 'Failed to update save status');
     }
+  };
+
+  //Share handler
+  const handleShare = (mantraId: number) => {
+    const mantra = feedData.find((m) => m.mantra_id === mantraId);
+    if (!mantra) return;
+
+    navigation.navigate('ShareMantra', { mantra });
   };
 
   const handleSelectCollection = async (collectionId: number) => {
@@ -230,12 +258,14 @@ export default function HomeScreen({ navigation }: any) {
   } else {
     content = (
       <FlatList
+        ref={listRef}
         data={feedData}
         renderItem={({ item }) => (
           <MantraCarousel
             item={item}
             onLike={handleLike}
             onSave={handleSave}
+            onShare={handleShare}
             onPress={() =>
               navigation.navigate('Focus', {
                 mantra: item,
@@ -251,6 +281,18 @@ export default function HomeScreen({ navigation }: any) {
         snapToAlignment="start"
         decelerationRate="fast"
         snapToInterval={SCREEN_HEIGHT}
+        // ✅ NEW: helps scrollToIndex be reliable
+        getItemLayout={(_, index) => ({
+          length: SCREEN_HEIGHT,
+          offset: SCREEN_HEIGHT * index,
+          index,
+        })}
+        // ✅ NEW: fallback if scrollToIndex happens before list is ready
+        onScrollToIndexFailed={(info) => {
+          setTimeout(() => {
+            listRef.current?.scrollToIndex({ index: info.index, animated: false });
+          }, 50);
+        }}
       />
     );
   }

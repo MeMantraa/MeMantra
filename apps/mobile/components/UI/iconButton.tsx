@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 
 type IconButtonProps = {
-  type: 'like' | 'save' | 'profile';
+  type: 'like' | 'save' | 'share' | 'profile';
   active?: boolean;
   onPress: () => void;
   testID?: string;
@@ -50,6 +50,15 @@ const IconButton: React.FC<IconButtonProps> = ({
           backgroundColor: colors.secondary,
           iconSize: 24,
           buttonSize: 48,
+        };
+      case 'share':
+        return {
+          iconName: 'paper-plane-outline',
+          iconColor: 'white',
+          defaultTestID: 'share-button',
+          backgroundColor: colors.primaryDark,
+          iconSize: 35,
+          buttonSize: 55,
         };
       default:
         return {

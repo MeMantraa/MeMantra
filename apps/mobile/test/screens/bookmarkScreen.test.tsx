@@ -237,7 +237,9 @@ describe('BookmarkScreen', () => {
 
   it('calls goBack when back button is pressed (loading state)', async () => {
     // Keep the promise pending to keep loading state
-    (collectionService.getCollectionById as jest.Mock).mockImplementation(() => new Promise(() => {}));
+    (collectionService.getCollectionById as jest.Mock).mockImplementation(
+      () => new Promise(() => {}),
+    );
 
     const { getByText, getByTestId } = renderScreen();
 
@@ -261,7 +263,18 @@ describe('BookmarkScreen', () => {
       })
       .mockResolvedValueOnce({
         status: 'success',
-        data: { mantras: [...mockMantras, { mantra_id: 3, title: 'New Mantra', key_takeaway: 'New', created_at: '2024-01-03', is_active: true }] },
+        data: {
+          mantras: [
+            ...mockMantras,
+            {
+              mantra_id: 3,
+              title: 'New Mantra',
+              key_takeaway: 'New',
+              created_at: '2024-01-03',
+              is_active: true,
+            },
+          ],
+        },
       });
 
     const { getByTestId } = renderScreen();

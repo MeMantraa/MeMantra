@@ -44,7 +44,11 @@ describe('SavedPopupBar', () => {
 
   it('renders with default message when visible is true', () => {
     const { getByText } = render(
-      <SavedPopupBar visible={true} onHide={mockOnHide} onPressCollections={mockOnPressCollections} />,
+      <SavedPopupBar
+        visible={true}
+        onHide={mockOnHide}
+        onPressCollections={mockOnPressCollections}
+      />,
     );
 
     expect(getByText('Saved successfully')).toBeTruthy();
@@ -66,7 +70,11 @@ describe('SavedPopupBar', () => {
 
   it('calls onHide after default duration (2000ms)', () => {
     render(
-      <SavedPopupBar visible={true} onHide={mockOnHide} onPressCollections={mockOnPressCollections} />,
+      <SavedPopupBar
+        visible={true}
+        onHide={mockOnHide}
+        onPressCollections={mockOnPressCollections}
+      />,
     );
 
     expect(mockOnHide).not.toHaveBeenCalled();
@@ -103,7 +111,11 @@ describe('SavedPopupBar', () => {
 
   it('calls onPressCollections when Collections button is pressed', () => {
     const { getByText } = render(
-      <SavedPopupBar visible={true} onHide={mockOnHide} onPressCollections={mockOnPressCollections} />,
+      <SavedPopupBar
+        visible={true}
+        onHide={mockOnHide}
+        onPressCollections={mockOnPressCollections}
+      />,
     );
 
     const collectionsButton = getByText('Collections');
@@ -114,7 +126,11 @@ describe('SavedPopupBar', () => {
 
   it('clears timeout when component unmounts', () => {
     const { unmount } = render(
-      <SavedPopupBar visible={true} onHide={mockOnHide} onPressCollections={mockOnPressCollections} />,
+      <SavedPopupBar
+        visible={true}
+        onHide={mockOnHide}
+        onPressCollections={mockOnPressCollections}
+      />,
     );
 
     unmount();
@@ -129,12 +145,20 @@ describe('SavedPopupBar', () => {
 
   it('clears timeout when visible changes to false', () => {
     const { rerender } = render(
-      <SavedPopupBar visible={true} onHide={mockOnHide} onPressCollections={mockOnPressCollections} />,
+      <SavedPopupBar
+        visible={true}
+        onHide={mockOnHide}
+        onPressCollections={mockOnPressCollections}
+      />,
     );
 
     // Change visible to false
     rerender(
-      <SavedPopupBar visible={false} onHide={mockOnHide} onPressCollections={mockOnPressCollections} />,
+      <SavedPopupBar
+        visible={false}
+        onHide={mockOnHide}
+        onPressCollections={mockOnPressCollections}
+      />,
     );
 
     // Fast-forward time
@@ -149,7 +173,11 @@ describe('SavedPopupBar', () => {
     Platform.OS = 'ios';
 
     const { getByText } = render(
-      <SavedPopupBar visible={true} onHide={mockOnHide} onPressCollections={mockOnPressCollections} />,
+      <SavedPopupBar
+        visible={true}
+        onHide={mockOnHide}
+        onPressCollections={mockOnPressCollections}
+      />,
     );
 
     const messageElement = getByText('Saved successfully');
@@ -166,7 +194,11 @@ describe('SavedPopupBar', () => {
     Platform.OS = 'android';
 
     const { getByText } = render(
-      <SavedPopupBar visible={true} onHide={mockOnHide} onPressCollections={mockOnPressCollections} />,
+      <SavedPopupBar
+        visible={true}
+        onHide={mockOnHide}
+        onPressCollections={mockOnPressCollections}
+      />,
     );
 
     const messageElement = getByText('Saved successfully');
@@ -181,7 +213,11 @@ describe('SavedPopupBar', () => {
 
   it('applies theme colors correctly', () => {
     const { getByText } = render(
-      <SavedPopupBar visible={true} onHide={mockOnHide} onPressCollections={mockOnPressCollections} />,
+      <SavedPopupBar
+        visible={true}
+        onHide={mockOnHide}
+        onPressCollections={mockOnPressCollections}
+      />,
     );
 
     const messageElement = getByText('Saved successfully');
@@ -205,7 +241,11 @@ describe('SavedPopupBar', () => {
     // This test verifies the fallback color logic exists in the component
     // The actual fallback is tested by checking the component's implementation
     const { getByText } = render(
-      <SavedPopupBar visible={true} onHide={mockOnHide} onPressCollections={mockOnPressCollections} />,
+      <SavedPopupBar
+        visible={true}
+        onHide={mockOnHide}
+        onPressCollections={mockOnPressCollections}
+      />,
     );
 
     const messageElement = getByText('Saved successfully');
@@ -216,12 +256,20 @@ describe('SavedPopupBar', () => {
 
   it('restarts timer when visible changes from false to true', () => {
     const { rerender } = render(
-      <SavedPopupBar visible={false} onHide={mockOnHide} onPressCollections={mockOnPressCollections} />,
+      <SavedPopupBar
+        visible={false}
+        onHide={mockOnHide}
+        onPressCollections={mockOnPressCollections}
+      />,
     );
 
     // Change visible to true
     rerender(
-      <SavedPopupBar visible={true} onHide={mockOnHide} onPressCollections={mockOnPressCollections} />,
+      <SavedPopupBar
+        visible={true}
+        onHide={mockOnHide}
+        onPressCollections={mockOnPressCollections}
+      />,
     );
 
     // Fast-forward time by 2000ms
@@ -233,7 +281,11 @@ describe('SavedPopupBar', () => {
 
   it('handles multiple visibility toggles correctly', () => {
     const { rerender } = render(
-      <SavedPopupBar visible={true} onHide={mockOnHide} onPressCollections={mockOnPressCollections} />,
+      <SavedPopupBar
+        visible={true}
+        onHide={mockOnHide}
+        onPressCollections={mockOnPressCollections}
+      />,
     );
 
     // Fast-forward 1000ms (halfway through duration)
@@ -241,12 +293,20 @@ describe('SavedPopupBar', () => {
 
     // Hide the popup
     rerender(
-      <SavedPopupBar visible={false} onHide={mockOnHide} onPressCollections={mockOnPressCollections} />,
+      <SavedPopupBar
+        visible={false}
+        onHide={mockOnHide}
+        onPressCollections={mockOnPressCollections}
+      />,
     );
 
     // Show it again
     rerender(
-      <SavedPopupBar visible={true} onHide={mockOnHide} onPressCollections={mockOnPressCollections} />,
+      <SavedPopupBar
+        visible={true}
+        onHide={mockOnHide}
+        onPressCollections={mockOnPressCollections}
+      />,
     );
 
     // Fast-forward the remaining time from the first show
@@ -265,28 +325,35 @@ describe('SavedPopupBar', () => {
 
   it('renders Ionicons chevron-forward icon', () => {
     const { getByText } = render(
-      <SavedPopupBar visible={true} onHide={mockOnHide} onPressCollections={mockOnPressCollections} />,
+      <SavedPopupBar
+        visible={true}
+        onHide={mockOnHide}
+        onPressCollections={mockOnPressCollections}
+      />,
     );
 
     // Verify the Collections button exists (which contains the icon)
     const collectionsText = getByText('Collections');
     expect(collectionsText).toBeTruthy();
-    
+
     // The icon is rendered alongside the Collections text
     expect(collectionsText.parent).toBeTruthy();
   });
 
   it('Collections button is pressable and triggers callback', () => {
     const { getByText } = render(
-      <SavedPopupBar visible={true} onHide={mockOnHide} onPressCollections={mockOnPressCollections} />,
+      <SavedPopupBar
+        visible={true}
+        onHide={mockOnHide}
+        onPressCollections={mockOnPressCollections}
+      />,
     );
 
     const collectionsText = getByText('Collections');
     expect(collectionsText).toBeTruthy();
-    
+
     // Press the Collections button again to verify it's pressable
     fireEvent.press(collectionsText);
     expect(mockOnPressCollections).toHaveBeenCalledTimes(1);
   });
 });
-

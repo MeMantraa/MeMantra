@@ -7,6 +7,7 @@ import likeRoutes from './like.routes';
 import reminderRoutes from './reminder.routes';
 import recommendationRoutes from './recommendation.routes';
 import userRoutes from './user.routes';
+import chatRoutes from './chat.routes';
 
 const router = Router();
 
@@ -33,5 +34,8 @@ router.use('/recommendations', recommendationRoutes);
 
 // User routes
 router.use('/users', userRoutes);
+
+// Chat routes
+router.use('/chat', chatRoutes);
 
 export default router;

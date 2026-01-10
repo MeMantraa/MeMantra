@@ -44,7 +44,7 @@ describe('ProfileScreen', () => {
 
   it('renders correctly with all options', async () => {
     (storage.getUserData as jest.Mock).mockResolvedValue({ username: 'memantrauser' });
-    
+
     const { getByText } = render(<ProfileScreen />);
 
     await waitFor(

@@ -154,7 +154,7 @@ describe('HomeScreen - Full Coverage', () => {
 
     await waitFor(() => expect(mantraService.getFeedMantras).toHaveBeenCalledTimes(2), {
       timeout: 10000,
-  });
+    });
   }, 15000);
 
   it('handles API error on initial fetch gracefully', async () => {
@@ -185,8 +185,8 @@ describe('HomeScreen - Full Coverage', () => {
 
     await waitFor(
       () => {
-      expect(getByText('M1')).toBeTruthy();
-      expect(getByText('M2')).toBeTruthy();
+        expect(getByText('M1')).toBeTruthy();
+        expect(getByText('M2')).toBeTruthy();
       },
       { timeout: 10000 },
     );
@@ -199,7 +199,7 @@ describe('HomeScreen - Full Coverage', () => {
     fireEvent.press(getByTestId('save-2'));
     await waitFor(() => expect(mantraService.saveMantra).toHaveBeenCalledWith(2, 'token-abc'), {
       timeout: 10000,
-  });
+    });
   }, 30000);
 
   it('reverts like on failure and shows alert', async () => {
@@ -220,7 +220,7 @@ describe('HomeScreen - Full Coverage', () => {
 
     await waitFor(
       () => {
-      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to update like status');
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to update like status');
       },
       { timeout: 10000 },
     );
@@ -244,7 +244,7 @@ describe('HomeScreen - Full Coverage', () => {
 
     await waitFor(
       () => {
-      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to update save status');
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to update save status');
       },
       { timeout: 10000 },
     );
@@ -272,10 +272,10 @@ describe('HomeScreen - Full Coverage', () => {
 
     await waitFor(
       () => {
-      expect(mockReset).toHaveBeenCalledWith({
-        index: 0,
-        routes: [{ name: 'Login' }],
-      });
+        expect(mockReset).toHaveBeenCalledWith({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        });
       },
       { timeout: 10000 },
     );
@@ -306,7 +306,7 @@ describe('HomeScreen - Full Coverage', () => {
 
     await waitFor(
       () => {
-      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to log out. Please try again.');
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to log out. Please try again.');
       },
       { timeout: 10000 },
     );
@@ -344,8 +344,8 @@ describe('HomeScreen - Full Coverage', () => {
 
     await waitFor(
       () => {
-      expect(getByText('SavedItem')).toBeTruthy();
-      expect(getByText('LikedItem')).toBeTruthy();
+        expect(getByText('SavedItem')).toBeTruthy();
+        expect(getByText('LikedItem')).toBeTruthy();
       },
       { timeout: 10000 },
     );
@@ -393,12 +393,12 @@ describe('HomeScreen - Full Coverage', () => {
 
       await waitFor(
         () => {
-        expect((storage as any).saveToken).toHaveBeenCalledWith('');
-        expect((storage as any).saveUserData).toHaveBeenCalledWith(null);
-        expect(mockReset).toHaveBeenCalledWith({
-          index: 0,
-          routes: [{ name: 'Login' }],
-        });
+          expect((storage as any).saveToken).toHaveBeenCalledWith('');
+          expect((storage as any).saveUserData).toHaveBeenCalledWith(null);
+          expect(mockReset).toHaveBeenCalledWith({
+            index: 0,
+            routes: [{ name: 'Login' }],
+          });
         },
         { timeout: 10000 },
       );
@@ -422,7 +422,7 @@ describe('HomeScreen - Full Coverage', () => {
 
     await waitFor(
       () => {
-      expect(mantraService.getFeedMantras).toHaveBeenCalledWith('mock-token');
+        expect(mantraService.getFeedMantras).toHaveBeenCalledWith('mock-token');
       },
       { timeout: 10000 },
     );
@@ -445,7 +445,7 @@ describe('HomeScreen - Full Coverage', () => {
 
     await waitFor(
       () => {
-      expect(mantraService.likeMantra).toHaveBeenCalledWith(20, 'mock-token');
+        expect(mantraService.likeMantra).toHaveBeenCalledWith(20, 'mock-token');
       },
       { timeout: 10000 },
     );
@@ -468,7 +468,7 @@ describe('HomeScreen - Full Coverage', () => {
 
     await waitFor(
       () => {
-      expect(mantraService.unlikeMantra).toHaveBeenCalledWith(21, 'mock-token');
+        expect(mantraService.unlikeMantra).toHaveBeenCalledWith(21, 'mock-token');
       },
       { timeout: 10000 },
     );
@@ -491,7 +491,7 @@ describe('HomeScreen - Full Coverage', () => {
 
     await waitFor(
       () => {
-      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to update like status');
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to update like status');
       },
       { timeout: 10000 },
     );
@@ -514,7 +514,7 @@ describe('HomeScreen - Full Coverage', () => {
 
     await waitFor(
       () => {
-      expect(mantraService.saveMantra).toHaveBeenCalledWith(30, 'mock-token');
+        expect(mantraService.saveMantra).toHaveBeenCalledWith(30, 'mock-token');
       },
       { timeout: 10000 },
     );
@@ -537,7 +537,7 @@ describe('HomeScreen - Full Coverage', () => {
 
     await waitFor(
       () => {
-      expect(mantraService.unsaveMantra).toHaveBeenCalledWith(31, 'mock-token');
+        expect(mantraService.unsaveMantra).toHaveBeenCalledWith(31, 'mock-token');
       },
       { timeout: 10000 },
     );
@@ -560,7 +560,7 @@ describe('HomeScreen - Full Coverage', () => {
 
     await waitFor(
       () => {
-      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to update save status');
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to update save status');
       },
       { timeout: 10000 },
     );
