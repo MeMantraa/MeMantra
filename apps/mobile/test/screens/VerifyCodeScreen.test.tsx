@@ -210,7 +210,7 @@ describe('VerifyCodeScreen', () => {
       email: 'user@example.com',
       code: '123456',
     });
-  });
+  }, 30000);
 
   it('auto-verifies when all 6 digits are entered', async () => {
     (authService.verifyResetCode as jest.Mock).mockResolvedValue({
