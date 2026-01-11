@@ -392,7 +392,7 @@ describe('MantraModel', () => {
 
       (db.selectFrom as jest.Mock).mockReturnValue(mockChain);
 
-      const result = await MantraModel.findWithLikeCount(50);
+      const result = await MantraModel.findWithLikeCount(50, 0);
 
       expect(db.selectFrom).toHaveBeenCalledWith('Mantra');
       expect(mockChain.leftJoin).toHaveBeenCalledWith('Like', 'Mantra.mantra_id', 'Like.mantra_id');
