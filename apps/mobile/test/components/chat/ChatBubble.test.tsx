@@ -173,6 +173,25 @@ describe('ChatBubble', () => {
       });
     });
 
+    it('closes emoji picker when modal backdrop is pressed', async () => {
+      const { getByText, queryByText } = render(
+        <ChatBubble message={baseMessage} isOwnMessage={false} />,
+      );
+
+      fireEvent(getByText('Hello, how are you?'), 'longPress');
+
+      await waitFor(() => {
+        expect(getByText('React with an emoji')).toBeTruthy();
+      });
+
+      const modal = getByText('React with an emoji').parent?.parent?.parent;
+      fireEvent.press(modal as any);
+
+      await waitFor(() => {
+        expect(queryByText('React with an emoji')).toBeNull();
+      });
+    });
+
     it('calls onReaction when emoji is selected', async () => {
       const onReaction = jest.fn();
       const { getByText } = render(
@@ -250,6 +269,90 @@ describe('ChatBubble', () => {
 
       expect(getByText(' Be present')).toBeTruthy();
     });
+
+    it('renders reply to mantra share in mantra message', () => {
+      const replyToMessage: Message = {
+        message_id: 2,
+        conversation_id: 1,
+        sender_id: 3,
+        content: JSON.stringify({
+          type: 'mantra_share',
+          text: 'Inner peace',
+          mantra_id: 456,
+        }),
+        created_at: new Date().toISOString(),
+        read: true,
+      };
+
+      const mantraMessage: Message = {
+        ...baseMessage,
+        content: JSON.stringify({
+          type: 'mantra_share',
+          text: 'Peace begins with a smile',
+          mantra_id: 123,
+        }),
+      };
+
+      const { getByText } = render(
+        <ChatBubble message={mantraMessage} isOwnMessage={false} replyToMessage={replyToMessage} />,
+      );
+
+      expect(getByText('🧘 Inner peace')).toBeTruthy();
+    });
+
+    it('handles malformed JSON in reply context', () => {
+      const replyToMessage: Message = {
+        message_id: 2,
+        conversation_id: 1,
+        sender_id: 3,
+        content: '{malformed json',
+        created_at: new Date().toISOString(),
+        read: true,
+      };
+
+      const { getByText } = render(
+        <ChatBubble message={baseMessage} isOwnMessage={false} replyToMessage={replyToMessage} />,
+      );
+
+      expect(getByText('{malformed json')).toBeTruthy();
+    });
+
+    it('handles missing text in mantra reply', () => {
+      const replyToMessage: Message = {
+        message_id: 2,
+        conversation_id: 1,
+        sender_id: 3,
+        content: JSON.stringify({
+          type: 'mantra_share',
+          mantra_id: 456,
+        }),
+        created_at: new Date().toISOString(),
+        read: true,
+      };
+
+      const { getByText } = render(
+        <ChatBubble message={baseMessage} isOwnMessage={false} replyToMessage={replyToMessage} />,
+      );
+
+      expect(getByText(' Shared mantra')).toBeTruthy();
+    });
+  });
+
+  describe('Swipe Gestures', () => {
+    it('renders with onSwipeReply prop', () => {
+      const onSwipeReply = jest.fn();
+      const { getByText } = render(
+        <ChatBubble message={baseMessage} isOwnMessage={false} onSwipeReply={onSwipeReply} />,
+      );
+
+      expect(getByText('Hello, how are you?')).toBeTruthy();
+    });
+
+    it('renders without onSwipeReply prop', () => {
+      const { getByText } = render(<ChatBubble message={baseMessage} isOwnMessage={false} />);
+
+      expect(getByText('Hello, how are you?')).toBeTruthy();
+    });
   });
 
   describe('Edge Cases', () => {
@@ -296,6 +399,23 @@ describe('ChatBubble', () => {
 
       expect(getByText('👍')).toBeTruthy();
       expect(queryByText('1')).toBeNull();
+    });
+
+    it('opens emoji picker when pressing + button in reactions', async () => {
+      const messageWithReactions: Message = {
+        ...baseMessage,
+        reactions: [{ emoji: '👍', count: 1, users: [1] }],
+      };
+
+      const { getByText } = render(
+        <ChatBubble message={messageWithReactions} isOwnMessage={false} />,
+      );
+
+      fireEvent.press(getByText('+'));
+
+      await waitFor(() => {
+        expect(getByText('React with an emoji')).toBeTruthy();
+      });
     });
   });
 });

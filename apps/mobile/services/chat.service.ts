@@ -244,3 +244,6 @@ const realChatService = {
 };
 
 export const chatService = USE_MOCK_DATA ? mockChatService : realChatService;
+
+export const __mockChatService = mockChatService;
+export const __realChatService = realChatService;
