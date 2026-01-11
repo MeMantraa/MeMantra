@@ -281,8 +281,8 @@ const realMantraService = {
 
   async likeMantra(mantraId: number, token: string) {
     const response = await apiClient.post(
-      `/mantras/like`,
-      { mantra_id: mantraId },
+      `/likes/${mantraId}`,
+      {},
       {
         headers: { Authorization: `Bearer ${token}` },
       },
@@ -291,7 +291,7 @@ const realMantraService = {
   },
 
   async unlikeMantra(mantraId: number, token: string) {
-    const response = await apiClient.delete(`/mantras/like/${mantraId}`, {
+    const response = await apiClient.delete(`/likes/${mantraId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;

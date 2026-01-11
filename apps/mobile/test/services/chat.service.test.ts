@@ -5,6 +5,7 @@ import {
   Message,
   CreateMessagePayload,
   CreateConversationPayload,
+  MessageReaction,
 } from '../../types/chat.types';
 
 jest.mock('../../services/api.config', () => ({
@@ -17,6 +18,15 @@ jest.mock('../../services/api.config', () => ({
 
 describe('chatService', () => {
   const mockToken = 'test-token-123';
+
+  beforeAll(() => {
+    jest.isolateModules(() => {
+      jest.doMock('../../services/chat.service', () => {
+        const actualModule = jest.requireActual('../../services/chat.service');
+        return actualModule;
+      });
+    });
+  });
 
   beforeEach(() => {
     jest.clearAllMocks();
