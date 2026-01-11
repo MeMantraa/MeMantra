@@ -62,6 +62,7 @@ export default function SavedPopupBar({
     if (!visible) return;
 
     setHasRated(false);
+    setHoveredStar(0);
     animateTo(1);
     startAutoHideTimer();
 
