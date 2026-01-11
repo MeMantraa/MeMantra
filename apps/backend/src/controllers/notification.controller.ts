@@ -159,14 +159,11 @@ export const NotificationController = {
         });
       }
 
-      // Get device tokens for all users
-      const deviceTokens: string[] = [];
-      for (const targetUserId of userIds) {
-        const user = await UserModel.findById(targetUserId);
-        if (user && user.device_token) {
-          deviceTokens.push(user.device_token);
-        }
-      }
+      // Get device tokens for all users in a single query
+      const users = await UserModel.findByIds(userIds);
+      const deviceTokens: string[] = users
+        .filter((user) => user.device_token)
+        .map((user) => user.device_token as string);
 
       if (deviceTokens.length === 0) {
         return res.status(400).json({

@@ -66,6 +66,20 @@ export const UserModel = {
     return user;
   },
 
+  async findByIds(ids: number[]): Promise<User[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    
+    const users = await db
+      .selectFrom('User')
+      .where('user_id', 'in', ids)
+      .selectAll()
+      .execute();
+    
+    return users;
+  },
+
   async findAll(): Promise<User[]> {
   const users = await db
     .selectFrom('User')
