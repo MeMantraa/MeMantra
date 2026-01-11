@@ -70,7 +70,7 @@ describe('notificationService', () => {
 
       expect(result).toEqual({
         granted: true,
-        canAskAgain: true,
+        canAskAgain: false,
         status: 'granted',
       });
       expect(Notifications.requestPermissionsAsync).toHaveBeenCalled();
@@ -88,8 +88,25 @@ describe('notificationService', () => {
 
       expect(result).toEqual({
         granted: false,
-        canAskAgain: true,
+        canAskAgain: false,
         status: 'denied',
+      });
+    });
+
+    it('should set canAskAgain to true when status remains undetermined', async () => {
+      (Notifications.getPermissionsAsync as jest.Mock).mockResolvedValue({
+        status: 'undetermined',
+      });
+      (Notifications.requestPermissionsAsync as jest.Mock).mockResolvedValue({
+        status: 'undetermined',
+      });
+
+      const result = await notificationService.requestPermissions();
+
+      expect(result).toEqual({
+        granted: false,
+        canAskAgain: true,
+        status: 'undetermined',
       });
     });
   });
