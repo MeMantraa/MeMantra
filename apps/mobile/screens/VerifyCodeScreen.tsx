@@ -150,7 +150,7 @@ export default function VerifyCodeScreen({ route, navigation }: any) {
             <View className="flex-row justify-between mb-[30px]">
               {code.map((digit, index) => (
                 <TextInput
-                  key={index}
+                  key={`digit-${index}`}
                   ref={(ref) => {
                     inputRefs.current[index] = ref;
                   }}
@@ -175,7 +175,7 @@ export default function VerifyCodeScreen({ route, navigation }: any) {
               style={{ backgroundColor: colors.secondary }}
               className="rounded-[30px] p-[14px] items-center mt-[8px]"
               onPress={() => handleVerifyCode()}
-              disabled={loading || code.some((digit) => digit === '')}
+              disabled={loading || code.includes('')}
             >
               <AppText className="text-[#ffffff] text-[18px] font-semibold">
                 {loading ? 'Verifying...' : 'Verify Code'}

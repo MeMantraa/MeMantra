@@ -3,7 +3,9 @@ jest.mock('dotenv', () => ({
 }));
 
 const mockSendMail = jest.fn();
-const mockVerify = jest.fn();
+const mockVerify = jest.fn((callback) => {
+  if (callback) callback(null);
+});
 
 jest.mock('nodemailer', () => ({
   createTransport: jest.fn(() => ({
@@ -14,7 +16,7 @@ jest.mock('nodemailer', () => ({
 
 const mockRandomBytes = jest.fn();
 
-jest.mock('crypto', () => ({
+jest.mock('node:crypto', () => ({
   randomBytes: mockRandomBytes,
 }));
 
@@ -45,7 +47,7 @@ describe('Email Service', () => {
     it('should generate a 6-digit code', () => {
       // Mock crypto.randomBytes to return predictable value
       const mockBuffer = Buffer.from([0x00, 0x01, 0x86, 0xA0]); // 100000 in hex
-      mockRandomBytes.mockReturnValue(mockBuffer);
+      mockRandomBytes.mockReturnValueOnce(mockBuffer);
 
       const code = generate6DigitCode();
 
@@ -57,14 +59,14 @@ describe('Email Service', () => {
     it('should generate codes between 100000 and 999999', () => {
       // Test with minimum value
       const minBuffer = Buffer.from([0x00, 0x00, 0x00, 0x00]); // 0
-      mockRandomBytes.mockReturnValue(minBuffer);
+      mockRandomBytes.mockReturnValueOnce(minBuffer);
       const minCode = generate6DigitCode();
       expect(parseInt(minCode)).toBeGreaterThanOrEqual(100000);
       expect(parseInt(minCode)).toBeLessThanOrEqual(999999);
 
-      // Test with maximum value
-      const maxBuffer = Buffer.from([0xFF, 0xFF, 0xFF, 0xFF]); // 4294967295
-      mockRandomBytes.mockReturnValue(maxBuffer);
+      // Test with maximum value that's within acceptable range
+      const maxBuffer = Buffer.from([0x00, 0xDB, 0xBA, 0x00]); // 14400000 which is < maxAcceptable
+      mockRandomBytes.mockReturnValueOnce(maxBuffer);
       const maxCode = generate6DigitCode();
       expect(parseInt(maxCode)).toBeGreaterThanOrEqual(100000);
       expect(parseInt(maxCode)).toBeLessThanOrEqual(999999);
@@ -72,7 +74,7 @@ describe('Email Service', () => {
 
     it('should return code as string', () => {
       const mockBuffer = Buffer.from([0x00, 0x01, 0x86, 0xA0]);
-      mockRandomBytes.mockReturnValue(mockBuffer);
+      mockRandomBytes.mockReturnValueOnce(mockBuffer);
 
       const code = generate6DigitCode();
 
@@ -97,7 +99,7 @@ describe('Email Service', () => {
 
     it('should handle edge case with value exactly at 100000', () => {
       const buffer = Buffer.from([0x00, 0x01, 0x86, 0xA0]); // 100000
-      mockRandomBytes.mockReturnValue(buffer);
+      mockRandomBytes.mockReturnValueOnce(buffer);
 
       const code = generate6DigitCode();
 
@@ -105,8 +107,8 @@ describe('Email Service', () => {
     });
 
     it('should handle modulo operation correctly', () => {
-      const buffer = Buffer.from([0xFF, 0xFF, 0xFF, 0xFF]);
-      mockRandomBytes.mockReturnValue(buffer);
+      const buffer = Buffer.from([0x00, 0xDB, 0xBA, 0x00]); // Use a safe value within range
+      mockRandomBytes.mockReturnValueOnce(buffer);
 
       const code = generate6DigitCode();
 

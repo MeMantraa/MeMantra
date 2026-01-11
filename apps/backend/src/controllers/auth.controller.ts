@@ -381,16 +381,37 @@ async updateEmail(req: Request, res: Response) {
     try {
       const { email, code } = req.body;
 
-      if (!email || !code) {
+      if (!email || typeof email !== 'string' || !code || typeof code !== 'string') {
         return res.status(400).json({
           status: 'error',
           message: 'Email and verification code are required',
         });
       }
 
-      const user = await verifyResetCodeAndGetUser(email, code);
+      const trimmedCode = code.trim();
+      
+      // Validate code format BEFORE any database queries
+      if (trimmedCode.length !== 6 || !/^\d{6}$/.test(trimmedCode)) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Invalid verification code format',
+        });
+      }
 
+      // Find user (only after validating code format)
+      const user = await UserModel.findByEmail(email.toLowerCase().trim());
+      
       if (!user) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Invalid or expired verification code',
+        });
+      }
+      
+      // Verify code
+      const validToken = await PasswordResetTokenModel.findValidToken(user.user_id, trimmedCode);
+      
+      if (!validToken) {
         return res.status(400).json({
           status: 'error',
           message: 'Invalid or expired verification code',

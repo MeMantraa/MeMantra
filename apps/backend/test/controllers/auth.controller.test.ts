@@ -896,7 +896,7 @@ describe('Password Reset Flow', () => {
 
       const res = await request(app)
         .post('/verify-reset-code')
-        .send({ email: 'user@example.com', code: 'wrong' });
+        .send({ email: 'user@example.com', code: '123456' });
 
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({

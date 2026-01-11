@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 
 // Configure Gmail SMTP transporter
 const transporter = nodemailer.createTransport({
@@ -12,19 +12,28 @@ const transporter = nodemailer.createTransport({
 });
 
 // Verify transporter configuration
-transporter.verify((error) => {
-  if (error) {
-    console.error('Email service configuration error:', error);
-  } else {
-    console.log('Email service is ready to send messages');
-  }
-});
+if (process.env.NODE_ENV !== 'test') {
+  transporter.verify((error) => {
+    if (error) {
+      console.error('Email service configuration error:', error);
+    } else {
+      console.log('Email service is ready to send messages');
+    }
+  });
+}
 
 // Generate a random 6-digit code 
 export const generate6DigitCode = (): string => {
-  const randomBytes = crypto.randomBytes(4);
-  const randomNumber = randomBytes.readUInt32BE(0);
-  const code = (randomNumber % 900000) + 100000;
+  const range = 900000; // 900000 possible values (100000 to 999999)
+  const maxAcceptable = Math.floor(0xFFFFFFFF / range) * range;
+  
+  let randomNumber: number;
+  do {
+    const randomBytes = crypto.randomBytes(4);
+    randomNumber = randomBytes.readUInt32BE(0);
+  } while (randomNumber >= maxAcceptable);
+  
+  const code = (randomNumber % range) + 100000;
   return code.toString();
 };
 
