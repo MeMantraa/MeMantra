@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import MantraCarousel from '../components/carousel';
 import { mantraService, Mantra } from '../services/mantra.service';
 import { collectionService, Collection } from '../services/collection.service';
+import { ratingService } from '../services/rating.service';
 import { storage } from '../utils/storage';
 import SearchBar from '../components/UI/searchBar';
 import IconButton from '../components/UI/iconButton';
@@ -169,6 +170,24 @@ export default function HomeScreen({ navigation }: any) {
     }
   };
 
+  const handleRate = async (mantraId: number, rating: number) => {
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      console.log('Rating mantra:', mantraId, 'with rating:', rating);
+
+      const response = await ratingService.rateMantra(mantraId, rating, undefined, token);
+
+      if (response.status === 'success') {
+        console.log('Rating saved successfully');
+      } else {
+        Alert.alert('Error', response.message || 'Failed to save rating');
+      }
+    } catch (err) {
+      console.error('Error rating mantra:', err);
+      Alert.alert('Error', 'Failed to save rating');
+    }
+  };
+
   const handleLogout = () => logoutUser(navigation);
 
   const handleSearch = (query: string) => console.log('Searching for:', query);
@@ -271,6 +290,11 @@ export default function HomeScreen({ navigation }: any) {
         onPressCollections={() => {
           setShowSavedPopup(false);
           setShowCollectionsSheet(true);
+        }}
+        onRate={(rating) => {
+          if (currentMantraId) {
+            handleRate(currentMantraId, rating);
+          }
         }}
       />
       <CollectionsSheet

@@ -3,9 +3,9 @@ import { apiClient } from './api.config';
 /**
  * CONFIGURATION
  * --------------
- * Set USE_MOCK_DATA = false later when backend is ready.
+ * Set USE_MOCK_DATA = false when backend is ready.
  */
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 /**
  * TYPES
@@ -189,6 +189,7 @@ const mockMantraService = {
     mockUserState.savedMantras.delete(mantraId);
     return { status: 'success', message: 'Removed from saved' };
   },
+
   async getSavedMantras(token: string) {
     const collectionId = 1;
     const response = await apiClient.get(`/collections/${collectionId}`, {
@@ -228,6 +229,7 @@ const mockMantraService = {
       data: { mantra: newMantra },
     };
   },
+
   async deleteMantra(mantraId: number, _token: string): Promise<MantraMutationResponse> {
     const exists = mockMantras.some((m) => m.mantra_id === mantraId);
 
@@ -281,16 +283,11 @@ const mockMantraService = {
 /* istanbul ignore next */
 const realMantraService = {
   /* istanbul ignore next */
-  async getFeedMantras(_token: string): Promise<MantraResponse> {
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    return {
-      status: 'success',
-      data: mockMantras.map((m) => ({
-        ...m,
-        isLiked: mockUserState.likedMantras.has(m.mantra_id),
-        isSaved: mockUserState.savedMantras.has(m.mantra_id),
-      })),
-    };
+  async getFeedMantras(token: string): Promise<MantraResponse> {
+    const response = await apiClient.get('/mantras/feed', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
   },
 
   /* istanbul ignore next */

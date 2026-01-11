@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { Rating, NewRating, RatingUpdate } from '../types/database.types';
+import { Rating } from '../types/database.types';
 
 export const RatingModel = {
   /**
