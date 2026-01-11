@@ -23,11 +23,8 @@ export const registerTokenSchema = z.object({
 
 // Unregister token schema
 export const unregisterTokenSchema = z.object({
-  body: z.object({
-    token: expoPushTokenSchema,
-  }),
+  body: z.object({}),
 });
-
 // Send notification schema
 export const sendNotificationSchema = z.object({
   body: z.object({
