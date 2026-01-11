@@ -159,12 +159,20 @@ export default function MantraCarousel({
         ))}
       </View>
 
-      {/* Action buttons */}
       {showButtons && (
         <View className="absolute right-6 bottom-40 items-center">
           <IconButton type="save" active={!!item.isSaved} onPress={handleSave} className="mb-6" />
-          <IconButton type="like" active={!!item.isLiked} onPress={handleLike} className="mb-6" />
-          <IconButton type="share" onPress={handleShare} className="mb-6" />
+          <View className="items-center">
+            <IconButton type="like" active={!!item.isLiked} onPress={handleLike} />
+            {item.like_count !== undefined && (
+              <AppText 
+                style={{ color: colors.text }} 
+                className="text-sm mt-1"
+              >
+                {item.like_count}
+              </AppText>
+            )}
+          </View>
         </View>
       )}
     </View>

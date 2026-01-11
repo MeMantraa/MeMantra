@@ -27,6 +27,7 @@ export interface Mantra {
   is_active: boolean;
   isLiked?: boolean;
   isSaved?: boolean;
+  like_count?: number;
 }
 
 export interface MantraResponse {

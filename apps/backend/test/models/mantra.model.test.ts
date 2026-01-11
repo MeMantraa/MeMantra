@@ -387,19 +387,21 @@ describe('MantraModel', () => {
         groupBy: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
         limit: jest.fn().mockReturnThis(),
+        offset: jest.fn().mockReturnThis(), // Add this line
         execute: jest.fn().mockResolvedValue(mockResults),
       };
 
       (db.selectFrom as jest.Mock).mockReturnValue(mockChain);
 
-      const result = await MantraModel.findWithLikeCount(50);
+      const result = await MantraModel.findWithLikeCount(50, 0);
 
       expect(db.selectFrom).toHaveBeenCalledWith('Mantra');
       expect(mockChain.leftJoin).toHaveBeenCalledWith('Like', 'Mantra.mantra_id', 'Like.mantra_id');
       expect(mockChain.where).toHaveBeenCalledWith('Mantra.is_active', '=', true);
       expect(mockChain.groupBy).toHaveBeenCalledWith('Mantra.mantra_id');
-      expect(mockChain.orderBy).toHaveBeenCalledWith('like_count', 'desc');
+      expect(mockChain.orderBy).toHaveBeenCalledWith('created_at', 'desc');
       expect(mockChain.limit).toHaveBeenCalledWith(50);
+      expect(mockChain.offset).toHaveBeenCalledWith(0); // Add this line
       expect(result[0].like_count).toBe(10);
     });
   });
