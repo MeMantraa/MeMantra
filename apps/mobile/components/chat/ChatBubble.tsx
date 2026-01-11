@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
-import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
-import Reanimated from 'react-native-reanimated';
+import { Swipeable } from 'react-native-gesture-handler';
 import { useTheme } from '../../context/ThemeContext';
 import AppText from '../UI/textWrapper';
 import { useNavigation } from '@react-navigation/native';
@@ -144,9 +143,9 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   }
 
   const renderLeftActions = () => (
-    <Reanimated.View style={styles.swipeActionContainer}>
+    <View style={styles.swipeActionContainer}>
       <AppText style={styles.swipeActionText}>Reply</AppText>
-    </Reanimated.View>
+    </View>
   );
 
   //
