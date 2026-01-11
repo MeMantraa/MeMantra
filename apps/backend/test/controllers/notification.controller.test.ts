@@ -203,9 +203,10 @@ describe('NotificationController', () => {
 
   describe('sendBulkNotification', () => {
     it('should send bulk notifications successfully', async () => {
-      (UserModel.findById as jest.Mock)
-        .mockResolvedValueOnce({ user_id: 1, device_token: 'Token1' })
-        .mockResolvedValueOnce({ user_id: 2, device_token: 'Token2' });
+      (UserModel.findByIds as jest.Mock).mockResolvedValue([
+        { user_id: 1, device_token: 'Token1' },
+        { user_id: 2, device_token: 'Token2' },
+      ]);
 
       (NotificationService.sendBulkNotification as jest.Mock).mockResolvedValue({
         data: [
@@ -235,7 +236,9 @@ describe('NotificationController', () => {
     });
 
     it('should return 400 if no valid device tokens found', async () => {
-      (UserModel.findById as jest.Mock).mockResolvedValue({ user_id: 1, device_token: null });
+      (UserModel.findByIds as jest.Mock).mockResolvedValue([
+        { user_id: 1, device_token: null },
+      ]);
 
       const res = await request(app)
         .post('/send-bulk')
