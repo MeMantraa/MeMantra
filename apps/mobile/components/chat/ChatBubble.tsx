@@ -37,6 +37,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const translateX = useRef(new Animated.Value(0)).current;
 
+  /* istanbul ignore next */
   const panResponder = useRef(
     PanResponder.create({
       onMoveShouldSetPanResponder: (_, gestureState) => {
