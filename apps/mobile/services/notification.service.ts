@@ -45,7 +45,7 @@ export const notificationService = {
 
     return {
       granted: finalStatus === 'granted',
-      canAskAgain: existingStatus === 'undetermined',
+      canAskAgain: finalStatus === 'undetermined',
       status: finalStatus as 'granted' | 'denied' | 'undetermined',
     };
   },
