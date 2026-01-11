@@ -1,18 +1,58 @@
-import React from 'react';
-import { View, FlatList, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  View,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  ActivityIndicator,
+  Alert,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { Mantra } from '../services/mantra.service';
-import { useSavedMantras } from '../context/SavedContext';
+import { collectionService } from '../services/collection.service';
+import { storage } from '../utils/storage';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ITEM_MARGIN = 12;
 const NUM_COLUMNS = 2;
 const ITEM_SIZE = (SCREEN_WIDTH - ITEM_MARGIN * (NUM_COLUMNS + 1)) / NUM_COLUMNS;
 
-export default function BookmarkScreen({ navigation }: any) {
+export default function BookmarkScreen({ navigation, route }: any) {
   const { colors } = useTheme();
-  const { savedMantras } = useSavedMantras();
+  const { collectionId = 0, collectionName = '' } = route?.params ?? {};
+
+  const [mantras, setMantras] = useState<Mantra[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    loadCollectionMantras();
+  }, [collectionId]);
+
+  const loadCollectionMantras = async () => {
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      const response = await collectionService.getCollectionById(collectionId, token);
+
+      if (response.status === 'success' && response.data) {
+        setMantras(response.data.mantras);
+      }
+    } catch (err) {
+      console.error('Error fetching collection mantras:', err);
+      Alert.alert('Error', 'Failed to load mantras');
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const handleRefresh = () => {
+    setRefreshing(true);
+    loadCollectionMantras();
+  };
 
   const renderItem = ({ item }: { item: Mantra }) => (
     <TouchableOpacity
@@ -29,27 +69,65 @@ export default function BookmarkScreen({ navigation }: any) {
     </TouchableOpacity>
   );
 
+  if (loading) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.primary }]}>
+        <View style={[styles.header, { backgroundColor: colors.primary }]}>
+          <TouchableOpacity
+            testID="back-button-empty"
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="arrow-back" size={28} color={colors.text} />
+          </TouchableOpacity>
+          <AppText style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
+            {collectionName}
+          </AppText>
+        </View>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.secondary} />
+          <AppText style={[styles.loadingText, { color: colors.text }]}>Loading mantras...</AppText>
+        </View>
+      </View>
+    );
+  }
+
   return (
-    <View style={[styles.container, { backgroundColor: colors.primary, paddingTop: 40 }]}>
-      <View
-        className="pt-12 pb-4 px-4"
-        style={{ backgroundColor: colors.primary, paddingLeft: 30 }}
-      >
-        <AppText style={{ color: colors.text, fontSize: 30, fontWeight: 'bold' }}>Library</AppText>
+    <View style={[styles.container, { backgroundColor: colors.primary }]}>
+      <View style={[styles.header, { backgroundColor: colors.primary }]}>
+        <TouchableOpacity
+          testID="back-button"
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="arrow-back" size={28} color={colors.text} />
+        </TouchableOpacity>
+        <AppText style={[styles.headerTitle, { color: colors.text }]} numberOfLines={1}>
+          {collectionName}
+        </AppText>
       </View>
 
-      {savedMantras.length === 0 ? (
+      {mantras.length === 0 ? (
         <View style={styles.emptyContainer}>
-          <AppText style={{ color: colors.text }}>You have no saved mantras yet.</AppText>
+          <Ionicons name="bookmark-outline" size={64} color={colors.secondary} />
+          <AppText style={[styles.emptyTitle, { color: colors.text }]}>No Mantras Yet</AppText>
+          <AppText style={[styles.emptyDescription, { color: colors.text, opacity: 0.7 }]}>
+            Save mantras to this collection to see them here
+          </AppText>
         </View>
       ) : (
         <FlatList
-          data={savedMantras}
+          testID="mantra-list"
+          data={mantras}
           keyExtractor={(item) => item.mantra_id.toString()}
           renderItem={renderItem}
           numColumns={NUM_COLUMNS}
-          columnWrapperStyle={{ justifyContent: 'space-between', marginBottom: ITEM_MARGIN }}
-          contentContainerStyle={{ padding: ITEM_MARGIN }}
+          columnWrapperStyle={styles.columnWrapper}
+          contentContainerStyle={styles.listContent}
+          refreshing={refreshing}
+          onRefresh={handleRefresh}
         />
       )}
     </View>
@@ -60,11 +138,54 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  header: {
+    paddingTop: 56,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    marginRight: 12,
+    padding: 4,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+  },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 40,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyDescription: {
+    fontSize: 14,
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  listContent: {
+    padding: ITEM_MARGIN,
+  },
+  columnWrapper: {
+    justifyContent: 'space-between',
+    marginBottom: ITEM_MARGIN,
   },
   itemContainer: {
     width: ITEM_SIZE,

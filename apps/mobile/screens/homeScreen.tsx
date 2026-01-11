@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   FlatList,
@@ -6,10 +6,12 @@ import {
   ActivityIndicator,
   Alert,
   TouchableOpacity,
+  Text,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import MantraCarousel from '../components/carousel';
 import { mantraService, Mantra } from '../services/mantra.service';
+import { collectionService, Collection } from '../services/collection.service';
 import { storage } from '../utils/storage';
 import SearchBar from '../components/UI/searchBar';
 import IconButton from '../components/UI/iconButton';
@@ -17,16 +19,29 @@ import { logoutUser } from '../utils/auth';
 import AppText from '../components/UI/textWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { useSavedMantras } from '../context/SavedContext';
+import SavedPopupBar from '../components/UI/savedPopupBar';
+import CollectionsSheet from '../components/collectionsSheet';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
-export default function HomeScreen({ navigation }: any) {
+export default function HomeScreen({ navigation, route }: any) {
   const [feedData, setFeedData] = useState<Mantra[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showSavedPopup, setShowSavedPopup] = useState(false);
+  const [showCollectionsSheet, setShowCollectionsSheet] = useState(false);
+  const [collectionToast, setCollectionToast] = useState('');
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [currentMantraId, setCurrentMantraId] = useState<number | null>(null);
+
   const { colors } = useTheme();
+
+  //scroll back to a specific mantra after sharing
+  const listRef = useRef<FlatList<Mantra>>(null);
+  const { setSavedMantras } = useSavedMantras();
 
   useEffect(() => {
     loadMantras();
+    loadCollections();
   }, []);
 
   const loadMantras = async () => {
@@ -41,6 +56,36 @@ export default function HomeScreen({ navigation }: any) {
       console.error('Error fetching mantras:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  //When coming back from ShareMantra screen, jump back to the mantra shared
+  useEffect(() => {
+    const returnToMantraId = route?.params?.returnToMantraId as number | undefined;
+    if (!returnToMantraId) return;
+    if (!feedData.length) return;
+
+    const idx = feedData.findIndex((m) => m.mantra_id === returnToMantraId);
+    if (idx < 0) return;
+
+    // clear param so it doesn't keep jumping
+    navigation.setParams({ returnToMantraId: undefined });
+
+    requestAnimationFrame(() => {
+      listRef.current?.scrollToIndex({ index: idx, animated: false });
+    });
+  }, [route?.params?.returnToMantraId, feedData.length]);
+
+  const loadCollections = async () => {
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      const response = await collectionService.getUserCollections(token);
+
+      if (response.status === 'success' && response.data) {
+        setCollections(response.data.collections);
+      }
+    } catch (err) {
+      console.error('Error fetching collections:', err);
     }
   };
 
@@ -67,8 +112,6 @@ export default function HomeScreen({ navigation }: any) {
     }
   };
 
-  const { setSavedMantras } = useSavedMantras();
-
   const handleSave = async (mantraId: number) => {
     try {
       const token = (await storage.getToken()) || 'mock-token';
@@ -85,6 +128,10 @@ export default function HomeScreen({ navigation }: any) {
         await mantraService.saveMantra(mantraId, token);
         const savedMantra = feedData.find((m) => m.mantra_id === mantraId);
         if (savedMantra) setSavedMantras((prev) => [...prev, savedMantra]);
+
+        // Store the mantra ID and show popup + collections sheet
+        setCurrentMantraId(mantraId);
+        setShowSavedPopup(true);
       }
     } catch (err) {
       console.error('Error toggling save:', err);
@@ -92,6 +139,61 @@ export default function HomeScreen({ navigation }: any) {
         prev.map((m) => (m.mantra_id === mantraId ? { ...m, isSaved: !m.isSaved } : m)),
       );
       Alert.alert('Error', 'Failed to update save status');
+    }
+  };
+
+  //Share handler
+  const handleShare = (mantraId: number) => {
+    const mantra = feedData.find((m) => m.mantra_id === mantraId);
+    if (!mantra) return;
+
+    navigation.navigate('ShareMantra', { mantra });
+  };
+
+  const handleSelectCollection = async (collectionId: number) => {
+    if (!currentMantraId) {
+      Alert.alert('Error', 'No mantra selected');
+      return;
+    }
+
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      const response = await collectionService.addMantraToCollection(
+        collectionId,
+        currentMantraId,
+        token,
+      );
+
+      if (response.status === 'success') {
+        const collection = collections.find((c) => c.collection_id === collectionId);
+        setCollectionToast(collection?.name || 'collection');
+        setTimeout(() => setCollectionToast(''), 2000);
+      } else {
+        Alert.alert('Error', response.message || 'Failed to add to collection');
+      }
+    } catch (err) {
+      console.error('Error adding to collection:', err);
+      Alert.alert('Error', 'Failed to add mantra to collection');
+    }
+  };
+
+  const handleCreateCollection = async (name: string): Promise<number> => {
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      const response = await collectionService.createCollection(name, undefined, token);
+
+      if (response.status === 'success' && response.data) {
+        const newCollection = response.data.collection;
+        setCollections((prev) => [newCollection, ...prev]);
+        return newCollection.collection_id;
+      } else {
+        Alert.alert('Error', response.message || 'Failed to create collection');
+        throw new Error('Failed to create collection');
+      }
+    } catch (err) {
+      console.error('Error creating collection:', err);
+      Alert.alert('Error', 'Failed to create collection');
+      throw err;
     }
   };
 
@@ -156,12 +258,14 @@ export default function HomeScreen({ navigation }: any) {
   } else {
     content = (
       <FlatList
+        ref={listRef}
         data={feedData}
         renderItem={({ item }) => (
           <MantraCarousel
             item={item}
             onLike={handleLike}
             onSave={handleSave}
+            onShare={handleShare}
             onPress={() =>
               navigation.navigate('Focus', {
                 mantra: item,
@@ -177,6 +281,18 @@ export default function HomeScreen({ navigation }: any) {
         snapToAlignment="start"
         decelerationRate="fast"
         snapToInterval={SCREEN_HEIGHT}
+        // ✅ NEW: helps scrollToIndex be reliable
+        getItemLayout={(_, index) => ({
+          length: SCREEN_HEIGHT,
+          offset: SCREEN_HEIGHT * index,
+          index,
+        })}
+        // ✅ NEW: fallback if scrollToIndex happens before list is ready
+        onScrollToIndexFailed={(info) => {
+          setTimeout(() => {
+            listRef.current?.scrollToIndex({ index: info.index, animated: false });
+          }, 50);
+        }}
       />
     );
   }
@@ -188,7 +304,39 @@ export default function HomeScreen({ navigation }: any) {
         <IconButton type="profile" onPress={handleUserPress} testID="profile-btn" />
       </View>
 
+      {/* Main feed */}
       {content}
+
+      <SavedPopupBar
+        visible={showSavedPopup}
+        onHide={() => setShowSavedPopup(false)}
+        onPressCollections={() => {
+          setShowSavedPopup(false);
+          setShowCollectionsSheet(true);
+        }}
+      />
+      <CollectionsSheet
+        visible={showCollectionsSheet}
+        collections={collections}
+        onClose={() => {
+          setShowCollectionsSheet(false);
+          setCurrentMantraId(null);
+        }}
+        onSelectCollection={handleSelectCollection}
+        onCreateCollection={handleCreateCollection}
+        onRefresh={loadCollections}
+      />
+
+      {!!collectionToast && (
+        <View
+          className="absolute top-24 self-center rounded-full px-6 py-3 shadow-lg"
+          style={{ backgroundColor: 'rgba(255, 255, 255, 0.6)' }}
+        >
+          <Text className="text-base" style={{ color: '#111827' }}>
+            Added to {collectionToast}
+          </Text>
+        </View>
+      )}
     </View>
   );
 }

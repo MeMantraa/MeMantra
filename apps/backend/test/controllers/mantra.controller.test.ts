@@ -489,18 +489,19 @@ describe('MantraController', () => {
     });
   });
 
-  describe('unsaveMantra', () => {
-    it('should unsave mantra successfully', async () => {
-      const mockCollection = {
-        collection_id: 10,
-        user_id: 1,
-        name: 'Saved Mantras',
-        description: 'Your saved mantras',
-      };
+    describe('unsaveMantra', () => {
+    it('should unsave mantra successfully (removes from at least one collection)', async () => {
+      const collections = [
+        { collection_id: 10, user_id: 1, name: 'Saved Mantras', description: 'Your saved mantras' },
+        { collection_id: 11, user_id: 1, name: 'Other', description: 'Other collection' },
+      ];
 
-      (CollectionModel.findByUserId as jest.Mock).mockResolvedValue([mockCollection]);
-      (CollectionModel.isMantraInCollection as jest.Mock).mockResolvedValue(true);
-      (CollectionModel.removeMantra as jest.Mock).mockResolvedValue(true);
+      (CollectionModel.findByUserId as jest.Mock).mockResolvedValue(collections);
+
+      // Simulate: removed from first collection, not removed from second
+      (CollectionModel.removeMantra as jest.Mock)
+        .mockResolvedValueOnce(true)
+        .mockResolvedValueOnce(false);
 
       const app = setupAppWithUser(1, 'test@test.com');
       const res = await request(app).delete('/mantras/1/save');
@@ -510,9 +511,16 @@ describe('MantraController', () => {
         status: 'success',
         message: 'Mantra unsaved successfully',
       });
+
       expect(CollectionModel.findByUserId).toHaveBeenCalledWith(1);
-      expect(CollectionModel.isMantraInCollection).toHaveBeenCalledWith(10, 1);
-      expect(CollectionModel.removeMantra).toHaveBeenCalledWith(10, 1);
+
+      // Called for each collection with (collection_id, mantraId)
+      expect(CollectionModel.removeMantra).toHaveBeenCalledTimes(2);
+      expect(CollectionModel.removeMantra).toHaveBeenNthCalledWith(1, 10, 1);
+      expect(CollectionModel.removeMantra).toHaveBeenNthCalledWith(2, 11, 1);
+
+      // No longer used by controller
+      expect(CollectionModel.isMantraInCollection).not.toHaveBeenCalled();
     });
 
     it('should return 401 if not authenticated', async () => {
@@ -526,7 +534,7 @@ describe('MantraController', () => {
       });
     });
 
-    it('should return 404 if saved collection does not exist', async () => {
+    it('should return 404 if user has no collections', async () => {
       (CollectionModel.findByUserId as jest.Mock).mockResolvedValue([]);
 
       const app = setupAppWithUser(1, 'test@test.com');
@@ -535,20 +543,24 @@ describe('MantraController', () => {
       expect(res.status).toBe(404);
       expect(res.body).toMatchObject({
         status: 'error',
-        message: 'No saved mantras collection found',
+        message: 'No collections found',
       });
+
+      expect(CollectionModel.removeMantra).not.toHaveBeenCalled();
     });
 
-    it('should return 404 if mantra is not in saved collection', async () => {
-      const mockCollection = {
-        collection_id: 10,
-        user_id: 1,
-        name: 'Saved Mantras',
-        description: 'Your saved mantras',
-      };
+    it('should return 404 if mantra is not in any collection', async () => {
+      const collections = [
+        { collection_id: 10, user_id: 1, name: 'Saved Mantras', description: 'Your saved mantras' },
+        { collection_id: 11, user_id: 1, name: 'Other', description: 'Other collection' },
+      ];
 
-      (CollectionModel.findByUserId as jest.Mock).mockResolvedValue([mockCollection]);
-      (CollectionModel.isMantraInCollection as jest.Mock).mockResolvedValue(false);
+      (CollectionModel.findByUserId as jest.Mock).mockResolvedValue(collections);
+
+      // Not removed from any collection
+      (CollectionModel.removeMantra as jest.Mock)
+        .mockResolvedValueOnce(false)
+        .mockResolvedValueOnce(false);
 
       const app = setupAppWithUser(1, 'test@test.com');
       const res = await request(app).delete('/mantras/1/save');
@@ -556,9 +568,14 @@ describe('MantraController', () => {
       expect(res.status).toBe(404);
       expect(res.body).toMatchObject({
         status: 'error',
-        message: 'Mantra not found in saved collection',
+        message: 'Mantra not found in any collection',
       });
-      expect(CollectionModel.removeMantra).not.toHaveBeenCalled();
+
+      expect(CollectionModel.removeMantra).toHaveBeenCalledTimes(2);
+      expect(CollectionModel.removeMantra).toHaveBeenNthCalledWith(1, 10, 1);
+      expect(CollectionModel.removeMantra).toHaveBeenNthCalledWith(2, 11, 1);
+
+      expect(CollectionModel.isMantraInCollection).not.toHaveBeenCalled();
     });
 
     it('should handle errors', async () => {
@@ -574,6 +591,7 @@ describe('MantraController', () => {
       });
     });
   });
+
 
   describe('getSavedMantras', () => {
     it('should get saved mantras when collection exists', async () => {

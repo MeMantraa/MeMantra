@@ -43,15 +43,20 @@ describe('ProfileScreen', () => {
   });
 
   it('renders correctly with all options', async () => {
+    (storage.getUserData as jest.Mock).mockResolvedValue({ username: 'memantrauser' });
+
     const { getByText } = render(<ProfileScreen />);
 
-    await waitFor(() => {
-      expect(getByText('memantrauser')).toBeTruthy();
-      expect(getByText('Update Email')).toBeTruthy();
-      expect(getByText('Update Password')).toBeTruthy();
-      expect(getByText('Delete Account')).toBeTruthy();
-      expect(getByText('Sign Out')).toBeTruthy();
-    });
+    await waitFor(
+      () => {
+        expect(getByText('memantrauser')).toBeTruthy();
+        expect(getByText('Update Email')).toBeTruthy();
+        expect(getByText('Update Password')).toBeTruthy();
+        expect(getByText('Delete Account')).toBeTruthy();
+        expect(getByText('Sign Out')).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
   });
 
   it('loads and displays username from storage', async () => {

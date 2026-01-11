@@ -4,7 +4,8 @@ import { StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/homeScreen';
 import AdminScreen from '../screens/adminScreen';
-import bookmarkScreen from '../screens/bookmarkScreen';
+import CollectionsScreen from '../screens/collectionScreen';
+import ChatScreen from '../screens/chatScreen';
 import { storage } from '../utils/storage';
 import { isAdminEmail } from '../utils/admin';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -22,6 +23,10 @@ const HomeTabIcon = ({ focused }: { focused: boolean }) => (
 
 const ProfileTabIcon = ({ focused }: { focused: boolean }) => (
   <Ionicons name={focused ? 'person' : 'person-outline'} size={30} color={'white'} />
+);
+
+const ChatTabIcon = ({ focused }: { focused: boolean }) => (
+  <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={30} color={'white'} />
 );
 
 const AdminTabIcon = ({ focused }: { focused: boolean }) => (
@@ -66,7 +71,7 @@ export default function BottomTabNavigator() {
     >
       <Tab.Screen
         name="Library"
-        component={bookmarkScreen}
+        component={CollectionsScreen}
         options={{
           tabBarIcon: LibraryTabIcon,
         }}
@@ -76,6 +81,13 @@ export default function BottomTabNavigator() {
         component={HomeScreen}
         options={{
           tabBarIcon: HomeTabIcon,
+        }}
+      />
+      <Tab.Screen
+        name="Chat"
+        component={ChatScreen}
+        options={{
+          tabBarIcon: ChatTabIcon,
         }}
       />
       <Tab.Screen

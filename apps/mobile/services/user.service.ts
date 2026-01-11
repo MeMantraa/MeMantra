@@ -39,7 +39,7 @@ export interface UserMutationResponse {
 
 export const userService = {
   async getAllUsers(token: string): Promise<UsersResponse> {
-    const response = await apiClient.get<UsersResponse>('/users', {
+    const response = await apiClient.get<UsersResponse>('/chat/users', {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;

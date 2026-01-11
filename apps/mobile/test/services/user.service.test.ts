@@ -28,7 +28,7 @@ jest.mock('../../services/api.config', () => ({
   apiClient: {
     get: jest.fn((url: string) => {
       const { users } = mockUserState;
-      if (url === '/users') {
+      if (url === '/users' || url === '/chat/users') {
         return Promise.resolve({
           data: {
             status: 'success',

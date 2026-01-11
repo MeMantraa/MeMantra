@@ -16,6 +16,10 @@ import FocusScreen from '../screens/focusScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import VerifyCodeScreen from '../screens/VerifyCodeScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
+import ConversationScreen from '../screens/conversationScreen';
+import NewConversationScreen from '../screens/NewConversationScreen';
+import ShareMantraScreen from '../screens/ShareMantraScreen';
+import BookmarkScreen from '../screens/bookmarkScreen';
 
 const Stack = createStackNavigator();
 
@@ -81,11 +85,10 @@ export default function MainNavigator() {
             component={ResetPasswordScreen}
             options={{ headerTitle: 'Reset Password' }}
           />
-
           <Stack.Screen name="Profile" component={ProfileScreen} />
           <Stack.Screen name="UpdateEmail" component={UpdateEmailScreen} />
           <Stack.Screen name="UpdatePassword" component={UpdatePasswordScreen} />
-
+          <Stack.Screen name="ShareMantra" component={ShareMantraScreen} />
           <Stack.Screen
             name="Focus"
             component={FocusScreen}
@@ -98,6 +101,44 @@ export default function MainNavigator() {
               transitionSpec: {
                 open: { animation: 'timing', config: { duration: 450 } },
                 close: { animation: 'timing', config: { duration: 350 } },
+              },
+            }}
+          />
+
+          <Stack.Screen
+            name="NewConversation"
+            component={NewConversationScreen}
+            options={{
+              headerShown: false,
+            }}
+          />
+
+          <Stack.Screen
+            name="Conversation"
+            component={ConversationScreen}
+            options={{
+              headerShown: true,
+              headerStyle: {
+                backgroundColor: '#9AA793',
+              },
+              headerTintColor: '#ffffff',
+              headerTitleStyle: {
+                fontFamily: 'LibreBaskerville-Regular',
+              },
+            }}
+          />
+          <Stack.Screen
+            name="CollectionDetail"
+            component={BookmarkScreen}
+            options={{
+              cardStyleInterpolator: ({ current }) => ({
+                cardStyle: {
+                  opacity: current.progress,
+                },
+              }),
+              transitionSpec: {
+                open: { animation: 'timing', config: { duration: 300 } },
+                close: { animation: 'timing', config: { duration: 300 } },
               },
             }}
           />

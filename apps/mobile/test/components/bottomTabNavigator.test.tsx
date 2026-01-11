@@ -33,6 +33,12 @@ jest.mock('../../screens/bookmarkScreen', () => {
   return () => React.createElement(Text, null, 'Bookmark Screen');
 });
 
+jest.mock('../../screens/collectionScreen', () => {
+  const React = jest.requireActual('react');
+  const { Text } = jest.requireActual('react-native');
+  return () => React.createElement(Text, null, 'Collections Screen');
+});
+
 jest.mock('../../screens/adminScreen', () => {
   const React = jest.requireActual('react');
   const { Text } = jest.requireActual('react-native');
@@ -55,16 +61,26 @@ jest.mock('../../utils/storage', () => ({
 jest.mock('@react-navigation/bottom-tabs', () => {
   const React = jest.requireActual('react');
   const { Text } = jest.requireActual('react-native');
+
+  const mockNavigation = {
+    navigate: jest.fn(),
+    goBack: jest.fn(),
+    reset: jest.fn(),
+    addListener: jest.fn(() => jest.fn()),
+  };
+
   return {
     createBottomTabNavigator: () => {
       const Screen = ({ component: Component, options, name }: any) => {
-        const icon = options?.tabBarIcon ? options.tabBarIcon({ color: 'white' }) : null;
+        const icon = options?.tabBarIcon
+          ? options.tabBarIcon({ color: 'white', focused: false })
+          : null;
 
         return (
           <>
             <Text>{name}</Text>
             {icon}
-            <Component />
+            <Component navigation={mockNavigation} />
           </>
         );
       };

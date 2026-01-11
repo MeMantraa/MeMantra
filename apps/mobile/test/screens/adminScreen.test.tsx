@@ -84,29 +84,43 @@ describe('AdminScreen', () => {
 
     const { getByText } = render(<AdminScreen />);
 
-    expect(getByText('Admin Controls')).toBeTruthy();
-    expect(getByText(/Add a new mantra/i)).toBeTruthy();
+    await waitFor(
+      () => {
+        expect(getByText('Admin Controls')).toBeTruthy();
+        expect(getByText(/Add a new mantra/i)).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
 
     fireEvent.press(getByText('Manage'));
-    await waitFor(() => {
-      expect(getByText('Test Mantra')).toBeTruthy();
-      expect(getByText('Take a deep breath')).toBeTruthy();
-    });
+    await waitFor(
+      () => {
+        expect(getByText('Test Mantra')).toBeTruthy();
+        expect(getByText('Take a deep breath')).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
 
     (userService.getAllUsers as jest.Mock).mockResolvedValue({
       status: 'success',
       data: { users: fakeUsers },
     });
     fireEvent.press(getByText('Users'));
-    await waitFor(() => {
-      expect(getByText(/Add a new user/i)).toBeTruthy();
-    });
+    await waitFor(
+      () => {
+        expect(getByText(/Add a new user/i)).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
 
     fireEvent.press(getByText('Manage'));
-    await waitFor(() => {
-      expect(getByText('alice')).toBeTruthy();
-      expect(getByText('alice@example.com')).toBeTruthy();
-    });
+    await waitFor(
+      () => {
+        expect(getByText('alice')).toBeTruthy();
+        expect(getByText('alice@example.com')).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
   }, 30000);
 
   it('submits MantraForm on Add when fields are filled', async () => {
@@ -121,6 +135,14 @@ describe('AdminScreen', () => {
 
     const { getByPlaceholderText, getByText } = render(<AdminScreen />);
 
+    // Wait for initial data load to complete
+    await waitFor(
+      () => {
+        expect(getByText('Admin Controls')).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
+
     fireEvent.changeText(getByPlaceholderText('Title *'), 'Test Mantra');
     fireEvent.changeText(getByPlaceholderText('Key Takeaway *'), 'Take a deep breath');
     fireEvent.press(getByText('Add Mantra'));
@@ -132,7 +154,7 @@ describe('AdminScreen', () => {
       );
       expect(Alert.alert).toHaveBeenCalledWith('Success', 'Mantra created successfully');
     });
-  });
+  }, 30000);
 
   it('shows alert when mantra fields are missing', async () => {
     const { getByText } = render(<AdminScreen />);

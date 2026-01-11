@@ -11,6 +11,7 @@ interface MantraCarouselProps {
   readonly item: Mantra;
   readonly onLike?: (mantraId: number) => void;
   readonly onSave?: (mantraId: number) => void;
+  readonly onShare?: (mantraId: number) => void;
   readonly showButtons?: boolean;
   readonly onPress?: () => void;
   readonly isFocusMode?: boolean;
@@ -20,6 +21,7 @@ export default function MantraCarousel({
   item,
   onLike,
   onSave,
+  onShare,
   showButtons = true,
   onPress,
   isFocusMode = false,
@@ -55,6 +57,10 @@ export default function MantraCarousel({
 
   const handleSave = () => {
     if (onSave) onSave(item.mantra_id);
+  };
+
+  const handleShare = () => {
+    if (onShare) onShare(item.mantra_id);
   };
 
   return (
@@ -157,7 +163,8 @@ export default function MantraCarousel({
       {showButtons && (
         <View className="absolute right-6 bottom-40 items-center">
           <IconButton type="save" active={!!item.isSaved} onPress={handleSave} className="mb-6" />
-          <IconButton type="like" active={!!item.isLiked} onPress={handleLike} />
+          <IconButton type="like" active={!!item.isLiked} onPress={handleLike} className="mb-6" />
+          <IconButton type="share" onPress={handleShare} className="mb-6" />
         </View>
       )}
     </View>

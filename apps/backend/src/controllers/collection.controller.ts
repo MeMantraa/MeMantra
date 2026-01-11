@@ -172,13 +172,39 @@ export const CollectionController = {
 
       if (!verifyOwnership(res, collection, userId)) return;
 
+      // CRITICAL: Check if mantra is already in collection BEFORE trying to insert
+      const exists = await CollectionModel.isMantraInCollection(
+        Number(id),
+        Number(mantraId)
+      );
+
+      if (exists) {
+        return res.status(200).json({
+          status: 'success',
+          message: 'Mantra already in collection',
+          alreadyExists: true,
+        });
+      }
+
       await CollectionModel.addMantra(Number(id), Number(mantraId), userId);
 
       return res.status(200).json({
         status: 'success',
         message: 'Mantra added to collection successfully',
+        alreadyExists: false,
       });
     } catch (error) {
+      // Handle duplicate key error gracefully (backup check)
+      if (error && typeof error === 'object' && 'code' in error) {
+        const pgError = error as { code: string };
+        if (pgError.code === '23505') { // PostgreSQL unique violation
+          return res.status(200).json({
+            status: 'success',
+            message: 'Mantra already in collection',
+            alreadyExists: true,
+          });
+        }
+      }
       return handleError(res, 'Error adding mantra to collection', error);
     }
   },
@@ -194,7 +220,14 @@ export const CollectionController = {
 
       if (!verifyOwnership(res, collection, userId)) return;
 
-      await CollectionModel.removeMantra(Number(id), Number(mantraId));
+      const removed = await CollectionModel.removeMantra(Number(id), Number(mantraId));
+
+      if (!removed) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Mantra not found in collection',
+        });
+      }
 
       return res.status(200).json({
         status: 'success',

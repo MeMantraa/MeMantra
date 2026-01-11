@@ -26,6 +26,11 @@ export const storage = {
     return data ? JSON.parse(data) : null;
   },
 
+  async getUserId(): Promise<number | null> {
+    const userData = await this.getUserData();
+    return userData?.user_id || null;
+  },
+
   async removeUserData(): Promise<void> {
     await AsyncStorage.removeItem(USER_DATA_KEY);
   },

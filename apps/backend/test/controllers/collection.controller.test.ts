@@ -8,7 +8,7 @@ jest.mock('../../src/models/collection.model');
 function setupAppWithUser(userId?: number, email?: string) {
   const app = express();
   app.use(express.json());
-  app.use((req, _res, next) => {
+  app.use((req: express.Request & { user?: { userId: number, email: string } }, _res, next) => {
     if (userId) req.user = { userId, email: email ?? '' };
     next();
   });
@@ -25,6 +25,62 @@ function setupAppWithUser(userId?: number, email?: string) {
 describe('CollectionController', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  describe('Utility Helper Functions Coverage', () => {
+    it('should test handleError utility', async () => {
+      (CollectionModel.findByUserId as jest.Mock).mockRejectedValue(new Error('Test error'));
+
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app).get('/collections');
+
+      expect(res.status).toBe(500);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Error retrieving collections',
+      });
+    });
+
+    it('should test requireAuth utility when user is not authenticated', async () => {
+      const app = setupAppWithUser();
+      const res = await request(app).get('/collections');
+
+      expect(res.status).toBe(401);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Authentication required',
+      });
+    });
+
+    it('should test verifyOwnership utility when collection is null', async () => {
+      (CollectionModel.findById as jest.Mock).mockResolvedValue(null);
+
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app).put('/collections/999').send({ name: 'Test' });
+
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Collection not found',
+      });
+    });
+
+    it('should test verifyOwnership utility when user_id does not match', async () => {
+      (CollectionModel.findById as jest.Mock).mockResolvedValue({
+        collection_id: 1,
+        user_id: 999,
+        name: 'Test',
+      });
+
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app).put('/collections/1').send({ name: 'Updated' });
+
+      expect(res.status).toBe(403);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Access denied',
+      });
+    });
   });
 
   describe('getUserCollections', () => {
@@ -165,6 +221,25 @@ describe('CollectionController', () => {
       expect(CollectionModel.create).toHaveBeenCalledWith(1, 'New Collection', 'Test');
     });
 
+    it('should create collection without description', async () => {
+      const newCollection = { name: 'New Collection' };
+      const createdCollection = { collection_id: 1, name: 'New Collection', user_id: 1 };
+      (CollectionModel.create as jest.Mock).mockResolvedValue(createdCollection);
+
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app)
+        .post('/collections')
+        .send(newCollection);
+
+      expect(res.status).toBe(201);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Collection created successfully',
+        data: { collection: createdCollection },
+      });
+      expect(CollectionModel.create).toHaveBeenCalledWith(1, 'New Collection', undefined);
+    });
+
     it('should return 401 if not authenticated', async () => {
       const app = setupAppWithUser();
       const res = await request(app)
@@ -211,6 +286,19 @@ describe('CollectionController', () => {
         status: 'success',
         message: 'Collection updated successfully',
         data: { collection: updatedCollection },
+      });
+    });
+
+    it('should return 401 if not authenticated', async () => {
+      const app = setupAppWithUser();
+      const res = await request(app)
+        .put('/collections/1')
+        .send({ name: 'New Name' });
+
+      expect(res.status).toBe(401);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Authentication required',
       });
     });
 
@@ -278,6 +366,17 @@ describe('CollectionController', () => {
       expect(CollectionModel.delete).toHaveBeenCalledWith(1);
     });
 
+    it('should return 401 if not authenticated', async () => {
+      const app = setupAppWithUser();
+      const res = await request(app).delete('/collections/1');
+
+      expect(res.status).toBe(401);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Authentication required',
+      });
+    });
+
     it('should return 404 if collection not found', async () => {
       (CollectionModel.findById as jest.Mock).mockResolvedValue(null);
 
@@ -323,6 +422,7 @@ describe('CollectionController', () => {
     it('should add mantra to collection', async () => {
       const existingCollection = { collection_id: 1, user_id: 1 };
       (CollectionModel.findById as jest.Mock).mockResolvedValue(existingCollection);
+      (CollectionModel.isMantraInCollection as jest.Mock).mockResolvedValue(false);
       (CollectionModel.addMantra as jest.Mock).mockResolvedValue(undefined);
 
       const app = setupAppWithUser(1, 'test@test.com');
@@ -332,8 +432,59 @@ describe('CollectionController', () => {
       expect(res.body).toMatchObject({
         status: 'success',
         message: 'Mantra added to collection successfully',
+        alreadyExists: false,
       });
+      expect(CollectionModel.isMantraInCollection).toHaveBeenCalledWith(1, 5);
       expect(CollectionModel.addMantra).toHaveBeenCalledWith(1, 5, 1);
+    });
+
+    it('should return success if mantra already exists in collection', async () => {
+      const existingCollection = { collection_id: 1, user_id: 1 };
+      (CollectionModel.findById as jest.Mock).mockResolvedValue(existingCollection);
+      (CollectionModel.isMantraInCollection as jest.Mock).mockResolvedValue(true);
+
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app).post('/collections/1/mantras/5');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Mantra already in collection',
+        alreadyExists: true,
+      });
+      expect(CollectionModel.isMantraInCollection).toHaveBeenCalledWith(1, 5);
+      expect(CollectionModel.addMantra).not.toHaveBeenCalled();
+    });
+
+    it('should handle PostgreSQL duplicate key error gracefully', async () => {
+      const existingCollection = { collection_id: 1, user_id: 1 };
+      (CollectionModel.findById as jest.Mock).mockResolvedValue(existingCollection);
+      (CollectionModel.isMantraInCollection as jest.Mock).mockResolvedValue(false);
+      
+      const pgError = new Error('Duplicate key') as any;
+      pgError.code = '23505';
+      (CollectionModel.addMantra as jest.Mock).mockRejectedValue(pgError);
+
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app).post('/collections/1/mantras/5');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Mantra already in collection',
+        alreadyExists: true,
+      });
+    });
+
+    it('should return 401 if not authenticated', async () => {
+      const app = setupAppWithUser();
+      const res = await request(app).post('/collections/1/mantras/5');
+
+      expect(res.status).toBe(401);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Authentication required',
+      });
     });
 
     it('should return 404 if collection not found', async () => {
@@ -392,6 +543,32 @@ describe('CollectionController', () => {
         message: 'Mantra removed from collection successfully',
       });
       expect(CollectionModel.removeMantra).toHaveBeenCalledWith(1, 5);
+    });
+
+    it('should return 404 if mantra not found in collection', async () => {
+      const existingCollection = { collection_id: 1, user_id: 1 };
+      (CollectionModel.findById as jest.Mock).mockResolvedValue(existingCollection);
+      (CollectionModel.removeMantra as jest.Mock).mockResolvedValue(false);
+
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app).delete('/collections/1/mantras/5');
+
+      expect(res.status).toBe(404);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Mantra not found in collection',
+      });
+    });
+
+    it('should return 401 if not authenticated', async () => {
+      const app = setupAppWithUser();
+      const res = await request(app).delete('/collections/1/mantras/5');
+
+      expect(res.status).toBe(401);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Authentication required',
+      });
     });
 
     it('should return 404 if collection not found', async () => {
