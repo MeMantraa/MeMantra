@@ -387,6 +387,7 @@ describe('MantraModel', () => {
         groupBy: jest.fn().mockReturnThis(),
         orderBy: jest.fn().mockReturnThis(),
         limit: jest.fn().mockReturnThis(),
+        offset: jest.fn().mockReturnThis(), // Add this line
         execute: jest.fn().mockResolvedValue(mockResults),
       };
 
@@ -400,6 +401,7 @@ describe('MantraModel', () => {
       expect(mockChain.groupBy).toHaveBeenCalledWith('Mantra.mantra_id');
       expect(mockChain.orderBy).toHaveBeenCalledWith('like_count', 'desc');
       expect(mockChain.limit).toHaveBeenCalledWith(50);
+      expect(mockChain.offset).toHaveBeenCalledWith(0); // Add this line
       expect(result[0].like_count).toBe(10);
     });
   });
