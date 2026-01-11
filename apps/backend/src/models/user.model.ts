@@ -81,40 +81,40 @@ export const UserModel = {
   },
 
   async findAll(): Promise<User[]> {
-  const users = await db
-    .selectFrom('User')
-    .selectAll()
-    .orderBy('created_at', 'desc')
-    .execute();
-  
-  return users;
-},
+    const users = await db
+      .selectFrom('User')
+      .selectAll()
+      .orderBy('created_at', 'desc')
+      .execute();
+    
+    return users;
+  },
 
-async update(id: number, updates: Partial<User>): Promise<User | undefined> {
-  const user = await db
-    .updateTable('User')
-    .set(updates)
-    .where('user_id', '=', id)
-    .returningAll()
-    .executeTakeFirst();
-  
-  return user;
-},
+  async update(id: number, updates: Partial<User>): Promise<User | undefined> {
+    const user = await db
+      .updateTable('User')
+      .set(updates)
+      .where('user_id', '=', id)
+      .returningAll()
+      .executeTakeFirst();
+    
+    return user;
+  },
 
-async delete(id: number): Promise<boolean> {
-  const result = await db
-    .deleteFrom('User')
-    .where('user_id', '=', id)
-    .executeTakeFirst();
-  
-  return result.numDeletedRows > 0;
-},
-async updateEmail(userId: number, email: string) {
-  return db
-    .updateTable('User')
-    .set({ email })
-    .where('user_id', '=', userId)
-    .executeTakeFirst();
-}
+  async delete(id: number): Promise<boolean> {
+    const result = await db
+      .deleteFrom('User')
+      .where('user_id', '=', id)
+      .executeTakeFirst();
+    
+    return result.numDeletedRows > 0;
+  },
+  async updateEmail(userId: number, email: string) {
+    return db
+      .updateTable('User')
+      .set({ email })
+      .where('user_id', '=', userId)
+      .executeTakeFirst();
+  }
 };
 
