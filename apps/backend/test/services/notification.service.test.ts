@@ -378,4 +378,163 @@ describe('NotificationService', () => {
       expect(message.to).toEqual(['ExponentPushToken[xxx]', 'ExponentPushToken[yyy]']);
     });
   });
+
+  describe('sendEnhancedReminderNotification', () => {
+    it('should send enhanced notification with generated content', async () => {
+      const mockResponse = {
+        data: {
+          data: [{ status: 'ok', id: 'receipt-id' }],
+        },
+      };
+
+      mockedAxios.post.mockResolvedValue(mockResponse);
+
+      const mantraText = 'I am strong and capable';
+      await NotificationService.sendEnhancedReminderNotification(
+        'ExponentPushToken[xxx]',
+        mantraText,
+        123
+      );
+
+      expect(mockedAxios.post).toHaveBeenCalled();
+      const calledWith = mockedAxios.post.mock.calls[0][1] as any[];
+      expect(calledWith[0].data.type).toBe('reminder');
+      expect(calledWith[0].data.reminderId).toBe(123);
+      expect(calledWith[0].data.mantraText).toBe(mantraText);
+    });
+
+    it('should accept custom category for content generation', async () => {
+      const mockResponse = {
+        data: {
+          data: [{ status: 'ok', id: 'receipt-id' }],
+        },
+      };
+
+      mockedAxios.post.mockResolvedValue(mockResponse);
+
+      await NotificationService.sendEnhancedReminderNotification(
+        'ExponentPushToken[xxx]',
+        'I am confident',
+        123,
+        { categoryName: 'confidence' }
+      );
+
+      expect(mockedAxios.post).toHaveBeenCalled();
+    });
+
+    it('should accept custom CTA style', async () => {
+      const mockResponse = {
+        data: {
+          data: [{ status: 'ok', id: 'receipt-id' }],
+        },
+      };
+
+      mockedAxios.post.mockResolvedValue(mockResponse);
+
+      await NotificationService.sendEnhancedReminderNotification(
+        'ExponentPushToken[xxx]',
+        'Test mantra',
+        123,
+        { ctaStyle: 'encouraging' }
+      );
+
+      expect(mockedAxios.post).toHaveBeenCalled();
+    });
+
+    it('should use custom title when provided', async () => {
+      const mockResponse = {
+        data: {
+          data: [{ status: 'ok', id: 'receipt-id' }],
+        },
+      };
+
+      mockedAxios.post.mockResolvedValue(mockResponse);
+
+      const customTitle = 'My Custom Title';
+      await NotificationService.sendEnhancedReminderNotification(
+        'ExponentPushToken[xxx]',
+        'Test',
+        123,
+        { customTitle }
+      );
+
+      const calledWith = mockedAxios.post.mock.calls[0][1] as any[];
+      expect(calledWith[0].title).toBe(customTitle);
+    });
+  });
+
+  describe('sendBulkEnhancedReminders', () => {
+    it('should send bulk enhanced notifications', async () => {
+      const mockResponse = {
+        data: {
+          data: [
+            { status: 'ok', id: 'receipt1' },
+            { status: 'ok', id: 'receipt2' },
+          ],
+        },
+      };
+
+      mockedAxios.post.mockResolvedValue(mockResponse);
+
+      const notifications = [
+        {
+          deviceToken: 'ExponentPushToken[xxx]',
+          mantraText: 'Mantra 1',
+          reminderId: 1,
+        },
+        {
+          deviceToken: 'ExponentPushToken[yyy]',
+          mantraText: 'Mantra 2',
+          reminderId: 2,
+          categoryName: 'confidence',
+        },
+      ];
+
+      await NotificationService.sendBulkEnhancedReminders(notifications);
+
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        'https://exp.host/--/api/v2/push/send',
+        expect.arrayContaining([
+          expect.objectContaining({
+            to: 'ExponentPushToken[xxx]',
+            data: expect.objectContaining({
+              type: 'reminder',
+              reminderId: 1,
+            }),
+          }),
+          expect.objectContaining({
+            to: 'ExponentPushToken[yyy]',
+            data: expect.objectContaining({
+              type: 'reminder',
+              reminderId: 2,
+            }),
+          }),
+        ]),
+        expect.any(Object)
+      );
+    });
+
+    it('should apply different CTA styles to different notifications', async () => {
+      const mockResponse = {
+        data: {
+          data: [{ status: 'ok', id: 'receipt1' }],
+        },
+      };
+
+      mockedAxios.post.mockResolvedValue(mockResponse);
+
+      const notifications = [
+        {
+          deviceToken: 'ExponentPushToken[xxx]',
+          mantraText: 'Mantra',
+          reminderId: 1,
+          ctaStyle: 'encouraging' as const,
+        },
+      ];
+
+      await NotificationService.sendBulkEnhancedReminders(notifications);
+
+      expect(mockedAxios.post).toHaveBeenCalled();
+    });
+  });
 });

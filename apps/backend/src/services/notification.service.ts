@@ -1,4 +1,8 @@
 import axios from 'axios';
+import {
+  generateNotificationContent,
+  NotificationContentOptions,
+} from '../config/notification-content.config';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
@@ -116,10 +120,11 @@ export const NotificationService = {
   },
 
   /**
-   * Send reminder notification
+   * Send reminder notification (basic version - kept for backward compatibility)
    * @param deviceToken - Expo push token
    * @param mantraText - The mantra text to include
    * @param reminderId - The reminder ID for deep linking
+   * @deprecated Use sendEnhancedReminderNotification for better content
    */
   async sendReminderNotification(
     deviceToken: string,
@@ -134,6 +139,71 @@ export const NotificationService = {
       reminderId,
       mantraText,
     });
+  },
+
+  /**
+   * Send enhanced reminder notification with motivational content and CTAs
+   * @param deviceToken - Expo push token
+   * @param mantraText - The mantra text to include
+   * @param reminderId - The reminder ID for deep linking
+   * @param options - Optional notification content customization
+   * @returns Expo push response
+   */
+  async sendEnhancedReminderNotification(
+    deviceToken: string,
+    mantraText: string,
+    reminderId: number,
+    options?: Partial<NotificationContentOptions>
+  ): Promise<ExpoPushResponse> {
+    // Generate notification content using templates
+    const { title, body } = generateNotificationContent({
+      mantraText,
+      ...options,
+    });
+
+    return await this.sendSimpleNotification(deviceToken, title, body, {
+      type: 'reminder',
+      reminderId,
+      mantraText,
+    });
+  },
+
+  /**
+   * Send bulk reminder notifications with enhanced content
+   * @param notifications - Array of notification details
+   * @returns Expo push response
+   */
+  async sendBulkEnhancedReminders(
+    notifications: Array<{
+      deviceToken: string;
+      mantraText: string;
+      reminderId: number;
+      categoryName?: string;
+      ctaStyle?: 'general' | 'encouraging' | 'actionOriented' | 'peaceful';
+    }>
+  ): Promise<ExpoPushResponse> {
+    const messages: ExpoPushMessage[] = notifications.map((notif) => {
+      const { title, body } = generateNotificationContent({
+        mantraText: notif.mantraText,
+        categoryName: notif.categoryName,
+        ctaStyle: notif.ctaStyle,
+      });
+
+      return {
+        to: notif.deviceToken,
+        title,
+        body,
+        data: {
+          type: 'reminder',
+          reminderId: notif.reminderId,
+          mantraText: notif.mantraText,
+        },
+        sound: 'default',
+        priority: 'high',
+      };
+    });
+
+    return await this.sendPushNotification(messages);
   },
 
   /**
