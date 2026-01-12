@@ -156,7 +156,7 @@ feature_flags: flags
 async findUsersWithFlag(flagName: string): Promise<User[]> {
 return await db
 .selectFrom('User')
-.where(sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`)
+.where(sql<boolean>`(${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`)
 .selectAll()
 .execute();
 },
@@ -165,7 +165,7 @@ return await db
 async findUsersWithoutFlag(flagName: string): Promise<User[]> {
 return await db
 .selectFrom('User')
-.where(db.raw(`NOT (feature_flags @> ARRAY[?])`, [flagName]))
+.where(sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`)
 .selectAll()
 .execute();
 },
