@@ -16,10 +16,16 @@ const mockAuthMiddleware = (req: any, _res: any, next: any) => {
   next();
 };
 
+// Middleware to mock admin user (for testing admin-only routes)
+const mockAdminMiddleware = (req: any, _res: any, next: any) => {
+  req.user = { userId: 1, isAdmin: true };
+  next();
+};
+
 app.post('/register-token', mockAuthMiddleware, NotificationController.registerToken);
 app.post('/unregister-token', mockAuthMiddleware, NotificationController.unregisterToken);
 app.post('/send', mockAuthMiddleware, NotificationController.sendNotification);
-app.post('/send-bulk', mockAuthMiddleware, NotificationController.sendBulkNotification);
+app.post('/send-bulk', mockAdminMiddleware, NotificationController.sendBulkNotification);
 app.get('/test', mockAuthMiddleware, NotificationController.sendTestNotification);
 
 describe('NotificationController', () => {

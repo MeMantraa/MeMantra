@@ -8,6 +8,7 @@ import {
   sendBulkNotificationSchema,
 } from '../validators/notification.validator';
 import { authenticate } from '../middleware/auth.middleware';
+import { requireAdmin } from '../middleware/admin.middleware';
 
 const router = Router();
 
@@ -35,9 +36,10 @@ router.post(
   NotificationController.sendNotification
 );
 
-// POST /api/notifications/send-bulk - Send bulk notifications (admin)
+// POST /api/notifications/send-bulk - Send bulk notifications (admin only)
 router.post(
   '/send-bulk',
+  requireAdmin,
   validateRequest(sendBulkNotificationSchema),
   NotificationController.sendBulkNotification
 );

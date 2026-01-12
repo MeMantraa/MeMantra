@@ -126,6 +126,8 @@ await NotificationService.sendEnhancedReminderNotification(
 
 ### Bulk Enhanced Reminders
 
+**⚠️ Admin Only:** This endpoint requires admin authentication.
+
 ```typescript
 await NotificationService.sendBulkEnhancedReminders([
   {
