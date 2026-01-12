@@ -7,6 +7,7 @@ import {
   NOTIFICATION_TITLES,
   MOTIVATIONAL_CTAS,
   CATEGORY_TEMPLATES,
+  CTAStyle,
 } from '../../src/config/notification-content.config';
 
 describe('Notification Content Configuration', () => {
@@ -70,12 +71,7 @@ describe('Notification Content Configuration', () => {
     });
 
     it('should return a non-empty string', () => {
-      const styles: Array<keyof typeof MOTIVATIONAL_CTAS> = [
-        'general',
-        'encouraging',
-        'actionOriented',
-        'peaceful',
-      ];
+      const styles: CTAStyle[] = ['general', 'encouraging', 'actionOriented', 'peaceful'];
 
       styles.forEach((style) => {
         const cta = getMotivationalCTA(style);

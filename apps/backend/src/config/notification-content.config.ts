@@ -149,9 +149,7 @@ export function getTimeBasedTemplate(hour: number): NotificationTemplate {
  * @param style - Style of CTA (general, encouraging, actionOriented, peaceful)
  * @returns Random CTA string
  */
-export function getMotivationalCTA(
-  style: keyof typeof MOTIVATIONAL_CTAS = 'general'
-): string {
+export function getMotivationalCTA(style: CTAStyle = 'general'): string {
   const ctas = MOTIVATIONAL_CTAS[style];
   const randomIndex = Math.floor(Math.random() * ctas.length);
   return ctas[randomIndex];
@@ -218,6 +216,11 @@ export function formatNotificationBody(
 }
 
 /**
+ * CTA style type - extracted for reuse
+ */
+export type CTAStyle = keyof typeof MOTIVATIONAL_CTAS;
+
+/**
  * Generate complete notification content
  * @param options - Notification options
  * @returns Object with title and body
@@ -226,7 +229,7 @@ export interface NotificationContentOptions {
   mantraText: string;
   categoryName?: string;
   hour?: number;
-  ctaStyle?: keyof typeof MOTIVATIONAL_CTAS;
+  ctaStyle?: CTAStyle;
   customTitle?: string;
   customCTA?: string;
 }

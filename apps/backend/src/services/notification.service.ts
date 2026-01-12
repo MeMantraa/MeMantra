@@ -2,6 +2,7 @@ import axios from 'axios';
 import {
   generateNotificationContent,
   NotificationContentOptions,
+  CTAStyle,
 } from '../config/notification-content.config';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
@@ -179,7 +180,7 @@ export const NotificationService = {
       mantraText: string;
       reminderId: number;
       categoryName?: string;
-      ctaStyle?: 'general' | 'encouraging' | 'actionOriented' | 'peaceful';
+      ctaStyle?: CTAStyle;
     }>
   ): Promise<ExpoPushResponse> {
     const messages: ExpoPushMessage[] = notifications.map((notif) => {
