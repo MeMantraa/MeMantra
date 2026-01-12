@@ -29,6 +29,7 @@ export interface UserTable {
   google_id: string | null;
   auth_provider: string | null;
   created_at: string | null;
+  feature_flags: string[] | null
 }
 
 export interface AdminTable {
