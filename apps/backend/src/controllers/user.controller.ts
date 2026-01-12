@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { UserModel } from '../models/user.model';
 import bcrypt from 'bcryptjs';
+import { isValidFeatureFlag } from '../utils/featureFlags';
 
 export const UserController = {
   // GET /api/users - Get all users (admin only)
@@ -216,4 +217,124 @@ export const UserController = {
       });
     }
   },
+
+  //GET /api/users/:id/feature-flags - Get user feature flags (admin only)
+  async getUserFeatureFlags(req: Request, res: Response) {
+    try {
+      const userId = Number(req.params.id);
+      if (!Number.isFinite(userId)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid user id' });
+      }
+
+      const user = await UserModel.findById(userId);
+      if (!user) {
+        return res.status(404).json({ status: 'error', message: 'User not found' });
+      }
+
+      return res.status(200).json({
+        status: 'success',
+        data: { user_id: user.user_id, feature_flags: user.feature_flags ?? [] },
+      });
+    } catch (error) {
+      console.error('Get user feature flags error:', error);
+      return res.status(500).json({ status: 'error', message: 'Error retrieving feature flags' });
+    }
+  },
+
+  // PUT /api/users/:id/feature-flags - replace all (admin only)
+  async setUserFeatureFlags(req: Request, res: Response) {
+    try {
+      const userId = Number(req.params.id);
+      if (!Number.isFinite(userId)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid user id' });
+      }
+
+      const flags = req.body?.flags;
+      if (!Array.isArray(flags)) {
+        return res.status(400).json({ status: 'error', message: 'flags must be an array' });
+      }
+
+      for (const f of flags) {
+        if (typeof f !== 'string' || !isValidFeatureFlag(f)) {
+          return res.status(400).json({
+            status: 'error',
+            message: `Invalid feature flag: ${String(f)}`,
+          });
+        }
+      }
+
+      const updated = await UserModel.setFlags(userId, flags);
+      if (!updated) {
+        return res.status(404).json({ status: 'error', message: 'User not found' });
+      }
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Feature flags updated successfully',
+        data: { user_id: updated.user_id, feature_flags: updated.feature_flags ?? [] },
+      });
+    } catch (error) {
+      console.error('Set user feature flags error:', error);
+      return res.status(500).json({ status: 'error', message: 'Error updating feature flags' });
+    }
+  },
+
+//POST /api/users/:id/feature-flags/:flag (enable one)
+  async enableUserFeatureFlag(req: Request, res: Response) {
+    try {
+      const userId = Number(req.params.id);
+      const flag = req.params.flag;
+
+      if (!Number.isFinite(userId)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid user id' });
+      }
+      if (!isValidFeatureFlag(flag)) {
+        return res.status(400).json({ status: 'error', message: `Invalid feature flag: ${flag}` });
+      }
+
+      const updated = await UserModel.addFlag(userId, flag);
+      if (!updated) {
+        return res.status(404).json({ status: 'error', message: 'User not found' });
+      }
+
+      return res.status(200).json({
+        status: 'success',
+        message: `Feature flag enabled: ${flag}`,
+        data: { user_id: updated.user_id, feature_flags: updated.feature_flags ?? [] },
+      });
+    } catch (error) {
+      console.error('Enable user feature flag error:', error);
+      return res.status(500).json({ status: 'error', message: 'Error enabling feature flag' });
+    }
+  },
+
+//DELETE /api/users/:id/feature-flags/:flag (disable one)
+  async disableUserFeatureFlag(req: Request, res: Response) {
+    try {
+      const userId = Number(req.params.id);
+      const flag = req.params.flag;
+
+      if (!Number.isFinite(userId)) {
+        return res.status(400).json({ status: 'error', message: 'Invalid user id' });
+      }
+      if (!isValidFeatureFlag(flag)) {
+        return res.status(400).json({ status: 'error', message: `Invalid feature flag: ${flag}` });
+      }
+
+      const updated = await UserModel.removeFlag(userId, flag);
+      if (!updated) {
+        return res.status(404).json({ status: 'error', message: 'User not found' });
+      }
+
+      return res.status(200).json({
+        status: 'success',
+        message: `Feature flag disabled: ${flag}`,
+        data: { user_id: updated.user_id, feature_flags: updated.feature_flags ?? [] },
+      });
+    } catch (error) {
+      console.error('Disable user feature flag error:', error);
+      return res.status(500).json({ status: 'error', message: 'Error disabling feature flag' });
+    }
+  },
+
 };
