@@ -207,7 +207,7 @@ export function formatNotificationBody(
 
   if (availableLength < 20) {
     // If not enough space, just return truncated mantra
-    return `"${mantraText.substring(0, maxLength - 4)}..."`;
+    return `"${mantraText.substring(0, maxLength - 5)}..."`;
   }
 
   const truncatedMantra = mantraText.substring(0, availableLength - 3);
