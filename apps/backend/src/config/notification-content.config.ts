@@ -202,7 +202,7 @@ export function formatNotificationBody(
   }
 
   // Truncate mantra text to fit with CTA
-  const ctaLength = cta.length + separator.length + 3; // +3 for quotes and ellipsis
+  const ctaLength = cta.length + separator.length + 5; // +5 for quotes and ellipsis (", ...")
   const availableLength = maxLength - ctaLength;
 
   if (availableLength < 20) {
