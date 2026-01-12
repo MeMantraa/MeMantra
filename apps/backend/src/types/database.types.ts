@@ -12,6 +12,7 @@ export interface Database {
   CollectionMantra: CollectionMantraTable;
   Reminder: ReminderTable;
   RecommendationLog: RecommendationLogTable;
+  PasswordResetToken: PasswordResetTokenTable;
   Conversation: ConversationTable;
   Message: MessageTable;
   MessageReaction: MessageReactionTable;
@@ -106,6 +107,14 @@ export interface RecommendationLogTable {
   reason: string | null;
 }
 
+export interface PasswordResetTokenTable {
+  token_id: Generated<number>;
+  user_id: number;
+  code: string;
+  expires_at: string;
+  created_at: string | null;
+}
+
 export interface ConversationTable {
   conversation_id: Generated<number>;
   user1_id: number;
@@ -178,6 +187,10 @@ export type ReminderUpdate = Updateable<ReminderTable>;
 export type RecommendationLog = Selectable<RecommendationLogTable>;
 export type NewRecommendationLog = Insertable<RecommendationLogTable>;
 export type RecommendationLogUpdate = Updateable<RecommendationLogTable>;
+
+export type PasswordResetToken = Selectable<PasswordResetTokenTable>;
+export type NewPasswordResetToken = Insertable<PasswordResetTokenTable>;
+export type PasswordResetTokenUpdate = Updateable<PasswordResetTokenTable>;
 
 export type Conversation = Selectable<ConversationTable>;
 export type NewConversation = Insertable<ConversationTable>;

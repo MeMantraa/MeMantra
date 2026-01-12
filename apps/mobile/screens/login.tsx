@@ -143,6 +143,15 @@ export default function LoginScreen({ navigation }: any) {
 
             <TextButton
               className="mt-[16px] items-center"
+              onPress={() => navigation.navigate('ForgotPassword')}
+              textClassName="text-[#ffffff] text-[14px] underline"
+              disabled={loading}
+            >
+              Forgot Password?
+            </TextButton>
+
+            <TextButton
+              className="mt-[16px] items-center"
               onPress={handleSignUp}
               textClassName="text-[#fff] text-[14px]"
               disabled={loading}
