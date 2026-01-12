@@ -1,5 +1,9 @@
 import React from 'react';
-import { FeatureFlagName, FeatureFlagArray, canViewFeature } from '../utils/featureFlags';
+import {
+  FeatureFlagName,
+  FeatureFlagArray,
+  canViewFeature,
+} from '../../backend/src/utils/featureFlags';
 
 type Props = {
   featureFlag: FeatureFlagName;
