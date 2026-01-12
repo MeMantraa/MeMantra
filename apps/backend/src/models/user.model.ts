@@ -109,7 +109,7 @@ async hasFlag(userId: number, flagName: string): Promise<boolean> {
 const result = await db
 .selectFrom('User')
 .where('user_id', '=', userId)
-.where(sql<boolean>`${sql.val(flagName)} (${sql.ref('feature_flags')})`)
+.where(sql<boolean>`${sql.val(flagName)} = ANY(${sql.ref('feature_flags')})`)
 .select('user_id')
 .executeTakeFirst();
 return !!result;
