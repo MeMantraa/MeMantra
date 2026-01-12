@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { View, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, Image, Alert } from 'react-native';
 import logo from '../assets/logo.png';
 import googleLogo from '../assets/googleLogo.png';
 import { authService } from '../services/auth.service';
@@ -9,6 +9,7 @@ import { useGoogleAuth } from '../services/google-auth.service';
 import { useTheme } from '../context/ThemeContext';
 import AppTextInput from '../components/UI/textInputWrapper';
 import AppText from '../components/UI/textWrapper';
+import TextButton from '../components/UI/textButton';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -130,40 +131,46 @@ export default function LoginScreen({ navigation }: any) {
               editable={!loading}
             />
 
-            <TouchableOpacity
-              style={{ backgroundColor: colors.secondary }}
-              className="rounded-[30px] p-[14px] items-center mt-[8px]"
+            <TextButton
               onPress={handleLogin}
+              className="rounded-[30px] p-[14px] items-center mt-[8px]"
+              textClassName="text-[#fff] text-[18px]"
+              style={{ backgroundColor: colors.secondary }}
               disabled={loading}
             >
-              <AppText className="text-[#ffffff] text-[18px] font-semibold">Login</AppText>
-            </TouchableOpacity>
+              Login
+            </TextButton>
 
-            <TouchableOpacity
-              className="items-center mt-[16px]"
+            <TextButton
+              className="mt-[16px] items-center"
               onPress={() => navigation.navigate('ForgotPassword')}
+              textClassName="text-[#ffffff] text-[14px] underline"
+              disabled={loading}
             >
-              <AppText className="text-[#ffffff] text-[14px] underline">Forgot Password?</AppText>
-            </TouchableOpacity>
+              Forgot Password?
+            </TextButton>
 
-            <TouchableOpacity className="items-center mt-[20px]" onPress={handleSignUp}>
-              <AppText className="text-[#fff] text-[14px]">
-                New to us?
-                <AppText className="text-[#ffffff] text-[14px] font-bold"> Sign Up</AppText>
-              </AppText>
-            </TouchableOpacity>
+            <TextButton
+              className="mt-[16px] items-center"
+              onPress={handleSignUp}
+              textClassName="text-[#fff] text-[14px]"
+              disabled={loading}
+            >
+              New to us? <AppText className="text-white font-black">Sign Up</AppText>
+            </TextButton>
 
-            <TouchableOpacity
+            <TextButton
               className="bg-[#6D7E68] rounded-[30px] p-[12px] mx-[60px] items-center mt-[18px]"
               onPress={handleGoogleSignIn}
               disabled={!request || loading}
+              textClassName="text-[#fff] text-[14px]"
               style={{ backgroundColor: colors.primaryDark }}
             >
               <View className="flex-row items-center">
                 <Image source={googleLogo} className="mr-[10px] w-[30px] h-[30px]" />
                 <AppText className="text-[#fff] text-[14px]">Sign In with Google</AppText>
               </View>
-            </TouchableOpacity>
+            </TextButton>
           </View>
         </View>
       </View>

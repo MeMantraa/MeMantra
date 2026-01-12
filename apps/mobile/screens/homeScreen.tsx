@@ -92,10 +92,19 @@ export default function HomeScreen({ navigation, route }: any) {
   const handleLike = async (mantraId: number) => {
     try {
       const token = (await storage.getToken()) || 'mock-token';
-      const isCurrentlyLiked = feedData.find((m) => m.mantra_id === mantraId)?.isLiked || false;
+      const mantra = feedData.find((m) => m.mantra_id === mantraId);
+      const isCurrentlyLiked = mantra?.isLiked || false;
 
       setFeedData((prev) =>
-        prev.map((m) => (m.mantra_id === mantraId ? { ...m, isLiked: !m.isLiked } : m)),
+        prev.map((m) =>
+          m.mantra_id === mantraId
+            ? {
+                ...m,
+                isLiked: !m.isLiked,
+                like_count: (m.like_count || 0) + (isCurrentlyLiked ? -1 : 1),
+              }
+            : m,
+        ),
       );
 
       if (isCurrentlyLiked) {
@@ -106,7 +115,15 @@ export default function HomeScreen({ navigation, route }: any) {
     } catch (err) {
       console.error('Error toggling like:', err);
       setFeedData((prev) =>
-        prev.map((m) => (m.mantra_id === mantraId ? { ...m, isLiked: !m.isLiked } : m)),
+        prev.map((m) =>
+          m.mantra_id === mantraId
+            ? {
+                ...m,
+                isLiked: !m.isLiked,
+                like_count: (m.like_count || 0) + (m.isLiked ? -1 : 1),
+              }
+            : m,
+        ),
       );
       Alert.alert('Error', 'Failed to update like status');
     }
