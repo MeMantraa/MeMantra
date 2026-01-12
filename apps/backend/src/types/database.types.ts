@@ -16,6 +16,7 @@ export interface Database {
   Conversation: ConversationTable;
   Message: MessageTable;
   MessageReaction: MessageReactionTable;
+  Rating: RatingTable;
 }
 
 //table interfaces
@@ -140,6 +141,16 @@ export interface MessageReactionTable {
   created_at: Generated<string>;
 }
 
+export interface RatingTable {
+  rating_id: Generated<number>;
+  user_id: number;
+  mantra_id: number;
+  rating: number;
+  review_text: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
 //types for type safe operations (typescript ting)
 export type User = Selectable<UserTable>;
 export type NewUser = Insertable<UserTable>;
@@ -192,3 +203,8 @@ export type MessageUpdate = Updateable<MessageTable>;
 export type MessageReaction = Selectable<MessageReactionTable>;
 export type NewMessageReaction = Insertable<MessageReactionTable>;
 export type MessageReactionUpdate = Updateable<MessageReactionTable>;
+
+
+export type Rating = Selectable<RatingTable>;
+export type NewRating = Insertable<RatingTable>;
+export type RatingUpdate = Updateable<RatingTable>;

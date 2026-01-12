@@ -3,7 +3,7 @@ import { apiClient } from './api.config';
 /**
  * CONFIGURATION
  * --------------
- * Set USE_MOCK_DATA = false later when backend is ready.
+ * Set USE_MOCK_DATA = false when backend is ready.
  */
 const USE_MOCK_DATA = false;
 
@@ -183,6 +183,7 @@ const mockMantraService = {
     mockUserState.savedMantras.delete(mantraId);
     return { status: 'success', message: 'Removed from saved' };
   },
+
   async getSavedMantras(token: string) {
     const collectionId = 1;
     const response = await apiClient.get(`/collections/${collectionId}`, {
@@ -222,6 +223,7 @@ const mockMantraService = {
       data: { mantra: newMantra },
     };
   },
+
   async deleteMantra(mantraId: number, _token: string): Promise<MantraMutationResponse> {
     const exists = mockMantras.some((m) => m.mantra_id === mantraId);
 
