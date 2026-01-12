@@ -108,7 +108,7 @@ describe('SavedPopupBar', () => {
   });
 
   it('calls onPressCollections when Collections button is pressed', () => {
-    const { getByTestId } = render(
+    const { getByText, getByTestId } = render(
       <SavedPopupBar
         visible={true}
         onHide={mockOnHide}
@@ -169,7 +169,7 @@ describe('SavedPopupBar', () => {
   it('applies correct bottom position for iOS', () => {
     Platform.OS = 'ios';
 
-    const { getByTestId } = render(
+    const { getByText, getByTestId } = render(
       <SavedPopupBar
         visible={true}
         onHide={mockOnHide}
@@ -189,7 +189,7 @@ describe('SavedPopupBar', () => {
   it('applies correct bottom position for Android', () => {
     Platform.OS = 'android';
 
-    const { getByTestId } = render(
+    const { getByText, getByTestId } = render(
       <SavedPopupBar
         visible={true}
         onHide={mockOnHide}
@@ -328,11 +328,12 @@ describe('SavedPopupBar', () => {
     const collectionsText = getByText('Collections');
     expect(collectionsText).toBeTruthy();
 
+    // The icon is rendered alongside the Collections text
     expect(collectionsText.parent).toBeTruthy();
   });
 
   it('Collections button is pressable and triggers callback', () => {
-    const { getByTestId } = render(
+    const { getByText } = render(
       <SavedPopupBar
         visible={true}
         onHide={mockOnHide}
@@ -340,9 +341,11 @@ describe('SavedPopupBar', () => {
       />,
     );
 
-    const collectionsButton = getByTestId('collections-button');
-    fireEvent.press(collectionsButton);
+    const collectionsText = getByText('Collections');
+    expect(collectionsText).toBeTruthy();
 
+    // Press the Collections button again to verify it's pressable
+    fireEvent.press(collectionsText);
     expect(mockOnPressCollections).toHaveBeenCalledTimes(1);
   });
 

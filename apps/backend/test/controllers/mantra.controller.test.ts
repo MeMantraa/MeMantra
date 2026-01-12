@@ -343,7 +343,7 @@ describe('MantraController', () => {
         status: 'success',
         data: { mantras: mockMantras },
       });
-      expect(MantraModel.findWithLikeCount).toHaveBeenCalledWith(10);
+      expect(MantraModel.findWithLikeCount).toHaveBeenCalledWith(10, 0);
     });
 
     it('should get popular mantras with custom limit', async () => {
@@ -354,7 +354,7 @@ describe('MantraController', () => {
       const res = await request(app).get('/mantras/popular?limit=5');
 
       expect(res.status).toBe(200);
-      expect(MantraModel.findWithLikeCount).toHaveBeenCalledWith(5);
+      expect(MantraModel.findWithLikeCount).toHaveBeenCalledWith(5, 0);
     });
 
     it('should handle errors', async () => {

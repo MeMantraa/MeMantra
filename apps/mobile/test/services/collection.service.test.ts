@@ -56,7 +56,9 @@ describe('collectionService', () => {
     it('should handle API errors', async () => {
       (apiClient.get as jest.Mock).mockRejectedValue(new Error('Network error'));
 
-      await expect(collectionService.getUserCollections(mockToken)).rejects.toThrow('Network error');
+      await expect(collectionService.getUserCollections(mockToken)).rejects.toThrow(
+        'Network error',
+      );
     });
   });
 
@@ -98,7 +100,9 @@ describe('collectionService', () => {
     it('should handle API errors', async () => {
       (apiClient.get as jest.Mock).mockRejectedValue(new Error('Not found'));
 
-      await expect(collectionService.getCollectionById(999, mockToken)).rejects.toThrow('Not found');
+      await expect(collectionService.getCollectionById(999, mockToken)).rejects.toThrow(
+        'Not found',
+      );
     });
   });
 
@@ -119,7 +123,11 @@ describe('collectionService', () => {
 
       (apiClient.post as jest.Mock).mockResolvedValue({ data: mockResponse });
 
-      const result = await collectionService.createCollection('New Collection', 'A new collection', mockToken);
+      const result = await collectionService.createCollection(
+        'New Collection',
+        'A new collection',
+        mockToken,
+      );
 
       expect(apiClient.post).toHaveBeenCalledWith(
         '/collections',
@@ -147,7 +155,11 @@ describe('collectionService', () => {
 
       (apiClient.post as jest.Mock).mockResolvedValue({ data: mockResponse });
 
-      const result = await collectionService.createCollection('No Description', undefined, mockToken);
+      const result = await collectionService.createCollection(
+        'No Description',
+        undefined,
+        mockToken,
+      );
 
       expect(apiClient.post).toHaveBeenCalledWith(
         '/collections',
@@ -162,7 +174,9 @@ describe('collectionService', () => {
     it('should handle API errors', async () => {
       (apiClient.post as jest.Mock).mockRejectedValue(new Error('Creation failed'));
 
-      await expect(collectionService.createCollection('Test', 'Desc', mockToken)).rejects.toThrow('Creation failed');
+      await expect(collectionService.createCollection('Test', 'Desc', mockToken)).rejects.toThrow(
+        'Creation failed',
+      );
     });
   });
 
@@ -183,7 +197,11 @@ describe('collectionService', () => {
 
       (apiClient.put as jest.Mock).mockResolvedValue({ data: mockResponse });
 
-      const result = await collectionService.updateCollection(1, { name: 'Updated Name' }, mockToken);
+      const result = await collectionService.updateCollection(
+        1,
+        { name: 'Updated Name' },
+        mockToken,
+      );
 
       expect(apiClient.put).toHaveBeenCalledWith(
         '/collections/1',
@@ -211,7 +229,11 @@ describe('collectionService', () => {
 
       (apiClient.put as jest.Mock).mockResolvedValue({ data: mockResponse });
 
-      const result = await collectionService.updateCollection(1, { description: 'Updated description' }, mockToken);
+      const result = await collectionService.updateCollection(
+        1,
+        { description: 'Updated description' },
+        mockToken,
+      );
 
       expect(apiClient.put).toHaveBeenCalledWith(
         '/collections/1',
@@ -258,7 +280,9 @@ describe('collectionService', () => {
     it('should handle API errors', async () => {
       (apiClient.put as jest.Mock).mockRejectedValue(new Error('Update failed'));
 
-      await expect(collectionService.updateCollection(1, { name: 'Test' }, mockToken)).rejects.toThrow('Update failed');
+      await expect(
+        collectionService.updateCollection(1, { name: 'Test' }, mockToken),
+      ).rejects.toThrow('Update failed');
     });
   });
 
@@ -283,7 +307,9 @@ describe('collectionService', () => {
     it('should handle API errors', async () => {
       (apiClient.delete as jest.Mock).mockRejectedValue(new Error('Delete failed'));
 
-      await expect(collectionService.deleteCollection(1, mockToken)).rejects.toThrow('Delete failed');
+      await expect(collectionService.deleteCollection(1, mockToken)).rejects.toThrow(
+        'Delete failed',
+      );
     });
   });
 
@@ -325,7 +351,9 @@ describe('collectionService', () => {
     it('should handle API errors', async () => {
       (apiClient.post as jest.Mock).mockRejectedValue(new Error('Add failed'));
 
-      await expect(collectionService.addMantraToCollection(1, 5, mockToken)).rejects.toThrow('Add failed');
+      await expect(collectionService.addMantraToCollection(1, 5, mockToken)).rejects.toThrow(
+        'Add failed',
+      );
     });
   });
 
@@ -349,8 +377,9 @@ describe('collectionService', () => {
     it('should handle API errors', async () => {
       (apiClient.delete as jest.Mock).mockRejectedValue(new Error('Remove failed'));
 
-      await expect(collectionService.removeMantraFromCollection(1, 5, mockToken)).rejects.toThrow('Remove failed');
+      await expect(collectionService.removeMantraFromCollection(1, 5, mockToken)).rejects.toThrow(
+        'Remove failed',
+      );
     });
   });
 });
-

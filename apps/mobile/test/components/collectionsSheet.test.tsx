@@ -104,9 +104,7 @@ describe('CollectionsSheet', () => {
   });
 
   it('does not call onRefresh when onRefresh is not provided', () => {
-    const { getByText } = render(
-      <CollectionsSheet {...defaultProps} onRefresh={undefined} />,
-    );
+    const { getByText } = render(<CollectionsSheet {...defaultProps} onRefresh={undefined} />);
 
     expect(getByText('Save to collection')).toBeTruthy();
   });
@@ -230,7 +228,10 @@ describe('CollectionsSheet', () => {
     fireEvent.press(getByText('My Collection'));
 
     await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Error selecting collection:', expect.any(Error));
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Error selecting collection:',
+        expect.any(Error),
+      );
     });
   });
 
@@ -310,20 +311,20 @@ describe('CollectionsSheet', () => {
     mockOnCreateCollection.mockReturnValueOnce(createPromise);
 
     const { getByText, getByPlaceholderText } = render(<CollectionsSheet {...defaultProps} />);
-    
+
     fireEvent.press(getByText('+ Create new collection'));
     const input = getByPlaceholderText('New collection name');
     fireEvent.changeText(input, 'New Collection');
-    
+
     // Start processing
     fireEvent.press(getByText('Create'));
-    
+
     // Try to select a collection while processing - should not work
     fireEvent.press(getByText('My Collection'));
-    
+
     // onSelectCollection should not be called while processing
     expect(mockOnSelectCollection).not.toHaveBeenCalled();
-    
+
     resolveCreate!();
     await waitFor(() => {
       expect(mockOnCreateCollection).toHaveBeenCalled();
@@ -332,7 +333,7 @@ describe('CollectionsSheet', () => {
 
   it('handles collection with null description', () => {
     const { getByText, queryByText } = render(<CollectionsSheet {...defaultProps} />);
-    
+
     // Collection with null description should not show description text
     expect(getByText('Another Collection')).toBeTruthy();
     expect(queryByText('null')).toBeNull();
@@ -410,21 +411,23 @@ describe('CollectionsSheet', () => {
 
   it('handles useEffect cleanup when visible changes to false', () => {
     const { rerender } = render(<CollectionsSheet {...defaultProps} visible={true} />);
-    
+
     // Change visible to false - should reset all state
     rerender(<CollectionsSheet {...defaultProps} visible={false} />);
-    
+
     // Reopen - should be in clean state
     rerender(<CollectionsSheet {...defaultProps} visible={true} />);
-    
+
     // Should show create button (not input)
-    const { queryByPlaceholderText } = render(<CollectionsSheet {...defaultProps} visible={true} />);
+    const { queryByPlaceholderText } = render(
+      <CollectionsSheet {...defaultProps} visible={true} />,
+    );
     expect(queryByPlaceholderText('New collection name')).toBeNull();
   });
 
   it('handles FlatList scroll when not dragging and not processing', () => {
     const { getByText } = render(<CollectionsSheet {...defaultProps} />);
-    
+
     // Collections should be scrollable when not processing
     expect(getByText('Saved Mantras')).toBeTruthy();
     expect(getByText('My Collection')).toBeTruthy();
@@ -433,13 +436,13 @@ describe('CollectionsSheet', () => {
 
   it('shows loading state when loading is true', () => {
     const { getByText } = render(<CollectionsSheet {...defaultProps} loading={true} />);
-    
+
     expect(getByText('Loading collections...')).toBeTruthy();
   });
 
   it('shows empty state when collections array is empty', () => {
     const { getByText } = render(<CollectionsSheet {...defaultProps} collections={[]} />);
-    
+
     expect(getByText('No collections yet. Create one above!')).toBeTruthy();
   });
 
@@ -451,7 +454,7 @@ describe('CollectionsSheet', () => {
     mockOnSelectCollection.mockReturnValueOnce(selectPromise);
 
     const { getByText, getByTestId } = render(<CollectionsSheet {...defaultProps} />);
-    
+
     // Start processing
     fireEvent.press(getByText('My Collection'));
 
@@ -478,10 +481,10 @@ describe('CollectionsSheet', () => {
     mockOnSelectCollection.mockReturnValueOnce(selectPromise);
 
     const { getByText } = render(<CollectionsSheet {...defaultProps} />);
-    
+
     // Start processing by selecting a collection
     fireEvent.press(getByText('My Collection'));
-    
+
     // Try to open create form while processing
     fireEvent.press(getByText('+ Create new collection'));
 
@@ -502,16 +505,16 @@ describe('CollectionsSheet', () => {
     mockOnCreateCollection.mockReturnValueOnce(createPromise);
 
     const { getByText, getByPlaceholderText } = render(<CollectionsSheet {...defaultProps} />);
-    
+
     fireEvent.press(getByText('+ Create new collection'));
 
     const input = getByPlaceholderText('New collection name');
     fireEvent.changeText(input, 'New Collection');
     fireEvent.press(getByText('Create'));
-    
+
     // Input should be disabled while processing
     expect(input.props.editable).toBe(false);
-    
+
     resolveCreate!();
     await waitFor(() => {
       expect(mockOnSelectCollection).toHaveBeenCalledWith(4);
@@ -527,11 +530,11 @@ describe('CollectionsSheet', () => {
         created_at: '2024-01-01',
       },
     ];
-    
+
     const { getByText, queryByText } = render(
       <CollectionsSheet {...defaultProps} collections={collectionsWithoutDesc} />,
     );
-    
+
     expect(getByText('No Description')).toBeTruthy();
     // Should not render description text
     expect(queryByText('undefined')).toBeNull();
@@ -539,11 +542,11 @@ describe('CollectionsSheet', () => {
 
   it('logs console message when collection is selected', async () => {
     const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-    
+
     const { getByText } = render(<CollectionsSheet {...defaultProps} />);
-    
+
     fireEvent.press(getByText('My Collection'));
-    
+
     await waitFor(() => {
       expect(consoleLogSpy).toHaveBeenCalledWith(
         'Mantra added to collection: "My Collection" (ID: 2)',
@@ -555,13 +558,13 @@ describe('CollectionsSheet', () => {
     const consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
 
     const { getByText, getByPlaceholderText } = render(<CollectionsSheet {...defaultProps} />);
-    
+
     fireEvent.press(getByText('+ Create new collection'));
 
     const input = getByPlaceholderText('New collection name');
     fireEvent.changeText(input, 'New Collection');
     fireEvent.press(getByText('Create'));
-    
+
     await waitFor(() => {
       expect(consoleLogSpy).toHaveBeenCalledWith(
         'Mantra added to new collection: "New Collection" (ID: 4)',
@@ -571,15 +574,15 @@ describe('CollectionsSheet', () => {
 
   it('does not close sheet when selecting collection fails', async () => {
     mockOnSelectCollection.mockRejectedValueOnce(new Error('Selection failed'));
-    
+
     const { getByText } = render(<CollectionsSheet {...defaultProps} />);
-    
+
     fireEvent.press(getByText('My Collection'));
-    
+
     await waitFor(() => {
       expect(mockOnSelectCollection).toHaveBeenCalled();
     });
-    
+
     // Sheet should not close on error
     expect(mockOnClose).not.toHaveBeenCalled();
   });
@@ -588,13 +591,13 @@ describe('CollectionsSheet', () => {
     mockOnCreateCollection.mockRejectedValueOnce(new Error('Creation failed'));
 
     const { getByText, getByPlaceholderText } = render(<CollectionsSheet {...defaultProps} />);
-    
+
     fireEvent.press(getByText('+ Create new collection'));
 
     const input = getByPlaceholderText('New collection name');
     fireEvent.changeText(input, 'New Collection');
     fireEvent.press(getByText('Create'));
-    
+
     await waitFor(() => {
       expect(mockOnCreateCollection).toHaveBeenCalled();
     });
@@ -602,6 +605,4 @@ describe('CollectionsSheet', () => {
     // Sheet should not close on error
     expect(mockOnClose).not.toHaveBeenCalled();
   });
-
 });
-

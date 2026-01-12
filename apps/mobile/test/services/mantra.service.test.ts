@@ -73,7 +73,6 @@ jest.mock('../../services/api.config', () => ({
     }),
 
     post: jest.fn((url: string, body: any) => {
-      // Match the actual endpoint: POST /likes/${mantraId}
       if (url.match(/^\/likes\/\d+$/)) {
         const mantraId = Number(url.split('/')[2]);
         mockState.likedMantras.add(mantraId);
@@ -108,10 +107,9 @@ jest.mock('../../services/api.config', () => ({
     }),
 
     delete: jest.fn((url: string) => {
-      // Match the actual endpoint: DELETE /likes/${mantraId}
       if (url.match(/^\/likes\/\d+$/)) {
-        const mantraId = Number(url.split('/')[2]);
-        mockState.likedMantras.delete(mantraId);
+        const id = Number(url.split('/')[2]);
+        mockState.likedMantras.delete(id);
         return Promise.resolve({ data: { status: 'success', message: 'Unliked successfully' } });
       }
       if (url.match(/^\/mantras\/\d+\/save\/?$/)) {
@@ -167,10 +165,7 @@ import { mantraService } from '../../services/mantra.service';
 describe('mantraService (mock implementation)', () => {
   beforeEach(() => {
     resetState();
-    // Reset the mock service's internal state
-    if ('resetMockState' in mantraService) {
-      (mantraService as any).resetMockState();
-    }
+    jest.resetModules();
   });
 
   it('returns mock mantra data with success status', async () => {
