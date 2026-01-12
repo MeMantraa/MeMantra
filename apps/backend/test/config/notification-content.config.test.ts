@@ -178,6 +178,37 @@ describe('Notification Content Configuration', () => {
 
       expect(body.length).toBeLessThanOrEqual(500);
     });
+
+    it('should maintain proper quote formatting in truncated text', () => {
+      const mantraText = 'A'.repeat(100);
+      const cta = 'Take action';
+
+      const body = formatNotificationBody(mantraText, cta, 50);
+
+      // Should start with opening quote
+      expect(body).toMatch(/^"/);
+      // Should have ellipsis followed by closing quote
+      expect(body).toMatch(/\.\.\."/);
+      // Should contain the CTA after the quotes
+      expect(body).toContain(cta);
+    });
+
+    it('should maintain quote consistency between normal and truncated formats', () => {
+      const shortMantra = 'I am enough';
+      const longMantra = 'A'.repeat(200);
+      const cta = 'Reflect';
+
+      const normalBody = formatNotificationBody(shortMantra, cta);
+      const truncatedBody = formatNotificationBody(longMantra, cta, 50);
+
+      // Both should start with opening quote
+      expect(normalBody).toMatch(/^"/);
+      expect(truncatedBody).toMatch(/^"/);
+
+      // Both should have closing quote around mantra text
+      expect(normalBody).toMatch(/".*"/);
+      expect(truncatedBody).toMatch(/\.\.\."/);
+    });
   });
 
   describe('generateNotificationContent', () => {
