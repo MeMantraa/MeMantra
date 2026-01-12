@@ -1,6 +1,7 @@
 import { db } from '../db';
 import bcrypt from 'bcryptjs';
 import { User, NewUser } from '../types/database.types';
+import { sql } from 'kysely';
 
 interface CreateUserData {
   username: string;
@@ -101,6 +102,72 @@ async updateEmail(userId: number, email: string) {
     .set({ email })
     .where('user_id', '=', userId)
     .executeTakeFirst();
-}
+},
+
+//Check if user has specific flag enabled
+async hasFlag(userId: number, flagName: string): Promise<boolean> {
+const result = await db
+.selectFrom('User')
+.where('user_id', '=', userId)
+.where(sql<boolean>`${sql.val(flagName)} (${sql.ref('feature_flags')})`)
+.select('user_id')
+.executeTakeFirst();
+return !!result;
+},
+
+//Add flag to user if not already present
+async addFlag(userId: number, flagName: string): Promise<User | undefined> {
+return await db
+.updateTable('User')
+.set({
+feature_flags: sql`array_append(${sql.ref('feature_flags')}, ${sql.val(flagName)})`
+})
+.where('user_id', '=', userId)
+.where(sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`)
+.returningAll()
+.executeTakeFirst();
+},
+
+//Remove flag from user
+async removeFlag(userId: number, flagName: string): Promise<User | undefined> {
+return await db
+.updateTable('User')
+.set({
+  feature_flags: sql`array_remove(${sql.ref('feature_flags')}, ${sql.val(flagName)})`
+})
+.where('user_id', '=', userId)
+.returningAll()
+.executeTakeFirst();
+},
+
+//Set multiple flags at once (replaces all existing flags)
+async setFlags(userId: number, flags: string[]): Promise<User | undefined> {
+return await db
+.updateTable('User')
+.set({
+feature_flags: flags
+})
+.where('user_id', '=', userId)
+.returningAll()
+.executeTakeFirst();
+},
+
+//Get all users who have a specific flag
+async findUsersWithFlag(flagName: string): Promise<User[]> {
+return await db
+.selectFrom('User')
+.where(sql<boolean>` (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`)
+.selectAll()
+.execute();
+},
+
+//Get all users who DON'T have a specific flag
+async findUsersWithoutFlag(flagName: string): Promise<User[]> {
+return await db
+.selectFrom('User')
+.where(sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`)
+.selectAll()
+.execute();
+},
 };
 
