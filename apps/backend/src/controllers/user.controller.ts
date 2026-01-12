@@ -254,16 +254,19 @@ export const UserController = {
         return res.status(400).json({ status: 'error', message: 'flags must be an array' });
       }
 
-      for (const f of flags) {
-        if (typeof f !== 'string' || !isValidFeatureFlag(f)) {
-          return res.status(400).json({
-            status: 'error',
-            message: `Invalid feature flag: ${String(f)}`,
-          });
-        }
+      const invalidFlag = flags.find(
+        (f) => typeof f !== 'string' || !isValidFeatureFlag(f),
+      );
+      if (invalidFlag !== undefined) {
+        return res.status(400).json({
+          status: 'error',
+          message: `Invalid feature flag: ${String(invalidFlag)}`,
+        });
       }
 
-      const updated = await UserModel.setFlags(userId, flags);
+      const uniqueFlags = Array.from(new Set(flags));
+
+      const updated = await UserModel.setFlags(userId, uniqueFlags);
       if (!updated) {
         return res.status(404).json({ status: 'error', message: 'User not found' });
       }
