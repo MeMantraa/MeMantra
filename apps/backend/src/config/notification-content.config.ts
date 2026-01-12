@@ -164,10 +164,13 @@ export function getMotivationalCTA(
  */
 export function getCategoryTemplate(categoryName: string): NotificationTemplate {
   // Convert to camelCase for matching (e.g., "self love" -> "selfLove")
+  // Using split/map approach instead of regex to avoid any potential ReDoS
   const normalizedCategory = categoryName
     .toLowerCase()
-    .replace(/\s+(.)/g, (_, char) => char.toUpperCase())
-    .replace(/\s+/g, '');
+    .split(/\s/)
+    .filter((word) => word.length > 0)
+    .map((word, index) => (index === 0 ? word : word.charAt(0).toUpperCase() + word.slice(1)))
+    .join('');
 
   const templates = CATEGORY_TEMPLATES[normalizedCategory];
 
