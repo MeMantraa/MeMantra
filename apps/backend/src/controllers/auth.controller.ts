@@ -48,6 +48,7 @@ export const AuthController = {
             user_id: newUser.user_id,
             username: newUser.username,
             email: newUser.email,
+            feature_flags: newUser.feature_flags ?? [],
           },
           token,
         },
@@ -100,6 +101,7 @@ export const AuthController = {
             user_id: user.user_id,
             username: user.username,
             email: user.email,
+            feature_flags: user.feature_flags ?? [],
           },
           token,
         },
@@ -140,6 +142,7 @@ export const AuthController = {
             user_id: user.user_id,
             username: user.username,
             email: user.email,
+            feature_flags: user.feature_flags ?? [],
           },
         },
       });
@@ -198,7 +201,7 @@ export const AuthController = {
       return res.status(200).json({
         status: 'success',
         message: 'Google authentication successful',
-        data: { user: { user_id: user.user_id, username: user.username, email: user.email }, token },
+        data: { user: { user_id: user.user_id, username: user.username, email: user.email, feature_flags: user.feature_flags ?? [], }, token },
       });
     } catch (error) {
       console.error('Google auth error:', error);
