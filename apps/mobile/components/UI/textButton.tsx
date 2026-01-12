@@ -23,19 +23,17 @@ const TextButton: React.FC<TextButtonProps> = ({
   disabled,
 }) => {
   return (
-    <>
-      <TouchableOpacity
-        activeOpacity={0.7}
-        className={`rounded-full items-center justify-center ${className}`}
-        onPress={onPress}
-        style={style}
-        disabled={disabled}
-      >
-        <AppText className={textClassName} style={textStyle}>
-          {children}
-        </AppText>
-      </TouchableOpacity>
-    </>
+    <TouchableOpacity
+      activeOpacity={0.7}
+      className={`rounded-full items-center justify-center ${className}`}
+      onPress={onPress}
+      style={style}
+      disabled={disabled}
+    >
+      <AppText className={textClassName} style={textStyle}>
+        {children}
+      </AppText>
+    </TouchableOpacity>
   );
 };
 export default TextButton;
