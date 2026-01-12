@@ -165,10 +165,7 @@ export default function MantraCarousel({
           <View className="items-center">
             <IconButton type="like" active={!!item.isLiked} onPress={handleLike} />
             {item.like_count !== undefined && (
-              <AppText 
-                style={{ color: colors.text }} 
-                className="text-sm mt-1"
-              >
+              <AppText style={{ color: colors.text }} className="text-sm mt-1">
                 {item.like_count}
               </AppText>
             )}

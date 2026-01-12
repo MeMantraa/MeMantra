@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import MantraCarousel from '../components/carousel';
 import { mantraService, Mantra } from '../services/mantra.service';
 import { collectionService, Collection } from '../services/collection.service';
+import { ratingService } from '../services/rating.service';
 import { storage } from '../utils/storage';
 import SearchBar from '../components/UI/searchBar';
 import IconButton from '../components/UI/iconButton';
@@ -103,8 +104,8 @@ export default function HomeScreen({ navigation, route }: any) {
                 isLiked: !m.isLiked,
                 like_count: (m.like_count || 0) + (isCurrentlyLiked ? -1 : 1),
               }
-            : m
-        )
+            : m,
+        ),
       );
 
       if (isCurrentlyLiked) {
@@ -122,8 +123,8 @@ export default function HomeScreen({ navigation, route }: any) {
                 isLiked: !m.isLiked,
                 like_count: (m.like_count || 0) + (m.isLiked ? -1 : 1),
               }
-            : m
-        )
+            : m,
+        ),
       );
       Alert.alert('Error', 'Failed to update like status');
     }
@@ -211,6 +212,24 @@ export default function HomeScreen({ navigation, route }: any) {
       console.error('Error creating collection:', err);
       Alert.alert('Error', 'Failed to create collection');
       throw err;
+    }
+  };
+
+  const handleRate = async (mantraId: number, rating: number) => {
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      console.log('Rating mantra:', mantraId, 'with rating:', rating);
+
+      const response = await ratingService.rateMantra(mantraId, rating, undefined, token);
+
+      if (response.status === 'success') {
+        console.log('Rating saved successfully');
+      } else {
+        Alert.alert('Error', response.message || 'Failed to save rating');
+      }
+    } catch (err) {
+      console.error('Error rating mantra:', err);
+      Alert.alert('Error', 'Failed to save rating');
     }
   };
 
@@ -330,6 +349,11 @@ export default function HomeScreen({ navigation, route }: any) {
         onPressCollections={() => {
           setShowSavedPopup(false);
           setShowCollectionsSheet(true);
+        }}
+        onRate={(rating) => {
+          if (currentMantraId) {
+            handleRate(currentMantraId, rating);
+          }
         }}
       />
       <CollectionsSheet
