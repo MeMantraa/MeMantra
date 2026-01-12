@@ -23,7 +23,7 @@ export const RatingModel = {
         .returningAll()
         .executeTakeFirstOrThrow();
     } else {
-      // Create new rating
+
       return await db
         .insertInto('Rating')
         .values({
@@ -41,7 +41,6 @@ export const RatingModel = {
 
   /**
    * Get user's rating for a specific mantra
-   * @example await RatingModel.findByUserAndMantra(userId, mantraId)
    */
   async findByUserAndMantra(userId: number, mantraId: number): Promise<Rating | undefined> {
     return await db
@@ -54,7 +53,6 @@ export const RatingModel = {
 
   /**
    * Get all ratings by a user
-   * @example await RatingModel.findByUserId(userId)
    */
   async findByUserId(userId: number): Promise<Rating[]> {
     return await db
@@ -67,7 +65,6 @@ export const RatingModel = {
 
   /**
    * Get all ratings for a mantra
-   * @example await RatingModel.findByMantraId(mantraId)
    */
   async findByMantraId(mantraId: number): Promise<Rating[]> {
     return await db
@@ -80,8 +77,6 @@ export const RatingModel = {
 
   /**
    * Calculate average rating for a mantra
-   * @example await RatingModel.getAverageRating(mantraId)
-   * @returns { average: 4.5, count: 142 }
    */
   async getAverageRating(mantraId: number): Promise<{ average: number; count: number }> {
     const result = await db
@@ -101,7 +96,6 @@ export const RatingModel = {
 
   /**
    * Get mantras with highest ratings (5 stars)
-   * @example await RatingModel.getTopRatedMantras(10)
    */
   async getTopRatedMantras(limit = 10) {
     const results = await db
