@@ -12,9 +12,11 @@ export interface Database {
   CollectionMantra: CollectionMantraTable;
   Reminder: ReminderTable;
   RecommendationLog: RecommendationLogTable;
+  PasswordResetToken: PasswordResetTokenTable;
   Conversation: ConversationTable;
   Message: MessageTable;
   MessageReaction: MessageReactionTable;
+  Rating: RatingTable;
 }
 
 //table interfaces
@@ -105,6 +107,14 @@ export interface RecommendationLogTable {
   reason: string | null;
 }
 
+export interface PasswordResetTokenTable {
+  token_id: Generated<number>;
+  user_id: number;
+  code: string;
+  expires_at: string;
+  created_at: string | null;
+}
+
 export interface ConversationTable {
   conversation_id: Generated<number>;
   user1_id: number;
@@ -129,6 +139,16 @@ export interface MessageReactionTable {
   user_id: number;
   emoji: string;
   created_at: Generated<string>;
+}
+
+export interface RatingTable {
+  rating_id: Generated<number>;
+  user_id: number;
+  mantra_id: number;
+  rating: number;
+  review_text: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 //types for type safe operations (typescript ting)
@@ -168,6 +188,10 @@ export type RecommendationLog = Selectable<RecommendationLogTable>;
 export type NewRecommendationLog = Insertable<RecommendationLogTable>;
 export type RecommendationLogUpdate = Updateable<RecommendationLogTable>;
 
+export type PasswordResetToken = Selectable<PasswordResetTokenTable>;
+export type NewPasswordResetToken = Insertable<PasswordResetTokenTable>;
+export type PasswordResetTokenUpdate = Updateable<PasswordResetTokenTable>;
+
 export type Conversation = Selectable<ConversationTable>;
 export type NewConversation = Insertable<ConversationTable>;
 export type ConversationUpdate = Updateable<ConversationTable>;
@@ -179,3 +203,8 @@ export type MessageUpdate = Updateable<MessageTable>;
 export type MessageReaction = Selectable<MessageReactionTable>;
 export type NewMessageReaction = Insertable<MessageReactionTable>;
 export type MessageReactionUpdate = Updateable<MessageReactionTable>;
+
+
+export type Rating = Selectable<RatingTable>;
+export type NewRating = Insertable<RatingTable>;
+export type RatingUpdate = Updateable<RatingTable>;

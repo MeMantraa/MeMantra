@@ -1,7 +1,13 @@
 import React, { useState, useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal, Pressable } from 'react-native';
-import Swipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
-import Reanimated from 'react-native-reanimated';
+import {
+  View,
+  StyleSheet,
+  TouchableOpacity,
+  Modal,
+  Pressable,
+  Animated,
+  PanResponder,
+} from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import AppText from '../UI/textWrapper';
 import { useNavigation } from '@react-navigation/native';
@@ -29,7 +35,32 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   const { colors } = useTheme();
   const navigation = useNavigation<any>();
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-  const swipeableRef = useRef<React.ComponentRef<typeof Swipeable>>(null);
+  const translateX = useRef(new Animated.Value(0)).current;
+
+  /* istanbul ignore next */
+  const panResponder = useRef(
+    PanResponder.create({
+      onMoveShouldSetPanResponder: (_, gestureState) => {
+        return Math.abs(gestureState.dx) > 5;
+      },
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dx > 0 && gestureState.dx < 80) {
+          translateX.setValue(gestureState.dx);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dx > 60 && onSwipeReply) {
+          onSwipeReply(message);
+        }
+        Animated.spring(translateX, {
+          toValue: 0,
+          useNativeDriver: true,
+          tension: 100,
+          friction: 10,
+        }).start();
+      },
+    }),
+  ).current;
 
   const formatTime = (isoString: string) => {
     const date = new Date(isoString);
@@ -49,13 +80,6 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
 
   const handleLongPress = () => {
     setShowEmojiPicker(true);
-  };
-
-  const handleSwipeRight = () => {
-    if (onSwipeReply) {
-      onSwipeReply(message);
-    }
-    setTimeout(() => swipeableRef.current?.close(), 0);
   };
 
   const renderReactions = () => {
@@ -143,23 +167,12 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
     parsed = null;
   }
 
-  const renderLeftActions = () => (
-    <Reanimated.View style={styles.swipeActionContainer}>
-      <AppText style={styles.swipeActionText}>Reply</AppText>
-    </Reanimated.View>
-  );
-
   //
   if (parsed?.type === 'mantra_share') {
     return (
       <>
         {renderEmojiPicker()}
-        <Swipeable
-          ref={swipeableRef}
-          renderLeftActions={renderLeftActions}
-          onSwipeableWillOpen={handleSwipeRight}
-          overshootLeft={false}
-        >
+        <Animated.View {...panResponder.panHandlers} style={[{ transform: [{ translateX }] }]}>
           <View
             style={[
               styles.container,
@@ -241,7 +254,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
             </TouchableOpacity>
             {renderReactions()}
           </View>
-        </Swipeable>
+        </Animated.View>
       </>
     );
   }
@@ -250,12 +263,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   return (
     <>
       {renderEmojiPicker()}
-      <Swipeable
-        ref={swipeableRef}
-        renderLeftActions={renderLeftActions}
-        onSwipeableWillOpen={handleSwipeRight}
-        overshootLeft={false}
-      >
+      <Animated.View {...panResponder.panHandlers} style={[{ transform: [{ translateX }] }]}>
         <View
           style={[
             styles.container,
@@ -335,7 +343,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
           </TouchableOpacity>
           {renderReactions()}
         </View>
-      </Swipeable>
+      </Animated.View>
     </>
   );
 };
@@ -473,16 +481,6 @@ const styles = StyleSheet.create({
   },
   emojiOptionText: {
     fontSize: 32,
-  },
-  swipeActionContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginVertical: 4,
-  },
-  swipeActionText: {
-    fontSize: 14,
-    opacity: 0.6,
   },
 });
 

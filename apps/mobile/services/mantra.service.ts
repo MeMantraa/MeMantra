@@ -3,7 +3,7 @@ import { apiClient } from './api.config';
 /**
  * CONFIGURATION
  * --------------
- * Set USE_MOCK_DATA = false later when backend is ready.
+ * Set USE_MOCK_DATA = false when backend is ready.
  */
 const USE_MOCK_DATA = false;
 
@@ -27,6 +27,7 @@ export interface Mantra {
   is_active: boolean;
   isLiked?: boolean;
   isSaved?: boolean;
+  like_count?: number;
 }
 
 export interface MantraResponse {
@@ -182,6 +183,7 @@ const mockMantraService = {
     mockUserState.savedMantras.delete(mantraId);
     return { status: 'success', message: 'Removed from saved' };
   },
+
   async getSavedMantras(token: string) {
     const collectionId = 1;
     const response = await apiClient.get(`/collections/${collectionId}`, {
@@ -221,6 +223,7 @@ const mockMantraService = {
       data: { mantra: newMantra },
     };
   },
+
   async deleteMantra(mantraId: number, _token: string): Promise<MantraMutationResponse> {
     const exists = mockMantras.some((m) => m.mantra_id === mantraId);
 
@@ -281,8 +284,8 @@ const realMantraService = {
 
   async likeMantra(mantraId: number, token: string) {
     const response = await apiClient.post(
-      `/mantras/like`,
-      { mantra_id: mantraId },
+      `/likes/${mantraId}`,
+      {},
       {
         headers: { Authorization: `Bearer ${token}` },
       },
@@ -291,7 +294,7 @@ const realMantraService = {
   },
 
   async unlikeMantra(mantraId: number, token: string) {
-    const response = await apiClient.delete(`/mantras/like/${mantraId}`, {
+    const response = await apiClient.delete(`/likes/${mantraId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;

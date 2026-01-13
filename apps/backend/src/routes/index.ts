@@ -9,6 +9,7 @@ import recommendationRoutes from './recommendation.routes';
 import userRoutes from './user.routes';
 import chatRoutes from './chat.routes';
 import notificationRoutes from './notification.routes';
+import ratingRoutes from './rating.routes';
 
 const router = Router();
 
@@ -41,5 +42,7 @@ router.use('/chat', chatRoutes);
 
 // Notification routes
 router.use('/notifications', notificationRoutes);
+// Rating routes
+router.use('/ratings', ratingRoutes); 
 
 export default router;

@@ -15,6 +15,9 @@ import BottomTabNavigator from '../components/bottomTabNavigator';
 import UpdateEmailScreen from '../screens/UpdateEmailScreen';
 import UpdatePasswordScreen from '../screens/UpdatePasswordScreen';
 import FocusScreen from '../screens/focusScreen';
+import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
+import VerifyCodeScreen from '../screens/VerifyCodeScreen';
+import ResetPasswordScreen from '../screens/ResetPasswordScreen';
 import ConversationScreen from '../screens/conversationScreen';
 import NewConversationScreen from '../screens/NewConversationScreen';
 import ShareMantraScreen from '../screens/ShareMantraScreen';
@@ -121,6 +124,21 @@ export default function MainNavigator() {
           <Stack.Screen name="MainApp" component={BottomTabNavigator} />
           <Stack.Screen name="Login" component={Login} options={{ headerTitle: 'Login' }} />
           <Stack.Screen name="Signup" component={Signup} options={{ headerTitle: 'Signup' }} />
+          <Stack.Screen
+            name="ForgotPassword"
+            component={ForgotPasswordScreen}
+            options={{ headerTitle: 'Forgot Password' }}
+          />
+          <Stack.Screen
+            name="VerifyCode"
+            component={VerifyCodeScreen}
+            options={{ headerTitle: 'Verify Code' }}
+          />
+          <Stack.Screen
+            name="ResetPassword"
+            component={ResetPasswordScreen}
+            options={{ headerTitle: 'Reset Password' }}
+          />
           <Stack.Screen name="Profile" component={ProfileScreen} />
           <Stack.Screen name="UpdateEmail" component={UpdateEmailScreen} />
           <Stack.Screen name="UpdatePassword" component={UpdatePasswordScreen} />
