@@ -6,6 +6,7 @@
       "outputs": ["dist/**", "build/**", "ios/build/**", "android/app/build/**"]
     },
     "dev": { "cache": false, "persistent": true },
+    "dev:tunnel": { "cache": false, "persistent": true },
     "lint": {},
     "typecheck": {},
     "test": {

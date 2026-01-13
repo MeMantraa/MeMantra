@@ -14,6 +14,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import BottomTabNavigator from '../components/bottomTabNavigator';
 import UpdateEmailScreen from '../screens/UpdateEmailScreen';
 import UpdatePasswordScreen from '../screens/UpdatePasswordScreen';
+import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
 import FocusScreen from '../screens/focusScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import VerifyCodeScreen from '../screens/VerifyCodeScreen';
@@ -142,6 +143,7 @@ export default function MainNavigator() {
           <Stack.Screen name="Profile" component={ProfileScreen} />
           <Stack.Screen name="UpdateEmail" component={UpdateEmailScreen} />
           <Stack.Screen name="UpdatePassword" component={UpdatePasswordScreen} />
+          <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
           <Stack.Screen name="ShareMantra" component={ShareMantraScreen} />
           <Stack.Screen
             name="Focus"

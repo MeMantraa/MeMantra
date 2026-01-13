@@ -70,7 +70,7 @@ export default [
       sourceType: 'module',
       parser: tsParser,
       parserOptions: { ecmaFeatures: { jsx: true } },
-      globals: { ...globals.browser, ...globals.es2021 },
+      globals: { ...globals.browser, ...globals.es2021, __DEV__: 'readonly' }, // Added __DEV__
     },
     plugins: {
       '@typescript-eslint': tsPlugin,
@@ -94,10 +94,11 @@ export default [
     settings: { react: { version: 'detect' } },
   },
 
+  // Test files configuration
   {
     files: ['**/*.{test,spec}.{js,jsx,ts,tsx}', '**/__tests__/**/*.{js,jsx,ts,tsx}'],
     languageOptions: {
-      globals: { ...globals.jest },
+      globals: { ...globals.jest, global: 'readonly' }, // Added global for Jest tests
     },
   },
 ];

@@ -77,6 +77,10 @@ export default function ProfileScreen() {
           label="Update Password"
           onPress={() => navigation.navigate('UpdatePassword')}
         />
+        <ProfileOption
+          label="Notification Settings"
+          onPress={() => navigation.navigate('NotificationSettings')}
+        />
         <ProfileOption label="Delete Account" onPress={confirmDeleteAccount} destructive />
         <ProfileOption label="Sign Out" onPress={handleLogout} />
       </View>
