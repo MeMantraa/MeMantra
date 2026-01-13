@@ -1,6 +1,5 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
-import { Platform } from 'react-native';
 import { notificationService } from '../../services/notification.service';
 
 const mockPost = jest.fn();
@@ -34,6 +33,19 @@ jest.mock('expo-device', () => ({
 jest.mock('react-native', () => ({
   Platform: {
     OS: 'ios',
+  },
+}));
+
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: {
+    expoConfig: {
+      extra: {
+        eas: {
+          projectId: '072863e5-efd5-4b9c-8f68-7edfca4409d0',
+        },
+      },
+    },
   },
 }));
 

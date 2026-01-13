@@ -1,6 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import * as Device from 'expo-device';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 import { apiClient } from './api.config';
 
 export interface NotificationPermissionStatus {
@@ -62,9 +63,17 @@ export const notificationService = {
     }
 
     try {
+      // Get project ID from app configuration
+      const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+
+      if (!projectId) {
+        console.error('Expo project ID not found in app configuration');
+        return null;
+      }
+
       // Get the Expo push token
       const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId: '072863e5-efd5-4b9c-8f68-7edfca4409d0',
+        projectId,
       });
 
       return tokenData.data;
