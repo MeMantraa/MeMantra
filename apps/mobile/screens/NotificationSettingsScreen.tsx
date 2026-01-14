@@ -233,6 +233,7 @@ export default function NotificationSettingsScreen() {
               </Text>
             </View>
             <Switch
+              testID="enable-notifications-switch"
               value={settings.enabled}
               onValueChange={handleToggleEnabled}
               trackColor={{ false: '#D1D5DB', true: '#8E9A86' }}
@@ -251,6 +252,7 @@ export default function NotificationSettingsScreen() {
               </Text>
             </View>
             <Switch
+              testID="quiet-hours-switch"
               value={settings.quietHoursEnabled}
               onValueChange={handleToggleQuietHours}
               disabled={!settings.enabled}
@@ -290,6 +292,7 @@ export default function NotificationSettingsScreen() {
 
         {/* Test Notification */}
         <TouchableOpacity
+          testID="test-notification-button"
           style={[styles.button, !settings.enabled && styles.buttonDisabled]}
           onPress={handleTestNotification}
           disabled={!settings.enabled}

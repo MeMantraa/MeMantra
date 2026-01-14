@@ -49,6 +49,13 @@ jest.mock('expo-constants', () => ({
   },
 }));
 
+jest.mock('../../services/notification-settings.service', () => ({
+  notificationSettingsService: {
+    getSettings: jest.fn(),
+    isWithinQuietHours: jest.fn(),
+  },
+}));
+
 describe('notificationService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
@@ -402,6 +409,156 @@ describe('notificationService', () => {
       const result = await notificationService.getBadgeCount();
 
       expect(result).toBe(3);
+    });
+  });
+
+  describe('shouldSendNotification', () => {
+    // eslint-disable-next-line no-undef
+    const { notificationSettingsService } = require('../../services/notification-settings.service');
+
+    it('should return false when notifications are disabled', async () => {
+      (notificationSettingsService.getSettings as jest.Mock).mockResolvedValue({
+        enabled: false,
+        quietHoursEnabled: false,
+        quietHoursStart: '22:00',
+        quietHoursEnd: '07:00',
+      });
+
+      const result = await notificationService.shouldSendNotification();
+
+      expect(result).toBe(false);
+    });
+
+    it('should return false when within quiet hours', async () => {
+      (notificationSettingsService.getSettings as jest.Mock).mockResolvedValue({
+        enabled: true,
+        quietHoursEnabled: true,
+        quietHoursStart: '22:00',
+        quietHoursEnd: '07:00',
+      });
+      (notificationSettingsService.isWithinQuietHours as jest.Mock).mockReturnValue(true);
+
+      const result = await notificationService.shouldSendNotification();
+
+      expect(result).toBe(false);
+    });
+
+    it('should return true when enabled and not within quiet hours', async () => {
+      (notificationSettingsService.getSettings as jest.Mock).mockResolvedValue({
+        enabled: true,
+        quietHoursEnabled: true,
+        quietHoursStart: '22:00',
+        quietHoursEnd: '07:00',
+      });
+      (notificationSettingsService.isWithinQuietHours as jest.Mock).mockReturnValue(false);
+
+      const result = await notificationService.shouldSendNotification();
+
+      expect(result).toBe(true);
+    });
+
+    it('should return true on error (fail-safe default)', async () => {
+      (notificationSettingsService.getSettings as jest.Mock).mockRejectedValue(
+        new Error('Settings error'),
+      );
+
+      const result = await notificationService.shouldSendNotification();
+
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('scheduleLocalNotification with settings', () => {
+    // eslint-disable-next-line no-undef
+    const { notificationSettingsService } = require('../../services/notification-settings.service');
+
+    beforeEach(() => {
+      (Notifications.scheduleNotificationAsync as jest.Mock).mockResolvedValue(
+        'notification-id-789',
+      );
+    });
+
+    it('should return null when settings prevent notification (respectSettings=true)', async () => {
+      (notificationSettingsService.getSettings as jest.Mock).mockResolvedValue({
+        enabled: false,
+        quietHoursEnabled: false,
+        quietHoursStart: '22:00',
+        quietHoursEnd: '07:00',
+      });
+
+      const result = await notificationService.scheduleLocalNotification(
+        'Title',
+        'Body',
+        { key: 'value' },
+        null,
+        true, // respectSettings
+      );
+
+      expect(result).toBeNull();
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
+    });
+
+    it('should schedule notification when settings allow (respectSettings=true)', async () => {
+      (notificationSettingsService.getSettings as jest.Mock).mockResolvedValue({
+        enabled: true,
+        quietHoursEnabled: false,
+        quietHoursStart: '22:00',
+        quietHoursEnd: '07:00',
+      });
+      (notificationSettingsService.isWithinQuietHours as jest.Mock).mockReturnValue(false);
+
+      const result = await notificationService.scheduleLocalNotification(
+        'Title',
+        'Body',
+        { key: 'value' },
+        null,
+        true, // respectSettings
+      );
+
+      expect(result).toBe('notification-id-789');
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalled();
+    });
+
+    it('should bypass settings check when respectSettings=false', async () => {
+      (notificationSettingsService.getSettings as jest.Mock).mockResolvedValue({
+        enabled: false, // Disabled but should be bypassed
+        quietHoursEnabled: false,
+        quietHoursStart: '22:00',
+        quietHoursEnd: '07:00',
+      });
+
+      const result = await notificationService.scheduleLocalNotification(
+        'Title',
+        'Body',
+        { key: 'value' },
+        null,
+        false, // respectSettings=false
+      );
+
+      expect(result).toBe('notification-id-789');
+      expect(Notifications.scheduleNotificationAsync).toHaveBeenCalled();
+      expect(notificationSettingsService.getSettings).not.toHaveBeenCalled();
+    });
+
+    it('should return null when within quiet hours (respectSettings=true)', async () => {
+      (notificationSettingsService.getSettings as jest.Mock).mockResolvedValue({
+        enabled: true,
+        quietHoursEnabled: true,
+        quietHoursStart: '22:00',
+        quietHoursEnd: '07:00',
+      });
+      (notificationSettingsService.isWithinQuietHours as jest.Mock).mockReturnValue(true);
+
+      const result = await notificationService.scheduleLocalNotification(
+        'Title',
+        'Body',
+        { key: 'value' },
+        null,
+        true,
+      );
+
+      expect(result).toBeNull();
+      expect(Notifications.scheduleNotificationAsync).not.toHaveBeenCalled();
     });
   });
 });

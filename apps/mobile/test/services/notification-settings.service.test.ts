@@ -150,6 +150,22 @@ describe('notificationSettingsService', () => {
         quietHoursEnd: '08:00',
       });
     });
+
+    it('should throw error when update fails', async () => {
+      const currentSettings: NotificationSettings = {
+        enabled: true,
+        quietHoursEnabled: false,
+        quietHoursStart: '22:00',
+        quietHoursEnd: '07:00',
+      };
+
+      (AsyncStorage.getItem as jest.Mock).mockResolvedValue(JSON.stringify(currentSettings));
+      (AsyncStorage.setItem as jest.Mock).mockRejectedValue(new Error('Update failed'));
+
+      await expect(
+        notificationSettingsService.updateSettings({ quietHoursEnabled: true }),
+      ).rejects.toThrow('Update failed');
+    });
   });
 
   describe('resetSettings', () => {
@@ -157,6 +173,12 @@ describe('notificationSettingsService', () => {
       await notificationSettingsService.resetSettings();
 
       expect(AsyncStorage.removeItem).toHaveBeenCalledWith('@memantra:notification_settings');
+    });
+
+    it('should throw error when reset fails', async () => {
+      (AsyncStorage.removeItem as jest.Mock).mockRejectedValue(new Error('Reset failed'));
+
+      await expect(notificationSettingsService.resetSettings()).rejects.toThrow('Reset failed');
     });
   });
 

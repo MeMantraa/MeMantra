@@ -1,7 +1,10 @@
 /* global require */
 
 describe('api.config', () => {
-  const loadModule = (platform: 'android' | 'ios' | 'web' = 'web') => {
+  const loadModule = (
+    platform: 'android' | 'ios' | 'web' = 'web',
+    hostUri: string | null = null,
+  ) => {
     jest.resetModules();
 
     const requestHandlers: Array<{
@@ -49,7 +52,17 @@ describe('api.config', () => {
       storage: mockStorage,
     }));
 
+    jest.doMock('expo-constants', () => ({
+      __esModule: true,
+      default: {
+        expoConfig: {
+          hostUri,
+        },
+      },
+    }));
+
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
+    const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
     let apiClient: any;
     let setNavigationRef: any;
@@ -64,6 +77,7 @@ describe('api.config', () => {
       requestHandlers,
       responseHandlers,
       consoleSpy,
+      consoleWarnSpy,
       mockStorage,
     };
   };
@@ -121,5 +135,58 @@ describe('api.config', () => {
     });
 
     consoleSpy.mockRestore();
+  });
+
+  describe('IP Detection', () => {
+    it('uses auto-detected IP for iOS when hostUri is provided without tunnel', () => {
+      const { mockCreate, consoleSpy } = loadModule('ios', '192.168.1.100:8081');
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ baseURL: 'http://192.168.1.100:4000/api' }),
+      );
+      consoleSpy.mockRestore();
+    });
+
+    it('uses auto-detected IP for Android when hostUri is provided without tunnel', () => {
+      const { mockCreate, consoleSpy } = loadModule('android', '192.168.1.100:8081');
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ baseURL: 'http://192.168.1.100:4000/api' }),
+      );
+      consoleSpy.mockRestore();
+    });
+
+    it('detects Expo tunnel and warns user', () => {
+      const { mockCreate, consoleSpy, consoleWarnSpy } = loadModule(
+        'ios',
+        '8-o8wbg-test-8081.exp.direct',
+      );
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        '⚠️  Expo tunnel detected. Backend requires local IP in api.config.local.ts',
+      );
+
+      // Falls back to localhost for iOS when tunnel detected without local config
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ baseURL: 'http://localhost:4000/api' }),
+      );
+
+      consoleSpy.mockRestore();
+      consoleWarnSpy.mockRestore();
+    });
+
+    it('falls back to Android emulator IP when no hostUri', () => {
+      const { mockCreate, consoleSpy } = loadModule('android', null);
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ baseURL: 'http://10.0.2.2:4000/api' }),
+      );
+      consoleSpy.mockRestore();
+    });
+
+    it('falls back to localhost for iOS when no hostUri', () => {
+      const { mockCreate, consoleSpy } = loadModule('ios', null);
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ baseURL: 'http://localhost:4000/api' }),
+      );
+      consoleSpy.mockRestore();
+    });
   });
 });
