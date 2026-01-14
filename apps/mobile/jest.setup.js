@@ -6,6 +6,8 @@ global.IS_REACT_ACT_ENVIRONMENT = true;
 // Suppress act warnings in console during tests
 // These warnings are expected when testing components with async effects
 const originalError = console.error;
+const sanitizeForLog = (value) =>
+  String(value).replace(/[\r\n\u2028\u2029]+/g, ' ');
 beforeAll(() => {
   console.error = (...args) => {
     if (
@@ -15,7 +17,8 @@ beforeAll(() => {
     ) {
       return;
     }
-    originalError.call(console, ...args);
+    const sanitizedArgs = args.map(sanitizeForLog);
+    originalError.call(console, ...sanitizedArgs);
   };
 });
 
