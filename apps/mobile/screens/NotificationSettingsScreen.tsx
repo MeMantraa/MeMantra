@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import type { RootStackParamList } from '../src/naviagation/types';
+import type { RootStackParamList } from '../src/navigation/types';
 import {
   notificationSettingsService,
   NotificationSettings,
