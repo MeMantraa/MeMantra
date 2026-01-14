@@ -55,6 +55,12 @@ export interface MantraDetailResponse {
   data: { mantra: Mantra };
 }
 
+export interface SingleMantraResponse {
+  status: string;
+  message?: string;
+  data: Mantra;
+}
+
 export interface MantraMutationResponse {
   status: string;
   message?: string;
@@ -267,6 +273,25 @@ const mockMantraService = {
       data: { mantra: updatedMantra },
     };
   },
+
+  async getMantraById(mantraId: number, _token: string): Promise<SingleMantraResponse> {
+    const mantra = mockMantras.find((m) => m.mantra_id === mantraId);
+    if (!mantra) {
+      return {
+        status: 'error',
+        message: 'Mantra not found',
+        data: null,
+      } as any;
+    }
+    return {
+      status: 'success',
+      data: {
+        ...mantra,
+        isLiked: mockUserState.likedMantras.has(mantra.mantra_id),
+        isSaved: mockUserState.savedMantras.has(mantra.mantra_id),
+      },
+    };
+  },
 };
 
 /**
@@ -345,6 +370,13 @@ const realMantraService = {
     token: string,
   ): Promise<MantraDetailResponse> {
     const response = await apiClient.put<MantraDetailResponse>(`/mantras/${mantraId}`, updateData, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  },
+
+  async getMantraById(mantraId: number, token: string): Promise<SingleMantraResponse> {
+    const response = await apiClient.get<SingleMantraResponse>(`/mantras/${mantraId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;

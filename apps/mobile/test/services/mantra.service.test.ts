@@ -59,7 +59,35 @@ function resetState() {
 // Mocks for apiClient as required by mantra.service.ts
 jest.mock('../../services/api.config', () => ({
   apiClient: {
-    get: jest.fn((_url: string) => {
+    get: jest.fn((url: string) => {
+      // Handle single mantra fetch by ID
+      const singleMantraMatch = url.match(/^\/mantras\/(\d+)$/);
+      if (singleMantraMatch) {
+        const mantraId = Number(singleMantraMatch[1]);
+        const mantra = mockState.mantras.find((m: Mantra) => m.mantra_id === mantraId);
+        if (mantra) {
+          return Promise.resolve({
+            data: {
+              status: 'success',
+              data: {
+                ...mantra,
+                isLiked: mockState.likedMantras.has(mantra.mantra_id),
+                isSaved: mockState.savedMantras.has(mantra.mantra_id),
+              },
+            },
+          });
+        } else {
+          return Promise.resolve({
+            data: {
+              status: 'error',
+              message: 'Mantra not found',
+              data: null,
+            },
+          });
+        }
+      }
+
+      // Handle feed mantras
       return Promise.resolve({
         data: {
           status: 'success',
@@ -286,5 +314,32 @@ describe('mantraService (mock implementation)', () => {
     // Delete
     const delResp = await mantraService.deleteMantra(id, 'token');
     expect(delResp.status).toBe('success');
+  });
+
+  describe('getMantraById', () => {
+    it('returns a single mantra by ID', async () => {
+      const response = await mantraService.getMantraById(1, 'token');
+      expect(response.status).toBe('success');
+      expect(response.data).toBeDefined();
+      expect(response.data.mantra_id).toBe(1);
+      expect(response.data.title).toBe('Pressure Is a Privilege');
+    });
+
+    it('returns mantra with correct isLiked/isSaved state', async () => {
+      // Like and save mantra 2
+      await mantraService.likeMantra(2, 'token');
+      await mantraService.saveMantra(2, 'token');
+
+      const response = await mantraService.getMantraById(2, 'token');
+      expect(response.status).toBe('success');
+      expect(response.data.isLiked).toBe(true);
+      expect(response.data.isSaved).toBe(true);
+    });
+
+    it('returns error for non-existent mantra', async () => {
+      const response = await mantraService.getMantraById(9999, 'token');
+      expect(response.status).toBe('error');
+      expect(response.message).toMatch(/not found/i);
+    });
   });
 });

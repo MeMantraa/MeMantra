@@ -83,11 +83,32 @@ export const apiClient = axios.create({
   timeout: 30000,
 });
 
-// Navigation ref to handle logout navigation
+// Navigation ref to handle logout navigation and deep linking
 let navigationRef: any = null;
 
 export const setNavigationRef = (ref: any) => {
   navigationRef = ref;
+};
+
+export const getNavigationRef = () => navigationRef;
+
+/**
+ * Navigate to a screen from outside React component context
+ * Used for deep linking from notifications
+ */
+export const navigateFromOutside = (screenName: string, params?: object) => {
+  if (navigationRef) {
+    navigationRef.navigate(screenName, params);
+  } else {
+    console.warn('Navigation ref not set, cannot navigate to:', screenName);
+  }
+};
+
+/**
+ * Check if navigation is ready
+ */
+export const isNavigationReady = (): boolean => {
+  return navigationRef !== null;
 };
 
 //request to attach jwt token

@@ -66,14 +66,26 @@ describe('api.config', () => {
 
     let apiClient: any;
     let setNavigationRef: any;
+    let getNavigationRef: any;
+    let navigateFromOutside: any;
+    let isNavigationReady: any;
     jest.isolateModules(() => {
-      ({ apiClient, setNavigationRef } = require('../../services/api.config'));
+      ({
+        apiClient,
+        setNavigationRef,
+        getNavigationRef,
+        navigateFromOutside,
+        isNavigationReady,
+      } = require('../../services/api.config'));
     });
 
     return {
       mockCreate,
       apiClient,
       setNavigationRef,
+      getNavigationRef,
+      navigateFromOutside,
+      isNavigationReady,
       requestHandlers,
       responseHandlers,
       consoleSpy,
@@ -187,6 +199,60 @@ describe('api.config', () => {
         expect.objectContaining({ baseURL: 'http://localhost:4000/api' }),
       );
       consoleSpy.mockRestore();
+    });
+  });
+
+  describe('Navigation Helpers', () => {
+    it('getNavigationRef returns null before setNavigationRef is called', () => {
+      const { getNavigationRef, consoleSpy } = loadModule('ios');
+      expect(getNavigationRef()).toBeNull();
+      consoleSpy.mockRestore();
+    });
+
+    it('getNavigationRef returns ref after setNavigationRef is called', () => {
+      const { setNavigationRef, getNavigationRef, consoleSpy } = loadModule('ios');
+      const mockRef = { navigate: jest.fn() };
+      setNavigationRef(mockRef);
+      expect(getNavigationRef()).toBe(mockRef);
+      consoleSpy.mockRestore();
+    });
+
+    it('isNavigationReady returns false before setNavigationRef is called', () => {
+      const { isNavigationReady, consoleSpy } = loadModule('ios');
+      expect(isNavigationReady()).toBe(false);
+      consoleSpy.mockRestore();
+    });
+
+    it('isNavigationReady returns true after setNavigationRef is called', () => {
+      const { setNavigationRef, isNavigationReady, consoleSpy } = loadModule('ios');
+      const mockRef = { navigate: jest.fn() };
+      setNavigationRef(mockRef);
+      expect(isNavigationReady()).toBe(true);
+      consoleSpy.mockRestore();
+    });
+
+    it('navigateFromOutside calls navigate when ref is set', () => {
+      const { setNavigationRef, navigateFromOutside, consoleSpy } = loadModule('ios');
+      const mockRef = { navigate: jest.fn() };
+      setNavigationRef(mockRef);
+
+      navigateFromOutside('Focus', { mantraId: 123 });
+
+      expect(mockRef.navigate).toHaveBeenCalledWith('Focus', { mantraId: 123 });
+      consoleSpy.mockRestore();
+    });
+
+    it('navigateFromOutside logs warning when ref is not set', () => {
+      const { navigateFromOutside, consoleSpy, consoleWarnSpy } = loadModule('ios');
+
+      navigateFromOutside('Focus', { mantraId: 123 });
+
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        'Navigation ref not set, cannot navigate to:',
+        'Focus',
+      );
+      consoleSpy.mockRestore();
+      consoleWarnSpy.mockRestore();
     });
   });
 });
