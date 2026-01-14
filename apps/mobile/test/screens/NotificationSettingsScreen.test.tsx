@@ -308,7 +308,7 @@ describe('NotificationSettingsScreen', () => {
 
       jest.spyOn(Alert, 'prompt').mockImplementation((title, message, buttons) => {
         if (buttons && Array.isArray(buttons)) {
-          promptCallback = buttons[1]?.onPress;
+          promptCallback = buttons[1]?.onPress as ((text?: string) => void) | undefined;
         }
       });
 
@@ -348,7 +348,7 @@ describe('NotificationSettingsScreen', () => {
 
       jest.spyOn(Alert, 'prompt').mockImplementation((title, message, buttons) => {
         if (buttons && Array.isArray(buttons)) {
-          promptCallback = buttons[1]?.onPress;
+          promptCallback = buttons[1]?.onPress as ((text?: string) => void) | undefined;
         }
       });
 
@@ -411,7 +411,7 @@ describe('NotificationSettingsScreen', () => {
 
       jest.spyOn(Alert, 'prompt').mockImplementation((title, message, buttons) => {
         if (buttons && Array.isArray(buttons)) {
-          promptCallback = buttons[1]?.onPress;
+          promptCallback = buttons[1]?.onPress as ((text?: string) => void) | undefined;
         }
       });
 
