@@ -178,7 +178,7 @@ describe('ShareMantraScreen', () => {
     (chatService.getConversations as jest.Mock).mockResolvedValue(mockConversations);
     (chatService.sendMessage as jest.Mock).mockRejectedValue(new Error('Send failed'));
 
-    const alertSpy = jest.spyOn(Alert, 'alert');
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
     const { getByText, queryByText } = render(
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
@@ -194,6 +194,7 @@ describe('ShareMantraScreen', () => {
     fireEvent.press(getByText('john_doe'));
 
     await waitFor(() => {
+      expect(chatService.sendMessage).toHaveBeenCalled();
       expect(alertSpy).toHaveBeenCalledWith('Error', 'Failed to share the mantra');
     });
 
@@ -203,6 +204,8 @@ describe('ShareMantraScreen', () => {
   it('handles error when loading conversations fails', async () => {
     (chatService.getConversations as jest.Mock).mockRejectedValue(new Error('Network error'));
 
+    const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
     const { queryByText } = render(
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
     );
@@ -210,9 +213,12 @@ describe('ShareMantraScreen', () => {
     await waitFor(
       () => {
         expect(queryByText('Loading conversations...')).toBeNull();
+        expect(alertSpy).toHaveBeenCalledWith('Error', 'Failed to load conversations');
       },
       { timeout: 3000 },
     );
+
+    alertSpy.mockRestore();
   });
 
   it('shows empty state when no conversations', async () => {

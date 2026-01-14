@@ -59,3 +59,51 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
     multiRemove: jest.fn(() => Promise.resolve()),
   },
 }));
+
+// Mock storage utility (used by api.config and other modules)
+jest.mock(
+  './utils/storage',
+  () => ({
+    storage: {
+      saveToken: jest.fn(() => Promise.resolve()),
+      getToken: jest.fn(() => Promise.resolve(null)),
+      removeToken: jest.fn(() => Promise.resolve()),
+      saveUserData: jest.fn(() => Promise.resolve()),
+      getUserData: jest.fn(() => Promise.resolve(null)),
+      getUserId: jest.fn(() => Promise.resolve(null)),
+      removeUserData: jest.fn(() => Promise.resolve()),
+      clearAll: jest.fn(() => Promise.resolve()),
+    },
+  }),
+  { virtual: false },
+);
+
+// Mock expo-constants
+jest.mock(
+  'expo-constants',
+  () => ({
+    __esModule: true,
+    default: {
+      expoConfig: {
+        hostUri: null,
+      },
+    },
+  }),
+  { virtual: true },
+);
+
+// Mock expo-notifications
+jest.mock(
+  'expo-notifications',
+  () => ({
+    setNotificationHandler: jest.fn(),
+    addNotificationReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+    addNotificationResponseReceivedListener: jest.fn(() => ({ remove: jest.fn() })),
+    requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+    getPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+    scheduleNotificationAsync: jest.fn(() => Promise.resolve('notification-id')),
+    cancelScheduledNotificationAsync: jest.fn(() => Promise.resolve()),
+    cancelAllScheduledNotificationsAsync: jest.fn(() => Promise.resolve()),
+  }),
+  { virtual: true },
+);

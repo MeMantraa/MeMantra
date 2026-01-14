@@ -52,9 +52,22 @@ jest.mock('../../screens/ProfileScreen', () => {
   return () => React.createElement(Text, null, 'Profile Screen');
 });
 
+jest.mock('../../screens/chatScreen', () => {
+  const React = jest.requireActual('react');
+  const { Text } = jest.requireActual('react-native');
+  return () => React.createElement(Text, null, 'Chat Screen');
+});
+
 jest.mock('../../utils/storage', () => ({
   storage: {
     getUserData: jest.fn(),
+    getToken: jest.fn(() => Promise.resolve('mock-token')),
+    saveToken: jest.fn(() => Promise.resolve()),
+    removeToken: jest.fn(() => Promise.resolve()),
+    saveUserData: jest.fn(() => Promise.resolve()),
+    getUserId: jest.fn(() => Promise.resolve(null)),
+    removeUserData: jest.fn(() => Promise.resolve()),
+    clearAll: jest.fn(() => Promise.resolve()),
   },
 }));
 

@@ -4,6 +4,9 @@
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
+    "start:tunnel": "expo start --tunnel",
+    "dev": "expo start",
+    "dev:tunnel": "expo start --tunnel",
     "setup:android": "expo prebuild --clean && cd android && gradlew clean",
     "run:android": "expo run:android",
     "run:ios": "expo run:ios",
@@ -13,7 +16,6 @@
     "android:build": "expo run:android",
     "ios:build": "expo run:ios",
     "build": "expo export",
-    "dev": "expo start",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "jest --coverage"
