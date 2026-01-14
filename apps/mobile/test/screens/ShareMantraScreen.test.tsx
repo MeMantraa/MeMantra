@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, fireEvent, waitFor, waitForElementToBeRemoved } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import ShareMantraScreen from '../../screens/ShareMantraScreen';
 import { chatService } from '../../services/chat.service';
 import { storage } from '../../utils/storage';
