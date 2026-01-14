@@ -98,26 +98,32 @@ describe('ShareMantraScreen', () => {
   it('loads and displays conversations', async () => {
     (chatService.getConversations as jest.Mock).mockResolvedValue(mockConversations);
 
-    const { getByText } = render(
+    const { getByText, queryByText } = render(
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
     );
 
+    // Wait for loading to complete
     await waitFor(() => {
-      expect(getByText('john_doe')).toBeTruthy();
-      expect(getByText('jane_smith')).toBeTruthy();
+      expect(queryByText('Loading conversations...')).toBeNull();
     });
+
+    expect(getByText('john_doe')).toBeTruthy();
+    expect(getByText('jane_smith')).toBeTruthy();
   });
 
   it('displays instruction text', async () => {
     (chatService.getConversations as jest.Mock).mockResolvedValue(mockConversations);
 
-    const { getByText } = render(
+    const { getByText, queryByText } = render(
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
     );
 
+    // Wait for loading to complete
     await waitFor(() => {
-      expect(getByText('Select a conversation to share:')).toBeTruthy();
+      expect(queryByText('Loading conversations...')).toBeNull();
     });
+
+    expect(getByText('Select a conversation to share:')).toBeTruthy();
   });
 
   it('sends mantra to selected conversation and navigates', async () => {
@@ -135,13 +141,16 @@ describe('ShareMantraScreen', () => {
       read: false,
     });
 
-    const { getByText } = render(
+    const { getByText, queryByText } = render(
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
     );
 
+    // Wait for loading to complete
     await waitFor(() => {
-      expect(getByText('john_doe')).toBeTruthy();
+      expect(queryByText('Loading conversations...')).toBeNull();
     });
+
+    expect(getByText('john_doe')).toBeTruthy();
 
     fireEvent.press(getByText('john_doe'));
 
@@ -171,16 +180,18 @@ describe('ShareMantraScreen', () => {
 
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
-    const { getByText } = render(
+    const { getByText, queryByText } = render(
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
     );
 
+    // Wait for loading to complete
     await waitFor(() => {
-      expect(getByText('john_doe')).toBeTruthy();
+      expect(queryByText('Loading conversations...')).toBeNull();
     });
 
-    const conversationButton = getByText('john_doe');
-    fireEvent.press(conversationButton);
+    expect(getByText('john_doe')).toBeTruthy();
+
+    fireEvent.press(getByText('john_doe'));
 
     await waitFor(() => {
       expect(chatService.sendMessage).toHaveBeenCalled();
@@ -213,26 +224,32 @@ describe('ShareMantraScreen', () => {
   it('shows empty state when no conversations', async () => {
     (chatService.getConversations as jest.Mock).mockResolvedValue([]);
 
-    const { getByText } = render(
+    const { getByText, queryByText } = render(
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
     );
 
+    // Wait for loading to complete
     await waitFor(() => {
-      expect(getByText(/No conversations yet/)).toBeTruthy();
+      expect(queryByText('Loading conversations...')).toBeNull();
     });
+
+    expect(getByText(/No conversations yet/)).toBeTruthy();
   });
 
   it('creates correct mantra share payload', async () => {
     (chatService.getConversations as jest.Mock).mockResolvedValue(mockConversations);
     (chatService.sendMessage as jest.Mock).mockResolvedValue({});
 
-    const { getByText } = render(
+    const { getByText, queryByText } = render(
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
     );
 
+    // Wait for loading to complete
     await waitFor(() => {
-      expect(getByText('jane_smith')).toBeTruthy();
+      expect(queryByText('Loading conversations...')).toBeNull();
     });
+
+    expect(getByText('jane_smith')).toBeTruthy();
 
     fireEvent.press(getByText('jane_smith'));
 

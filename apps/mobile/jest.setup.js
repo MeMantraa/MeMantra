@@ -1,5 +1,28 @@
 require('@testing-library/jest-native/extend-expect');
 
+// Set React act environment
+global.IS_REACT_ACT_ENVIRONMENT = true;
+
+// Suppress act warnings in console during tests
+// These warnings are expected when testing components with async effects
+const originalError = console.error;
+beforeAll(() => {
+  console.error = (...args) => {
+    if (
+      typeof args[0] === 'string' &&
+      args[0].includes('Warning: An update to') &&
+      args[0].includes('inside a test was not wrapped in act')
+    ) {
+      return;
+    }
+    originalError.call(console, ...args);
+  };
+});
+
+afterAll(() => {
+  console.error = originalError;
+});
+
 // Mock expo-splash-screen
 jest.mock(
   'expo-splash-screen',
