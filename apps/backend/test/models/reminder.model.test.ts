@@ -33,6 +33,7 @@ describe('ReminderModel', () => {
         time: '2024-12-01T09:00:00Z',
         frequency: 'daily',
         status: 'active',
+        last_sent_at: null,
       };
 
       const mockChain = {
@@ -60,6 +61,7 @@ describe('ReminderModel', () => {
         time: '2024-12-01T09:00:00Z',
         frequency: 'daily',
         status: 'active',
+        last_sent_at: null,
       };
 
       const mockChain = {
@@ -102,6 +104,7 @@ describe('ReminderModel', () => {
           time: '2024-12-01T09:00:00Z',
           frequency: 'daily',
           status: 'active',
+          last_sent_at: null,
         },
         {
           reminder_id: 2,
@@ -110,6 +113,7 @@ describe('ReminderModel', () => {
           time: '2024-12-01T18:00:00Z',
           frequency: 'weekly',
           status: 'active',
+          last_sent_at: null,
         },
       ];
 
@@ -141,6 +145,7 @@ describe('ReminderModel', () => {
           time: '2024-12-01T09:00:00Z',
           frequency: 'daily',
           status: 'active',
+          last_sent_at: null,
         },
       ];
 
@@ -171,6 +176,7 @@ describe('ReminderModel', () => {
           time: '2024-12-01T09:00:00Z',
           frequency: 'daily',
           status: 'active',
+          last_sent_at: null,
         },
       ];
 
@@ -205,6 +211,7 @@ describe('ReminderModel', () => {
         time: '2024-12-01T10:00:00Z',
         frequency: 'weekly',
         status: 'active',
+        last_sent_at: null,
       };
 
       const mockChain = {
@@ -234,6 +241,7 @@ describe('ReminderModel', () => {
         time: '2024-12-01T09:00:00Z',
         frequency: 'daily',
         status: 'paused',
+        last_sent_at: null,
       };
 
       const mockChain = {
@@ -341,6 +349,7 @@ describe('ReminderModel', () => {
           time: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
           frequency: 'daily',
           status: 'active',
+          last_sent_at: null,
         },
       ];
 
@@ -373,6 +382,7 @@ describe('ReminderModel', () => {
           time: '2024-12-01T09:00:00Z',
           frequency: 'daily',
           status: 'active',
+          last_sent_at: null,
         },
       ];
 
