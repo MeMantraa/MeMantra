@@ -80,7 +80,8 @@ CREATE TABLE "Reminder" (
   "mantra_id" int,
   "time" timestamp,
   "frequency" varchar,
-  "status" varchar
+  "status" varchar,
+  "last_sent_at" timestamp
 );
 
 CREATE TABLE "RecommendationLog" (

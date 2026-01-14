@@ -97,6 +97,7 @@ export interface ReminderTable {
   time: string | null;
   frequency: string | null;
   status: string | null;
+  last_sent_at: string | null;
 }
 
 export interface RecommendationLogTable {
