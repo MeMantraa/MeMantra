@@ -1,4 +1,5 @@
-import { storage } from '../../utils/storage';
+// Unmock storage module for this test since we want to test the real implementation
+jest.unmock('../../utils/storage');
 
 const mockSetItem = jest.fn();
 const mockGetItem = jest.fn();
@@ -11,6 +12,8 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   removeItem: (...args: unknown[]) => mockRemoveItem(...args),
   multiRemove: (...args: unknown[]) => mockMultiRemove(...args),
 }));
+
+import { storage } from '../../utils/storage';
 
 describe('storage utility', () => {
   beforeEach(() => {

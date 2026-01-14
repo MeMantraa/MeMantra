@@ -3,7 +3,18 @@ import { Platform } from 'react-native';
 import { storage } from '../utils/storage';
 import Constants from 'expo-constants';
 
+// Try to import local config (gitignored) - copy api.config.local.example.ts to api.config.local.ts
 let LOCAL_DEV_IP: string | null = null;
+// eslint-disable-next-line no-undef
+if (process.env.NODE_ENV !== 'test') {
+  try {
+    // eslint-disable-next-line no-undef
+    const localConfig = require('./api.config.local');
+    LOCAL_DEV_IP = localConfig.LOCAL_DEV_IP;
+  } catch {
+    // No local config file - that's fine, will auto-detect from Expo
+  }
+}
 
 // Auto-detect local IP address from Expo's debugger host
 const getLocalIpAddress = (): string | null => {
