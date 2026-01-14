@@ -24,7 +24,7 @@ const getLocalIpAddress = (): string | null => {
   // If using Expo tunnel (exp.direct domain), we can't auto-detect the local IP
   // because the backend isn't tunneled - it only runs locally
   // In this case, you MUST set LOCAL_DEV_IP in api.config.local.ts
-  if (debuggerHost && debuggerHost.includes('exp.direct')) {
+  if (debuggerHost?.includes('exp.direct')) {
     console.warn('⚠️  Expo tunnel detected. Backend requires local IP in api.config.local.ts');
     return null;
   }
@@ -59,7 +59,7 @@ const getBaseUrl = () => {
     // Android emulator uses 10.0.2.2 to access host machine
     // For real device with tunnel, set DEV_IP above
     const host = DEV_IP || '10.0.2.2';
-    return __DEV__ ? `http://${host}:${PORT}/api` : `http://${host}:${PORT}/api`;
+    return `http://${host}:${PORT}/api`;
   }
 
   //if ios
@@ -67,7 +67,7 @@ const getBaseUrl = () => {
     // iOS simulator uses localhost
     // For physical device or tunnel, set DEV_IP above
     const host = DEV_IP || 'localhost';
-    return __DEV__ ? `http://${host}:${PORT}/api` : `http://${host}:${PORT}/api`;
+    return `http://${host}:${PORT}/api`;
   }
 };
 

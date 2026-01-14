@@ -145,16 +145,18 @@ export default function NotificationSettingsScreen() {
         {
           text: 'Reset',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              await notificationSettingsService.resetSettings();
-              const defaultSettings = notificationSettingsService.getDefaultSettings();
-              setSettings(defaultSettings);
-              Alert.alert('Success', 'Settings reset to defaults');
-            } catch (error) {
-              console.error('Error resetting settings:', error);
-              Alert.alert('Error', 'Failed to reset settings');
-            }
+          onPress: () => {
+            (async () => {
+              try {
+                await notificationSettingsService.resetSettings();
+                const defaultSettings = notificationSettingsService.getDefaultSettings();
+                setSettings(defaultSettings);
+                Alert.alert('Success', 'Settings reset to defaults');
+              } catch (error) {
+                console.error('Error resetting settings:', error);
+                Alert.alert('Error', 'Failed to reset settings');
+              }
+            })();
           },
         },
       ],
@@ -178,7 +180,7 @@ export default function NotificationSettingsScreen() {
             text: 'OK',
             onPress: (text?: string) => {
               if (text && /^([01]\d|2[0-3]):([0-5]\d)$/.test(text)) {
-                handleTimeChange(field, text);
+                void handleTimeChange(field, text);
               } else {
                 Alert.alert('Invalid Format', 'Please enter time in HH:MM format (e.g., 22:00)');
               }
