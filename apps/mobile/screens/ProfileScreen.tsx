@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../src/naviagation/types';
@@ -68,10 +68,15 @@ export default function ProfileScreen() {
   const handleLogout = () => logoutUser(navigation);
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.name}>{username}</Text>
+    <View className="flex-1 bg-[#A8B3A2] pt-[70px] px-5">
+      <Text
+        className="text-[34px] font-bold text-white mb-10 text-center"
+        style={{ fontFamily: 'Red_Hat_Text-Bold' }}
+      >
+        {username}
+      </Text>
 
-      <View style={styles.optionsContainer}>
+      <View className="mt-5 gap-5">
         <ProfileOption label="Update Email" onPress={() => navigation.navigate('UpdateEmail')} />
         <ProfileOption
           label="Update Password"
@@ -94,43 +99,13 @@ function ProfileOption({
   destructive?: boolean;
 }) {
   return (
-    <TouchableOpacity style={styles.option} onPress={onPress}>
-      <Text style={[styles.optionText, destructive && styles.destructiveText]}>{label}</Text>
+    <TouchableOpacity className="bg-white py-[18px] px-5 rounded-xl" onPress={onPress}>
+      <Text
+        className={`text-[18px] ${destructive ? 'text-[#b30000]' : 'text-[#333]'}`}
+        style={{ fontFamily: 'Red_Hat_Text-SemiBold' }}
+      >
+        {label}
+      </Text>
     </TouchableOpacity>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#A8B3A2',
-    paddingTop: 70,
-    paddingHorizontal: 20,
-  },
-  name: {
-    fontSize: 34,
-    fontWeight: '700',
-    fontFamily: 'Red_Hat_Text-Bold',
-    color: 'white',
-    marginBottom: 40,
-    textAlign: 'center',
-  },
-  optionsContainer: {
-    marginTop: 20,
-    gap: 20,
-  },
-  option: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-  },
-  optionText: {
-    fontSize: 18,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: '#333',
-  },
-  destructiveText: {
-    color: '#b30000',
-  },
-});
