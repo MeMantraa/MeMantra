@@ -52,6 +52,11 @@ const redactSensitiveData = (data: any): any => {
   if (typeof data === 'object') {
     const redacted: any = {};
     for (const [key, value] of Object.entries(data)) {
+      
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+        continue;
+      }
+
       if (shouldRedactKey(key)) {
         redacted[key] = '[REDACTED]';
       } else if (value !== null && typeof value === 'object') {
