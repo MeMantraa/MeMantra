@@ -50,7 +50,7 @@ const redactSensitiveData = (data: any): any => {
   }
 
   if (typeof data === 'object') {
-    const redacted: any = {};
+    const redacted: any = Object.create(null);
     for (const [key, value] of Object.entries(data)) {
       
       if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
@@ -58,11 +58,26 @@ const redactSensitiveData = (data: any): any => {
       }
 
       if (shouldRedactKey(key)) {
-        redacted[key] = '[REDACTED]';
+        Object.defineProperty(redacted, key, {
+          value: '[REDACTED]',
+          enumerable: true,
+          configurable: true,
+          writable: true
+        });
       } else if (value !== null && typeof value === 'object') {
-        redacted[key] = redactSensitiveData(value);
+        Object.defineProperty(redacted, key, {
+          value: redactSensitiveData(value),
+          enumerable: true,
+          configurable: true,
+          writable: true
+        });
       } else {
-        redacted[key] = value;
+        Object.defineProperty(redacted, key, {
+          value: value,
+          enumerable: true,
+          configurable: true,
+          writable: true
+        });
       }
     }
     return redacted;
