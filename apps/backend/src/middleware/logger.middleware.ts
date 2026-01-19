@@ -21,18 +21,22 @@ const keyCache = new Map<string, boolean>();
 
 const shouldRedactKey = (key: string): boolean => {
   const lowerKey = key.toLowerCase();
-  
-  
+
   if (keyCache.has(lowerKey)) {
     return keyCache.get(lowerKey)!;
   }
-  
-  const shouldRedact = Array.from(SENSITIVE_FIELDS).some(field => lowerKey.includes(field));
-  
+
+  let shouldRedact = false;
+  for (const field of SENSITIVE_FIELDS) {
+    if (lowerKey.includes(field)) {
+      shouldRedact = true;
+      break;
+    }
+  }
+
   if (keyCache.size < 1000) {
     keyCache.set(lowerKey, shouldRedact);
   }
-  
   return shouldRedact;
 };
 
