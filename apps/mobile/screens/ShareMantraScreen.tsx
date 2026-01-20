@@ -27,7 +27,8 @@ export default function ShareMantraScreen({ route, navigation }: any) {
       const data = await chatService.getConversations(token || 'mock-token');
       setConversations(data);
     } catch (err) {
-      console.error(err);
+      console.error('Failed: loadConversations:', err);
+      Alert.alert('Error', 'Failed to load conversations');
     } finally {
       setLoading(false);
     }

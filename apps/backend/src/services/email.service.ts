@@ -12,7 +12,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // Verify transporter configuration
-if (process.env.NODE_ENV !== 'test') {
+if (process.env.NODE_ENV !== 'test' && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
   transporter.verify((error) => {
     if (error) {
       console.error('Email service configuration error:', error);
@@ -20,6 +20,8 @@ if (process.env.NODE_ENV !== 'test') {
       console.log('Email service is ready to send messages');
     }
   });
+} else if (process.env.NODE_ENV !== 'test') {
+  console.warn('Email credentials not configured. Password reset emails will not be sent.');
 }
 
 // Generate a random 6-digit code 
