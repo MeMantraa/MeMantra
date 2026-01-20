@@ -26,11 +26,15 @@ describe('Logging and Error Middleware', () => {
     await request(app).get('/test/path\n\rwithnewline');
 
     const calls = consoleLogSpy.mock.calls.flat();
-    expect(
-      calls.some(call => typeof call === 'string' && call.includes('GET /test/pathwithnewline'))
-    ).toBe(true);
-
     consoleLogSpy.mockRestore();
+    
+    expect(
+      calls.some(call => typeof call === 'string' && call.includes('Method: GET'))
+    ).toBe(true);
+    
+    expect(
+      calls.some(call => typeof call === 'string' && call.includes('Path: /test/pathwithnewline'))
+    ).toBe(true);
   });
 
 });
