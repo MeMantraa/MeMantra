@@ -375,10 +375,10 @@ describe('mantraService (mock implementation)', () => {
       const savedMantras = await mantraService.getSavedMantras('token');
 
       expect(savedMantras.length).toBe(2);
-      expect(savedMantras.every((m) => m.isSaved === true)).toBe(true);
-      expect(savedMantras.find((m) => m.mantra_id === 1)).toBeDefined();
-      expect(savedMantras.find((m) => m.mantra_id === 3)).toBeDefined();
-      expect(savedMantras.find((m) => m.mantra_id === 2)).toBeUndefined();
+      expect(savedMantras.every((m: Mantra) => m.isSaved === true)).toBe(true);
+      expect(savedMantras.find((m: Mantra) => m.mantra_id === 1)).toBeDefined();
+      expect(savedMantras.find((m: Mantra) => m.mantra_id === 3)).toBeDefined();
+      expect(savedMantras.find((m: Mantra) => m.mantra_id === 2)).toBeUndefined();
     });
 
     it('returns saved mantras with correct isLiked state', async () => {
@@ -389,7 +389,7 @@ describe('mantraService (mock implementation)', () => {
       const savedMantras = await mantraService.getSavedMantras('token');
 
       expect(savedMantras.length).toBe(1);
-      const mantra2 = savedMantras.find((m) => m.mantra_id === 2);
+      const mantra2 = savedMantras.find((m: Mantra) => m.mantra_id === 2);
       expect(mantra2?.isSaved).toBe(true);
       expect(mantra2?.isLiked).toBe(true);
     });
