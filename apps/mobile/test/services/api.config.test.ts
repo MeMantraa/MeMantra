@@ -200,6 +200,125 @@ describe('api.config', () => {
       );
       consoleSpy.mockRestore();
     });
+
+    it('configures base URL for web platform', () => {
+      const { mockCreate, consoleSpy } = loadModule('web', null);
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ baseURL: 'http://localhost:4000/api' }),
+      );
+      consoleSpy.mockRestore();
+    });
+
+    it('uses detected IP for web platform when hostUri is provided', () => {
+      const { mockCreate, consoleSpy } = loadModule('web', '192.168.1.50:8081');
+      expect(mockCreate).toHaveBeenCalledWith(
+        expect.objectContaining({ baseURL: 'http://192.168.1.50:4000/api' }),
+      );
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('Request Interceptor - Token Attachment', () => {
+    it('attaches Authorization header when token exists', async () => {
+      const { requestHandlers, consoleSpy, mockStorage } = loadModule('ios');
+      mockStorage.getToken.mockResolvedValueOnce('valid-jwt-token');
+
+      const handler = requestHandlers[0];
+      const config = { url: '/mantras', headers: {} };
+
+      const result = await handler.fulfilled(config);
+
+      expect(mockStorage.getToken).toHaveBeenCalled();
+      expect(result.headers.Authorization).toBe('Bearer valid-jwt-token');
+      consoleSpy.mockRestore();
+    });
+
+    it('does not attach Authorization header when no token', async () => {
+      const { requestHandlers, consoleSpy, mockStorage } = loadModule('ios');
+      mockStorage.getToken.mockResolvedValueOnce(null);
+
+      const handler = requestHandlers[0];
+      const config = { url: '/mantras', headers: {} };
+
+      const result = await handler.fulfilled(config);
+
+      expect(mockStorage.getToken).toHaveBeenCalled();
+      expect(result.headers.Authorization).toBeUndefined();
+      consoleSpy.mockRestore();
+    });
+
+    it('creates headers object if not present', async () => {
+      const { requestHandlers, consoleSpy, mockStorage } = loadModule('ios');
+      mockStorage.getToken.mockResolvedValueOnce('token-123');
+
+      const handler = requestHandlers[0];
+      const config = { url: '/mantras' }; // No headers property
+
+      const result = await handler.fulfilled(config);
+
+      expect(result.headers).toBeDefined();
+      expect(result.headers.Authorization).toBe('Bearer token-123');
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('Response Interceptor - Error Handling', () => {
+    it('handles 401 error without navigation ref', async () => {
+      const { responseHandlers, consoleSpy, mockStorage } = loadModule('ios');
+      const handler = responseHandlers[0];
+
+      const error = { response: { status: 401 } };
+      await expect(handler.rejected(error)).rejects.toThrow();
+
+      expect(mockStorage.clearAll).toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it('handles storage clearAll failure gracefully', async () => {
+      const { responseHandlers, consoleSpy, mockStorage } = loadModule('ios');
+      const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+      mockStorage.clearAll.mockRejectedValueOnce(new Error('Storage error'));
+
+      const handler = responseHandlers[0];
+      const error = { response: { status: 401 } };
+
+      await expect(handler.rejected(error)).rejects.toThrow();
+
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to clear storage:', expect.any(Error));
+      consoleSpy.mockRestore();
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('handles non-401 errors without clearing storage', async () => {
+      const { responseHandlers, consoleSpy, mockStorage } = loadModule('ios');
+      const handler = responseHandlers[0];
+
+      const error = { response: { status: 500 } };
+      await expect(handler.rejected(error)).rejects.toThrow();
+
+      expect(mockStorage.clearAll).not.toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
+
+    it('wraps Error objects correctly', async () => {
+      const { responseHandlers, consoleSpy } = loadModule('ios');
+      const handler = responseHandlers[0];
+
+      const error = new Error('Network Error');
+      await expect(handler.rejected(error)).rejects.toThrow('Network Error');
+      consoleSpy.mockRestore();
+    });
+
+    it('handles errors without response property', async () => {
+      const { responseHandlers, consoleSpy, mockStorage } = loadModule('ios');
+      const handler = responseHandlers[0];
+
+      const error = { message: 'Network timeout' };
+      await expect(handler.rejected(error)).rejects.toThrow();
+
+      expect(mockStorage.clearAll).not.toHaveBeenCalled();
+      consoleSpy.mockRestore();
+    });
   });
 
   describe('Navigation Helpers', () => {

@@ -1,88 +1,194 @@
-// Unmock storage module for this test since we want to test the real implementation
+/* global require */
+
+// Unmock storage so we can test the actual implementation
 jest.unmock('../../utils/storage');
 
-// AsyncStorage mocks (for user data)
-const mockAsyncSetItem = jest.fn();
-const mockAsyncGetItem = jest.fn();
-const mockAsyncRemoveItem = jest.fn();
-
-jest.mock('@react-native-async-storage/async-storage', () => ({
-  setItem: (...args: unknown[]) => mockAsyncSetItem(...args),
-  getItem: (...args: unknown[]) => mockAsyncGetItem(...args),
-  removeItem: (...args: unknown[]) => mockAsyncRemoveItem(...args),
-}));
-
-// SecureStore mocks (for auth token)
-const mockSecureSetItem = jest.fn();
-const mockSecureGetItem = jest.fn();
-const mockSecureDeleteItem = jest.fn();
-
-jest.mock('expo-secure-store', () => ({
-  setItemAsync: (...args: unknown[]) => mockSecureSetItem(...args),
-  getItemAsync: (...args: unknown[]) => mockSecureGetItem(...args),
-  deleteItemAsync: (...args: unknown[]) => mockSecureDeleteItem(...args),
-}));
-
-// Mock Platform to return 'ios' so SecureStore is used
-jest.mock('react-native', () => ({
-  Platform: {
-    OS: 'ios',
-  },
-}));
-
-import { storage } from '../../utils/storage';
-
 describe('storage utility', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+  // Shared mock references that get set in loadStorageModule
+  let mockAsyncStorage: {
+    setItem: jest.Mock;
+    getItem: jest.Mock;
+    removeItem: jest.Mock;
+  };
+  let mockSecureStore: {
+    setItemAsync: jest.Mock;
+    getItemAsync: jest.Mock;
+    deleteItemAsync: jest.Mock;
+  };
+
+  const loadStorageModule = (platformOS: string) => {
+    jest.resetModules();
+
+    // Create fresh mocks
+    mockAsyncStorage = {
+      setItem: jest.fn().mockResolvedValue(undefined),
+      getItem: jest.fn().mockResolvedValue(null),
+      removeItem: jest.fn().mockResolvedValue(undefined),
+    };
+
+    mockSecureStore = {
+      setItemAsync: jest.fn().mockResolvedValue(undefined),
+      getItemAsync: jest.fn().mockResolvedValue(null),
+      deleteItemAsync: jest.fn().mockResolvedValue(undefined),
+    };
+
+    // Setup mocks before requiring the module
+    jest.doMock('@react-native-async-storage/async-storage', () => ({
+      __esModule: true,
+      default: mockAsyncStorage,
+    }));
+
+    jest.doMock('expo-secure-store', () => mockSecureStore);
+
+    jest.doMock('react-native', () => ({
+      Platform: { OS: platformOS },
+    }));
+
+    // Now require the module with mocks in place
+
+    return require('../../utils/storage').storage;
+  };
+
+  describe('native platforms (iOS/Android)', () => {
+    it('saves token using SecureStore', async () => {
+      const storage = loadStorageModule('ios');
+
+      await storage.saveToken('jwt-value');
+
+      expect(mockSecureStore.setItemAsync).toHaveBeenCalledWith('auth_token', 'jwt-value');
+    });
+
+    it('retrieves token using SecureStore', async () => {
+      const storage = loadStorageModule('ios');
+      mockSecureStore.getItemAsync.mockResolvedValueOnce('jwt-value');
+
+      const token = await storage.getToken();
+
+      expect(mockSecureStore.getItemAsync).toHaveBeenCalledWith('auth_token');
+      expect(token).toBe('jwt-value');
+    });
+
+    it('removes token using SecureStore', async () => {
+      const storage = loadStorageModule('android');
+
+      await storage.removeToken();
+
+      expect(mockSecureStore.deleteItemAsync).toHaveBeenCalledWith('auth_token');
+    });
+
+    it('stores user data using AsyncStorage', async () => {
+      const storage = loadStorageModule('ios');
+      const user = { id: 1, name: 'Tester' };
+
+      await storage.saveUserData(user);
+
+      expect(mockAsyncStorage.setItem).toHaveBeenCalledWith('@user_data', JSON.stringify(user));
+    });
+
+    it('retrieves and parses user data', async () => {
+      const storage = loadStorageModule('ios');
+      const user = { id: 1, name: 'Tester' };
+      mockAsyncStorage.getItem.mockResolvedValueOnce(JSON.stringify(user));
+
+      const result = await storage.getUserData();
+
+      expect(mockAsyncStorage.getItem).toHaveBeenCalledWith('@user_data');
+      expect(result).toEqual(user);
+    });
+
+    it('returns null when no user data exists', async () => {
+      const storage = loadStorageModule('ios');
+      mockAsyncStorage.getItem.mockResolvedValueOnce(null);
+
+      const result = await storage.getUserData();
+
+      expect(result).toBeNull();
+    });
+
+    it('removes user data', async () => {
+      const storage = loadStorageModule('ios');
+
+      await storage.removeUserData();
+
+      expect(mockAsyncStorage.removeItem).toHaveBeenCalledWith('@user_data');
+    });
+
+    it('clears all stored values', async () => {
+      const storage = loadStorageModule('ios');
+
+      await storage.clearAll();
+
+      expect(mockSecureStore.deleteItemAsync).toHaveBeenCalledWith('auth_token');
+      expect(mockAsyncStorage.removeItem).toHaveBeenCalledWith('@user_data');
+    });
+
+    it('returns user_id from stored user data', async () => {
+      const storage = loadStorageModule('ios');
+      mockAsyncStorage.getItem.mockResolvedValueOnce(JSON.stringify({ user_id: 42, name: 'Test' }));
+
+      const userId = await storage.getUserId();
+
+      expect(userId).toBe(42);
+    });
+
+    it('returns null for getUserId when no user data', async () => {
+      const storage = loadStorageModule('ios');
+      mockAsyncStorage.getItem.mockResolvedValueOnce(null);
+
+      const userId = await storage.getUserId();
+
+      expect(userId).toBeNull();
+    });
+
+    it('returns null for getUserId when user_id missing', async () => {
+      const storage = loadStorageModule('ios');
+      mockAsyncStorage.getItem.mockResolvedValueOnce(JSON.stringify({ name: 'Test' }));
+
+      const userId = await storage.getUserId();
+
+      expect(userId).toBeNull();
+    });
   });
 
-  it('saves and retrieves a token using SecureStore', async () => {
-    mockSecureGetItem.mockResolvedValueOnce('jwt-value');
+  describe('web platform fallback', () => {
+    it('saves token using AsyncStorage with warning', async () => {
+      const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
+      const storage = loadStorageModule('web');
 
-    await storage.saveToken('jwt-value');
-    const token = await storage.getToken();
+      await storage.saveToken('web-token');
 
-    expect(mockSecureSetItem).toHaveBeenCalledWith('auth_token', 'jwt-value');
-    expect(mockSecureGetItem).toHaveBeenCalledWith('auth_token');
-    expect(token).toBe('jwt-value');
-  });
+      expect(consoleWarnSpy).toHaveBeenCalledWith(
+        'SecureStore not available on web, using AsyncStorage',
+      );
+      expect(mockAsyncStorage.setItem).toHaveBeenCalledWith('@auth_token', 'web-token');
+      consoleWarnSpy.mockRestore();
+    });
 
-  it('removes the auth token using SecureStore', async () => {
-    await storage.removeToken();
-    expect(mockSecureDeleteItem).toHaveBeenCalledWith('auth_token');
-  });
+    it('retrieves token using AsyncStorage', async () => {
+      const storage = loadStorageModule('web');
+      mockAsyncStorage.getItem.mockResolvedValueOnce('web-token');
 
-  it('stores and parses user data', async () => {
-    const user = { id: 1, name: 'Tester' };
-    mockAsyncGetItem.mockResolvedValueOnce(JSON.stringify(user));
+      const token = await storage.getToken();
 
-    await storage.saveUserData(user);
-    const result = await storage.getUserData();
+      expect(mockAsyncStorage.getItem).toHaveBeenCalledWith('@auth_token');
+      expect(token).toBe('web-token');
+    });
 
-    expect(mockAsyncSetItem).toHaveBeenCalledWith('@user_data', JSON.stringify(user));
-    expect(mockAsyncGetItem).toHaveBeenCalledWith('@user_data');
-    expect(result).toEqual(user);
-  });
+    it('removes token using AsyncStorage', async () => {
+      const storage = loadStorageModule('web');
 
-  it('removes user data', async () => {
-    await storage.removeUserData();
-    expect(mockAsyncRemoveItem).toHaveBeenCalledWith('@user_data');
-  });
+      await storage.removeToken();
 
-  it('clears all stored values', async () => {
-    await storage.clearAll();
-    // clearAll removes token via SecureStore and user data via AsyncStorage
-    expect(mockSecureDeleteItem).toHaveBeenCalledWith('auth_token');
-    expect(mockAsyncRemoveItem).toHaveBeenCalledWith('@user_data');
-  });
+      expect(mockAsyncStorage.removeItem).toHaveBeenCalledWith('@auth_token');
+    });
 
-  it('returns null if no user data is stored', async () => {
-    mockAsyncGetItem.mockResolvedValueOnce(null);
+    it('clearAll uses AsyncStorage for token', async () => {
+      const storage = loadStorageModule('web');
 
-    const result = await storage.getUserData();
+      await storage.clearAll();
 
-    expect(mockAsyncGetItem).toHaveBeenCalledWith('@user_data');
-    expect(result).toBeNull();
+      expect(mockAsyncStorage.removeItem).toHaveBeenCalledWith('@auth_token');
+      expect(mockAsyncStorage.removeItem).toHaveBeenCalledWith('@user_data');
+    });
   });
 });
