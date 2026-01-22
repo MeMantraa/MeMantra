@@ -23,6 +23,18 @@ jest.mock('../../utils/storage');
 jest.mock('../../services/auth.service');
 jest.mock('../../utils/auth');
 
+jest.mock('../../context/ThemeContext', () => ({
+  useTheme: () => ({
+    colors: {
+      white: '#ffffff',
+      black: '#000000',
+      primary: '#9AA793',
+      primaryDark: '#6D7E68',
+      settings: '#D9D9D9',
+    },
+  }),
+}));
+
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     goBack: jest.fn(),
@@ -31,24 +43,19 @@ jest.mock('@react-navigation/native', () => ({
 
 jest.mock('../../components/UI/textWrapper', () => {
   const { Text } = jest.requireActual('react-native');
-
   return ({ children, ...props }: any) => <Text {...props}>{children}</Text>;
 });
 
 jest.mock('../../components/UI/textInputWrapper', () => {
   const { TextInput } = jest.requireActual('react-native');
-
   return (props: any) => <TextInput {...props} />;
 });
 
 describe('UpdateEmailScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-
     (storage.getUserData as jest.Mock).mockResolvedValue({ email: 'test@memantra.com' });
-
     (storage.getToken as jest.Mock).mockResolvedValue('mock-token');
   });
 
@@ -61,11 +68,8 @@ describe('UpdateEmailScreen', () => {
 
     await waitFor(() => {
       expect(getByText('Update Email')).toBeTruthy();
-
-      expect(getByText('← Back')).toBeTruthy();
-
+      expect(getByText('Back')).toBeTruthy();
       expect(getByText('Save Email')).toBeTruthy();
-
       expect(getByPlaceholderText('Enter new email')).toBeTruthy();
     });
   });
@@ -75,7 +79,6 @@ describe('UpdateEmailScreen', () => {
 
     await waitFor(() => {
       const input = getByPlaceholderText('Enter new email');
-
       expect(input.props.value).toBe('test@memantra.com');
     });
 
@@ -89,7 +92,6 @@ describe('UpdateEmailScreen', () => {
 
     await waitFor(() => {
       const input = getByPlaceholderText('Enter new email');
-
       expect(input.props.value).toBe('');
     });
   });
@@ -98,13 +100,11 @@ describe('UpdateEmailScreen', () => {
     const { getByText } = render(<UpdateEmailScreen />);
 
     await waitFor(() => {
-      expect(getByText('← Back')).toBeTruthy();
+      expect(getByText('Back')).toBeTruthy();
     });
 
-    const backButton = getByText('← Back');
-
+    const backButton = getByText('Back');
     fireEvent.press(backButton);
-
     expect(backButton).toBeTruthy();
   });
 
@@ -113,14 +113,11 @@ describe('UpdateEmailScreen', () => {
 
     await waitFor(() => {
       const input = getByPlaceholderText('Enter new email');
-
       expect(input).toBeTruthy();
     });
 
     const input = getByPlaceholderText('Enter new email');
-
     fireEvent.changeText(input, 'newemail@memantra.com');
-
     expect(input.props.value).toBe('newemail@memantra.com');
   });
 
@@ -131,25 +128,20 @@ describe('UpdateEmailScreen', () => {
 
     await waitFor(() => {
       const input = getByPlaceholderText('Enter new email');
-
       expect(input).toBeTruthy();
     });
 
     const input = getByPlaceholderText('Enter new email');
-
     fireEvent.changeText(input, 'newemail@memantra.com');
 
     const saveButton = getByText('Save Email');
-
     fireEvent.press(saveButton);
 
     await waitFor(() => {
       expect(authService.updateEmail).toHaveBeenCalledWith('newemail@memantra.com', 'mock-token');
-
       expect(Alert.alert).toHaveBeenCalledWith(
         'Email Updated',
         'Your email has been changed. You will be logged out for security reasons.',
-
         expect.any(Array),
       );
     });
@@ -165,7 +157,6 @@ describe('UpdateEmailScreen', () => {
     });
 
     const saveButton = getByText('Save Email');
-
     fireEvent.press(saveButton);
 
     await waitFor(() => {
@@ -176,7 +167,6 @@ describe('UpdateEmailScreen', () => {
 
   it('handles update email error gracefully', async () => {
     const errorMessage = 'Email already exists';
-
     (authService.updateEmail as jest.Mock).mockRejectedValue({
       message: errorMessage,
     });
@@ -185,21 +175,17 @@ describe('UpdateEmailScreen', () => {
 
     await waitFor(() => {
       const input = getByPlaceholderText('Enter new email');
-
       expect(input).toBeTruthy();
     });
 
     const input = getByPlaceholderText('Enter new email');
-
     fireEvent.changeText(input, 'existing@memantra.com');
 
     const saveButton = getByText('Save Email');
-
     fireEvent.press(saveButton);
 
     await waitFor(() => {
       expect(authService.updateEmail).toHaveBeenCalledWith('existing@memantra.com', 'mock-token');
-
       expect(Alert.alert).toHaveBeenCalledWith('Error', errorMessage);
     });
   });
@@ -211,21 +197,17 @@ describe('UpdateEmailScreen', () => {
 
     await waitFor(() => {
       const input = getByPlaceholderText('Enter new email');
-
       expect(input).toBeTruthy();
     });
 
     const input = getByPlaceholderText('Enter new email');
-
     fireEvent.changeText(input, 'test@memantra.com');
 
     const saveButton = getByText('Save Email');
-
     fireEvent.press(saveButton);
 
     await waitFor(() => {
       expect(authService.updateEmail).toHaveBeenCalledWith('test@memantra.com', 'mock-token');
-
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to update email.');
     });
   });
@@ -234,7 +216,6 @@ describe('UpdateEmailScreen', () => {
     (authService.updateEmail as jest.Mock).mockResolvedValue({ success: true });
 
     let alertCallback: any;
-
     (Alert.alert as jest.Mock).mockImplementation((title, message, buttons) => {
       if (buttons && buttons[0]) {
         alertCallback = buttons[0].onPress;
@@ -248,7 +229,6 @@ describe('UpdateEmailScreen', () => {
     });
 
     const saveButton = getByText('Save Email');
-
     fireEvent.press(saveButton);
 
     await waitFor(() => {
@@ -257,7 +237,6 @@ describe('UpdateEmailScreen', () => {
 
     if (alertCallback) {
       alertCallback();
-
       expect(logoutUser).toHaveBeenCalled();
     }
   });
