@@ -163,10 +163,12 @@ describe('NotificationSettingsScreen', () => {
 
       const { getByTestId } = render(<NotificationSettingsScreen />);
 
+      // Wait for the component to finish loading first
       await waitFor(() => {
         expect(notificationSettingsService.getSettings).toHaveBeenCalled();
       });
 
+      // Now find and interact with the toggle
       const toggle = getByTestId('enable-notifications-switch');
       fireEvent(toggle, 'valueChange', true);
 
