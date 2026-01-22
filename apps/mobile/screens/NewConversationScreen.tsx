@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  TextInput,
-} from 'react-native';
+import { View, FlatList, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { User, userService } from '../services/user.service';
@@ -82,12 +75,16 @@ export default function NewConversationScreen({ navigation }: any) {
 
   const renderUserItem = ({ item }: { item: User }) => (
     <TouchableOpacity
-      style={[styles.userItem, { backgroundColor: `${colors.primaryDark}33` }]}
+      className="flex-row items-center p-3 rounded-xl mb-2"
+      style={{ backgroundColor: `${colors.primaryDark}33` }}
       onPress={() => handleUserSelect(item)}
       disabled={creating}
     >
-      <View style={styles.avatarContainer}>
-        <View style={[styles.avatar, { backgroundColor: colors.secondary }]}>
+      <View className="mr-3">
+        <View
+          className="w-[50px] h-[50px] rounded-full items-center justify-center"
+          style={{ backgroundColor: colors.secondary }}
+        >
           <AppText
             style={{
               color: colors.primaryDark,
@@ -100,7 +97,7 @@ export default function NewConversationScreen({ navigation }: any) {
         </View>
       </View>
 
-      <View style={styles.userInfo}>
+      <View className="flex-1">
         <AppText
           style={{
             color: colors.text,
@@ -128,43 +125,58 @@ export default function NewConversationScreen({ navigation }: any) {
 
   if (loading) {
     return (
-      <View style={[styles.container, { backgroundColor: colors.primary }]}>
-        <View style={[styles.header, { backgroundColor: colors.primary }]}>
+      <View className="flex-1 pt-10" style={{ backgroundColor: colors.primary }}>
+        <View
+          className="flex-row justify-between items-center pt-6 pb-4 px-5"
+          style={{ backgroundColor: colors.primary }}
+        >
           <TouchableOpacity onPress={() => navigation.goBack()}>
-            <AppText style={[styles.backButton, { color: colors.secondary }]}>← Back</AppText>
+            <AppText style={{ color: colors.secondary, fontSize: 16, fontWeight: '600' }}>
+              ← Back
+            </AppText>
           </TouchableOpacity>
-          <AppText style={[styles.headerTitle, { color: colors.text }]}>New Conversation</AppText>
-          <View style={{ width: 50 }} />
+          <AppText style={{ color: colors.text, fontSize: 24, fontWeight: 'bold' }}>
+            New Conversation
+          </AppText>
+          <View className="w-[50px]" />
         </View>
 
-        <View style={styles.centerContainer}>
+        <View className="flex-1 justify-center items-center px-5">
           <ActivityIndicator color={colors.secondary} size="large" />
-          <AppText style={{ color: colors.text, marginTop: 16 }}>Loading users...</AppText>
+          <AppText className="mt-4" style={{ color: colors.text }}>
+            Loading users...
+          </AppText>
         </View>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.primary }]}>
-      <View style={[styles.header, { backgroundColor: colors.primary }]}>
+    <View className="flex-1 pt-10" style={{ backgroundColor: colors.primary }}>
+      <View
+        className="flex-row justify-between items-center pt-6 pb-4 px-5"
+        style={{ backgroundColor: colors.primary }}
+      >
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <AppText style={[styles.backButton, { color: colors.secondary }]}>← Back</AppText>
+          <AppText style={{ color: colors.secondary, fontSize: 16, fontWeight: '600' }}>
+            ← Back
+          </AppText>
         </TouchableOpacity>
-        <AppText style={[styles.headerTitle, { color: colors.text }]}>New Conversation</AppText>
-        <View style={{ width: 50 }} />
+        <AppText style={{ color: colors.text, fontSize: 24, fontWeight: 'bold' }}>
+          New Conversation
+        </AppText>
+        <View className="w-[50px]" />
       </View>
 
-      <View style={styles.searchContainer}>
+      <View className="px-5 mb-4">
         <TextInput
-          style={[
-            styles.searchInput,
-            {
-              backgroundColor: `${colors.primaryDark}33`,
-              color: colors.text,
-              borderColor: `${colors.primaryDark}66`,
-            },
-          ]}
+          className="h-14 rounded-xl px-4 border"
+          style={{
+            backgroundColor: `${colors.primaryDark}33`,
+            color: colors.text,
+            borderColor: `${colors.primaryDark}66`,
+            fontSize: 16,
+          }}
           placeholder="Search users..."
           placeholderTextColor={`${colors.text}66`}
           value={searchText}
@@ -173,8 +185,8 @@ export default function NewConversationScreen({ navigation }: any) {
       </View>
 
       {filteredUsers.length === 0 ? (
-        <View style={styles.centerContainer}>
-          <AppText style={{ color: colors.text, textAlign: 'center' }}>
+        <View className="flex-1 justify-center items-center px-5">
+          <AppText className="text-center" style={{ color: colors.text }}>
             {searchText.trim() ? 'No users found' : 'No users available'}
           </AppText>
         </View>
@@ -183,73 +195,9 @@ export default function NewConversationScreen({ navigation }: any) {
           data={filteredUsers}
           keyExtractor={(item) => item.user_id.toString()}
           renderItem={renderUserItem}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 20 }}
         />
       )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 40,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 16,
-    paddingHorizontal: 20,
-  },
-  backButton: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  searchContainer: {
-    paddingHorizontal: 20,
-    marginBottom: 16,
-  },
-  searchInput: {
-    height: 48,
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    fontSize: 16,
-    borderWidth: 1,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  listContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
-  userItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  avatarContainer: {
-    marginRight: 12,
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  userInfo: {
-    flex: 1,
-  },
-});

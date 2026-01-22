@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, FlatList, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { ChatBubble } from '../components/chat/ChatBubble';
@@ -124,7 +124,7 @@ export default function ConversationScreen({ route, navigation }: any) {
   const renderContent = () => {
     if (loading) {
       return (
-        <View style={styles.centerContainer}>
+        <View className="flex-1 justify-center items-center px-5">
           <AppText style={{ color: colors.text }}>Loading messages...</AppText>
         </View>
       );
@@ -132,8 +132,8 @@ export default function ConversationScreen({ route, navigation }: any) {
 
     if (messages.length === 0) {
       return (
-        <View style={styles.centerContainer}>
-          <AppText style={{ color: colors.text, textAlign: 'center' }}>
+        <View className="flex-1 justify-center items-center px-5">
+          <AppText style={{ color: colors.text }} className="text-center">
             No messages yet.{'\n'}Start the conversation!
           </AppText>
         </View>
@@ -145,7 +145,7 @@ export default function ConversationScreen({ route, navigation }: any) {
         ref={flatListRef}
         data={messages}
         keyExtractor={(item) => item.message_id.toString()}
-        contentContainerStyle={styles.messagesList}
+        contentContainerStyle={{ paddingVertical: 16 }}
         renderItem={({ item }) => (
           <ChatBubble
             message={item}
@@ -164,7 +164,8 @@ export default function ConversationScreen({ route, navigation }: any) {
 
   return (
     <KeyboardAvoidingView
-      style={[styles.container, { backgroundColor: colors.primary }]}
+      className="flex-1"
+      style={{ backgroundColor: colors.primary }}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
@@ -174,18 +175,3 @@ export default function ConversationScreen({ route, navigation }: any) {
     </KeyboardAvoidingView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  messagesList: {
-    paddingVertical: 16,
-  },
-});
