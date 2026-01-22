@@ -1,10 +1,10 @@
 import { storage } from '../utils/storage';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
-import type { RootStackParamList } from '../src/naviagation/types';
+import type { RootStackParamList } from '../src/navigation/types';
 import { useTheme } from '../context/ThemeContext';
 import React, { useEffect, useState } from 'react';
-import { View, TouchableOpacity, Alert } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import AppText from '../components/UI/textWrapper';
 import { profileSettingsStyles as styles } from '../styles/profileSettings.styles';
 import { Ionicons } from '@expo/vector-icons';
