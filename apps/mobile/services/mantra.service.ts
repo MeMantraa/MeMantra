@@ -3,9 +3,9 @@ import { apiClient } from './api.config';
 /**
  * CONFIGURATION
  * --------------
- * Set USE_MOCK_DATA = false later when backend is ready.
+ * Set USE_MOCK_DATA = false when backend is ready.
  */
-const USE_MOCK_DATA = true;
+const USE_MOCK_DATA = false;
 
 /**
  * TYPES
@@ -27,6 +27,7 @@ export interface Mantra {
   is_active: boolean;
   isLiked?: boolean;
   isSaved?: boolean;
+  like_count?: number;
 }
 
 export interface MantraResponse {
@@ -35,12 +36,42 @@ export interface MantraResponse {
   data: Mantra[];
 }
 
+export interface CreateMantraPayload {
+  title: string;
+  key_takeaway: string;
+  background_author?: string;
+  background_description?: string;
+  jamie_take?: string;
+  when_where?: string;
+  negative_thoughts?: string;
+  cbt_principles?: string;
+  references?: string;
+  is_active?: boolean;
+}
+
+export interface MantraDetailResponse {
+  status: string;
+  message?: string;
+  data: { mantra: Mantra };
+}
+
+export interface SingleMantraResponse {
+  status: string;
+  message?: string;
+  data: Mantra;
+}
+
+export interface MantraMutationResponse {
+  status: string;
+  message?: string;
+}
+
 /**
  * MOCK DATA
  * ---------
  * Used while backend endpoints aren't connected.
  */
-const MOCK_MANTRAS: Mantra[] = [
+const INITIAL_MOCK_MANTRAS: Mantra[] = [
   {
     mantra_id: 1,
     title: 'Pressure Is a Privilege',
@@ -112,22 +143,26 @@ const MOCK_MANTRAS: Mantra[] = [
   },
 ];
 
+let mockMantras: Mantra[] = [...INITIAL_MOCK_MANTRAS];
+
 /**
  * MOCK SERVICE
  * ------------
  * Simulates backend responses with delays and mock state.
  */
+/* istanbul ignore next */
 const mockUserState = {
   likedMantras: new Set<number>(),
   savedMantras: new Set<number>(),
 };
 
+/* istanbul ignore next */
 const mockMantraService = {
   async getFeedMantras(_token: string): Promise<MantraResponse> {
     await new Promise((resolve) => setTimeout(resolve, 600));
     return {
       status: 'success',
-      data: MOCK_MANTRAS.map((m) => ({
+      data: mockMantras.map((m) => ({
         ...m,
         isLiked: mockUserState.likedMantras.has(m.mantra_id),
         isSaved: mockUserState.savedMantras.has(m.mantra_id),
@@ -154,6 +189,109 @@ const mockMantraService = {
     mockUserState.savedMantras.delete(mantraId);
     return { status: 'success', message: 'Removed from saved' };
   },
+
+  async getSavedMantras(token: string) {
+    const collectionId = 1;
+    const response = await apiClient.get(`/collections/${collectionId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data.data.mantras;
+  },
+
+  async createMantra(
+    mantraData: CreateMantraPayload,
+    _token: string,
+  ): Promise<MantraDetailResponse> {
+    const nextId =
+      mockMantras.length > 0 ? Math.max(...mockMantras.map((m) => m.mantra_id)) + 1 : 1;
+
+    const newMantra: Mantra = {
+      mantra_id: nextId,
+      title: mantraData.title,
+      key_takeaway: mantraData.key_takeaway,
+      background_author: mantraData.background_author,
+      background_description: mantraData.background_description,
+      jamie_take: mantraData.jamie_take,
+      when_where: mantraData.when_where,
+      negative_thoughts: mantraData.negative_thoughts,
+      cbt_principles: mantraData.cbt_principles,
+      references: mantraData.references,
+      created_at: new Date().toISOString(),
+      is_active: mantraData.is_active ?? true,
+      isLiked: false,
+      isSaved: false,
+    };
+
+    mockMantras = [newMantra, ...mockMantras];
+
+    return {
+      status: 'success',
+      data: { mantra: newMantra },
+    };
+  },
+
+  async deleteMantra(mantraId: number, _token: string): Promise<MantraMutationResponse> {
+    const exists = mockMantras.some((m) => m.mantra_id === mantraId);
+
+    if (!exists) {
+      return {
+        status: 'error',
+        message: 'Mantra not found',
+      };
+    }
+
+    mockMantras = mockMantras.filter((m) => m.mantra_id !== mantraId);
+    mockUserState.likedMantras.delete(mantraId);
+    mockUserState.savedMantras.delete(mantraId);
+
+    return {
+      status: 'success',
+      message: 'Mantra deleted successfully',
+    };
+  },
+
+  async updateMantra(
+    mantraId: number,
+    updateData: any,
+    _token: string,
+  ): Promise<MantraDetailResponse> {
+    const index = mockMantras.findIndex((m) => m.mantra_id === mantraId);
+    if (index === -1) {
+      return {
+        status: 'error',
+        message: 'Mantra not found',
+        data: { mantra: null },
+      } as any;
+    }
+    const updatedMantra = {
+      ...mockMantras[index],
+      ...updateData,
+    };
+    mockMantras[index] = updatedMantra;
+    return {
+      status: 'success',
+      data: { mantra: updatedMantra },
+    };
+  },
+
+  async getMantraById(mantraId: number, _token: string): Promise<SingleMantraResponse> {
+    const mantra = mockMantras.find((m) => m.mantra_id === mantraId);
+    if (!mantra) {
+      return {
+        status: 'error',
+        message: 'Mantra not found',
+        data: null,
+      } as any;
+    }
+    return {
+      status: 'success',
+      data: {
+        ...mantra,
+        isLiked: mockUserState.likedMantras.has(mantra.mantra_id),
+        isSaved: mockUserState.savedMantras.has(mantra.mantra_id),
+      },
+    };
+  },
 };
 
 /**
@@ -171,8 +309,8 @@ const realMantraService = {
 
   async likeMantra(mantraId: number, token: string) {
     const response = await apiClient.post(
-      `/mantras/like`,
-      { mantra_id: mantraId },
+      `/likes/${mantraId}`,
+      {},
       {
         headers: { Authorization: `Bearer ${token}` },
       },
@@ -181,7 +319,7 @@ const realMantraService = {
   },
 
   async unlikeMantra(mantraId: number, token: string) {
-    const response = await apiClient.delete(`/mantras/like/${mantraId}`, {
+    const response = await apiClient.delete(`/likes/${mantraId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;
@@ -189,8 +327,8 @@ const realMantraService = {
 
   async saveMantra(mantraId: number, token: string) {
     const response = await apiClient.post(
-      `/mantras/save`,
-      { mantra_id: mantraId },
+      `/mantras/${mantraId}/save`,
+      {},
       {
         headers: { Authorization: `Bearer ${token}` },
       },
@@ -199,7 +337,46 @@ const realMantraService = {
   },
 
   async unsaveMantra(mantraId: number, token: string) {
-    const response = await apiClient.delete(`/mantras/save/${mantraId}`, {
+    const response = await apiClient.delete(`/mantras/${mantraId}/save/`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  },
+
+  async getSavedMantras(token: string): Promise<Mantra[]> {
+    const response = await apiClient.get('/mantras/saved', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data.data;
+  },
+  async createMantra(
+    mantraData: CreateMantraPayload,
+    token: string,
+  ): Promise<MantraDetailResponse> {
+    const response = await apiClient.post<MantraDetailResponse>('/mantras', mantraData, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  },
+  async deleteMantra(mantraId: number, token: string): Promise<MantraMutationResponse> {
+    const response = await apiClient.delete<MantraMutationResponse>(`/mantras/${mantraId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  },
+  async updateMantra(
+    mantraId: number,
+    updateData: any,
+    token: string,
+  ): Promise<MantraDetailResponse> {
+    const response = await apiClient.put<MantraDetailResponse>(`/mantras/${mantraId}`, updateData, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  },
+
+  async getMantraById(mantraId: number, token: string): Promise<SingleMantraResponse> {
+    const response = await apiClient.get<SingleMantraResponse>(`/mantras/${mantraId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data;

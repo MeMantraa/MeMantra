@@ -3,14 +3,15 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 import { ThemeProvider, useTheme, ThemeContext } from '../../context/ThemeContext';
 import { themes } from '../../styles/theme';
 import { Text, Button } from 'react-native';
+import AppText from '../../components/UI/textWrapper';
 
 const TestComponent = () => {
   const { theme, colors, toggleTheme } = useTheme();
 
   return (
     <>
-      <Text>{theme}</Text>
-      <Text>{colors.primary}</Text>
+      <AppText>{theme}</AppText>
+      <AppText>{colors.primary}</AppText>
       <Button title="toggle" onPress={toggleTheme} />
     </>
   );

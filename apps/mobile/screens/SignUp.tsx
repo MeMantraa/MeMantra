@@ -1,12 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
+import { View, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import logo from '../assets/logo.png';
 import googleLogo from '../assets/googleLogo.png';
 import { authService } from '../services/auth.service';
 import { storage } from '../utils/storage';
 import { useGoogleAuth } from '../services/google-auth.service';
 import { useTheme } from '../context/ThemeContext';
+import AppTextInput from '../components/UI/textInputWrapper';
+import AppText from '../components/UI/textWrapper';
 
 export default function SignUpScreen({ navigation }: any) {
   const [username, setUsername] = useState('');
@@ -51,7 +53,10 @@ export default function SignUpScreen({ navigation }: any) {
           {
             text: 'OK',
             onPress: () => {
-              //navigate home
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'MainApp' }],
+              });
             },
           },
         ]);
@@ -118,7 +123,7 @@ export default function SignUpScreen({ navigation }: any) {
             </View>
 
             <View className="w-full max-w-[400px]">
-              <TextInput
+              <AppTextInput
                 className="bg-[#fff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
                 placeholder="Username"
                 placeholderTextColor={colors.placeholderText}
@@ -127,7 +132,7 @@ export default function SignUpScreen({ navigation }: any) {
                 autoCapitalize="none"
                 editable={!loading}
               />
-              <TextInput
+              <AppTextInput
                 className="bg-[#fff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
                 placeholder="Email"
                 placeholderTextColor={colors.placeholderText}
@@ -137,7 +142,7 @@ export default function SignUpScreen({ navigation }: any) {
                 keyboardType="email-address"
                 editable={!loading}
               />
-              <TextInput
+              <AppTextInput
                 className="bg-[#fff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
                 placeholder="Password"
                 placeholderTextColor={colors.placeholderText}
@@ -147,7 +152,7 @@ export default function SignUpScreen({ navigation }: any) {
                 autoCapitalize="none"
                 editable={!loading}
               />
-              <TextInput
+              <AppTextInput
                 className="bg-[#fff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
                 placeholder="Confirm Password"
                 placeholderTextColor={colors.placeholderText}
@@ -163,14 +168,14 @@ export default function SignUpScreen({ navigation }: any) {
                 className="rounded-[30px] p-[14px] items-center mt-[8px]"
                 onPress={handleSignUp}
               >
-                <Text className="text-[#fff] text-[18px] font-semibold">Sign Up</Text>
+                <AppText className="text-[#fff] text-[18px] font-semibold">Sign Up</AppText>
               </TouchableOpacity>
 
               <TouchableOpacity className="items-center mt-[20px]" onPress={handleLoginRedirect}>
-                <Text className="text-[#fff] text-[14px]">
+                <AppText className="text-[#fff] text-[14px]">
                   Already have an account?
-                  <Text className="text-[#fff] text-[14px] font-bold"> Login</Text>
-                </Text>
+                  <AppText className="text-[#fff] text-[14px] font-bold"> Login</AppText>
+                </AppText>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -181,7 +186,7 @@ export default function SignUpScreen({ navigation }: any) {
               >
                 <View className="flex-row items-center">
                   <Image source={googleLogo} className="mr-[10px] w-[30px] h-[30px]" />
-                  <Text className="text-[#fff] text-[14px]">Sign Up with Google</Text>
+                  <AppText className="text-[#fff] text-[14px]">Sign Up with Google</AppText>
                 </View>
               </TouchableOpacity>
             </View>

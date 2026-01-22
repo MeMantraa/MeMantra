@@ -9,8 +9,9 @@ import MainNavigator from './app/index';
 import splashLogo from './assets/logo.png';
 import './global.css';
 import type { RootStackParamList } from './types/navigation';
-
-declare const __DEV__: boolean;
+import LibreBaskerville from './assets/fonts/LibreBaskerville-Regular.ttf';
+import * as Font from 'expo-font';
+import { setNavigationRef } from './services/api.config';
 declare const process: {
   env: {
     EXPO_PUBLIC_POSTHOG_API_KEY?: string;
@@ -149,21 +150,16 @@ export default function App() {
 
     async function prepare() {
       try {
-        console.log('In development mode:', __DEV__);
-        if (__DEV__) {
-          console.log('Development mode: Sentry disabled');
-        } else {
-          console.log('Production mode: Initializing Sentry...');
-          const { startPerformanceTracking } = await import('./sentry');
-          startPerformanceTracking();
-        }
-      } catch (e) {
-        console.warn(e);
-      } finally {
+        await Font.loadAsync({
+          'LibreBaskerville-Regular': LibreBaskerville,
+        });
+
         await SplashScreen.hideAsync();
         if (isMounted) {
           setAppIsReady(true);
         }
+      } catch (e) {
+        console.warn(e);
       }
     }
 
@@ -223,7 +219,14 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      {content}
+      <NavigationContainer
+        ref={navigationRef}
+        onReady={() => {
+          setNavigationRef(navigationRef.current);
+        }}
+      >
+        <MainNavigator />
+      </NavigationContainer>
       {isSplashVisible && (
         <Animated.View style={[styles.splashOverlay, { opacity: fadeAnim }]} pointerEvents="none">
           <Image source={splashLogo} style={styles.splashImage} resizeMode="contain" />

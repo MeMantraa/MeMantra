@@ -29,6 +29,13 @@ export interface AuthResponse {
   };
 }
 
+export interface SimpleResponse {
+  status: string;
+  message: string;
+  data?: any;
+  waitTime?: number;
+}
+
 export const authService = {
   async login(credentials: LoginCredentials): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>('/auth/login', credentials);
@@ -51,6 +58,56 @@ export const authService = {
 
   async googleAuth({ idToken }: GoogleAuthCredentials): Promise<AuthResponse> {
     const response = await apiClient.post<AuthResponse>('/auth/google', { idToken });
+    return response.data;
+  },
+
+  async updateEmail(newEmail: string, token: string) {
+    const response = await apiClient.patch(
+      '/auth/email',
+      { email: newEmail },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    );
+
+    return response.data;
+  },
+
+  async updatePassword(newPassword: string, token: string) {
+    const response = await apiClient.patch(
+      '/auth/password',
+      { password: newPassword },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+    return response.data;
+  },
+
+  async deleteAccount(token: string) {
+    return apiClient.delete('/auth/account', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  async forgotPassword(email: string): Promise<SimpleResponse> {
+    const response = await apiClient.post<SimpleResponse>('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  async verifyResetCode(email: string, code: string): Promise<SimpleResponse> {
+    const response = await apiClient.post<SimpleResponse>('/auth/verify-code', { email, code });
+    return response.data;
+  },
+
+  async resetPassword(email: string, code: string, newPassword: string): Promise<SimpleResponse> {
+    const response = await apiClient.post<SimpleResponse>('/auth/reset-password', {
+      email,
+      code,
+      newPassword,
+    });
     return response.data;
   },
 };

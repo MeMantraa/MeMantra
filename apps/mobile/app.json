@@ -28,14 +28,6 @@
     "plugins": [
       "expo-web-browser",
       [
-        "@sentry/react-native/expo",
-        {
-          "url": "https://sentry.io/",
-          "project": "memantraapp",
-          "organization": "memantra"
-        }
-      ],
-      [
         "expo-splash-screen",
         {
           "backgroundColor": "#8E9A86",
@@ -47,7 +39,14 @@
           "imageWidth": 200
         }
       ],
-      "expo-localization"
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#8E9A86",
+          "sound": "default"
+        }
+      ]
     ],
     "extra": {
       "eas": {

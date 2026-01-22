@@ -1,0 +1,25 @@
+appId: com.memantra.mobile
+---
+- tapOn: New to us? Sign Up
+- tapOn: Username
+- inputText: e2eTestUser
+- hideKeyboard
+
+- tapOn: Email
+- inputText: e2eTestUser@gmail.com
+- hideKeyboard
+
+- tapOn: Password
+- clearKeychain
+- inputText: TestPassword123!
+- hideKeyboard
+
+- tapOn: Confirm Password
+- clearKeychain
+- inputText: TestPassword123!
+- hideKeyboard
+
+- longPressOn: Sign Up
+- assertVisible: Account created successfully!
+
+- tapOn: ok

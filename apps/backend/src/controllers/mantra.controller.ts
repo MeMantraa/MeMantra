@@ -1,6 +1,8 @@
 import { Request, Response } from 'express';
 import { MantraModel } from '../models/mantra.model';
+import { CollectionModel } from '../models/collection.model';
 import { CreateMantraInput, UpdateMantraInput, MantraQueryInput } from '../validators/mantra.validator';
+import { db } from '../db';
 
 export const MantraController = {
   // GET /api/mantras - List all mantras with optional search and pagination
@@ -185,7 +187,7 @@ export const MantraController = {
     try {
       const { limit = '10' } = req.query;
 
-      const mantras = await MantraModel.findWithLikeCount(Number(limit));
+      const mantras = await MantraModel.findWithLikeCount(Number(limit), 0);
 
       return res.status(200).json({
         status: 'success',
@@ -196,6 +198,218 @@ export const MantraController = {
       return res.status(500).json({
         status: 'error',
         message: 'Error retrieving popular mantras',
+      });
+    }
+  },
+
+  // GET /api/mantras/feed - Get mantras with user's like/save status
+  async getFeedMantras(req: Request, res: Response) {
+    try {
+      const userId = req.user?.userId;
+      const limit = Number(req.query.limit) || 50;
+      const offset = Number(req.query.offset) || 0;
+
+      const mantras = await MantraModel.findWithLikeCount(limit, offset);
+
+      // Get user's liked and saved mantras
+      let likedMantraIds: number[] = [];
+      let savedMantraIds: number[] = [];
+
+      if (userId) {
+        const liked = await db
+          .selectFrom('Like')
+          .where('user_id', '=', userId)
+          .select('mantra_id')
+          .execute();
+        likedMantraIds = liked.map(l => l.mantra_id).filter((id): id is number => id !== null);
+
+        // UPDATED: Check if mantra is in ANY collection, remove duplicates with Set
+        const saved = await db
+          .selectFrom('Collection')
+          .innerJoin('CollectionMantra', 'Collection.collection_id', 'CollectionMantra.collection_id')
+          .where('Collection.user_id', '=', userId)
+          .select('CollectionMantra.mantra_id')
+          .execute();
+        savedMantraIds = [...new Set(saved.map(s => s.mantra_id).filter((id): id is number => id !== null))];
+      }
+
+      const mantrasWithStatus = mantras.map(mantra => ({
+        ...mantra,
+        isLiked: likedMantraIds.includes(mantra.mantra_id),
+        isSaved: savedMantraIds.includes(mantra.mantra_id),
+      }));
+
+      return res.status(200).json({
+        status: 'success',
+        data: mantrasWithStatus,
+      });
+    } catch (error) {
+      console.error('Get feed mantras error:', error);
+      return res.status(500).json({
+        status: 'error',
+        message: 'Error retrieving feed mantras',
+      });
+    }
+  },
+
+  // POST /api/mantras/:mantraId/save - Save mantra to user's "Saved Mantras" collection
+  async saveMantra(req: Request, res: Response) {
+    try {
+      // 1. Check authentication
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(401).json({
+          status: 'error',
+          message: 'Authentication required',
+        });
+      }
+
+      // 2. Get mantra ID from URL
+      const mantraId = Number(req.params.mantraId);
+
+      // 3. Verify mantra exists
+      const mantra = await MantraModel.findById(mantraId);
+      if (!mantra) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Mantra not found',
+        });
+      }
+
+      // 4. Find or create "Saved Mantras" collection (lazy creation)
+      const allCollections = await CollectionModel.findByUserId(userId);
+      let savedCollection = allCollections.find(c => c.name === 'Saved Mantras');
+
+      savedCollection ??= await CollectionModel.create(
+        userId,
+        'Saved Mantras',
+        'Your saved mantras'
+      );
+
+      // 5. Check if mantra is already saved (prevent duplicates)
+      const isAlreadySaved = await CollectionModel.isMantraInCollection(
+        savedCollection.collection_id,
+        mantraId
+      );
+
+      if (isAlreadySaved) {
+        return res.status(200).json({
+          status: 'success',
+          message: 'Mantra already saved',
+        });
+      }
+
+      // 6. Add mantra to collection
+      await CollectionModel.addMantra(
+        savedCollection.collection_id,
+        mantraId,
+        userId
+      );
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Mantra saved successfully',
+      });
+    } catch (error) {
+      console.error('Save mantra error:', error);
+      return res.status(500).json({
+        status: 'error',
+        message: 'Error saving mantra',
+      });
+    }
+  },
+
+  // DELETE /api/mantras/:mantraId/save - Remove mantra from ALL user's collections
+  async unsaveMantra(req: Request, res: Response) {
+    try {
+      // 1. Check authentication
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(401).json({
+          status: 'error',
+          message: 'Authentication required',
+        });
+      }
+
+      // 2. Get mantra ID from URL
+      const mantraId = Number(req.params.mantraId);
+
+      // 3. UPDATED: Get ALL user's collections
+      const allCollections = await CollectionModel.findByUserId(userId);
+
+      if (allCollections.length === 0) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'No collections found',
+        });
+      }
+
+      // 4. UPDATED: Remove mantra from ALL collections
+      let removedCount = 0;
+      for (const collection of allCollections) {
+        const removed = await CollectionModel.removeMantra(
+          collection.collection_id,
+          mantraId
+        );
+        if (removed) {
+          removedCount++;
+        }
+      }
+
+      // 5. If not found in any collection, return error
+      if (removedCount === 0) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Mantra not found in any collection',
+        });
+      }
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Mantra unsaved successfully',
+      });
+    } catch (error) {
+      console.error('Unsave mantra error:', error);
+      return res.status(500).json({
+        status: 'error',
+        message: 'Error unsaving mantra',
+      });
+    }
+  },
+
+  async getSavedMantras(req: Request, res: Response) {
+    try {
+      const userId = req.user?.userId;
+      
+      if (!userId) {
+        return res.status(401).json({
+          status: 'error',
+          message: 'Authentication required',
+        });
+      }
+
+      // Find user's "Saved Mantras" collection
+      const allCollections = await CollectionModel.findByUserId(userId);
+      const savedCollection = allCollections.find(c => c.name === 'Saved Mantras');
+
+      if (!savedCollection) {
+        return res.status(200).json({
+          status: 'success',
+          data: [],
+        });
+      }
+
+      const mantras = await CollectionModel.getMantrasInCollection(savedCollection.collection_id);
+
+      return res.status(200).json({
+        status: 'success',
+        data: mantras,
+      });
+    } catch (error) {
+      console.error('Get saved mantras error:', error);
+      return res.status(500).json({
+        status: 'error',
+        message: 'Error retrieving saved mantras',
       });
     }
   },

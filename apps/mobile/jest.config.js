@@ -20,5 +20,6 @@ module.exports = {
     '!<rootDir>/**/tailwind.config.js',
     '!<rootDir>/**/babel.config.js',
     '!<rootDir>/**/sentry/**',
+    '!<rootDir>/**/types.ts',
   ],
 };

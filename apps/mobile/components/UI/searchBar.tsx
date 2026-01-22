@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { TextInput, TouchableOpacity, Animated, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import AppTextInput from './textInputWrapper';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -76,7 +77,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, placeholder = 'Search..
 
       {isExpanded && (
         <>
-          <TextInput
+          <AppTextInput
             testID="search-input"
             ref={inputRef}
             value={searchQuery}

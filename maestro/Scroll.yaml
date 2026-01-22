@@ -1,0 +1,23 @@
+appId: com.memantra.mobile
+---
+- scroll
+
+- scroll
+
+- tapOn:
+    point: 50%,50%
+- swipe:
+    direction: LEFT
+- swipe:
+    direction: LEFT
+- swipe:
+    direction: LEFT
+- swipe:
+    direction: LEFT
+- swipe:
+    direction: LEFT
+
+- swipe:
+    direction: LEFT
+- tapOn:
+    id: back-button

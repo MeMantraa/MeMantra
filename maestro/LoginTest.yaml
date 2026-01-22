@@ -1,0 +1,15 @@
+appId: com.memantra.mobile
+---
+- launchApp:
+    clearState: true
+- tapOn: Email
+- inputText: e2eTestUser@gmail.com
+- hideKeyboard
+
+- tapOn: Password
+- inputText: TestPassword123!
+- hideKeyboard
+
+- longPressOn: Login
+- assertVisible:
+    id: profile-btn

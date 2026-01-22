@@ -1,7 +1,9 @@
 import React, { useRef, useState } from 'react';
-import { View, Text, Dimensions, FlatList, ScrollView } from 'react-native';
+import { View, Dimensions, FlatList, ScrollView, TouchableWithoutFeedback } from 'react-native';
 import { Mantra } from '../services/mantra.service';
 import IconButton from '../components/UI/iconButton';
+import AppText from './UI/textWrapper';
+import { useTheme } from '../context/ThemeContext';
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -9,12 +11,24 @@ interface MantraCarouselProps {
   readonly item: Mantra;
   readonly onLike?: (mantraId: number) => void;
   readonly onSave?: (mantraId: number) => void;
+  readonly onShare?: (mantraId: number) => void;
+  readonly showButtons?: boolean;
+  readonly onPress?: () => void;
+  readonly isFocusMode?: boolean;
 }
 
-export default function MantraCarousel({ item, onLike, onSave }: Readonly<MantraCarouselProps>) {
+export default function MantraCarousel({
+  item,
+  onLike,
+  onSave,
+  onShare,
+  showButtons = true,
+  onPress,
+  isFocusMode = false,
+}: Readonly<MantraCarouselProps>) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const { colors } = useTheme();
 
-  // Filter out pages with no content
   const pages = [
     { title: 'Mantra', content: item.title },
     { title: 'Key Takeaway', content: item.key_takeaway },
@@ -45,13 +59,19 @@ export default function MantraCarousel({ item, onLike, onSave }: Readonly<Mantra
     if (onSave) onSave(item.mantra_id);
   };
 
+  const handleShare = () => {
+    if (onShare) onShare(item.mantra_id);
+  };
+
   return (
     <View
       style={{ height: SCREEN_HEIGHT, width: SCREEN_WIDTH }}
-      className="justify-center items-center bg-[#9AA793]"
+      className="justify-center items-center  backgroundColor: colors.primary"
     >
       <View className="absolute top-36 z-11">
-        <Text className="text-white text-6xl opacity-50">" "</Text>
+        <AppText style={{ color: colors.text }} className="text-6xl opacity-50">
+          " "
+        </AppText>
       </View>
 
       {/* Horizontal scroll through pages */}
@@ -74,39 +94,51 @@ export default function MantraCarousel({ item, onLike, onSave }: Readonly<Mantra
           renderItem={({ item: page, index }) => (
             <View style={{ width: SCREEN_WIDTH }} className="justify-center items-center px-6">
               {index === 0 ? (
-                // First page (Mantra) - centered, no scroll
-                <View
-                  className="w-full max-w-[500px] justify-center items-center"
-                  style={{ height: SCREEN_HEIGHT * 0.5 }}
-                >
-                  <Text className="text-white text-center leading-10 text-3xl font-light tracking-wide">
-                    {page.content}
-                  </Text>
-                </View>
+                /* MANTRA PAGE */
+                <TouchableWithoutFeedback onPress={onPress}>
+                  <View
+                    className="w-full max-w-[500px] justify-center items-center"
+                    style={{ height: SCREEN_HEIGHT * 0.5 }}
+                  >
+                    <AppText
+                      style={{ color: colors.text }}
+                      className={`text-center leading-10 font-light tracking-wide ${isFocusMode ? 'text-4xl' : 'text-3xl'}`}
+                    >
+                      {page.content}
+                    </AppText>
+                  </View>
+                </TouchableWithoutFeedback>
               ) : (
-                // Other pages - scrollable
+                /* OTHER PAGES */
                 <ScrollView
                   style={{
                     width: '100%',
                     maxWidth: 500,
-                    height: SCREEN_HEIGHT * 0.55,
+                    height: SCREEN_HEIGHT * 0.6,
                   }}
                   contentContainerStyle={{
                     paddingVertical: 40,
                     paddingHorizontal: 24,
                     paddingBottom: 60,
-                    paddingTop: 0,
                   }}
                   showsVerticalScrollIndicator={false}
                   nestedScrollEnabled={true}
                 >
                   <View className="mb-6">
-                    <Text className="text-[#E6D29C] text-3xl font-semibold text-center">
+                    <AppText
+                      style={{ color: colors.secondary }}
+                      className=" text-3xl font-semibold text-center"
+                    >
                       {page.title}
-                    </Text>
+                    </AppText>
                   </View>
 
-                  <Text className="text-white  leading-7 text-lg">{page.content}</Text>
+                  <AppText
+                    style={{ color: colors.text }}
+                    className={`leading-7 ${isFocusMode ? 'text-xl' : 'text-lg'}`}
+                  >
+                    {page.content}
+                  </AppText>
                 </ScrollView>
               )}
             </View>
@@ -118,19 +150,28 @@ export default function MantraCarousel({ item, onLike, onSave }: Readonly<Mantra
       <View className="absolute bottom-40 left-0 right-0 flex-row justify-center items-center">
         {pages.map((page) => (
           <View
-            key={`${item.mantra_id}-${page.title}`} // Use a stable, unique key (SonarQube)
+            key={`${item.mantra_id}-${page.title}`}
             className={`h-2 rounded-full mx-1 ${
-              pages.indexOf(page) === currentIndex ? 'w-2 bg-white' : 'w-2 bg-white/40'
+              pages.indexOf(page) === currentIndex ? 'w-2' : 'w-2 opacity-40'
             }`}
+            style={{ backgroundColor: colors.text }}
           />
         ))}
       </View>
 
-      {/* Action buttons */}
-      <View className="absolute right-6 bottom-40 items-center">
-        <IconButton type="save" active={!!item.isSaved} onPress={handleSave} className="mb-6" />
-        <IconButton type="like" active={!!item.isLiked} onPress={handleLike} />
-      </View>
+      {showButtons && (
+        <View className="absolute right-6 bottom-40 items-center">
+          <IconButton type="save" active={!!item.isSaved} onPress={handleSave} className="mb-6" />
+          <View className="items-center">
+            <IconButton type="like" active={!!item.isLiked} onPress={handleLike} />
+            {item.like_count !== undefined && (
+              <AppText style={{ color: colors.text }} className="text-sm mt-1">
+                {item.like_count}
+              </AppText>
+            )}
+          </View>
+        </View>
+      )}
     </View>
   );
 }

@@ -3,6 +3,8 @@ package.json
 pnpm-lock.yaml
 lock.yaml
 
+.expo/
+
 # Logs
 logs
 *.log
@@ -163,3 +165,7 @@ pnpm-lock.yaml
 
 # Claude files
 CLAUDE.md
+
+
+# Expo
+.expo/

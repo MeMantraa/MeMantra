@@ -40,7 +40,7 @@ pnpm --filter mobile android
 
 ```
 apps/mobile
-├─ App.tsx                 # Expo entry, splash animation, Sentry init
+├─ App.tsx                 # Expo entry, splash animation
 ├─ app/index.tsx           # Navigation container (login/signup → tabs)
 ├─ components/             # Reusable UI widgets (carousel, buttons, tabs)
 ├─ context/ThemeContext.tsx
