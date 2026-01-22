@@ -11,7 +11,7 @@ export const pool = new Pool({
 export async function testConnection() {
   try {
     const client = await pool.connect();
-    console.log('Successfully connected to the database');
+    console.log('Successfully connected to the Neon hosted shared database');
     client.release();
     return true;
   } catch (error) {
