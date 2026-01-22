@@ -1,15 +1,18 @@
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { storage } from '../utils/storage';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../src/naviagation/types';
-import { logoutUser } from '../utils/auth';
-import { storage } from '../utils/storage';
-import { authService } from '../services/auth.service';
+import { useTheme } from '../context/ThemeContext';
 import React, { useEffect, useState } from 'react';
+import { View, TouchableOpacity, Alert } from 'react-native';
+import AppText from '../components/UI/textWrapper';
+import { profileSettingsStyles as styles } from '../styles/profileSettings.styles';
+import { Ionicons } from '@expo/vector-icons';
 
 type ProfileNavProp = StackNavigationProp<RootStackParamList>;
 
 export default function ProfileScreen() {
+  const { colors } = useTheme();
   const navigation = useNavigation<ProfileNavProp>();
   const [username, setUsername] = useState<string>('');
 
@@ -21,116 +24,46 @@ export default function ProfileScreen() {
     load();
   }, []);
 
-  const confirmDeleteAccount = () => {
-    Alert.alert(
-      'Delete Account',
-      'Are you absolutely sure you want to permanently delete your account? This action cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete',
-          style: 'destructive',
-          onPress: () => {
-            deleteAccount();
-          },
-        },
-      ],
-    );
-  };
-  const deleteAccount = async () => {
-    try {
-      const token = await storage.getToken();
-
-      if (!token) {
-        Alert.alert('Error', 'Not authenticated.');
-        return;
-      }
-
-      await authService.deleteAccount(token);
-      showDeletedAlert();
-    } catch (err: any) {
-      console.error('Delete account error:', err);
-      Alert.alert('Error', err?.response?.data?.message || 'Failed to delete account.');
-    }
-  };
-
-  const showDeletedAlert = () => {
-    Alert.alert('Account Deleted', 'Your account has been deleted. You will now be logged out.', [
-      {
-        text: 'OK',
-        onPress: () => {
-          logoutUser(navigation);
-        },
-      },
-    ]);
-  };
-
-  const handleLogout = () => logoutUser(navigation);
-
   return (
-    <View style={styles.container}>
-      <Text style={styles.name}>{username}</Text>
-
-      <View style={styles.optionsContainer}>
-        <ProfileOption label="Update Email" onPress={() => navigation.navigate('UpdateEmail')} />
-        <ProfileOption
-          label="Update Password"
-          onPress={() => navigation.navigate('UpdatePassword')}
-        />
-        <ProfileOption label="Delete Account" onPress={confirmDeleteAccount} destructive />
-        <ProfileOption label="Sign Out" onPress={handleLogout} />
+    <View className="flex-1 pt-16 px-10" style={{ backgroundColor: colors.primary }}>
+      <AppText className="text-[30px] text-left mb-10 mt-2" style={{ color: colors.text }}>
+        {username}
+      </AppText>
+      <AppText className="text-[16px] text-center pt-16" style={{ color: colors.text }}>
+        Profile Photo Goes Here
+      </AppText>
+      <View className="pt-10 mt-20 mb-10 gap-2.5">
+        <TouchableOpacity
+          className="flex-row justify-between"
+          style={[styles.button, { backgroundColor: colors.primaryDark }]}
+          onPress={() => navigation.navigate('Notifications')}
+        >
+          <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
+            Notifications
+          </AppText>
+          <Ionicons name="chevron-forward" size={24} color={colors.white} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          className="flex-row justify-between"
+          style={[styles.button, { backgroundColor: colors.primaryDark }]}
+          onPress={() => navigation.navigate('Liked')}
+        >
+          <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
+            Liked
+          </AppText>
+          <Ionicons name="chevron-forward" size={24} color={colors.white} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          className="flex-row justify-between"
+          style={[styles.button, { backgroundColor: colors.primaryDark }]}
+          onPress={() => navigation.navigate('Settings')}
+        >
+          <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
+            Settings
+          </AppText>
+          <Ionicons name="chevron-forward" size={24} color={colors.white} />
+        </TouchableOpacity>
       </View>
     </View>
   );
 }
-
-function ProfileOption({
-  label,
-  onPress,
-  destructive = false,
-}: {
-  label: string;
-  onPress: () => void;
-  destructive?: boolean;
-}) {
-  return (
-    <TouchableOpacity style={styles.option} onPress={onPress}>
-      <Text style={[styles.optionText, destructive && styles.destructiveText]}>{label}</Text>
-    </TouchableOpacity>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#A8B3A2',
-    paddingTop: 70,
-    paddingHorizontal: 20,
-  },
-  name: {
-    fontSize: 34,
-    fontWeight: '700',
-    fontFamily: 'Red_Hat_Text-Bold',
-    color: 'white',
-    marginBottom: 40,
-    textAlign: 'center',
-  },
-  optionsContainer: {
-    marginTop: 20,
-    gap: 20,
-  },
-  option: {
-    backgroundColor: '#ffffff',
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-  },
-  optionText: {
-    fontSize: 18,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: '#333',
-  },
-  destructiveText: {
-    color: '#b30000',
-  },
-});

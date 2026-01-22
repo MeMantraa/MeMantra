@@ -46,11 +46,13 @@ export default function ChatScreen({ navigation }: any) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.primary }]}>
-      <View style={[styles.header, { backgroundColor: colors.primary }]}>
-        <AppText style={[styles.headerTitle, { color: colors.text }]}>Messages</AppText>
-      </View>
-
+    <View className="flex-1 pt-16 pb-4 px-[30px]" style={{ backgroundColor: colors.primary }}>
+      <AppText
+        className="text-[30px] text-left mt-2"
+        style={{ backgroundColor: colors.primary, color: colors.text }}
+      >
+        Messages
+      </AppText>
       <ChatList
         conversations={conversations}
         loading={loading}
@@ -69,19 +71,6 @@ export default function ChatScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 40,
-  },
-  header: {
-    paddingTop: 12,
-    paddingBottom: 16,
-    paddingHorizontal: 30,
-  },
-  headerTitle: {
-    fontSize: 30,
-    fontWeight: 'bold',
-  },
   fab: {
     position: 'absolute',
     bottom: 20,

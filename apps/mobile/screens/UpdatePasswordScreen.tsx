@@ -7,8 +7,10 @@ import { logoutUser } from '../utils/auth';
 import { profileSettingsStyles as styles } from '../styles/profileSettings.styles';
 import AppText from '../components/UI/textWrapper';
 import AppTextInput from '../components/UI/textInputWrapper';
+import { useTheme } from '../context/ThemeContext';
 
 export default function UpdatePasswordScreen() {
+  const { colors } = useTheme();
   const navigation = useNavigation();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
@@ -49,16 +51,16 @@ export default function UpdatePasswordScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.white }]}>
       {/* Back Button */}
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <AppText style={styles.backText}>← Back</AppText>
+        <AppText style={[styles.backText, { color: colors.primaryDark }]}>Back</AppText>
       </TouchableOpacity>
 
-      <AppText style={styles.title}>Update Password</AppText>
+      <AppText style={[styles.title, { color: colors.black }]}>Update Password</AppText>
 
       <AppTextInput
-        style={styles.input}
+        style={[styles.input, { borderColor: colors.primary }]}
         secureTextEntry
         placeholder="New password"
         placeholderTextColor="#aaa"
@@ -67,7 +69,7 @@ export default function UpdatePasswordScreen() {
       />
 
       <AppTextInput
-        style={styles.input}
+        style={[styles.input, { borderColor: colors.primary }]}
         secureTextEntry
         placeholder="Confirm password"
         placeholderTextColor="#aaa"
@@ -75,8 +77,11 @@ export default function UpdatePasswordScreen() {
         onChangeText={setConfirm}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleUpdate}>
-        <AppText style={styles.buttonText}>Save Password</AppText>
+      <TouchableOpacity
+        style={[styles.button, { backgroundColor: colors.settings }]}
+        onPress={handleUpdate}
+      >
+        <AppText style={[styles.buttonText, { color: colors.black }]}>Save Password</AppText>
       </TouchableOpacity>
     </View>
   );

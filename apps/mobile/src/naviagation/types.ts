@@ -10,4 +10,7 @@ export type RootStackParamList = {
   Chat: undefined;
   Conversation: { conversation: Conversation };
   Focus: { mantra: Mantra };
+  Notifications: undefined;
+  Liked: undefined;
+  Settings: undefined;
 };
