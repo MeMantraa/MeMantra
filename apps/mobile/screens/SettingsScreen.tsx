@@ -103,8 +103,6 @@ function SettingsOption({
 }) {
   const { colors } = useTheme();
 
-  console.log('destructive:', destructive);
-  console.log('error color:', colors.error);
   return (
     <TouchableOpacity
       className="px-5 py-5 rounded-[18px]"

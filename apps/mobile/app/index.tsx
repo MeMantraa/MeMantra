@@ -25,7 +25,6 @@ import ConversationScreen from '../screens/conversationScreen';
 import NewConversationScreen from '../screens/NewConversationScreen';
 import ShareMantraScreen from '../screens/ShareMantraScreen';
 import BookmarkScreen from '../screens/bookmarkScreen';
-import NotificationsScreen from '../screens/notificationScreen';
 import LikedScreen from '../screens/LikedScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 
@@ -278,7 +277,6 @@ export default function MainNavigator() {
               },
             }}
           />
-          <Stack.Screen name="Notifications" component={NotificationsScreen} />
           <Stack.Screen name="Liked" component={LikedScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
         </Stack.Navigator>

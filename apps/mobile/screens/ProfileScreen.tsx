@@ -36,7 +36,7 @@ export default function ProfileScreen() {
         <TouchableOpacity
           className="flex-row justify-between"
           style={[styles.button, { backgroundColor: colors.primaryDark }]}
-          onPress={() => navigation.navigate('Notifications')}
+          onPress={() => navigation.navigate('NotificationSettings')}
         >
           <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
             Notifications
