@@ -1,7 +1,7 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-set -euo pipefail
+set -eu
 
 # Ensure local binaries take precedence regardless of shell setup
 export PATH="$PWD/node_modules/.bin:$PATH"

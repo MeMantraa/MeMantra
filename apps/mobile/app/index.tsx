@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import * as Notifications from 'expo-notifications';
@@ -6,6 +6,8 @@ import { ThemeProvider } from '../context/ThemeContext';
 import { SavedProvider } from '../context/SavedContext';
 import { storage } from '../utils/storage';
 import { notificationService } from '../services/notification.service';
+import { mantraService, Mantra } from '../services/mantra.service';
+import { navigateFromOutside, isNavigationReady } from '../services/api.config';
 
 // Import screens
 import Login from '../screens/login';
@@ -14,6 +16,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import BottomTabNavigator from '../components/bottomTabNavigator';
 import UpdateEmailScreen from '../screens/UpdateEmailScreen';
 import UpdatePasswordScreen from '../screens/UpdatePasswordScreen';
+import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
 import FocusScreen from '../screens/focusScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import VerifyCodeScreen from '../screens/VerifyCodeScreen';
@@ -65,6 +68,78 @@ export default function MainNavigator() {
     }
   }, [isLoggedIn]);
 
+  // Handler for navigating to mantra detail from notification
+  const handleNotificationNavigation = useCallback(async (mantraId: number) => {
+    try {
+      const token = await storage.getToken();
+      if (!token) {
+        console.log('No auth token, cannot navigate to mantra');
+        return;
+      }
+
+      // Wait for navigation to be ready (with timeout)
+      let attempts = 0;
+      while (!isNavigationReady() && attempts < 10) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        attempts++;
+      }
+
+      if (!isNavigationReady()) {
+        console.warn('Navigation not ready after timeout');
+        return;
+      }
+
+      // Fetch the mantra details
+      const response = await mantraService.getMantraById(mantraId, token);
+
+      if (response.status === 'success' && response.data) {
+        const mantra: Mantra = response.data;
+
+        // Create simple like/save handlers for deep-linked mantra
+        const handleLike = async (id: number) => {
+          try {
+            const authToken = await storage.getToken();
+            if (!authToken) return;
+
+            if (mantra.isLiked) {
+              await mantraService.unlikeMantra(id, authToken);
+            } else {
+              await mantraService.likeMantra(id, authToken);
+            }
+          } catch (error) {
+            console.error('Error toggling like:', error);
+          }
+        };
+
+        const handleSave = async (id: number) => {
+          try {
+            const authToken = await storage.getToken();
+            if (!authToken) return;
+
+            if (mantra.isSaved) {
+              await mantraService.unsaveMantra(id, authToken);
+            } else {
+              await mantraService.saveMantra(id, authToken);
+            }
+          } catch (error) {
+            console.error('Error toggling save:', error);
+          }
+        };
+
+        // Navigate to Focus screen with mantra data
+        navigateFromOutside('Focus', {
+          mantra,
+          onLike: handleLike,
+          onSave: handleSave,
+        });
+      } else {
+        console.error('Failed to fetch mantra:', response.message);
+      }
+    } catch (error) {
+      console.error('Error navigating to mantra from notification:', error);
+    }
+  }, []);
+
   // Set up notification event listeners
   useEffect(() => {
     // This listener is fired whenever a notification is received while the app is foregrounded
@@ -80,9 +155,12 @@ export default function MainNavigator() {
       // Handle notification tap - extract data for deep linking
       const data = response.notification.request.content.data;
 
-      if (data.type === 'reminder' && data.reminderId) {
-        // TODO: Navigate to reminder detail or mantra detail
-        console.log('Navigate to reminder:', data.reminderId);
+      if (data.type === 'reminder' && data.mantraId) {
+        // Navigate to mantra detail
+        handleNotificationNavigation(data.mantraId as number);
+      } else if (data.type === 'reminder' && data.reminderId) {
+        // Legacy support: if only reminderId is provided, log it
+        console.log('Reminder notification without mantraId:', data.reminderId);
       }
     });
 
@@ -95,7 +173,7 @@ export default function MainNavigator() {
         responseListener.current.remove();
       }
     };
-  }, []);
+  }, [handleNotificationNavigation]);
 
   if (isLoggedIn === null) {
     return (
@@ -145,6 +223,7 @@ export default function MainNavigator() {
           <Stack.Screen name="Profile" component={ProfileScreen} />
           <Stack.Screen name="UpdateEmail" component={UpdateEmailScreen} />
           <Stack.Screen name="UpdatePassword" component={UpdatePasswordScreen} />
+          <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
           <Stack.Screen name="ShareMantra" component={ShareMantraScreen} />
           <Stack.Screen
             name="Focus"

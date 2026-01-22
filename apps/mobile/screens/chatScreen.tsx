@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import ChatList from '../components/chat/ChatList';
@@ -14,11 +14,9 @@ export default function ChatScreen({ navigation }: any) {
 
   useEffect(() => {
     loadConversations();
-
     const unsubscribe = navigation.addListener('focus', () => {
       loadConversations();
     });
-
     return unsubscribe;
   }, [navigation]);
 
@@ -61,33 +59,14 @@ export default function ChatScreen({ navigation }: any) {
 
       {/* Floating Action Button for New Conversation */}
       <TouchableOpacity
-        style={[styles.fab, { backgroundColor: colors.secondary }]}
+        className="absolute bottom-5 right-5 w-14 h-14 rounded-[28px] items-center justify-center shadow-lg"
+        style={{ backgroundColor: colors.secondary }}
         onPress={handleNewConversation}
       >
-        <AppText style={[styles.fabText, { color: colors.primaryDark }]}>+</AppText>
+        <AppText className="text-2xl font-bold" style={{ color: colors.primaryDark }}>
+          +
+        </AppText>
       </TouchableOpacity>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  fab: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  fabText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-});

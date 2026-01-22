@@ -3,6 +3,7 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { apiClient } from './api.config';
+import { notificationSettingsService } from './notification-settings.service';
 
 export interface NotificationPermissionStatus {
   granted: boolean;
@@ -174,18 +175,57 @@ export const notificationService = {
   },
 
   /**
+   * Check if notifications should be sent based on user settings
+   * @returns True if notifications should be sent, false otherwise
+   */
+  async shouldSendNotification(): Promise<boolean> {
+    try {
+      const settings = await notificationSettingsService.getSettings();
+
+      // Check if notifications are disabled
+      if (!settings.enabled) {
+        console.log('Notifications are disabled in settings');
+        return false;
+      }
+
+      // Check if we're within quiet hours
+      if (notificationSettingsService.isWithinQuietHours(settings)) {
+        console.log('Currently within quiet hours');
+        return false;
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error checking notification settings:', error);
+      // Default to allowing notifications if we can't read settings
+      return true;
+    }
+  },
+
+  /**
    * Schedule a local notification
    * @param title - Notification title
    * @param body - Notification body
    * @param data - Optional data payload
    * @param trigger - When to show notification (null = immediate)
+   * @param respectSettings - Whether to check user settings before scheduling (default: true)
    */
   async scheduleLocalNotification(
     title: string,
     body: string,
     data?: Record<string, unknown>,
     trigger: Notifications.NotificationTriggerInput | null = null,
-  ): Promise<string> {
+    respectSettings: boolean = true,
+  ): Promise<string | null> {
+    // Check user settings if requested
+    if (respectSettings) {
+      const shouldSend = await this.shouldSendNotification();
+      if (!shouldSend) {
+        console.log('Notification not scheduled due to user settings');
+        return null;
+      }
+    }
+
     const notificationId = await Notifications.scheduleNotificationAsync({
       content: {
         title,

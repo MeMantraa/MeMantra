@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import AppText from '../UI/textWrapper';
 import { Conversation } from '../../types/chat.types';
@@ -47,17 +47,19 @@ const ChatList: React.FC<ChatListProps> = ({ conversations, loading, onConversat
 
   if (loading) {
     return (
-      <View style={styles.centerContainer}>
+      <View className="flex-1 justify-center items-center px-5">
         <ActivityIndicator color={colors.secondary} size="large" />
-        <AppText style={{ color: colors.text, marginTop: 16 }}>Loading conversations...</AppText>
+        <AppText className="mt-4" style={{ color: colors.text }}>
+          Loading conversations...
+        </AppText>
       </View>
     );
   }
 
   if (conversations.length === 0) {
     return (
-      <View style={styles.centerContainer}>
-        <AppText style={{ color: colors.text, fontSize: 16, textAlign: 'center' }}>
+      <View className="flex-1 justify-center items-center px-5">
+        <AppText className="text-base text-center" style={{ color: colors.text }}>
           No conversations yet.{'\n'}Start chatting with other users!
         </AppText>
       </View>
@@ -68,31 +70,26 @@ const ChatList: React.FC<ChatListProps> = ({ conversations, loading, onConversat
     <FlatList
       data={conversations}
       keyExtractor={(item) => item.conversation_id.toString()}
-      contentContainerStyle={styles.listContent}
+      contentContainerStyle={{ paddingVertical: 8, paddingHorizontal: 16 }}
       renderItem={({ item }) => (
         <TouchableOpacity
-          style={[
-            styles.conversationItem,
-            {
-              backgroundColor: `${colors.primaryDark}33`,
-            },
-          ]}
+          className="flex-row px-3 py-4 rounded-xl mb-2"
+          style={{
+            backgroundColor: `${colors.primaryDark}33`,
+          }}
           onPress={() => onConversationPress(item)}
         >
-          <View style={styles.avatarContainer}>
+          <View className="mr-3">
             <View
-              style={[
-                styles.avatar,
-                {
-                  backgroundColor: colors.secondary,
-                },
-              ]}
+              className="w-[50px] h-[50px] rounded-full items-center justify-center"
+              style={{
+                backgroundColor: colors.secondary,
+              }}
             >
               <AppText
+                className="text-[20px] font-bold"
                 style={{
                   color: colors.primaryDark,
-                  fontSize: 20,
-                  fontWeight: 'bold',
                 }}
               >
                 {item.participant_username.charAt(0).toUpperCase()}
@@ -100,34 +97,32 @@ const ChatList: React.FC<ChatListProps> = ({ conversations, loading, onConversat
             </View>
           </View>
 
-          <View style={styles.conversationContent}>
-            <View style={styles.conversationHeader}>
+          <View className="flex-1 justify-center">
+            <View className="flex-row justify-between items-center mb-1">
               <AppText
+                className="text-[17px] font-semibold"
                 style={{
                   color: colors.text,
-                  fontSize: 17,
-                  fontWeight: '600',
                 }}
                 numberOfLines={1}
               >
                 {item.participant_username}
               </AppText>
               <AppText
+                className="text-[12px]"
                 style={{
                   color: `${colors.text}99`,
-                  fontSize: 12,
                 }}
               >
                 {formatTime(item.last_message_time)}
               </AppText>
             </View>
 
-            <View style={styles.messagePreviewContainer}>
+            <View className="flex-row items-center">
               <AppText
+                className="text-[14px] flex-1"
                 style={{
                   color: `${colors.text}cc`,
-                  fontSize: 14,
-                  flex: 1,
                 }}
                 numberOfLines={1}
               >
@@ -135,18 +130,15 @@ const ChatList: React.FC<ChatListProps> = ({ conversations, loading, onConversat
               </AppText>
               {item.unread_count > 0 && (
                 <View
-                  style={[
-                    styles.unreadBadge,
-                    {
-                      backgroundColor: colors.secondary,
-                    },
-                  ]}
+                  className="min-w-[20px] h-[20px] rounded-[10px] items-center justify-center px-[6px] ml-2"
+                  style={{
+                    backgroundColor: colors.secondary,
+                  }}
                 >
                   <AppText
+                    className="text-[12px] font-bold"
                     style={{
                       color: colors.primaryDark,
-                      fontSize: 12,
-                      fontWeight: 'bold',
                     }}
                   >
                     {item.unread_count}
@@ -160,57 +152,5 @@ const ChatList: React.FC<ChatListProps> = ({ conversations, loading, onConversat
     />
   );
 };
-
-const styles = StyleSheet.create({
-  centerContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  listContent: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-  },
-  conversationItem: {
-    flexDirection: 'row',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 8,
-  },
-  avatarContainer: {
-    marginRight: 12,
-  },
-  avatar: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  conversationContent: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  conversationHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 4,
-  },
-  messagePreviewContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  unreadBadge: {
-    minWidth: 20,
-    height: 20,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-    marginLeft: 8,
-  },
-});
 
 export default ChatList;

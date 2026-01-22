@@ -3,6 +3,89 @@ import { Request, Response, NextFunction } from 'express';
 const sanitizeForLog = (value: unknown): string =>
   String(value).replaceAll(/[\r\n\u2028\u2029]+/g, ' ');
 
+
+const SENSITIVE_FIELDS = new Set([
+  'password',
+  'code',
+  'token',
+  'content',
+  'message',
+  'text',
+  'review',
+  'device',
+  'google_id',
+]);
+
+
+const keyCache = new Map<string, boolean>();
+
+const shouldRedactKey = (key: string): boolean => {
+  const lowerKey = key.toLowerCase();
+
+  if (keyCache.has(lowerKey)) {
+    return keyCache.get(lowerKey)!;
+  }
+
+  let shouldRedact = false;
+  for (const field of SENSITIVE_FIELDS) {
+    if (lowerKey.includes(field)) {
+      shouldRedact = true;
+      break;
+    }
+  }
+
+  if (keyCache.size < 1000) {
+    keyCache.set(lowerKey, shouldRedact);
+  }
+  return shouldRedact;
+};
+
+const redactSensitiveData = (data: any): any => {
+  if (data === null || data === undefined) {
+    return data;
+  }
+
+  if (Array.isArray(data)) {
+    return data.map(item => redactSensitiveData(item));
+  }
+
+  if (typeof data === 'object') {
+    const redacted: any = Object.create(null);
+    for (const [key, value] of Object.entries(data)) {
+      
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
+        continue;
+      }
+
+      if (shouldRedactKey(key)) {
+        Object.defineProperty(redacted, key, {
+          value: '[REDACTED]',
+          enumerable: true,
+          configurable: true,
+          writable: true
+        });
+      } else if (value !== null && typeof value === 'object') {
+        Object.defineProperty(redacted, key, {
+          value: redactSensitiveData(value),
+          enumerable: true,
+          configurable: true,
+          writable: true
+        });
+      } else {
+        Object.defineProperty(redacted, key, {
+          value: value,
+          enumerable: true,
+          configurable: true,
+          writable: true
+        });
+      }
+    }
+    return redacted;
+  }
+
+  return data;
+};
+
 export const requestLogger = (req: Request, res: Response, next: NextFunction) => {
   const startTime = Date.now();
 
@@ -24,13 +107,14 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
     authorization: req.get('authorization') ? 'Bearer [REDACTED]' : 'None',
   });
 
-  //log body
+  //log body with sensitive data redacted
   if (req.body && Object.keys(req.body).length > 0) {
     const sanitizedBody = Array.isArray(req.body)
       ? [...req.body]
       : ({ ...req.body } as Record<string, unknown>);
     try {
-      console.log('Body:', sanitizeForLog(JSON.stringify(sanitizedBody)));
+      const redactedBody = redactSensitiveData(sanitizedBody);
+      console.log('Body:', sanitizeForLog(JSON.stringify(redactedBody)));
     } catch {
       console.log('Body: [Unserializable Body]');
     }
@@ -38,7 +122,8 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
 
   if (req.query && Object.keys(req.query).length > 0) {
     try {
-      console.log('Query:', sanitizeForLog(JSON.stringify(req.query)));
+      const redactedQuery = redactSensitiveData(req.query);
+      console.log('Query:', sanitizeForLog(JSON.stringify(redactedQuery)));
     } catch {
       console.log('Query: [Unserializable Query]');
     }
@@ -56,7 +141,8 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
 
     try {
       const responseData = typeof data === 'string' ? JSON.parse(data) : data;
-      const responsePreview = JSON.stringify(responseData).substring(0, 500);
+      const redactedResponse = redactSensitiveData(responseData);
+      const responsePreview = JSON.stringify(redactedResponse).substring(0, 500);
       const previewWithEllipsis = responsePreview + (responsePreview.length >= 500 ? '...' : '');
       console.log('Response Preview:', sanitizeForLog(previewWithEllipsis));
     } catch {

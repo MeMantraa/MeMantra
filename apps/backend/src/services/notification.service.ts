@@ -125,12 +125,14 @@ export const NotificationService = {
    * @param deviceToken - Expo push token
    * @param mantraText - The mantra text to include
    * @param reminderId - The reminder ID for deep linking
+   * @param mantraId - The mantra ID for deep linking to mantra detail
    * @deprecated Use sendEnhancedReminderNotification for better content
    */
   async sendReminderNotification(
     deviceToken: string,
     mantraText: string,
-    reminderId: number
+    reminderId: number,
+    mantraId?: number
   ): Promise<ExpoPushResponse> {
     const title = 'Time for your mantra';
     const body = mantraText.length > 100 ? `${mantraText.substring(0, 97)}...` : mantraText;
@@ -138,6 +140,7 @@ export const NotificationService = {
     return await this.sendSimpleNotification(deviceToken, title, body, {
       type: 'reminder',
       reminderId,
+      mantraId,
       mantraText,
     });
   },
@@ -147,6 +150,7 @@ export const NotificationService = {
    * @param deviceToken - Expo push token
    * @param mantraText - The mantra text to include
    * @param reminderId - The reminder ID for deep linking
+   * @param mantraId - The mantra ID for deep linking to mantra detail
    * @param options - Optional notification content customization
    * @returns Expo push response
    */
@@ -154,6 +158,7 @@ export const NotificationService = {
     deviceToken: string,
     mantraText: string,
     reminderId: number,
+    mantraId?: number,
     options?: Partial<NotificationContentOptions>
   ): Promise<ExpoPushResponse> {
     // Generate notification content using templates
@@ -165,6 +170,7 @@ export const NotificationService = {
     return await this.sendSimpleNotification(deviceToken, title, body, {
       type: 'reminder',
       reminderId,
+      mantraId,
       mantraText,
     });
   },
@@ -179,6 +185,7 @@ export const NotificationService = {
       deviceToken: string;
       mantraText: string;
       reminderId: number;
+      mantraId?: number;
       categoryName?: string;
       ctaStyle?: CTAStyle;
     }>
@@ -197,6 +204,7 @@ export const NotificationService = {
         data: {
           type: 'reminder',
           reminderId: notif.reminderId,
+          mantraId: notif.mantraId,
           mantraText: notif.mantraText,
         },
         sound: 'default',
