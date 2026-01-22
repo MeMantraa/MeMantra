@@ -173,10 +173,13 @@ export default function CollectionsScreen({ navigation }: any) {
   }
 
   return (
-    <View className="flex-1 pt-16 pb-4 px-[30px]" style={{ backgroundColor: colors.primary }}>
-      <AppText className="text-[30px] text-left mb-10 mt-2" style={{ color: colors.text }}>
-        Collections
-      </AppText>
+    <View className="flex-1" style={{ backgroundColor: colors.primary }}>
+      <View className="pt-[60px] pb-4 px-[30px]" style={{ backgroundColor: colors.primary }}>
+        <AppText className="text-[30px] font-bold" style={{ color: colors.text }}>
+          Collections
+        </AppText>
+      </View>
+
       {collections.length === 0 ? (
         <View className="flex-1 justify-center items-center px-10">
           <Ionicons name="folder-open-outline" size={64} color={colors.secondary} />
