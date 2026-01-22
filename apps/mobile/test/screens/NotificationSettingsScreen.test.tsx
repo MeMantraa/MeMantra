@@ -108,13 +108,9 @@ describe('NotificationSettingsScreen', () => {
         enabled: true,
       });
 
-      const { getByTestId } = render(<NotificationSettingsScreen />);
+      const { findByTestId } = render(<NotificationSettingsScreen />);
 
-      await waitFor(() => {
-        expect(notificationSettingsService.getSettings).toHaveBeenCalled();
-      });
-
-      const toggle = getByTestId('enable-notifications-switch');
+      const toggle = await findByTestId('enable-notifications-switch');
       fireEvent(toggle, 'valueChange', true);
 
       await waitFor(() => {
@@ -136,13 +132,9 @@ describe('NotificationSettingsScreen', () => {
         enabled: true,
       });
 
-      const { getByTestId } = render(<NotificationSettingsScreen />);
+      const { findByTestId } = render(<NotificationSettingsScreen />);
 
-      await waitFor(() => {
-        expect(notificationSettingsService.getSettings).toHaveBeenCalled();
-      });
-
-      const toggle = getByTestId('enable-notifications-switch');
+      const toggle = await findByTestId('enable-notifications-switch');
       fireEvent(toggle, 'valueChange', true);
 
       await waitFor(() => {
@@ -161,13 +153,9 @@ describe('NotificationSettingsScreen', () => {
         granted: false,
       });
 
-      const { getByTestId } = render(<NotificationSettingsScreen />);
+      const { findByTestId } = render(<NotificationSettingsScreen />);
 
-      await waitFor(() => {
-        expect(notificationSettingsService.getSettings).toHaveBeenCalled();
-      });
-
-      const toggle = getByTestId('enable-notifications-switch');
+      const toggle = await findByTestId('enable-notifications-switch');
       fireEvent(toggle, 'valueChange', true);
 
       await waitFor(() => {
@@ -186,13 +174,9 @@ describe('NotificationSettingsScreen', () => {
         new Error('Update failed'),
       );
 
-      const { getByTestId } = render(<NotificationSettingsScreen />);
+      const { getByTestId, findByTestId } = render(<NotificationSettingsScreen />);
 
-      await waitFor(() => {
-        expect(notificationSettingsService.getSettings).toHaveBeenCalled();
-      });
-
-      const toggle = getByTestId('enable-notifications-switch');
+      const toggle = await findByTestId('enable-notifications-switch');
       fireEvent(toggle, 'valueChange', false);
 
       await waitFor(() => {
@@ -208,13 +192,9 @@ describe('NotificationSettingsScreen', () => {
         quietHoursEnabled: true,
       });
 
-      const { getByTestId } = render(<NotificationSettingsScreen />);
+      const { findByTestId } = render(<NotificationSettingsScreen />);
 
-      await waitFor(() => {
-        expect(notificationSettingsService.getSettings).toHaveBeenCalled();
-      });
-
-      const toggle = getByTestId('quiet-hours-switch');
+      const toggle = await findByTestId('quiet-hours-switch');
       fireEvent(toggle, 'valueChange', true);
 
       await waitFor(() => {
@@ -229,13 +209,9 @@ describe('NotificationSettingsScreen', () => {
         new Error('Update failed'),
       );
 
-      const { getByTestId } = render(<NotificationSettingsScreen />);
+      const { findByTestId } = render(<NotificationSettingsScreen />);
 
-      await waitFor(() => {
-        expect(notificationSettingsService.getSettings).toHaveBeenCalled();
-      });
-
-      const toggle = getByTestId('quiet-hours-switch');
+      const toggle = await findByTestId('quiet-hours-switch');
       fireEvent(toggle, 'valueChange', true);
 
       await waitFor(() => {
@@ -475,14 +451,10 @@ describe('NotificationSettingsScreen', () => {
         enabled: false,
       });
 
-      const { getByTestId } = render(<NotificationSettingsScreen />);
-
-      await waitFor(() => {
-        expect(notificationSettingsService.getSettings).toHaveBeenCalled();
-      });
+      const { findByTestId } = render(<NotificationSettingsScreen />);
 
       // Verify button is rendered
-      const testButton = getByTestId('test-notification-button');
+      const testButton = await findByTestId('test-notification-button');
       expect(testButton).toBeTruthy();
 
       // Verify notification service was not called
