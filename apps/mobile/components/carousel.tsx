@@ -162,6 +162,7 @@ export default function MantraCarousel({
       {showButtons && (
         <View className="absolute right-6 bottom-40 items-center">
           <IconButton type="save" active={!!item.isSaved} onPress={handleSave} className="mb-6" />
+          <IconButton type="share" onPress={handleShare} className="mb-6" />
           <View className="items-center">
             <IconButton type="like" active={!!item.isLiked} onPress={handleLike} />
             {item.like_count !== undefined && (

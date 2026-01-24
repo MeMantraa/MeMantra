@@ -29,9 +29,14 @@ export default function NewConversationScreen({ navigation }: any) {
       const response = await userService.getAllUsers(token || '');
 
       if (response.status === 'success') {
-        // Filter out current user since I can't chat with myself
+        // Filter out current user and everyone's emails
         const currentUserId = await storage.getUserId();
-        const otherUsers = response.data.users.filter((user) => user.user_id !== currentUserId);
+        const otherUsers = response.data.users
+          .filter((user) => user.user_id !== currentUserId)
+          .map((user) => ({
+            ...user,
+            email: null, //hide email
+          }));
         setUsers(otherUsers);
       }
     } catch (err) {
@@ -42,16 +47,16 @@ export default function NewConversationScreen({ navigation }: any) {
   };
 
   const filterUsers = () => {
-    if (searchText.trim()) {
-      const filtered = users.filter(
-        (user) =>
-          user.username?.toLowerCase().includes(searchText.toLowerCase()) ||
-          user.email?.toLowerCase().includes(searchText.toLowerCase()),
-      );
-      setFilteredUsers(filtered);
-    } else {
-      setFilteredUsers(users);
+    const q = searchText.trim().toLowerCase();
+
+    if (!q) {
+      setFilteredUsers([]);
+      return;
     }
+
+    const filtered = users.filter((user) => (user.username ?? '').toLowerCase().includes(q));
+
+    setFilteredUsers(filtered);
   };
 
   const handleUserSelect = async (user: User) => {
@@ -92,7 +97,7 @@ export default function NewConversationScreen({ navigation }: any) {
               fontWeight: 'bold',
             }}
           >
-            {(item.username || item.email || 'U').charAt(0).toUpperCase()}
+            {(item.username || 'U').charAt(0).toUpperCase()}
           </AppText>
         </View>
       </View>
@@ -107,16 +112,6 @@ export default function NewConversationScreen({ navigation }: any) {
         >
           {item.username || 'Unknown User'}
         </AppText>
-        {item.email && (
-          <AppText
-            style={{
-              color: `${colors.text}99`,
-              fontSize: 14,
-            }}
-          >
-            {item.email}
-          </AppText>
-        )}
       </View>
 
       {creating && <ActivityIndicator size="small" color={colors.secondary} />}
@@ -187,7 +182,7 @@ export default function NewConversationScreen({ navigation }: any) {
       {filteredUsers.length === 0 ? (
         <View className="flex-1 justify-center items-center px-5">
           <AppText className="text-center" style={{ color: colors.text }}>
-            {searchText.trim() ? 'No users found' : 'No users available'}
+            {searchText.trim() ? 'No users found' : 'Search for a user to start a chat'}
           </AppText>
         </View>
       ) : (
