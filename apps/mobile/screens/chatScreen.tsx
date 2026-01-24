@@ -44,13 +44,13 @@ export default function ChatScreen({ navigation }: any) {
   };
 
   return (
-    <View className="flex-1 pt-16 pb-4 px-[30px]" style={{ backgroundColor: colors.primary }}>
-      <AppText
-        className="text-[30px] text-left mt-2"
-        style={{ backgroundColor: colors.primary, color: colors.text }}
-      >
-        Messages
-      </AppText>
+    <View className="flex-1 pt-10" style={{ backgroundColor: colors.primary }}>
+      <View className="pt-3 pb-4 px-[30px]" style={{ backgroundColor: colors.primary }}>
+        <AppText className="text-[30px] font-bold" style={{ color: colors.text }}>
+          Messages
+        </AppText>
+      </View>
+
       <ChatList
         conversations={conversations}
         loading={loading}

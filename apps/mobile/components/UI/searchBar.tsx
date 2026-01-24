@@ -86,6 +86,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, placeholder = 'Search..
             placeholderTextColor={colors.primaryDark}
             style={{
               color: colors.primaryDark,
+              backgroundColor: 'transparent',
               paddingVertical: 12,
               paddingHorizontal: 0,
               height: 48,
