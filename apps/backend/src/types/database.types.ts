@@ -28,7 +28,6 @@ export interface UserTable {
   email: string | null;
   password_hash: string | null;
   device_token: string | null;
-  google_id: string | null;
   auth_provider: string | null;
   created_at: string | null;
 }

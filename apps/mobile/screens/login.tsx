@@ -1,11 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, Image, Alert } from 'react-native';
 import logo from '../assets/logo.png';
-import googleLogo from '../assets/googleLogo.png';
 import { authService } from '../services/auth.service';
 import { storage } from '../utils/storage';
-import { useGoogleAuth } from '../services/google-auth.service';
 import { useTheme } from '../context/ThemeContext';
 import AppTextInput from '../components/UI/textInputWrapper';
 import AppText from '../components/UI/textWrapper';
@@ -16,8 +14,6 @@ export default function LoginScreen({ navigation }: any) {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { colors } = useTheme();
-
-  const { request, response, promptAsync } = useGoogleAuth();
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -54,50 +50,6 @@ export default function LoginScreen({ navigation }: any) {
 
   const handleSignUp = () => {
     navigation.navigate('Signup');
-  };
-
-  useEffect(() => {
-    handleGoogleResponse();
-  }, [response]);
-
-  const handleGoogleResponse = async () => {
-    if (response?.type === 'success') {
-      const { authentication } = response;
-      const idToken = authentication?.idToken;
-
-      if (idToken) {
-        setLoading(true);
-        try {
-          const authResponse = await authService.googleAuth({ idToken });
-
-          if (authResponse.status === 'success') {
-            await storage.saveToken(authResponse.data.token);
-            await storage.saveUserData(authResponse.data.user);
-
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'MainApp' }],
-            });
-          } else {
-            Alert.alert('Error', authResponse.message || 'Google login failed');
-          }
-        } catch (error) {
-          console.error('Google auth error:', error);
-          Alert.alert('Error', 'Google authentication failed');
-        } finally {
-          setLoading(false);
-        }
-      }
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    try {
-      await promptAsync();
-    } catch (error) {
-      console.error('Google sign-in error:', error);
-      Alert.alert('Error', 'Failed to initiate Google sign-in');
-    }
   };
 
   return (
@@ -157,19 +109,6 @@ export default function LoginScreen({ navigation }: any) {
               disabled={loading}
             >
               New to us? <AppText className="text-white font-black">Sign Up</AppText>
-            </TextButton>
-
-            <TextButton
-              className="bg-[#6D7E68] rounded-[30px] p-[12px] mx-[60px] items-center mt-[18px]"
-              onPress={handleGoogleSignIn}
-              disabled={!request || loading}
-              textClassName="text-[#fff] text-[14px]"
-              style={{ backgroundColor: colors.primaryDark }}
-            >
-              <View className="flex-row items-center">
-                <Image source={googleLogo} className="mr-[10px] w-[30px] h-[30px]" />
-                <AppText className="text-[#fff] text-[14px]">Sign In with Google</AppText>
-              </View>
             </TextButton>
           </View>
         </View>

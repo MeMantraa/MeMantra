@@ -15,9 +15,6 @@ router.post('/login', validateRequest(loginSchema), AuthController.login);
 //api route to get current user profile
 router.get('/me', authenticate, AuthController.getMe);
 
-//api route for google authentication
-router.post('/auth/google', AuthController.googleAuth);
-
 //api route for user updating email
 router.patch('/email', authenticate, AuthController.updateEmail);
 

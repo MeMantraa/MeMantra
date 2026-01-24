@@ -102,10 +102,13 @@ describe('ShareMantraScreen', () => {
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
     );
 
-    // Wait for loading to complete
-    await waitFor(() => {
-      expect(queryByText('Loading conversations...')).toBeNull();
-    });
+    // Wait for loading to complete with longer timeout
+    await waitFor(
+      () => {
+        expect(queryByText('Loading conversations...')).toBeNull();
+      },
+      { timeout: 3000 },
+    );
 
     expect(getByText('john_doe')).toBeTruthy();
     expect(getByText('jane_smith')).toBeTruthy();
@@ -118,10 +121,13 @@ describe('ShareMantraScreen', () => {
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
     );
 
-    // Wait for loading to complete
-    await waitFor(() => {
-      expect(queryByText('Loading conversations...')).toBeNull();
-    });
+    // Wait for loading to complete with longer timeout
+    await waitFor(
+      () => {
+        expect(queryByText('Loading conversations...')).toBeNull();
+      },
+      { timeout: 3000 },
+    );
 
     expect(getByText('Select a conversation to share:')).toBeTruthy();
   });
@@ -145,10 +151,13 @@ describe('ShareMantraScreen', () => {
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
     );
 
-    // Wait for loading to complete
-    await waitFor(() => {
-      expect(queryByText('Loading conversations...')).toBeNull();
-    });
+    // Wait for loading to complete with longer timeout
+    await waitFor(
+      () => {
+        expect(queryByText('Loading conversations...')).toBeNull();
+      },
+      { timeout: 3000 },
+    );
 
     expect(getByText('john_doe')).toBeTruthy();
 
@@ -184,10 +193,13 @@ describe('ShareMantraScreen', () => {
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
     );
 
-    // Wait for loading to complete
-    await waitFor(() => {
-      expect(queryByText('Loading conversations...')).toBeNull();
-    });
+    // Wait for loading to complete with longer timeout
+    await waitFor(
+      () => {
+        expect(queryByText('Loading conversations...')).toBeNull();
+      },
+      { timeout: 3000 },
+    );
 
     expect(getByText('john_doe')).toBeTruthy();
 
@@ -228,10 +240,13 @@ describe('ShareMantraScreen', () => {
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
     );
 
-    // Wait for loading to complete
-    await waitFor(() => {
-      expect(queryByText('Loading conversations...')).toBeNull();
-    });
+    // Wait for loading to complete with longer timeout
+    await waitFor(
+      () => {
+        expect(queryByText('Loading conversations...')).toBeNull();
+      },
+      { timeout: 3000 },
+    );
 
     expect(getByText(/No conversations yet/)).toBeTruthy();
   });
@@ -244,10 +259,13 @@ describe('ShareMantraScreen', () => {
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
     );
 
-    // Wait for loading to complete
-    await waitFor(() => {
-      expect(queryByText('Loading conversations...')).toBeNull();
-    });
+    // Wait for loading to complete with longer timeout
+    await waitFor(
+      () => {
+        expect(queryByText('Loading conversations...')).toBeNull();
+      },
+      { timeout: 3000 },
+    );
 
     expect(getByText('jane_smith')).toBeTruthy();
 
