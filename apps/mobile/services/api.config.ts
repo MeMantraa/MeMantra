@@ -3,15 +3,13 @@ import { Platform } from 'react-native';
 import { storage } from '../utils/storage';
 
 const getBaseUrl = () => {
-  //if android
-  if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:4000/api';
-  }
+  // Preferred: use env (works on real phones)
+  const envUrl = process.env.EXPO_PUBLIC_API_BASE_URL;
+  if (envUrl) return envUrl;
 
-  //if ios
-  if (Platform.OS === 'ios') {
-    return 'http://localhost:4000/api';
-  }
+  // Fallbacks (mostly for emulators)
+  if (Platform.OS === 'android') return 'http://10.0.2.2:4000';
+  return 'http://localhost:4000/api';
 };
 
 const API_BASE_URL = getBaseUrl();

@@ -1,11 +1,12 @@
 services:
   backend:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: ./apps/backend/dockerfile
     working_dir: /app/apps/backend
     ports:
-      - '${API_PORT:-4000}:3000'
+      - '${API_PORT:-4000}:4000'
     env_file:
       - ./apps/backend/.env
     environment:
@@ -33,12 +34,13 @@ services:
 
   #runs local, containerized db
   db:
+    restart: unless-stopped
     image: postgres:17
     env_file:
       - ./apps/backend/.env
     environment: {}
     ports:
-      - '${DB_PORT:-5432}:5432'
+      - '127.0.0.1:5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
       # Initialize the database with init script

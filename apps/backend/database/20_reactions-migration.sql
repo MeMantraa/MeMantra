@@ -3,7 +3,7 @@
 -- Create MessageReaction table
 CREATE TABLE IF NOT EXISTS "MessageReaction" (
     reaction_id SERIAL PRIMARY KEY,
-    message_id INTEGER NOT NULL REFERENCES "Message"(message_id) ON DELETE CASCADE,
+    message_id INTEGER NOT NULL REFERENCES message(message_id) ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES "User"(user_id) ON DELETE CASCADE,
     emoji VARCHAR(10) NOT NULL,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
