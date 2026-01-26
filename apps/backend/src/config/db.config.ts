@@ -11,7 +11,9 @@ export const pool = new Pool({
   // database: process.env.DB_NAME,
 
   connectionString: process.env.DATABASE_URL, // Neon Hosted Database URL
-  ssl: { rejectUnauthorized: false }, // required for Neon
+  ssl: process.env.DATABASE_URL?.includes('sslmode=require')
+? { rejectUnauthorized: false }
+: false,
 });
 
 export async function testConnection() {

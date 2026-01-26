@@ -14,7 +14,10 @@ const dialect = new PostgresDialect({
     // database: process.env.DB_NAME,
 
   connectionString: process.env.DATABASE_URL, // Neon Hosted Database URL
-  ssl: { rejectUnauthorized: false }, // required for Neon
+  // Enable SSL only for managed DBs like Neon (sslmode=require). Local docker Postgres doesn't support SSL.
+ssl: process.env.DATABASE_URL?.includes('sslmode=require')
+  ? { rejectUnauthorized: false }
+  : false,
   })
 });
 
