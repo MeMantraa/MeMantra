@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import ChatList from '../components/chat/ChatList';
@@ -14,11 +14,9 @@ export default function ChatScreen({ navigation }: any) {
 
   useEffect(() => {
     loadConversations();
-
     const unsubscribe = navigation.addListener('focus', () => {
       loadConversations();
     });
-
     return unsubscribe;
   }, [navigation]);
 
@@ -46,9 +44,11 @@ export default function ChatScreen({ navigation }: any) {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.primary }]}>
-      <View style={[styles.header, { backgroundColor: colors.primary }]}>
-        <AppText style={[styles.headerTitle, { color: colors.text }]}>Messages</AppText>
+    <View className="flex-1 pt-10" style={{ backgroundColor: colors.primary }}>
+      <View className="pt-3 pb-4 px-[30px]" style={{ backgroundColor: colors.primary }}>
+        <AppText className="text-[30px] font-bold" style={{ color: colors.text }}>
+          Messages
+        </AppText>
       </View>
 
       <ChatList
@@ -59,46 +59,14 @@ export default function ChatScreen({ navigation }: any) {
 
       {/* Floating Action Button for New Conversation */}
       <TouchableOpacity
-        style={[styles.fab, { backgroundColor: colors.secondary }]}
+        className="absolute bottom-5 right-5 w-14 h-14 rounded-[28px] items-center justify-center shadow-lg"
+        style={{ backgroundColor: colors.secondary }}
         onPress={handleNewConversation}
       >
-        <AppText style={[styles.fabText, { color: colors.primaryDark }]}>+</AppText>
+        <AppText className="text-2xl font-bold" style={{ color: colors.primaryDark }}>
+          +
+        </AppText>
       </TouchableOpacity>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop: 40,
-  },
-  header: {
-    paddingTop: 12,
-    paddingBottom: 16,
-    paddingHorizontal: 30,
-  },
-  headerTitle: {
-    fontSize: 30,
-    fontWeight: 'bold',
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  fabText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-});

@@ -819,6 +819,47 @@ describe('HomeScreen - Full Coverage', () => {
     );
   }, 15000);
 
+  it('scrolls to specific mantra when returnToMantraId is passed via route params', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    const sample = [
+      { mantra_id: 1, title: 'M1', isLiked: false, isSaved: false },
+      { mantra_id: 2, title: 'M2', isLiked: false, isSaved: false },
+      { mantra_id: 3, title: 'M3', isLiked: false, isSaved: false },
+    ];
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: sample,
+    });
+
+    const mockSetParams = jest.fn();
+    const mockNavigation = {
+      navigate: mockNavigate,
+      reset: mockReset,
+      setParams: mockSetParams,
+    };
+
+    const { getByText } = render(
+      <SavedProvider>
+        <HomeScreen
+          navigation={mockNavigation}
+          route={{
+            params: { returnToMantraId: 2 },
+          }}
+        />
+      </SavedProvider>,
+    );
+
+    await waitFor(() => expect(getByText('M2')).toBeTruthy(), { timeout: 10000 });
+
+    // Verify that setParams was called to clear the returnToMantraId after scrolling
+    await waitFor(
+      () => {
+        expect(mockSetParams).toHaveBeenCalledWith({ returnToMantraId: undefined });
+      },
+      { timeout: 10000 },
+    );
+  }, 15000);
+
   it('shows collection toast after successfully adding mantra to collection', async () => {
     (storage.getToken as jest.Mock).mockResolvedValue('token');
     const sample = [{ mantra_id: 1, title: 'M1', isLiked: false, isSaved: false }];

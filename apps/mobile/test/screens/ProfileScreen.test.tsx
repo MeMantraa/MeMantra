@@ -52,6 +52,7 @@ describe('ProfileScreen', () => {
         expect(getByText('memantrauser')).toBeTruthy();
         expect(getByText('Update Email')).toBeTruthy();
         expect(getByText('Update Password')).toBeTruthy();
+        expect(getByText('Notification Settings')).toBeTruthy();
         expect(getByText('Delete Account')).toBeTruthy();
         expect(getByText('Sign Out')).toBeTruthy();
       },
@@ -106,6 +107,19 @@ describe('ProfileScreen', () => {
     fireEvent.press(updatePasswordButton);
 
     expect(mockNavigate).toHaveBeenCalledWith('UpdatePassword');
+  });
+
+  it('navigates to NotificationSettings screen when Notification Settings is pressed', async () => {
+    const { getByText } = render(<ProfileScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Notification Settings')).toBeTruthy();
+    });
+
+    const notificationSettingsButton = getByText('Notification Settings');
+    fireEvent.press(notificationSettingsButton);
+
+    expect(mockNavigate).toHaveBeenCalledWith('NotificationSettings');
   });
 
   it('calls logoutUser when Sign Out is pressed', async () => {

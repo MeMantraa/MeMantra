@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/homeScreen';
 import AdminScreen from '../screens/adminScreen';
@@ -65,7 +64,14 @@ export default function BottomTabNavigator() {
       initialRouteName="Home"
       screenOptions={{
         tabBarShowLabel: false,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: {
+          backgroundColor: '#6d7e68',
+          borderTopWidth: 0.5,
+          borderTopColor: 'white',
+          height: 105,
+          paddingBottom: 12,
+          paddingTop: 15,
+        },
         headerShown: false,
       }}
     >
@@ -109,20 +115,3 @@ export default function BottomTabNavigator() {
     </Tab.Navigator>
   );
 }
-
-const styles = StyleSheet.create({
-  screenContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#A8B3A2',
-  },
-  tabBar: {
-    backgroundColor: '#6d7e68',
-    borderTopWidth: 0.5,
-    borderTopColor: 'white',
-    height: 105,
-    paddingBottom: 12,
-    paddingTop: 15,
-  },
-});

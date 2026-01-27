@@ -67,107 +67,128 @@ export const UserModel = {
     return user;
   },
 
+  async findByIds(ids: number[]): Promise<User[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    
+    const users = await db
+      .selectFrom('User')
+      .where('user_id', 'in', ids)
+      .selectAll()
+      .execute();
+    
+    return users;
+  },
+
   async findAll(): Promise<User[]> {
-  const users = await db
-    .selectFrom('User')
-    .selectAll()
-    .orderBy('created_at', 'desc')
-    .execute();
-  
-  return users;
-},
+    const users = await db
+      .selectFrom('User')
+      .selectAll()
+      .orderBy('created_at', 'desc')
+      .execute();
+    
+    return users;
+  },
 
-async update(id: number, updates: Partial<User>): Promise<User | undefined> {
-  const user = await db
-    .updateTable('User')
-    .set(updates)
-    .where('user_id', '=', id)
-    .returningAll()
-    .executeTakeFirst();
-  
-  return user;
-},
+  async update(id: number, updates: Partial<User>): Promise<User | undefined> {
+    const user = await db
+      .updateTable('User')
+      .set(updates)
+      .where('user_id', '=', id)
+      .returningAll()
+      .executeTakeFirst();
+    
+    return user;
+  },
 
-async delete(id: number): Promise<boolean> {
-  const result = await db
-    .deleteFrom('User')
-    .where('user_id', '=', id)
-    .executeTakeFirst();
-  
-  return result.numDeletedRows > 0;
-},
-async updateEmail(userId: number, email: string) {
-  return db
-    .updateTable('User')
-    .set({ email })
-    .where('user_id', '=', userId)
-    .executeTakeFirst();
-},
+  async delete(id: number): Promise<boolean> {
+    const result = await db
+      .deleteFrom('User')
+      .where('user_id', '=', id)
+      .executeTakeFirst();
 
-//Check if user has specific flag enabled
-async hasFlag(userId: number, flagName: string): Promise<boolean> {
-const result = await db
-.selectFrom('User')
-.where('user_id', '=', userId)
-.where(sql<boolean>`${sql.val(flagName)} = ANY(${sql.ref('feature_flags')})`)
-.select('user_id')
-.executeTakeFirst();
-return !!result;
-},
+    return result.numDeletedRows > 0;
+  },
 
-//Add flag to user if not already present
-async addFlag(userId: number, flagName: string): Promise<User | undefined> {
-return await db
-.updateTable('User')
-.set({
-feature_flags: sql`array_append(${sql.ref('feature_flags')}, ${sql.val(flagName)})`
-})
-.where('user_id', '=', userId)
-.where(sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`)
-.returningAll()
-.executeTakeFirst();
-},
+  async updateEmail(userId: number, email: string) {
+    return db
+      .updateTable('User')
+      .set({ email })
+      .where('user_id', '=', userId)
+      .executeTakeFirst();
+  },
 
-//Remove flag from user
-async removeFlag(userId: number, flagName: string): Promise<User | undefined> {
-return await db
-.updateTable('User')
-.set({
-  feature_flags: sql`array_remove(${sql.ref('feature_flags')}, ${sql.val(flagName)})`
-})
-.where('user_id', '=', userId)
-.returningAll()
-.executeTakeFirst();
-},
+  // Check if user has specific flag enabled
+  async hasFlag(userId: number, flagName: string): Promise<boolean> {
+    const result = await db
+      .selectFrom('User')
+      .where('user_id', '=', userId)
+      .where(sql<boolean>`${sql.val(flagName)} = ANY(${sql.ref('feature_flags')})`)
+      .select('user_id')
+      .executeTakeFirst();
 
-//Set multiple flags at once (replaces all existing flags)
-async setFlags(userId: number, flags: string[]): Promise<User | undefined> {
-return await db
-.updateTable('User')
-.set({
-feature_flags: flags
-})
-.where('user_id', '=', userId)
-.returningAll()
-.executeTakeFirst();
-},
+    return !!result;
+  },
 
-//Get all users who have a specific flag
-async findUsersWithFlag(flagName: string): Promise<User[]> {
-return await db
-.selectFrom('User')
-.where(sql<boolean>`(${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`)
-.selectAll()
-.execute();
-},
+  // Add flag to user if not already present
+  async addFlag(userId: number, flagName: string): Promise<User | undefined> {
+    return await db
+      .updateTable('User')
+      .set({
+        feature_flags: sql`array_append(${sql.ref('feature_flags')}, ${sql.val(flagName)})`,
+      })
+      .where('user_id', '=', userId)
+      .where(
+        sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`,
+      )
+      .returningAll()
+      .executeTakeFirst();
+  },
 
-//Get all users who DON'T have a specific flag
-async findUsersWithoutFlag(flagName: string): Promise<User[]> {
-return await db
-.selectFrom('User')
-.where(sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`)
-.selectAll()
-.execute();
-},
+  // Remove flag from user
+  async removeFlag(userId: number, flagName: string): Promise<User | undefined> {
+    return await db
+      .updateTable('User')
+      .set({
+        feature_flags: sql`array_remove(${sql.ref('feature_flags')}, ${sql.val(flagName)})`,
+      })
+      .where('user_id', '=', userId)
+      .returningAll()
+      .executeTakeFirst();
+  },
+
+  // Set multiple flags at once (replaces all existing flags)
+  async setFlags(userId: number, flags: string[]): Promise<User | undefined> {
+    return await db
+      .updateTable('User')
+      .set({
+        feature_flags: flags,
+      })
+      .where('user_id', '=', userId)
+      .returningAll()
+      .executeTakeFirst();
+  },
+
+  // Get all users who have a specific flag
+  async findUsersWithFlag(flagName: string): Promise<User[]> {
+    return await db
+      .selectFrom('User')
+      .where(sql<boolean>`(${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`)
+      .selectAll()
+      .execute();
+  },
+
+  // Get all users who DON'T have a specific flag
+  async findUsersWithoutFlag(flagName: string): Promise<User[]> {
+    return await db
+      .selectFrom('User')
+      .where(
+        sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`,
+      )
+      .selectAll()
+      .execute();
+  },
+
 };
 
