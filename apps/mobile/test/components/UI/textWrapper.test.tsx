@@ -1,11 +1,11 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { Platform } from 'react-native';
-import AppText from '../../../components/UI/textWrapper';
+import AppText, { styles } from '../../../components/UI/textWrapper';
 
 describe('AppText Component', () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
   it('renders text with correct content', () => {
@@ -25,15 +25,21 @@ describe('AppText Component', () => {
 
   it('applies Android-specific styles on Android platform', () => {
     jest.spyOn(Platform, 'OS', 'get').mockReturnValue('android');
+
     const { getByText } = render(<AppText>Android Text</AppText>);
-    expect(getByText('Android Text')).toBeTruthy();
-    jest.restoreAllMocks();
+    const node = getByText('Android Text');
+
+    // ✅ THIS is what covers the branch
+    expect(node).toHaveStyle(styles.androidTextFix);
   });
 
-  it('renders without Android-specific styles on iOS platform', () => {
+  it('does NOT apply Android-specific styles on iOS platform', () => {
     jest.spyOn(Platform, 'OS', 'get').mockReturnValue('ios');
+
     const { getByText } = render(<AppText>iOS Text</AppText>);
-    expect(getByText('iOS Text')).toBeTruthy();
-    jest.restoreAllMocks();
+    const node = getByText('iOS Text');
+
+    // ✅ Covers false branch
+    expect(node).not.toHaveStyle(styles.androidTextFix);
   });
 });

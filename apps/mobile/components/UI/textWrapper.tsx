@@ -27,7 +27,7 @@ function AppTextBase(props: Readonly<AppTextProps>) {
 const AppText = cssInterop(AppTextBase, { className: 'style' });
 export default AppText;
 
-const styles = StyleSheet.create({
+export const styles = StyleSheet.create({
   text: {
     fontFamily: 'LibreBaskerville-Regular',
   },
