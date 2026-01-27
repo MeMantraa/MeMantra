@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View } from 'react-native';
 import { TouchableOpacity } from 'react-native';
 import AppText from '../components/UI/textWrapper';
 import { profileSettingsStyles as styles } from '../styles/profileSettings.styles';
