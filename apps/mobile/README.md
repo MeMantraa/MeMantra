@@ -45,7 +45,7 @@ apps/mobile
 ├─ components/             # Reusable UI widgets (carousel, buttons, tabs)
 ├─ context/ThemeContext.tsx
 ├─ screens/                # Login, SignUp, Home
-├─ services/               # API clients (auth, mantra, Google)
+├─ services/               # API clients (auth, mantra)
 ├─ utils/storage.ts        # AsyncStorage helpers for token/user data
 ├─ styles/ + global.css    # NativeWind config and shared styles
 ├─ test/                   # Jest + RTL suites

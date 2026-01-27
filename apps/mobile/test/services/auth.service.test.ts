@@ -53,16 +53,6 @@ describe('authService', () => {
     expect(result).toBe(data);
   });
 
-  it('calls the googleAuth endpoint and returns the response data', async () => {
-    const data = { status: 'success' };
-    mockPost.mockResolvedValueOnce({ data });
-
-    const result = await authService.googleAuth({ idToken: 'google-token' });
-
-    expect(mockPost).toHaveBeenCalledWith('/auth/google', { idToken: 'google-token' });
-    expect(result).toBe(data);
-  });
-
   describe('forgotPassword', () => {
     it('calls the forgot-password endpoint with email and returns response data', async () => {
       const email = 'user@example.com';
