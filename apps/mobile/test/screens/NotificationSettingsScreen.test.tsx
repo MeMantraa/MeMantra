@@ -153,9 +153,14 @@ describe('NotificationSettingsScreen', () => {
         granted: false,
       });
 
-      const { findByTestId } = render(<NotificationSettingsScreen />);
+      const { getByTestId } = render(<NotificationSettingsScreen />);
 
-      const toggle = await findByTestId('enable-notifications-switch');
+      // Wait for the component to finish loading first
+      await waitFor(() => {
+        expect(notificationSettingsService.getSettings).toHaveBeenCalled();
+      });
+
+      const toggle = await getByTestId('enable-notifications-switch');
       fireEvent(toggle, 'valueChange', true);
 
       await waitFor(() => {

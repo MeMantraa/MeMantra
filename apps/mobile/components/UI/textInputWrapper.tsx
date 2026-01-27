@@ -16,7 +16,6 @@ const styles = StyleSheet.create({
   input: {
     fontFamily: 'LibreBaskerville-Regular',
     fontSize: 16,
-    color: '#222',
     padding: 10,
     borderWidth: 1,
     borderColor: '#ccc',
