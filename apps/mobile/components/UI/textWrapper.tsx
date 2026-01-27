@@ -14,7 +14,6 @@ function AppTextBase(props: Readonly<AppTextProps>) {
         styles.text,
 
         // Android: helps prevent baseline/descender clipping with some fonts
-        // c8 ignore next
         Platform.OS === 'android' ? styles.androidTextFix : null,
 
         props.style,
