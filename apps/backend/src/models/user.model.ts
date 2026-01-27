@@ -25,6 +25,7 @@ export const UserModel = {
       password_hash: hashedPassword,
       device_token: userData.device_token || null,
       created_at: new Date().toISOString(),
+      feature_flags: [],
     };
     
     //insert in db
