@@ -5,7 +5,11 @@ import AppText, { styles } from '../../../components/UI/textWrapper';
 
 describe('AppText Component', () => {
   afterEach(() => {
-    jest.restoreAllMocks();
+    // Reset Platform.OS after each test
+    Object.defineProperty(Platform, 'OS', {
+      value: 'ios',
+      configurable: true,
+    });
   });
 
   it('renders text with correct content', () => {
@@ -24,22 +28,26 @@ describe('AppText Component', () => {
   });
 
   it('applies Android-specific styles on Android platform', () => {
-    jest.spyOn(Platform, 'OS', 'get').mockReturnValue('android');
+    Object.defineProperty(Platform, 'OS', {
+      value: 'android',
+      configurable: true,
+    });
 
     const { getByText } = render(<AppText>Android Text</AppText>);
     const node = getByText('Android Text');
 
-    // ✅ THIS is what covers the branch
     expect(node).toHaveStyle(styles.androidTextFix);
   });
 
   it('does NOT apply Android-specific styles on iOS platform', () => {
-    jest.spyOn(Platform, 'OS', 'get').mockReturnValue('ios');
+    Object.defineProperty(Platform, 'OS', {
+      value: 'ios',
+      configurable: true,
+    });
 
     const { getByText } = render(<AppText>iOS Text</AppText>);
     const node = getByText('iOS Text');
 
-    // ✅ Covers false branch
     expect(node).not.toHaveStyle(styles.androidTextFix);
   });
 });
