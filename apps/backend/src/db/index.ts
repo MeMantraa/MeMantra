@@ -7,15 +7,9 @@ dotenv.config();
 
 const dialect = new PostgresDialect({
   pool: new Pool({
-    // host: process.env.DB_HOST,
-    // port: Number.parseInt(process.env.DB_PORT || '5432'),
-    // user: process.env.DB_USER,
-    // password: process.env.DB_PASSWORD,
-    // database: process.env.DB_NAME,
-
-  connectionString: process.env.DATABASE_URL, // Neon Hosted Database URL
-  ssl: { rejectUnauthorized: false }, // required for Neon
-  })
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false },
+  }),
 });
 
 export const db = new Kysely<Database>({

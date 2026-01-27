@@ -34,9 +34,12 @@ export default function HomeScreen({ navigation, route }: any) {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [currentMantraId, setCurrentMantraId] = useState<number | null>(null);
 
+  //for smoother animations
+  const [initialIndex, setInitialIndex] = useState(0);
+  const [readyToShowFeed, setReadyToShowFeed] = useState(false);
+
   const { colors } = useTheme();
 
-  //scroll back to a specific mantra after sharing
   const listRef = useRef<FlatList<Mantra>>(null);
   const { setSavedMantras } = useSavedMantras();
 
@@ -47,35 +50,60 @@ export default function HomeScreen({ navigation, route }: any) {
 
   const loadMantras = async () => {
     try {
+      setLoading(true);
+      setReadyToShowFeed(false);
       const token = (await storage.getToken()) || 'mock-token';
       const response = await mantraService.getFeedMantras(token);
 
       if (response.status === 'success') {
         setFeedData(response.data);
+      } else {
+        setFeedData([]);
       }
     } catch (err) {
       console.error('Error fetching mantras:', err);
+      setFeedData([]);
     } finally {
       setLoading(false);
     }
   };
 
-  //When coming back from ShareMantra screen, jump back to the mantra shared
+  // compute index of mantra to show (in case user accesses a mantra from the messaging tab)
   useEffect(() => {
-    const returnToMantraId = route?.params?.returnToMantraId as number | undefined;
-    if (!returnToMantraId) return;
+    if (loading) return;
     if (!feedData.length) return;
 
-    const idx = feedData.findIndex((m) => m.mantra_id === returnToMantraId);
-    if (idx < 0) return;
+    const raw = route?.params?.returnToMantraId;
+    const targetId = raw !== undefined && raw !== null ? Number(raw) : undefined;
 
-    // clear param so it doesn't keep jumping
-    navigation.setParams({ returnToMantraId: undefined });
+    // normal home behavior
+    if (!targetId || Number.isNaN(targetId)) {
+      setInitialIndex(0);
+      setReadyToShowFeed(true);
+      return;
+    }
 
+    const idx = feedData.findIndex((m) => m.mantra_id === targetId);
+
+    // if not found, just show normally
+    if (idx < 0) {
+      setInitialIndex(0);
+      setReadyToShowFeed(true);
+      navigation.setParams({ returnToMantraId: undefined });
+      return;
+    }
+
+    setInitialIndex(idx);
+    setReadyToShowFeed(true);
+
+    //if the list is already on screen (coming from Messages), jump immediately
     requestAnimationFrame(() => {
       listRef.current?.scrollToIndex({ index: idx, animated: false });
     });
-  }, [route?.params?.returnToMantraId, feedData.length]);
+
+    // clear param so it doesn't keep jumping
+    navigation.setParams({ returnToMantraId: undefined });
+  }, [loading, feedData, route?.params?.returnToMantraId]);
 
   const loadCollections = async () => {
     try {
@@ -147,7 +175,6 @@ export default function HomeScreen({ navigation, route }: any) {
         const savedMantra = feedData.find((m) => m.mantra_id === mantraId);
         if (savedMantra) setSavedMantras((prev) => [...prev, savedMantra]);
 
-        // Store the mantra ID and show popup + collections sheet
         setCurrentMantraId(mantraId);
         setShowSavedPopup(true);
       }
@@ -160,7 +187,6 @@ export default function HomeScreen({ navigation, route }: any) {
     }
   };
 
-  //Share handler
   const handleShare = (mantraId: number) => {
     const mantra = feedData.find((m) => m.mantra_id === mantraId);
     if (!mantra) return;
@@ -218,13 +244,9 @@ export default function HomeScreen({ navigation, route }: any) {
   const handleRate = async (mantraId: number, rating: number) => {
     try {
       const token = (await storage.getToken()) || 'mock-token';
-      console.log('Rating mantra:', mantraId, 'with rating:', rating);
-
       const response = await ratingService.rateMantra(mantraId, rating, undefined, token);
 
-      if (response.status === 'success') {
-        console.log('Rating saved successfully');
-      } else {
+      if (response.status !== 'success') {
         Alert.alert('Error', response.message || 'Failed to save rating');
       }
     } catch (err) {
@@ -257,7 +279,7 @@ export default function HomeScreen({ navigation, route }: any) {
 
   let content;
 
-  if (loading) {
+  if (loading || (!readyToShowFeed && feedData.length > 0)) {
     content = (
       <View
         className="flex-1 justify-center items-center"
@@ -294,8 +316,10 @@ export default function HomeScreen({ navigation, route }: any) {
   } else {
     content = (
       <FlatList
+        key={`feed-${initialIndex}`} // ✅ remount so initialScrollIndex is applied when it changes
         ref={listRef}
         data={feedData}
+        initialScrollIndex={initialIndex} // ✅ no flash to first item
         renderItem={({ item }) => (
           <MantraCarousel
             item={item}
@@ -317,13 +341,11 @@ export default function HomeScreen({ navigation, route }: any) {
         snapToAlignment="start"
         decelerationRate="fast"
         snapToInterval={SCREEN_HEIGHT}
-        // ✅ NEW: helps scrollToIndex be reliable
         getItemLayout={(_, index) => ({
           length: SCREEN_HEIGHT,
           offset: SCREEN_HEIGHT * index,
           index,
         })}
-        // ✅ NEW: fallback if scrollToIndex happens before list is ready
         onScrollToIndexFailed={(info) => {
           setTimeout(() => {
             listRef.current?.scrollToIndex({ index: info.index, animated: false });
@@ -340,7 +362,6 @@ export default function HomeScreen({ navigation, route }: any) {
         <IconButton type="profile" onPress={handleUserPress} testID="profile-btn" />
       </View>
 
-      {/* Main feed */}
       {content}
 
       <SavedPopupBar

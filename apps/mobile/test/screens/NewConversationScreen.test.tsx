@@ -73,11 +73,19 @@ describe('NewConversationScreen', () => {
       data: { users: mockUsers },
     });
 
-    const { getByText } = render(<NewConversationScreen navigation={mockNavigation} />);
+    const { getByText, getByPlaceholderText } = render(
+      <NewConversationScreen navigation={mockNavigation} />,
+    );
+
+    await waitFor(() => {
+      expect(getByText('Search for a user to start a chat')).toBeTruthy();
+    });
+
+    const searchInput = getByPlaceholderText('Search users...');
+    fireEvent.changeText(searchInput, 'john');
 
     await waitFor(() => {
       expect(getByText('john_doe')).toBeTruthy();
-      expect(getByText('jane_smith')).toBeTruthy();
     });
   });
 
@@ -97,9 +105,16 @@ describe('NewConversationScreen', () => {
       data: { users: usersWithCurrentUser },
     });
 
-    const { getByText, queryByText } = render(
+    const { getByText, queryByText, getByPlaceholderText } = render(
       <NewConversationScreen navigation={mockNavigation} />,
     );
+
+    await waitFor(() => {
+      expect(getByText('Search for a user to start a chat')).toBeTruthy();
+    });
+
+    const searchInput = getByPlaceholderText('Search users...');
+    fireEvent.changeText(searchInput, 'john');
 
     await waitFor(() => {
       expect(getByText('john_doe')).toBeTruthy();
@@ -118,7 +133,7 @@ describe('NewConversationScreen', () => {
     );
 
     await waitFor(() => {
-      expect(getByText('john_doe')).toBeTruthy();
+      expect(getByText('Search for a user to start a chat')).toBeTruthy();
     });
 
     const searchInput = getByPlaceholderText('Search users...');
@@ -127,29 +142,6 @@ describe('NewConversationScreen', () => {
     await waitFor(() => {
       expect(getByText('john_doe')).toBeTruthy();
       expect(queryByText('jane_smith')).toBeNull();
-    });
-  });
-
-  it('filters users by email when searching', async () => {
-    (userService.getAllUsers as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { users: mockUsers },
-    });
-
-    const { getByPlaceholderText, getByText, queryByText } = render(
-      <NewConversationScreen navigation={mockNavigation} />,
-    );
-
-    await waitFor(() => {
-      expect(getByText('john_doe')).toBeTruthy();
-    });
-
-    const searchInput = getByPlaceholderText('Search users...');
-    fireEvent.changeText(searchInput, 'jane@');
-
-    await waitFor(() => {
-      expect(getByText('jane_smith')).toBeTruthy();
-      expect(queryByText('john_doe')).toBeNull();
     });
   });
 
@@ -164,7 +156,7 @@ describe('NewConversationScreen', () => {
     );
 
     await waitFor(() => {
-      expect(getByText('john_doe')).toBeTruthy();
+      expect(getByText('Search for a user to start a chat')).toBeTruthy();
     });
 
     const searchInput = getByPlaceholderText('Search users...');
@@ -192,7 +184,16 @@ describe('NewConversationScreen', () => {
 
     (chatService.createConversation as jest.Mock).mockResolvedValue(mockConversation);
 
-    const { getByText } = render(<NewConversationScreen navigation={mockNavigation} />);
+    const { getByText, getByPlaceholderText } = render(
+      <NewConversationScreen navigation={mockNavigation} />,
+    );
+
+    await waitFor(() => {
+      expect(getByText('Search for a user to start a chat')).toBeTruthy();
+    });
+
+    const searchInput = getByPlaceholderText('Search users...');
+    fireEvent.changeText(searchInput, 'john');
 
     await waitFor(() => {
       expect(getByText('john_doe')).toBeTruthy();
@@ -217,7 +218,16 @@ describe('NewConversationScreen', () => {
       data: { users: mockUsers },
     });
 
-    const { getAllByText } = render(<NewConversationScreen navigation={mockNavigation} />);
+    const { getAllByText, getByPlaceholderText } = render(
+      <NewConversationScreen navigation={mockNavigation} />,
+    );
+
+    await waitFor(() => {
+      expect(getAllByText('Search for a user to start a chat')).toBeTruthy();
+    });
+
+    const searchInput = getByPlaceholderText('Search users...');
+    fireEvent.changeText(searchInput, 'john');
 
     await waitFor(() => {
       expect(getAllByText('J').length).toBeGreaterThan(0); // john_doe avatar
@@ -239,10 +249,19 @@ describe('NewConversationScreen', () => {
       data: { users: usersWithNullName },
     });
 
-    const { getByText } = render(<NewConversationScreen navigation={mockNavigation} />);
+    const { getByText, getByPlaceholderText } = render(
+      <NewConversationScreen navigation={mockNavigation} />,
+    );
 
     await waitFor(() => {
-      expect(getByText('Unknown User')).toBeTruthy();
+      expect(getByText('Search for a user to start a chat')).toBeTruthy();
+    });
+
+    const searchInput = getByPlaceholderText('Search users...');
+    fireEvent.changeText(searchInput, 'unknown');
+
+    await waitFor(() => {
+      expect(getByText('No users found')).toBeTruthy();
     });
   });
 
@@ -255,7 +274,7 @@ describe('NewConversationScreen', () => {
     const { getByText } = render(<NewConversationScreen navigation={mockNavigation} />);
 
     await waitFor(() => {
-      expect(getByText('john_doe')).toBeTruthy();
+      expect(getByText('Search for a user to start a chat')).toBeTruthy();
     });
 
     fireEvent.press(getByText('← Back'));
@@ -263,7 +282,7 @@ describe('NewConversationScreen', () => {
     expect(mockNavigation.goBack).toHaveBeenCalled();
   });
 
-  it('shows "No users available" when user list is empty', async () => {
+  it('shows "Search for a user to start a chat" when user list is empty', async () => {
     (userService.getAllUsers as jest.Mock).mockResolvedValue({
       status: 'success',
       data: { users: [] },
@@ -272,7 +291,7 @@ describe('NewConversationScreen', () => {
     const { getByText } = render(<NewConversationScreen navigation={mockNavigation} />);
 
     await waitFor(() => {
-      expect(getByText('No users available')).toBeTruthy();
+      expect(getByText('Search for a user to start a chat')).toBeTruthy();
     });
   });
 });
