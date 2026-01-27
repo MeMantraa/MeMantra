@@ -87,6 +87,23 @@ jest.mock('../../services/api.config', () => ({
         }
       }
 
+      // Handle saved mantras
+      if (url === '/mantras/saved') {
+        const savedMantras = mockState.mantras
+          .filter((m: Mantra) => mockState.savedMantras.has(m.mantra_id))
+          .map((m: Mantra) => ({
+            ...m,
+            isLiked: mockState.likedMantras.has(m.mantra_id),
+            isSaved: true,
+          }));
+        return Promise.resolve({
+          data: {
+            status: 'success',
+            data: savedMantras,
+          },
+        });
+      }
+
       // Handle feed mantras
       return Promise.resolve({
         data: {
@@ -340,6 +357,57 @@ describe('mantraService (mock implementation)', () => {
       const response = await mantraService.getMantraById(9999, 'token');
       expect(response.status).toBe('error');
       expect(response.message).toMatch(/not found/i);
+    });
+  });
+
+  describe('getSavedMantras', () => {
+    it('returns empty array when no mantras are saved', async () => {
+      const savedMantras = await mantraService.getSavedMantras('token');
+      expect(Array.isArray(savedMantras)).toBe(true);
+      expect(savedMantras.length).toBe(0);
+    });
+
+    it('returns only saved mantras', async () => {
+      // Save mantras 1 and 3
+      await mantraService.saveMantra(1, 'token');
+      await mantraService.saveMantra(3, 'token');
+
+      const savedMantras = await mantraService.getSavedMantras('token');
+
+      expect(savedMantras.length).toBe(2);
+      expect(savedMantras.every((m: Mantra) => m.isSaved === true)).toBe(true);
+      expect(savedMantras.find((m: Mantra) => m.mantra_id === 1)).toBeDefined();
+      expect(savedMantras.find((m: Mantra) => m.mantra_id === 3)).toBeDefined();
+      expect(savedMantras.find((m: Mantra) => m.mantra_id === 2)).toBeUndefined();
+    });
+
+    it('returns saved mantras with correct isLiked state', async () => {
+      // Save and like mantra 2
+      await mantraService.saveMantra(2, 'token');
+      await mantraService.likeMantra(2, 'token');
+
+      const savedMantras = await mantraService.getSavedMantras('token');
+
+      expect(savedMantras.length).toBe(1);
+      const mantra2 = savedMantras.find((m: Mantra) => m.mantra_id === 2);
+      expect(mantra2?.isSaved).toBe(true);
+      expect(mantra2?.isLiked).toBe(true);
+    });
+
+    it('updates when mantras are unsaved', async () => {
+      // Save mantras 1 and 2
+      await mantraService.saveMantra(1, 'token');
+      await mantraService.saveMantra(2, 'token');
+
+      let savedMantras = await mantraService.getSavedMantras('token');
+      expect(savedMantras.length).toBe(2);
+
+      // Unsave mantra 1
+      await mantraService.unsaveMantra(1, 'token');
+
+      savedMantras = await mantraService.getSavedMantras('token');
+      expect(savedMantras.length).toBe(1);
+      expect(savedMantras[0].mantra_id).toBe(2);
     });
   });
 });

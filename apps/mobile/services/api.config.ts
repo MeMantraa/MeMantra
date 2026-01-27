@@ -69,9 +69,25 @@ const getBaseUrl = () => {
     const host = DEV_IP || 'localhost';
     return `http://${host}:${PORT}/api`;
   }
+
+  // Web or unknown platform fallback
+  if (Platform.OS === 'web') {
+    // Web uses same-origin or configured URL
+    const webHost = DEV_IP || 'localhost';
+    return `http://${webHost}:${PORT}/api`;
+  }
+
+  // Unknown platform - throw clear error
+  throw new Error(`Unsupported platform: ${Platform.OS}. Cannot determine API base URL.`);
 };
 
 const API_BASE_URL = getBaseUrl();
+
+if (!API_BASE_URL) {
+  throw new Error(
+    'API_BASE_URL is undefined. Check your network configuration or set LOCAL_DEV_IP in api.config.local.ts',
+  );
+}
 
 console.log('✅ API Base URL:', API_BASE_URL);
 
@@ -114,6 +130,11 @@ export const isNavigationReady = (): boolean => {
 //request to attach jwt token
 apiClient.interceptors.request.use(
   async (config: any) => {
+    const token = await storage.getToken();
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error: any) => {
