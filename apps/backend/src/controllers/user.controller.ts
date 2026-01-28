@@ -14,6 +14,18 @@ function sanitizeUser(user: User) {
   };
 }
 
+function sendError(res: Response, status: number, message: string) {
+  return res.status(status).json({ status: 'error', message });
+}
+
+function sendFeatureFlagResponse(res: Response, user: User, message: string) {
+  return res.status(200).json({
+    status: 'success',
+    message,
+    data: { user_id: user.user_id, feature_flags: user.feature_flags ?? [] },
+  });
+}
+
 export const UserController = {
   // GET /api/users - Get all users (admin only)
   async getAllUsers(_req: Request, res: Response) {
@@ -27,10 +39,7 @@ export const UserController = {
       });
     } catch (error) {
       console.error('Get all users error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error retrieving users',
-      });
+      return sendError(res, 500, 'Error retrieving users');
     }
   },
 
@@ -41,10 +50,7 @@ export const UserController = {
       const user = await UserModel.findById(Number(id));
 
       if (!user) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'User not found',
-        });
+        return sendError(res, 404, 'User not found');
       }
 
       const sanitizedUser = sanitizeUser(user);
@@ -55,10 +61,7 @@ export const UserController = {
       });
     } catch (error) {
       console.error('Get user by ID error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error retrieving user',
-      });
+      return sendError(res, 500, 'Error retrieving user');
     }
   },
 
@@ -70,18 +73,12 @@ export const UserController = {
       // Check if user exists
       const existingUserByEmail = await UserModel.findByEmail(email);
       if (existingUserByEmail) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Email already in use',
-        });
+        return sendError(res, 400, 'Email already in use');
       }
 
       const existingUserByUsername = await UserModel.findByUsername(username);
       if (existingUserByUsername) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Username already taken',
-        });
+        return sendError(res, 400, 'Username already taken');
       }
 
       // Create user
@@ -101,10 +98,7 @@ export const UserController = {
       });
     } catch (error) {
       console.error('Create user error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error creating user',
-      });
+      return sendError(res, 500, 'Error creating user');
     }
   },
 
@@ -116,31 +110,20 @@ export const UserController = {
 
       const existingUser = await UserModel.findById(Number(id));
       if (!existingUser) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'User not found',
-        });
+        return sendError(res, 404, 'User not found');
       }
 
-      // Check if email is taken by another user
       if (email && email !== existingUser.email) {
         const emailTaken = await UserModel.findByEmail(email);
         if (emailTaken && emailTaken.user_id !== Number(id)) {
-          return res.status(400).json({
-            status: 'error',
-            message: 'Email already in use',
-          });
+          return sendError(res, 400, 'Email already in use');
         }
       }
 
-      // Check if username is taken by another user
       if (username && username !== existingUser.username) {
         const usernameTaken = await UserModel.findByUsername(username);
         if (usernameTaken && usernameTaken.user_id !== Number(id)) {
-          return res.status(400).json({
-            status: 'error',
-            message: 'Username already taken',
-          });
+          return sendError(res, 400, 'Username already taken');
         }
       }
 
@@ -163,10 +146,7 @@ export const UserController = {
       });
     } catch (error) {
       console.error('Update user error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error updating user',
-      });
+      return sendError(res, 500, 'Error updating user');
     }
   },
 
@@ -177,18 +157,11 @@ export const UserController = {
 
       const existingUser = await UserModel.findById(Number(id));
       if (!existingUser) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'User not found',
-        });
+        return sendError(res, 404, 'User not found');
       }
 
-      // Prevent deleting yourself
       if (req.user?.userId === Number(id)) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Cannot delete your own account',
-        });
+        return sendError(res, 400, 'Cannot delete your own account');
       }
 
       await UserModel.delete(Number(id));
@@ -199,10 +172,7 @@ export const UserController = {
       });
     } catch (error) {
       console.error('Delete user error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error deleting user',
-      });
+      return sendError(res, 500, 'Error deleting user');
     }
   },
 
@@ -211,12 +181,12 @@ export const UserController = {
     try {
       const userId = Number(req.params.id);
       if (!Number.isFinite(userId)) {
-        return res.status(400).json({ status: 'error', message: 'Invalid user id' });
+        return sendError(res, 400, 'Invalid user id');
       }
 
       const user = await UserModel.findById(userId);
       if (!user) {
-        return res.status(404).json({ status: 'error', message: 'User not found' });
+        return sendError(res, 404, 'User not found');
       }
 
       return res.status(200).json({
@@ -225,7 +195,7 @@ export const UserController = {
       });
     } catch (error) {
       console.error('Get user feature flags error:', error);
-      return res.status(500).json({ status: 'error', message: 'Error retrieving feature flags' });
+      return sendError(res, 500, 'Error retrieving feature flags');
     }
   },
 
@@ -234,39 +204,32 @@ export const UserController = {
     try {
       const userId = Number(req.params.id);
       if (!Number.isFinite(userId)) {
-        return res.status(400).json({ status: 'error', message: 'Invalid user id' });
+        return sendError(res, 400, 'Invalid user id');
       }
 
       const flags = req.body?.flags;
       if (!Array.isArray(flags)) {
-        return res.status(400).json({ status: 'error', message: 'flags must be an array' });
+        return sendError(res, 400, 'flags must be an array');
       }
 
       const invalidFlag = flags.find(
         (f) => typeof f !== 'string' || !isValidFeatureFlag(f),
       );
       if (invalidFlag !== undefined) {
-        return res.status(400).json({
-          status: 'error',
-          message: `Invalid feature flag: ${String(invalidFlag)}`,
-        });
+        return sendError(res, 400, `Invalid feature flag: ${String(invalidFlag)}`);
       }
 
       const uniqueFlags = Array.from(new Set(flags));
 
       const updated = await UserModel.setFlags(userId, uniqueFlags);
       if (!updated) {
-        return res.status(404).json({ status: 'error', message: 'User not found' });
+        return sendError(res, 404, 'User not found');
       }
 
-      return res.status(200).json({
-        status: 'success',
-        message: 'Feature flags updated successfully',
-        data: { user_id: updated.user_id, feature_flags: updated.feature_flags ?? [] },
-      });
+      return sendFeatureFlagResponse(res, updated, 'Feature flags updated successfully');
     } catch (error) {
       console.error('Set user feature flags error:', error);
-      return res.status(500).json({ status: 'error', message: 'Error updating feature flags' });
+      return sendError(res, 500, 'Error updating feature flags');
     }
   },
 
@@ -277,25 +240,21 @@ export const UserController = {
       const flag = req.params.flag;
 
       if (!Number.isFinite(userId)) {
-        return res.status(400).json({ status: 'error', message: 'Invalid user id' });
+        return sendError(res, 400, 'Invalid user id');
       }
       if (!isValidFeatureFlag(flag)) {
-        return res.status(400).json({ status: 'error', message: `Invalid feature flag: ${flag}` });
+        return sendError(res, 400, `Invalid feature flag: ${flag}`);
       }
 
       const updated = await UserModel.addFlag(userId, flag);
       if (!updated) {
-        return res.status(404).json({ status: 'error', message: 'User not found' });
+        return sendError(res, 404, 'User not found');
       }
 
-      return res.status(200).json({
-        status: 'success',
-        message: `Feature flag enabled: ${flag}`,
-        data: { user_id: updated.user_id, feature_flags: updated.feature_flags ?? [] },
-      });
+      return sendFeatureFlagResponse(res, updated, `Feature flag enabled: ${flag}`);
     } catch (error) {
       console.error('Enable user feature flag error:', error);
-      return res.status(500).json({ status: 'error', message: 'Error enabling feature flag' });
+      return sendError(res, 500, 'Error enabling feature flag');
     }
   },
 
@@ -306,25 +265,21 @@ export const UserController = {
       const flag = req.params.flag;
 
       if (!Number.isFinite(userId)) {
-        return res.status(400).json({ status: 'error', message: 'Invalid user id' });
+        return sendError(res, 400, 'Invalid user id');
       }
       if (!isValidFeatureFlag(flag)) {
-        return res.status(400).json({ status: 'error', message: `Invalid feature flag: ${flag}` });
+        return sendError(res, 400, `Invalid feature flag: ${flag}`);
       }
 
       const updated = await UserModel.removeFlag(userId, flag);
       if (!updated) {
-        return res.status(404).json({ status: 'error', message: 'User not found' });
+        return sendError(res, 404, 'User not found');
       }
 
-      return res.status(200).json({
-        status: 'success',
-        message: `Feature flag disabled: ${flag}`,
-        data: { user_id: updated.user_id, feature_flags: updated.feature_flags ?? [] },
-      });
+      return sendFeatureFlagResponse(res, updated, `Feature flag disabled: ${flag}`);
     } catch (error) {
       console.error('Disable user feature flag error:', error);
-      return res.status(500).json({ status: 'error', message: 'Error disabling feature flag' });
+      return sendError(res, 500, 'Error disabling feature flag');
     }
   },
 
