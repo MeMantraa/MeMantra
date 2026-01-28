@@ -13,7 +13,6 @@ const SENSITIVE_FIELDS = new Set([
   'text',
   'review',
   'device',
-  'google_id',
 ]);
 
 

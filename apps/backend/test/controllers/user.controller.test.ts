@@ -42,7 +42,7 @@ describe('UserController', () => {
           username: 'user2',
           email: 'user2@example.com',
           password_hash: 'secret2',
-          auth_provider: 'google',
+          auth_provider: 'local',
           created_at: 'now'
         },
       ]);
@@ -60,7 +60,7 @@ describe('UserController', () => {
           user_id: 2,
           username: 'user2',
           email: 'user2@example.com',
-          auth_provider: 'google',
+          auth_provider: 'local',
           created_at: 'now'
         },
       ]);

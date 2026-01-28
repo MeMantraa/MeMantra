@@ -109,34 +109,9 @@ Get current authenticated user profile.
 }
 ```
 
-### POST `/api/auth/google`
-
-Authenticate user with Google OAuth.
-
 **Request Body:**
 
-```json
-{
-  "idToken": "google_id_token_string"
-}
-```
-
 **Response:** `200 OK`
-
-```json
-{
-  "status": "success",
-  "message": "Google authentication successful",
-  "data": {
-    "user": {
-      "user_id": 1,
-      "username": "johndoe",
-      "email": "john@example.com"
-    },
-    "token": "jwt_token_string"
-  }
-}
-```
 
 ---
 

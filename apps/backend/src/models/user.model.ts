@@ -7,8 +7,7 @@ interface CreateUserData {
   email: string;
   password: string;
   device_token?: string | null;
-  google_id?: string | null;
-  auth_provider?: 'local' | 'google';
+  auth_provider?: 'local';
 }
 
 export const UserModel = {
