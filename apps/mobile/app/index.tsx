@@ -139,6 +139,40 @@ export default function MainNavigator() {
     }
   }, []);
 
+  // Handler for navigating to collection from notification
+  const handleCollectionNotificationNavigation = useCallback(
+    async (collectionId: number, collectionName: string) => {
+      try {
+        const token = await storage.getToken();
+        if (!token) {
+          console.log('No auth token, cannot navigate to collection');
+          return;
+        }
+
+        // Wait for navigation to be ready (with timeout)
+        let attempts = 0;
+        while (!isNavigationReady() && attempts < 10) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+          attempts++;
+        }
+
+        if (!isNavigationReady()) {
+          console.warn('Navigation not ready after timeout');
+          return;
+        }
+
+        // Navigate to CollectionDetail screen with collection data
+        navigateFromOutside('CollectionDetail', {
+          collectionId,
+          collectionName,
+        });
+      } catch (error) {
+        console.error('Error navigating to collection from notification:', error);
+      }
+    },
+    [],
+  );
+
   // Set up notification event listeners
   useEffect(() => {
     // This listener is fired whenever a notification is received while the app is foregrounded
@@ -154,7 +188,13 @@ export default function MainNavigator() {
       // Handle notification tap - extract data for deep linking
       const data = response.notification.request.content.data;
 
-      if (data.type === 'reminder' && data.mantraId) {
+      if (data.type === 'collection_reminder' && data.collectionId) {
+        // Navigate to collection detail
+        handleCollectionNotificationNavigation(
+          data.collectionId as number,
+          (data.collectionName as string) || 'Collection',
+        );
+      } else if (data.type === 'reminder' && data.mantraId) {
         // Navigate to mantra detail
         handleNotificationNavigation(data.mantraId as number);
       } else if (data.type === 'reminder' && data.reminderId) {
@@ -172,7 +212,7 @@ export default function MainNavigator() {
         responseListener.current.remove();
       }
     };
-  }, [handleNotificationNavigation]);
+  }, [handleNotificationNavigation, handleCollectionNotificationNavigation]);
 
   if (isLoggedIn === null) {
     return (

@@ -240,6 +240,7 @@ export const ReminderModel = {
         'Reminder.reminder_id',
         'Reminder.user_id',
         'Reminder.mantra_id',
+        'Reminder.collection_id',
         'Reminder.time',
         'Reminder.frequency',
         'Reminder.status',
@@ -257,6 +258,7 @@ export const ReminderModel = {
         reminder_id: result.reminder_id,
         user_id: result.user_id,
         mantra_id: result.mantra_id,
+        collection_id: result.collection_id,
         time: result.time,
         frequency: result.frequency,
         status: result.status,
@@ -271,6 +273,7 @@ export const ReminderModel = {
   /**
    * Get all due reminders with user and mantra details
    * This is an optimized query that fetches everything needed to send notifications
+   * Only returns mantra-based reminders (collection_id is null)
    */
   async findDueRemindersWithDetails(): Promise<Array<{
     reminder_id: number;
@@ -292,6 +295,7 @@ export const ReminderModel = {
       .innerJoin('Mantra', 'Mantra.mantra_id', 'Reminder.mantra_id')
       .where('Reminder.status', '=', 'active')
       .where('Reminder.time', '<=', now.toISOString())
+      .where('Reminder.collection_id', 'is', null)
       .where((eb) =>
         eb.or([
           // One-time reminders that haven't been sent
@@ -317,6 +321,89 @@ export const ReminderModel = {
       ])
       .orderBy('Reminder.time', 'asc')
       .execute();
+  },
+
+  /**
+   * Get all due collection reminders with user and collection details
+   * This is an optimized query for collection-based reminders
+   */
+  async findDueCollectionRemindersWithDetails(): Promise<Array<{
+    reminder_id: number;
+    user_id: number | null;
+    collection_id: number | null;
+    time: string | null;
+    frequency: string | null;
+    status: string | null;
+    last_sent_at: string | null;
+    user_device_token: string | null;
+    collection_name: string | null;
+    collection_description: string | null;
+  }>> {
+    const now = new Date();
+
+    return await db
+      .selectFrom('Reminder')
+      .innerJoin('User', 'User.user_id', 'Reminder.user_id')
+      .innerJoin('Collection', 'Collection.collection_id', 'Reminder.collection_id')
+      .where('Reminder.status', '=', 'active')
+      .where('Reminder.time', '<=', now.toISOString())
+      .where('Reminder.collection_id', 'is not', null)
+      .where((eb) =>
+        eb.or([
+          // One-time reminders that haven't been sent
+          eb.and([
+            eb('Reminder.frequency', '=', 'once'),
+            eb('Reminder.last_sent_at', 'is', null),
+          ]),
+          // Recurring reminders
+          eb('Reminder.frequency', '!=', 'once'),
+        ])
+      )
+      .select([
+        'Reminder.reminder_id',
+        'Reminder.user_id',
+        'Reminder.collection_id',
+        'Reminder.time',
+        'Reminder.frequency',
+        'Reminder.status',
+        'Reminder.last_sent_at',
+        'User.device_token as user_device_token',
+        'Collection.name as collection_name',
+        'Collection.description as collection_description',
+      ])
+      .orderBy('Reminder.time', 'asc')
+      .execute();
+  },
+
+  // Get reminders by collection
+  async findByCollectionId(collectionId: number): Promise<Reminder[]> {
+    return await db
+      .selectFrom('Reminder')
+      .where('collection_id', '=', collectionId)
+      .selectAll()
+      .orderBy('time', 'asc')
+      .execute();
+  },
+
+  // Get reminders for a specific user and collection combination
+  async findByUserAndCollection(userId: number, collectionId: number): Promise<Reminder[]> {
+    return await db
+      .selectFrom('Reminder')
+      .where('user_id', '=', userId)
+      .where('collection_id', '=', collectionId)
+      .selectAll()
+      .orderBy('time', 'asc')
+      .execute();
+  },
+
+  // Delete all reminders for a collection (when collection is deleted)
+  async deleteByCollectionId(collectionId: number): Promise<number> {
+    const result = await db
+      .deleteFrom('Reminder')
+      .where('collection_id', '=', collectionId)
+      .executeTakeFirst();
+
+    return Number(result.numDeletedRows);
   },
 };
 
