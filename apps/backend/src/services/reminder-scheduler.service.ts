@@ -16,28 +16,25 @@ interface SchedulerConfig {
   testMode?: boolean;
 }
 
-interface ReminderWithDetails {
+// Base interface for common reminder fields
+interface BaseReminderDetails {
   reminder_id: number;
   user_id: number | null;
-  mantra_id: number | null;
   time: string | null;
   frequency: string | null;
   status: string | null;
   last_sent_at: string | null;
   user_device_token: string | null;
+}
+
+interface ReminderWithDetails extends BaseReminderDetails {
+  mantra_id: number | null;
   mantra_title: string | null;
   mantra_key_takeaway: string | null;
 }
 
-interface CollectionReminderWithDetails {
-  reminder_id: number;
-  user_id: number | null;
+interface CollectionReminderWithDetails extends BaseReminderDetails {
   collection_id: number | null;
-  time: string | null;
-  frequency: string | null;
-  status: string | null;
-  last_sent_at: string | null;
-  user_device_token: string | null;
   collection_name: string | null;
   collection_description: string | null;
 }
@@ -147,6 +144,34 @@ export const ReminderSchedulerService = {
   },
 
   /**
+   * Validate common reminder requirements and return error if invalid
+   * @returns Error message if validation fails, null if valid
+   */
+  validateReminderBase(
+    reminder: BaseReminderDetails,
+    reminderType: 'Reminder' | 'Collection Reminder'
+  ): string | null {
+    if (!reminder.user_device_token) {
+      console.warn(
+        `⚠️  ${reminderType} ${reminder.reminder_id}: User has no device token, skipping`
+      );
+      return 'No device token';
+    }
+    return null;
+  },
+
+  /**
+   * Update reminder after successful send based on frequency
+   */
+  async updateReminderAfterSend(reminderId: number, frequency: string | null): Promise<void> {
+    if (frequency === 'once') {
+      await ReminderModel.markAsCompleted(reminderId);
+    } else {
+      await ReminderModel.updateLastSentAt(reminderId);
+    }
+  },
+
+  /**
    * Process a single reminder
    * @param reminder - Reminder with user and mantra details
    */
@@ -156,43 +181,26 @@ export const ReminderSchedulerService = {
     try {
       // Check if reminder should be sent based on frequency
       if (!this.shouldSendReminder(frequency, last_sent_at)) {
-        return { reminderId: reminder_id, success: true }; // Skip but don't mark as failure
+        return { reminderId: reminder_id, success: true };
       }
 
-      // Validate required data
-      if (!reminder.user_device_token) {
-        console.warn(
-          `⚠️  Reminder ${reminder_id}: User has no device token, skipping`
-        );
-        return {
-          reminderId: reminder_id,
-          success: false,
-          error: 'No device token',
-        };
+      // Validate base requirements
+      const baseError = this.validateReminderBase(reminder, 'Reminder');
+      if (baseError) {
+        return { reminderId: reminder_id, success: false, error: baseError };
       }
 
+      // Validate mantra-specific requirements
       if (!reminder.mantra_key_takeaway) {
         console.warn(
           `⚠️  Reminder ${reminder_id}: Mantra has no key takeaway, skipping`
         );
-        return {
-          reminderId: reminder_id,
-          success: false,
-          error: 'No mantra content',
-        };
+        return { reminderId: reminder_id, success: false, error: 'No mantra content' };
       }
 
       // Send the notification
       await this.sendReminderNotification(reminder);
-
-      // Update reminder status
-      if (frequency === 'once') {
-        // Mark one-time reminders as completed
-        await ReminderModel.markAsCompleted(reminder_id);
-      } else {
-        // Update last_sent_at for recurring reminders
-        await ReminderModel.updateLastSentAt(reminder_id);
-      }
+      await this.updateReminderAfterSend(reminder_id, frequency);
 
       console.log(`✅ Reminder ${reminder_id} sent successfully`);
       return { reminderId: reminder_id, success: true };
@@ -282,43 +290,26 @@ export const ReminderSchedulerService = {
     try {
       // Check if reminder should be sent based on frequency
       if (!this.shouldSendReminder(frequency, last_sent_at)) {
-        return { reminderId: reminder_id, success: true }; // Skip but don't mark as failure
+        return { reminderId: reminder_id, success: true };
       }
 
-      // Validate required data
-      if (!reminder.user_device_token) {
-        console.warn(
-          `⚠️  Collection Reminder ${reminder_id}: User has no device token, skipping`
-        );
-        return {
-          reminderId: reminder_id,
-          success: false,
-          error: 'No device token',
-        };
+      // Validate base requirements
+      const baseError = this.validateReminderBase(reminder, 'Collection Reminder');
+      if (baseError) {
+        return { reminderId: reminder_id, success: false, error: baseError };
       }
 
+      // Validate collection-specific requirements
       if (!reminder.collection_name) {
         console.warn(
           `⚠️  Collection Reminder ${reminder_id}: Collection has no name, skipping`
         );
-        return {
-          reminderId: reminder_id,
-          success: false,
-          error: 'No collection name',
-        };
+        return { reminderId: reminder_id, success: false, error: 'No collection name' };
       }
 
       // Send the notification
       await this.sendCollectionReminderNotification(reminder);
-
-      // Update reminder status
-      if (frequency === 'once') {
-        // Mark one-time reminders as completed
-        await ReminderModel.markAsCompleted(reminder_id);
-      } else {
-        // Update last_sent_at for recurring reminders
-        await ReminderModel.updateLastSentAt(reminder_id);
-      }
+      await this.updateReminderAfterSend(reminder_id, frequency);
 
       console.log(`✅ Collection Reminder ${reminder_id} sent successfully`);
       return { reminderId: reminder_id, success: true };
