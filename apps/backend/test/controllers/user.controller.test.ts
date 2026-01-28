@@ -137,7 +137,7 @@ describe('UserController', () => {
       expect(res.status).toBe(201);
       expect(res.body.status).toBe('success');
       expect(res.body.message).toBe('User created successfully');
-      expect(res.body.data.user).toEqual({
+      expect(res.body.data.user).toMatchObject({
         user_id: 3,
         username: 'newuser',
         email: 'new@email.com',
@@ -215,7 +215,7 @@ describe('UserController', () => {
       expect(res.status).toBe(200);
       expect(res.body.status).toBe('success');
       expect(res.body.message).toBe('User updated successfully');
-      expect(res.body.data.user).toEqual({
+      expect(res.body.data.user).toMatchObject({
         user_id: 7,
         username: 'newname',
         email: 'new@email.com',

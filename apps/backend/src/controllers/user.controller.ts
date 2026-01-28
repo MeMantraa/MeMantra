@@ -2,21 +2,24 @@ import { Request, Response } from 'express';
 import { UserModel } from '../models/user.model';
 import bcrypt from 'bcryptjs';
 import { isValidFeatureFlag } from '../utils/featureFlags';
+import { User } from '../types/database.types';
+
+function sanitizeUser(user: User) {
+  return {
+    user_id: user.user_id,
+    username: user.username,
+    email: user.email,
+    auth_provider: user.auth_provider,
+    created_at: user.created_at,
+  };
+}
 
 export const UserController = {
   // GET /api/users - Get all users (admin only)
   async getAllUsers(_req: Request, res: Response) {
     try {
       const users = await UserModel.findAll();
-      
-      // Remove sensitive data
-      const sanitizedUsers = users.map(user => ({
-        user_id: user.user_id,
-        username: user.username,
-        email: user.email,
-        auth_provider: user.auth_provider,
-        created_at: user.created_at,
-      }));
+      const sanitizedUsers = users.map(sanitizeUser);
 
       return res.status(200).json({
         status: 'success',
@@ -44,14 +47,7 @@ export const UserController = {
         });
       }
 
-      // Remove sensitive data
-      const sanitizedUser = {
-        user_id: user.user_id,
-        username: user.username,
-        email: user.email,
-        auth_provider: user.auth_provider,
-        created_at: user.created_at,
-      };
+      const sanitizedUser = sanitizeUser(user);
 
       return res.status(200).json({
         status: 'success',
@@ -100,11 +96,7 @@ export const UserController = {
         status: 'success',
         message: 'User created successfully',
         data: {
-          user: {
-            user_id: newUser.user_id,
-            username: newUser.username,
-            email: newUser.email,
-          },
+          user: sanitizeUser(newUser),
         },
       });
     } catch (error) {
@@ -166,11 +158,7 @@ export const UserController = {
         status: 'success',
         message: 'User updated successfully',
         data: {
-          user: {
-            user_id: updatedUser?.user_id,
-            username: updatedUser?.username,
-            email: updatedUser?.email,
-          },
+          user: updatedUser ? sanitizeUser(updatedUser) : null,
         },
       });
     } catch (error) {
