@@ -176,7 +176,45 @@ export const NotificationService = {
   },
 
   /**
+   * Send collection reminder notification
+   * Deep links to a collection instead of a single mantra
+   * @param deviceToken - Expo push token
+   * @param collectionName - The collection name for notification content
+   * @param reminderId - The reminder ID for deep linking
+   * @param collectionId - The collection ID for deep linking to collection detail
+   * @param mantraCount - Optional count of mantras in collection for context
+   * @param options - Optional notification content customization
+   * @returns Expo push response
+   */
+  async sendCollectionReminderNotification(
+    deviceToken: string,
+    collectionName: string,
+    reminderId: number,
+    collectionId: number,
+    mantraCount?: number,
+    options?: Partial<NotificationContentOptions>
+  ): Promise<ExpoPushResponse> {
+    // Generate notification content with collection context
+    const collectionText = mantraCount
+      ? `Explore your "${collectionName}" collection with ${mantraCount} mantras`
+      : `Time to explore your "${collectionName}" collection`;
+
+    const { title, body } = generateNotificationContent({
+      mantraText: collectionText,
+      ...options,
+    });
+
+    return await this.sendSimpleNotification(deviceToken, title, body, {
+      type: 'collection_reminder',
+      reminderId,
+      collectionId,
+      collectionName,
+    });
+  },
+
+  /**
    * Send bulk reminder notifications with enhanced content
+   * Supports both mantra-based and collection-based reminders
    * @param notifications - Array of notification details
    * @returns Expo push response
    */
@@ -186,6 +224,8 @@ export const NotificationService = {
       mantraText: string;
       reminderId: number;
       mantraId?: number;
+      collectionId?: number;
+      collectionName?: string;
       categoryName?: string;
       ctaStyle?: CTAStyle;
     }>
@@ -197,16 +237,26 @@ export const NotificationService = {
         ctaStyle: notif.ctaStyle,
       });
 
+      // Determine notification type based on whether it's collection-based
+      const isCollectionReminder = notif.collectionId !== undefined;
+
       return {
         to: notif.deviceToken,
         title,
         body,
-        data: {
-          type: 'reminder',
-          reminderId: notif.reminderId,
-          mantraId: notif.mantraId,
-          mantraText: notif.mantraText,
-        },
+        data: isCollectionReminder
+          ? {
+              type: 'collection_reminder',
+              reminderId: notif.reminderId,
+              collectionId: notif.collectionId,
+              collectionName: notif.collectionName,
+            }
+          : {
+              type: 'reminder',
+              reminderId: notif.reminderId,
+              mantraId: notif.mantraId,
+              mantraText: notif.mantraText,
+            },
         sound: 'default',
         priority: 'high',
       };

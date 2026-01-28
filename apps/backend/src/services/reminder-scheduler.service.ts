@@ -29,6 +29,19 @@ interface ReminderWithDetails {
   mantra_key_takeaway: string | null;
 }
 
+interface CollectionReminderWithDetails {
+  reminder_id: number;
+  user_id: number | null;
+  collection_id: number | null;
+  time: string | null;
+  frequency: string | null;
+  status: string | null;
+  last_sent_at: string | null;
+  user_device_token: string | null;
+  collection_name: string | null;
+  collection_description: string | null;
+}
+
 interface ProcessResult {
   reminderId: number;
   success: boolean;
@@ -86,24 +99,35 @@ export const ReminderSchedulerService = {
   },
 
   /**
-   * Process all due reminders
+   * Process all due reminders (both mantra-based and collection-based)
    * This is the main method that runs on each cron tick
    */
   async processReminders(): Promise<ProcessResult[]> {
     const results: ProcessResult[] = [];
 
     try {
-      // Get all due reminders with user and mantra details
+      // Get all due mantra-based reminders
       const dueReminders = await ReminderModel.findDueRemindersWithDetails();
+      // Get all due collection-based reminders
+      const dueCollectionReminders = await ReminderModel.findDueCollectionRemindersWithDetails();
 
-      if (dueReminders.length === 0) {
+      const totalDue = dueReminders.length + dueCollectionReminders.length;
+
+      if (totalDue === 0) {
         return results;
       }
 
-      console.log(`📬 Processing ${dueReminders.length} due reminder(s)`);
+      console.log(`📬 Processing ${totalDue} due reminder(s) (${dueReminders.length} mantra, ${dueCollectionReminders.length} collection)`);
 
+      // Process mantra-based reminders
       for (const reminder of dueReminders) {
         const result = await this.processReminder(reminder);
+        results.push(result);
+      }
+
+      // Process collection-based reminders
+      for (const reminder of dueCollectionReminders) {
+        const result = await this.processCollectionReminder(reminder);
         results.push(result);
       }
 
@@ -245,6 +269,86 @@ export const ReminderSchedulerService = {
       mantra_key_takeaway,
       reminder_id,
       mantra_id ?? undefined
+    );
+  },
+
+  /**
+   * Process a single collection-based reminder
+   * @param reminder - Collection reminder with user and collection details
+   */
+  async processCollectionReminder(reminder: CollectionReminderWithDetails): Promise<ProcessResult> {
+    const { reminder_id, frequency, last_sent_at } = reminder;
+
+    try {
+      // Check if reminder should be sent based on frequency
+      if (!this.shouldSendReminder(frequency, last_sent_at)) {
+        return { reminderId: reminder_id, success: true }; // Skip but don't mark as failure
+      }
+
+      // Validate required data
+      if (!reminder.user_device_token) {
+        console.warn(
+          `⚠️  Collection Reminder ${reminder_id}: User has no device token, skipping`
+        );
+        return {
+          reminderId: reminder_id,
+          success: false,
+          error: 'No device token',
+        };
+      }
+
+      if (!reminder.collection_name) {
+        console.warn(
+          `⚠️  Collection Reminder ${reminder_id}: Collection has no name, skipping`
+        );
+        return {
+          reminderId: reminder_id,
+          success: false,
+          error: 'No collection name',
+        };
+      }
+
+      // Send the notification
+      await this.sendCollectionReminderNotification(reminder);
+
+      // Update reminder status
+      if (frequency === 'once') {
+        // Mark one-time reminders as completed
+        await ReminderModel.markAsCompleted(reminder_id);
+      } else {
+        // Update last_sent_at for recurring reminders
+        await ReminderModel.updateLastSentAt(reminder_id);
+      }
+
+      console.log(`✅ Collection Reminder ${reminder_id} sent successfully`);
+      return { reminderId: reminder_id, success: true };
+    } catch (error) {
+      console.error(`❌ Error processing collection reminder ${reminder_id}:`, error);
+      return {
+        reminderId: reminder_id,
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  },
+
+  /**
+   * Send the actual notification for a collection reminder
+   */
+  async sendCollectionReminderNotification(reminder: CollectionReminderWithDetails): Promise<void> {
+    const { reminder_id, collection_id, user_device_token, collection_name } =
+      reminder;
+
+    if (!user_device_token || !collection_name || !collection_id) {
+      throw new Error('Missing required notification data');
+    }
+
+    // Use the collection reminder notification
+    await NotificationService.sendCollectionReminderNotification(
+      user_device_token,
+      collection_name,
+      reminder_id,
+      collection_id
     );
   },
 

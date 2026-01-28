@@ -26,6 +26,8 @@ describe('ReminderSchedulerService', () => {
     // Reset scheduler state
     ReminderSchedulerService.cronTask = null;
     ReminderSchedulerService.isRunning = false;
+    // Mock collection reminders to return empty by default (for backwards compatibility)
+    mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -406,6 +408,186 @@ describe('ReminderSchedulerService', () => {
       expect(consoleSpy).toHaveBeenCalledWith(
         '🔄 Manually triggered reminder processing'
       );
+
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('processCollectionReminders', () => {
+    it('should process collection reminders and send notifications', async () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      const mockCollectionReminders = [
+        {
+          reminder_id: 2,
+          user_id: 1,
+          collection_id: 1,
+          time: yesterday.toISOString(),
+          frequency: 'daily',
+          status: 'active',
+          last_sent_at: yesterday.toISOString(),
+          user_device_token: 'ExponentPushToken[yyy]',
+          collection_name: 'My Collection',
+          collection_description: 'Test collection',
+        },
+      ];
+
+      mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue([]);
+      mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue(
+        mockCollectionReminders
+      );
+      mockedReminderModel.updateLastSentAt.mockResolvedValue(undefined);
+      mockedNotificationService.sendCollectionReminderNotification.mockResolvedValue(
+        { data: [{ status: 'ok' }] }
+      );
+
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+
+      const results = await ReminderSchedulerService.processReminders();
+
+      expect(results).toHaveLength(1);
+      expect(results[0].success).toBe(true);
+      expect(
+        mockedNotificationService.sendCollectionReminderNotification
+      ).toHaveBeenCalledWith(
+        'ExponentPushToken[yyy]',
+        'My Collection',
+        2,
+        1
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should skip collection reminders without device token', async () => {
+      const mockCollectionReminders = [
+        {
+          reminder_id: 2,
+          user_id: 1,
+          collection_id: 1,
+          time: new Date().toISOString(),
+          frequency: 'once',
+          status: 'active',
+          last_sent_at: null,
+          user_device_token: null,
+          collection_name: 'My Collection',
+          collection_description: 'Test collection',
+        },
+      ];
+
+      mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue([]);
+      mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue(
+        mockCollectionReminders
+      );
+
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      jest.spyOn(console, 'log').mockImplementation();
+
+      const results = await ReminderSchedulerService.processReminders();
+
+      expect(results).toHaveLength(1);
+      expect(results[0].success).toBe(false);
+      expect(results[0].error).toBe('No device token');
+      expect(consoleSpy).toHaveBeenCalledWith(
+        '⚠️  Collection Reminder 2: User has no device token, skipping'
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should mark one-time collection reminders as completed after sending', async () => {
+      const mockCollectionReminders = [
+        {
+          reminder_id: 2,
+          user_id: 1,
+          collection_id: 1,
+          time: new Date().toISOString(),
+          frequency: 'once',
+          status: 'active',
+          last_sent_at: null,
+          user_device_token: 'ExponentPushToken[yyy]',
+          collection_name: 'My Collection',
+          collection_description: 'Test collection',
+        },
+      ];
+
+      mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue([]);
+      mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue(
+        mockCollectionReminders
+      );
+      mockedReminderModel.markAsCompleted.mockResolvedValue(undefined);
+      mockedNotificationService.sendCollectionReminderNotification.mockResolvedValue(
+        { data: [{ status: 'ok' }] }
+      );
+
+      jest.spyOn(console, 'log').mockImplementation();
+
+      await ReminderSchedulerService.processReminders();
+
+      expect(mockedReminderModel.markAsCompleted).toHaveBeenCalledWith(2);
+      expect(mockedReminderModel.updateLastSentAt).not.toHaveBeenCalled();
+    });
+
+    it('should process both mantra and collection reminders together', async () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      const mockMantraReminders = [
+        {
+          reminder_id: 1,
+          user_id: 1,
+          mantra_id: 1,
+          time: yesterday.toISOString(),
+          frequency: 'daily',
+          status: 'active',
+          last_sent_at: yesterday.toISOString(),
+          user_device_token: 'ExponentPushToken[xxx]',
+          mantra_title: 'Test Mantra',
+          mantra_key_takeaway: 'Test takeaway',
+        },
+      ];
+
+      const mockCollectionReminders = [
+        {
+          reminder_id: 2,
+          user_id: 1,
+          collection_id: 1,
+          time: yesterday.toISOString(),
+          frequency: 'daily',
+          status: 'active',
+          last_sent_at: yesterday.toISOString(),
+          user_device_token: 'ExponentPushToken[yyy]',
+          collection_name: 'My Collection',
+          collection_description: 'Test collection',
+        },
+      ];
+
+      mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue(mockMantraReminders);
+      mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue(
+        mockCollectionReminders
+      );
+      mockedReminderModel.updateLastSentAt.mockResolvedValue(undefined);
+      mockedNotificationService.sendEnhancedReminderNotification.mockResolvedValue(
+        { data: [{ status: 'ok' }] }
+      );
+      mockedNotificationService.sendCollectionReminderNotification.mockResolvedValue(
+        { data: [{ status: 'ok' }] }
+      );
+
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+
+      const results = await ReminderSchedulerService.processReminders();
+
+      expect(results).toHaveLength(2);
+      expect(results[0].success).toBe(true);
+      expect(results[1].success).toBe(true);
+      expect(
+        mockedNotificationService.sendEnhancedReminderNotification
+      ).toHaveBeenCalledTimes(1);
+      expect(
+        mockedNotificationService.sendCollectionReminderNotification
+      ).toHaveBeenCalledTimes(1);
 
       consoleSpy.mockRestore();
     });
