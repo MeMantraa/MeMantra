@@ -658,5 +658,171 @@ describe('NotificationService', () => {
 
       expect(mockedAxios.post).toHaveBeenCalled();
     });
+
+    it('should send collection-based notifications with collection_reminder type', async () => {
+      const mockResponse = {
+        data: {
+          data: [{ status: 'ok', id: 'receipt1' }],
+        },
+      };
+
+      mockedAxios.post.mockResolvedValue(mockResponse);
+
+      const notifications = [
+        {
+          deviceToken: 'ExponentPushToken[xxx]',
+          mantraText: 'Collection notification',
+          reminderId: 1,
+          collectionId: 10,
+          collectionName: 'My Collection',
+        },
+      ];
+
+      await NotificationService.sendBulkEnhancedReminders(notifications);
+
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        'https://exp.host/--/api/v2/push/send',
+        expect.arrayContaining([
+          expect.objectContaining({
+            to: 'ExponentPushToken[xxx]',
+            data: expect.objectContaining({
+              type: 'collection_reminder',
+              reminderId: 1,
+              collectionId: 10,
+              collectionName: 'My Collection',
+            }),
+          }),
+        ]),
+        expect.any(Object)
+      );
+    });
+
+    it('should handle mixed mantra and collection notifications', async () => {
+      const mockResponse = {
+        data: {
+          data: [
+            { status: 'ok', id: 'receipt1' },
+            { status: 'ok', id: 'receipt2' },
+          ],
+        },
+      };
+
+      mockedAxios.post.mockResolvedValue(mockResponse);
+
+      const notifications = [
+        {
+          deviceToken: 'ExponentPushToken[xxx]',
+          mantraText: 'Mantra notification',
+          reminderId: 1,
+          mantraId: 100,
+        },
+        {
+          deviceToken: 'ExponentPushToken[yyy]',
+          mantraText: 'Collection notification',
+          reminderId: 2,
+          collectionId: 10,
+          collectionName: 'My Collection',
+        },
+      ];
+
+      await NotificationService.sendBulkEnhancedReminders(notifications);
+
+      const calledWith = mockedAxios.post.mock.calls[0][1] as any[];
+      expect(calledWith[0].data.type).toBe('reminder');
+      expect(calledWith[0].data.mantraId).toBe(100);
+      expect(calledWith[1].data.type).toBe('collection_reminder');
+      expect(calledWith[1].data.collectionId).toBe(10);
+    });
+  });
+
+  describe('sendCollectionReminderNotification', () => {
+    it('should send collection reminder notification with correct format', async () => {
+      const mockResponse = {
+        data: {
+          data: [{ status: 'ok', id: 'receipt-id' }],
+        },
+      };
+
+      mockedAxios.post.mockResolvedValue(mockResponse);
+
+      await NotificationService.sendCollectionReminderNotification(
+        'ExponentPushToken[xxx]',
+        'My Collection',
+        123,
+        456
+      );
+
+      expect(mockedAxios.post).toHaveBeenCalled();
+      const calledWith = mockedAxios.post.mock.calls[0][1] as any[];
+      expect(calledWith[0].data.type).toBe('collection_reminder');
+      expect(calledWith[0].data.reminderId).toBe(123);
+      expect(calledWith[0].data.collectionId).toBe(456);
+      expect(calledWith[0].data.collectionName).toBe('My Collection');
+    });
+
+    it('should include mantra count in body when provided', async () => {
+      const mockResponse = {
+        data: {
+          data: [{ status: 'ok', id: 'receipt-id' }],
+        },
+      };
+
+      mockedAxios.post.mockResolvedValue(mockResponse);
+
+      await NotificationService.sendCollectionReminderNotification(
+        'ExponentPushToken[xxx]',
+        'My Collection',
+        123,
+        456,
+        5
+      );
+
+      expect(mockedAxios.post).toHaveBeenCalled();
+      const calledWith = mockedAxios.post.mock.calls[0][1] as any[];
+      // The body should mention the mantra count
+      expect(calledWith[0].body).toContain('5 mantras');
+    });
+
+    it('should generate appropriate body without mantra count', async () => {
+      const mockResponse = {
+        data: {
+          data: [{ status: 'ok', id: 'receipt-id' }],
+        },
+      };
+
+      mockedAxios.post.mockResolvedValue(mockResponse);
+
+      await NotificationService.sendCollectionReminderNotification(
+        'ExponentPushToken[xxx]',
+        'Morning Mantras',
+        123,
+        456
+      );
+
+      expect(mockedAxios.post).toHaveBeenCalled();
+      const calledWith = mockedAxios.post.mock.calls[0][1] as any[];
+      expect(calledWith[0].body).toContain('Morning Mantras');
+    });
+
+    it('should accept custom options for content generation', async () => {
+      const mockResponse = {
+        data: {
+          data: [{ status: 'ok', id: 'receipt-id' }],
+        },
+      };
+
+      mockedAxios.post.mockResolvedValue(mockResponse);
+
+      await NotificationService.sendCollectionReminderNotification(
+        'ExponentPushToken[xxx]',
+        'Confidence Collection',
+        123,
+        456,
+        undefined,
+        { ctaStyle: 'encouraging' }
+      );
+
+      expect(mockedAxios.post).toHaveBeenCalled();
+    });
   });
 });
