@@ -51,8 +51,8 @@ export const NotificationController = {
         });
       }
 
-      const safePlatform = platform ? String(platform).replace(/[\r\n]/g, '') : '';
-      const safeDeviceName = deviceName ? String(deviceName).replace(/[\r\n]/g, '') : '';
+      const safePlatform = platform ? String(platform).replaceAll(/[\r\n]/g, '') : '';
+      const safeDeviceName = deviceName ? String(deviceName).replaceAll(/[\r\n]/g, '') : '';
       console.log(`Device token registered for user ${userId}: ${safePlatform} - ${safeDeviceName}`);
 
       return res.status(200).json({
