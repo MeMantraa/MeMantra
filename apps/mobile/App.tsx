@@ -9,6 +9,8 @@ import './global.css';
 import LibreBaskerville from './assets/fonts/LibreBaskerville-Regular.ttf';
 import * as Font from 'expo-font';
 import { setNavigationRef } from './services/api.config';
+import { PostHogProvider } from 'posthog-react-native';
+import { posthog } from './services/posthog';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -17,6 +19,7 @@ export default function App() {
   const [isSplashVisible, setIsSplashVisible] = useState(true);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const navigationRef = useRef<any>(null);
+  const previousRouteNameRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     let isMounted = true;
@@ -67,19 +70,47 @@ export default function App() {
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <NavigationContainer
-        ref={navigationRef}
-        onReady={() => {
-          setNavigationRef(navigationRef.current);
+      <PostHogProvider
+        client={posthog}
+        autocapture={{
+          captureTouches: true,
+          captureScreens: false,
         }}
       >
-        <MainNavigator />
-      </NavigationContainer>
-      {isSplashVisible && (
-        <Animated.View style={[styles.splashOverlay, { opacity: fadeAnim }]} pointerEvents="none">
-          <Image source={splashLogo} style={styles.splashImage} resizeMode="contain" />
-        </Animated.View>
-      )}
+        <NavigationContainer
+          ref={navigationRef}
+          onReady={() => {
+            setNavigationRef(navigationRef.current);
+            const route = navigationRef.current?.getCurrentRoute?.();
+            previousRouteNameRef.current = route?.name;
+
+            // optional: prove it's working
+            posthog.capture('app_ready');
+
+            // initial screen
+            if (route?.name) {
+              posthog.screen(route.name, route.params ?? {});
+            }
+          }}
+          onStateChange={() => {
+            const route = navigationRef.current?.getCurrentRoute?.();
+            const currentRouteName = route?.name;
+            const previousRouteName = previousRouteNameRef.current;
+
+            if (currentRouteName && currentRouteName !== previousRouteName) {
+              posthog.screen(currentRouteName, route?.params ?? {});
+              previousRouteNameRef.current = currentRouteName;
+            }
+          }}
+        >
+          <MainNavigator />
+        </NavigationContainer>
+        {isSplashVisible && (
+          <Animated.View style={[styles.splashOverlay, { opacity: fadeAnim }]} pointerEvents="none">
+            <Image source={splashLogo} style={styles.splashImage} resizeMode="contain" />
+          </Animated.View>
+        )}
+      </PostHogProvider>
     </GestureHandlerRootView>
   );
 }

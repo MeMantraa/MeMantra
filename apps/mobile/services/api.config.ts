@@ -41,8 +41,8 @@ const getBaseUrl = () => {
 
   // Use local config IP if:
   // 1. It's explicitly set AND
-  // 2. We're using tunnel (because backend needs local IP when mobile app is tunneled)
-  const shouldUseLocalConfig = LOCAL_DEV_IP && isUsingTunnel;
+  // 2. We're using tunnel OR auto-detection failed (common in dev-client on device)
+  const shouldUseLocalConfig = LOCAL_DEV_IP && (isUsingTunnel || !autoDetectedIP);
   const DEV_IP: string | null = shouldUseLocalConfig ? LOCAL_DEV_IP : autoDetectedIP;
 
   console.log('🔍 IP Detection:', {

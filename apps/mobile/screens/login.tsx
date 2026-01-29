@@ -8,8 +8,10 @@ import { useTheme } from '../context/ThemeContext';
 import AppTextInput from '../components/UI/textInputWrapper';
 import AppText from '../components/UI/textWrapper';
 import TextButton from '../components/UI/textButton';
+import { usePostHogScreen } from '../utils/posthog';
 
 export default function LoginScreen({ navigation }: any) {
+  usePostHogScreen();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -60,7 +62,7 @@ export default function LoginScreen({ navigation }: any) {
             <Image source={logo} className="w-[250px] h-[250px]" resizeMode="contain" />
           </View>
 
-          <View className="w-full max-w-[400px]">
+          <View className="w-full max-w-[400px]" ph-no-capture>
             <AppTextInput
               className="bg-[#ffffff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
               placeholder="Email"

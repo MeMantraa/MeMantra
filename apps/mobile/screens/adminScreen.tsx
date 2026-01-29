@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Modal } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { Mantra, mantraService } from '../services/mantra.service';
@@ -9,11 +9,13 @@ import MantraList from '../components/admin/MantraList';
 import UserForm from '../components/admin/UserForm';
 import UserList from '../components/admin/UserList';
 import AppText from '../components/UI/textWrapper';
+import { usePostHogScreen } from '../utils/posthog';
 
 type AdminMode = 'mantras' | 'users';
 type ActionMode = 'add' | 'manage';
 
 const AdminScreen: React.FC = () => {
+  usePostHogScreen();
   const { colors } = useTheme();
   const [mode, setMode] = useState<AdminMode>('mantras');
   const [action, setAction] = useState<ActionMode>('add');
@@ -46,11 +48,7 @@ const AdminScreen: React.FC = () => {
     password: '',
   });
 
-  useEffect(() => {
-    loadData();
-  }, [mode]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const token = (await storage.getToken()) || 'mock-token';
@@ -72,7 +70,11 @@ const AdminScreen: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [mode]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const resetMantraForm = () => {
     setMantraForm({

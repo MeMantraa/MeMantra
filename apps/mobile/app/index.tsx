@@ -27,6 +27,7 @@ import ShareMantraScreen from '../screens/ShareMantraScreen';
 import BookmarkScreen from '../screens/bookmarkScreen';
 import LikedScreen from '../screens/LikedScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import PostHogSurveyScreen from '../screens/PostHogSurveyScreen';
 
 const Stack = createStackNavigator();
 
@@ -319,6 +320,7 @@ export default function MainNavigator() {
           />
           <Stack.Screen name="Liked" component={LikedScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="PostHogSurvey" component={PostHogSurveyScreen} />
         </Stack.Navigator>
       </SavedProvider>
     </ThemeProvider>

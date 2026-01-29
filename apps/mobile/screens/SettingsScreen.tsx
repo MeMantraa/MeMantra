@@ -70,6 +70,7 @@ export default function SettingsScreen() {
         Settings
       </AppText>
       <View className="mt-20 mb-10 gap-2.5">
+        <SettingsOption label="Survey" onPress={() => navigation.navigate('PostHogSurvey')} />
         <SettingsOption label="Update Email" onPress={() => navigation.navigate('UpdateEmail')} />
         <SettingsOption
           label="Update Password"

@@ -1,5 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { View, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
 import logo from '../assets/logo.png';
 import { authService } from '../services/auth.service';
@@ -7,8 +7,10 @@ import { storage } from '../utils/storage';
 import { useTheme } from '../context/ThemeContext';
 import AppTextInput from '../components/UI/textInputWrapper';
 import AppText from '../components/UI/textWrapper';
+import { usePostHogScreen } from '../utils/posthog';
 
 export default function SignUpScreen({ navigation }: any) {
+  usePostHogScreen();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -80,7 +82,7 @@ export default function SignUpScreen({ navigation }: any) {
               <Image source={logo} className="w-[200px] h-[200px]" />
             </View>
 
-            <View className="w-full max-w-[400px]">
+            <View className="w-full max-w-[400px]" ph-no-capture>
               <AppTextInput
                 className="bg-[#fff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
                 placeholder="Username"

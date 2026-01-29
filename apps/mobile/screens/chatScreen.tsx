@@ -6,8 +6,10 @@ import ChatList from '../components/chat/ChatList';
 import { Conversation } from '../types/chat.types';
 import { chatService } from '../services/chat.service';
 import { storage } from '../utils/storage';
+import { usePostHogScreen } from '../utils/posthog';
 
 export default function ChatScreen({ navigation }: any) {
+  usePostHogScreen();
   const { colors } = useTheme();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);

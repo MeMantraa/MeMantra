@@ -7,10 +7,13 @@ import { logoutUser } from '../utils/auth';
 import { profileSettingsStyles as styles } from '../styles/profileSettings.styles';
 import AppText from '../components/UI/textWrapper';
 import AppTextInput from '../components/UI/textInputWrapper';
+
 import { useTheme } from '../context/ThemeContext';
+import { usePostHogScreen } from '../utils/posthog';
 
 export default function UpdatePasswordScreen() {
   const { colors } = useTheme();
+  usePostHogScreen();
   const navigation = useNavigation();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');

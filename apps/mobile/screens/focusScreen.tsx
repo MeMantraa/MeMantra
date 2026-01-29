@@ -4,8 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import MantraCarousel from '../components/carousel';
 import { Mantra } from '../services/mantra.service';
 import { useTheme } from '../context/ThemeContext';
+import { usePostHogScreen } from '../utils/posthog';
 
 export default function FocusScreen({ route, navigation }: any) {
+  usePostHogScreen();
   const { mantra, onLike, onSave } = route.params as {
     mantra: Mantra;
     onLike: (id: number) => void;

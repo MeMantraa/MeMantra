@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, FlatList, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { User, userService } from '../services/user.service';
 import { chatService } from '../services/chat.service';
 import { storage } from '../utils/storage';
+import { usePostHogScreen } from '../utils/posthog';
 
 export default function NewConversationScreen({ navigation }: any) {
+  usePostHogScreen();
   const { colors } = useTheme();
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
@@ -14,15 +16,7 @@ export default function NewConversationScreen({ navigation }: any) {
   const [searchText, setSearchText] = useState('');
   const [creating, setCreating] = useState(false);
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  useEffect(() => {
-    filterUsers();
-  }, [searchText, users]);
-
-  const loadUsers = async () => {
+  const loadUsers = useCallback(async () => {
     try {
       setLoading(true);
       const token = await storage.getToken();
@@ -44,9 +38,13 @@ export default function NewConversationScreen({ navigation }: any) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
-  const filterUsers = () => {
+  useEffect(() => {
+    loadUsers();
+  }, [loadUsers]);
+
+  const filterUsers = useCallback(() => {
     const q = searchText.trim().toLowerCase();
 
     if (!q) {
@@ -57,7 +55,11 @@ export default function NewConversationScreen({ navigation }: any) {
     const filtered = users.filter((user) => (user.username ?? '').toLowerCase().includes(q));
 
     setFilteredUsers(filtered);
-  };
+  }, [searchText, users]);
+
+  useEffect(() => {
+    filterUsers();
+  }, [filterUsers]);
 
   const handleUserSelect = async (user: User) => {
     try {

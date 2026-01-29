@@ -22,10 +22,12 @@ import { useTheme } from '../context/ThemeContext';
 import { useSavedMantras } from '../context/SavedContext';
 import SavedPopupBar from '../components/UI/savedPopupBar';
 import CollectionsSheet from '../components/collectionsSheet';
+import { usePostHogScreen } from '../utils/posthog';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation, route }: any) {
+  usePostHogScreen();
   const [feedData, setFeedData] = useState<Mantra[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSavedPopup, setShowSavedPopup] = useState(false);
@@ -103,7 +105,7 @@ export default function HomeScreen({ navigation, route }: any) {
 
     // clear param so it doesn't keep jumping
     navigation.setParams({ returnToMantraId: undefined });
-  }, [loading, feedData, route?.params?.returnToMantraId]);
+  }, [loading, feedData, route?.params?.returnToMantraId, navigation]);
 
   const loadCollections = async () => {
     try {

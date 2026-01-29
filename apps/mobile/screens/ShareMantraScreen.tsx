@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { View, StyleSheet, Alert } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
@@ -7,20 +7,17 @@ import { Conversation } from '../types/chat.types';
 import { chatService } from '../services/chat.service';
 import { storage } from '../utils/storage';
 import { Mantra } from '../services/mantra.service';
+import { usePostHogScreen } from '../utils/posthog';
 
 export default function ShareMantraScreen({ route, navigation }: any) {
+  usePostHogScreen();
   const { mantra } = route.params as { mantra: Mantra };
   const { colors } = useTheme();
 
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    navigation.setOptions({ title: 'Share mantra' });
-    loadConversations();
-  }, []);
-
-  const loadConversations = async () => {
+  const loadConversations = useCallback(async () => {
     try {
       setLoading(true);
       const token = await storage.getToken();
@@ -32,7 +29,12 @@ export default function ShareMantraScreen({ route, navigation }: any) {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    navigation.setOptions({ title: 'Share mantra' });
+    loadConversations();
+  }, [navigation, loadConversations]);
 
   const sendToConversation = async (conversation: Conversation) => {
     try {

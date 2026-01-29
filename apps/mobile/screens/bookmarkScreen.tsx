@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   FlatList,
@@ -13,6 +13,7 @@ import AppText from '../components/UI/textWrapper';
 import { Mantra } from '../services/mantra.service';
 import { collectionService } from '../services/collection.service';
 import { storage } from '../utils/storage';
+import { usePostHogScreen } from '../utils/posthog';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ITEM_MARGIN = 12;
@@ -20,6 +21,7 @@ const NUM_COLUMNS = 2;
 const ITEM_SIZE = (SCREEN_WIDTH - ITEM_MARGIN * (NUM_COLUMNS + 1)) / NUM_COLUMNS;
 
 export default function BookmarkScreen({ navigation, route }: any) {
+  usePostHogScreen();
   const { colors } = useTheme();
   const { collectionId = 0, collectionName = '' } = route?.params ?? {};
 
@@ -27,11 +29,7 @@ export default function BookmarkScreen({ navigation, route }: any) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    loadCollectionMantras();
-  }, [collectionId]);
-
-  const loadCollectionMantras = async () => {
+  const loadCollectionMantras = useCallback(async () => {
     try {
       const token = (await storage.getToken()) || 'mock-token';
       const response = await collectionService.getCollectionById(collectionId, token);
@@ -46,7 +44,11 @@ export default function BookmarkScreen({ navigation, route }: any) {
       setLoading(false);
       setRefreshing(false);
     }
-  };
+  }, [collectionId]);
+
+  useEffect(() => {
+    loadCollectionMantras();
+  }, [loadCollectionMantras]);
 
   const handleRefresh = () => {
     setRefreshing(true);

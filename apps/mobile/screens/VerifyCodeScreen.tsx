@@ -5,8 +5,10 @@ import logo from '../assets/logo.png';
 import { authService } from '../services/auth.service';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
+import { usePostHogScreen } from '../utils/posthog';
 
 export default function VerifyCodeScreen({ route, navigation }: any) {
+  usePostHogScreen();
   const { email } = route.params;
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);

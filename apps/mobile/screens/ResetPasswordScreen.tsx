@@ -6,8 +6,10 @@ import { authService } from '../services/auth.service';
 import { useTheme } from '../context/ThemeContext';
 import AppTextInput from '../components/UI/textInputWrapper';
 import AppText from '../components/UI/textWrapper';
+import { usePostHogScreen } from '../utils/posthog';
 
 export default function ResetPasswordScreen({ route, navigation }: any) {
+  usePostHogScreen();
   const { email, code } = route.params;
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');

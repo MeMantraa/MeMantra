@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
@@ -7,8 +7,10 @@ import ChatInput from '../components/chat/ChatInput';
 import { Message, Conversation } from '../types/chat.types';
 import { chatService } from '../services/chat.service';
 import { storage } from '../utils/storage';
+import { usePostHogScreen } from '../utils/posthog';
 
 export default function ConversationScreen({ route, navigation }: any) {
+  usePostHogScreen();
   const { conversation } = route.params as { conversation: Conversation };
   const { colors } = useTheme();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -17,16 +19,7 @@ export default function ConversationScreen({ route, navigation }: any) {
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
-  useEffect(() => {
-    loadMessages();
-    loadCurrentUser();
-
-    navigation.setOptions({
-      title: conversation.participant_username,
-    });
-  }, []);
-
-  const loadCurrentUser = async () => {
+  const loadCurrentUser = useCallback(async () => {
     try {
       const userData = await storage.getUserData();
       if (userData?.user_id) {
@@ -35,9 +28,9 @@ export default function ConversationScreen({ route, navigation }: any) {
     } catch (err) {
       console.error('Error loading current user:', err);
     }
-  };
+  }, []);
 
-  const loadMessages = async () => {
+  const loadMessages = useCallback(async () => {
     try {
       setLoading(true);
       const token = await storage.getToken();
@@ -67,7 +60,16 @@ export default function ConversationScreen({ route, navigation }: any) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [conversation.conversation_id]);
+
+  useEffect(() => {
+    loadMessages();
+    loadCurrentUser();
+
+    navigation.setOptions({
+      title: conversation.participant_username,
+    });
+  }, [conversation.participant_username, navigation, loadMessages, loadCurrentUser]);
 
   const handleSend = async (content: string) => {
     try {

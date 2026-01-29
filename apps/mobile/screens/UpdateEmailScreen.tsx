@@ -9,9 +9,11 @@ import AppText from '../components/UI/textWrapper';
 import AppTextInput from '../components/UI/textInputWrapper';
 import { useTheme } from '../context/ThemeContext';
 //import  back from './assets/back.html';
+import { usePostHogScreen } from '../utils/posthog';
 
 export default function UpdateEmailScreen() {
   const { colors } = useTheme();
+  usePostHogScreen();
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
 

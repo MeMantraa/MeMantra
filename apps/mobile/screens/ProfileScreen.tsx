@@ -8,11 +8,13 @@ import { View, TouchableOpacity } from 'react-native';
 import AppText from '../components/UI/textWrapper';
 import { profileSettingsStyles as styles } from '../styles/profileSettings.styles';
 import { Ionicons } from '@expo/vector-icons';
+import { usePostHogScreen } from '../utils/posthog';
 
 type ProfileNavProp = StackNavigationProp<RootStackParamList>;
 
 export default function ProfileScreen() {
   const { colors } = useTheme();
+  usePostHogScreen();
   const navigation = useNavigation<ProfileNavProp>();
   const [username, setUsername] = useState<string>('');
 
