@@ -94,6 +94,38 @@ jest.mock(
   { virtual: true },
 );
 
+// Mock expo-device
+jest.mock(
+  'expo-device',
+  () => ({
+    __esModule: true,
+    default: {
+      isDevice: true,
+      deviceName: 'Test Device',
+    },
+    isDevice: true,
+    deviceName: 'Test Device',
+  }),
+  { virtual: true },
+);
+
+// Mock expo-secure-store
+jest.mock(
+  'expo-secure-store',
+  () => ({
+    __esModule: true,
+    default: {
+      setItemAsync: jest.fn(() => Promise.resolve()),
+      getItemAsync: jest.fn(() => Promise.resolve(null)),
+      deleteItemAsync: jest.fn(() => Promise.resolve()),
+    },
+    setItemAsync: jest.fn(() => Promise.resolve()),
+    getItemAsync: jest.fn(() => Promise.resolve(null)),
+    deleteItemAsync: jest.fn(() => Promise.resolve()),
+  }),
+  { virtual: true },
+);
+
 // Mock expo-notifications
 jest.mock(
   'expo-notifications',
