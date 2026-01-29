@@ -23,6 +23,18 @@ jest.mock('../../utils/storage');
 jest.mock('../../services/auth.service');
 jest.mock('../../utils/auth');
 
+jest.mock('../../context/ThemeContext', () => ({
+  useTheme: () => ({
+    colors: {
+      white: '#ffffff',
+      black: '#000000',
+      primary: '#9AA793',
+      primaryDark: '#6D7E68',
+      settings: '#D9D9D9',
+    },
+  }),
+}));
+
 jest.mock('@react-navigation/native', () => ({
   useNavigation: () => ({
     goBack: jest.fn(),
@@ -42,9 +54,7 @@ jest.mock('../../components/UI/textInputWrapper', () => {
 describe('UpdatePasswordScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-
     (storage.getToken as jest.Mock).mockResolvedValue('mock-token');
   });
 
@@ -56,13 +66,9 @@ describe('UpdatePasswordScreen', () => {
     const { getByText, getByPlaceholderText } = render(<UpdatePasswordScreen />);
 
     expect(getByText('Update Password')).toBeTruthy();
-
-    expect(getByText('← Back')).toBeTruthy();
-
+    expect(getByText('Back')).toBeTruthy();
     expect(getByText('Save Password')).toBeTruthy();
-
     expect(getByPlaceholderText('New password')).toBeTruthy();
-
     expect(getByPlaceholderText('Confirm password')).toBeTruthy();
   });
 
@@ -70,25 +76,20 @@ describe('UpdatePasswordScreen', () => {
     const { getByPlaceholderText } = render(<UpdatePasswordScreen />);
 
     const passwordInput = getByPlaceholderText('New password');
-
     const confirmInput = getByPlaceholderText('Confirm password');
 
     fireEvent.changeText(passwordInput, 'memantra123');
-
     fireEvent.changeText(confirmInput, 'memantra123');
 
     expect(passwordInput.props.value).toBe('memantra123');
-
     expect(confirmInput.props.value).toBe('memantra123');
   });
 
   it('calls navigation.goBack when back button is pressed', () => {
     const { getByText } = render(<UpdatePasswordScreen />);
 
-    const backButton = getByText('← Back');
-
+    const backButton = getByText('Back');
     fireEvent.press(backButton);
-
     expect(backButton).toBeTruthy();
   });
 
@@ -96,15 +97,12 @@ describe('UpdatePasswordScreen', () => {
     const { getByPlaceholderText, getByText } = render(<UpdatePasswordScreen />);
 
     const passwordInput = getByPlaceholderText('New password');
-
     fireEvent.changeText(passwordInput, 'mema');
 
     const saveButton = getByText('Save Password');
-
     fireEvent.press(saveButton);
 
     expect(Alert.alert).toHaveBeenCalledWith('Error', 'Password must be at least 6 characters.');
-
     expect(authService.updatePassword).not.toHaveBeenCalled();
   });
 
@@ -112,19 +110,15 @@ describe('UpdatePasswordScreen', () => {
     const { getByPlaceholderText, getByText } = render(<UpdatePasswordScreen />);
 
     const passwordInput = getByPlaceholderText('New password');
-
     const confirmInput = getByPlaceholderText('Confirm password');
 
     fireEvent.changeText(passwordInput, 'memantra123');
-
     fireEvent.changeText(confirmInput, 'memantra456');
 
     const saveButton = getByText('Save Password');
-
     fireEvent.press(saveButton);
 
     expect(Alert.alert).toHaveBeenCalledWith('Error', 'Passwords do not match.');
-
     expect(authService.updatePassword).not.toHaveBeenCalled();
   });
 
@@ -134,20 +128,16 @@ describe('UpdatePasswordScreen', () => {
     const { getByPlaceholderText, getByText } = render(<UpdatePasswordScreen />);
 
     const passwordInput = getByPlaceholderText('New password');
-
     const confirmInput = getByPlaceholderText('Confirm password');
 
     fireEvent.changeText(passwordInput, 'memantra123');
-
     fireEvent.changeText(confirmInput, 'memantra123');
 
     const saveButton = getByText('Save Password');
-
     fireEvent.press(saveButton);
 
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'Not authenticated.');
-
       expect(authService.updatePassword).not.toHaveBeenCalled();
     });
   });
@@ -158,24 +148,19 @@ describe('UpdatePasswordScreen', () => {
     const { getByPlaceholderText, getByText } = render(<UpdatePasswordScreen />);
 
     const passwordInput = getByPlaceholderText('New password');
-
     const confirmInput = getByPlaceholderText('Confirm password');
 
     fireEvent.changeText(passwordInput, 'newmemantra123');
-
     fireEvent.changeText(confirmInput, 'newmemantra123');
 
     const saveButton = getByText('Save Password');
-
     fireEvent.press(saveButton);
 
     await waitFor(() => {
       expect(authService.updatePassword).toHaveBeenCalledWith('newmemantra123', 'mock-token');
-
       expect(Alert.alert).toHaveBeenCalledWith(
         'Password Updated',
         'Your password has been changed. You will be logged out for security reasons.',
-
         expect.any(Array),
       );
     });
@@ -189,20 +174,16 @@ describe('UpdatePasswordScreen', () => {
     const { getByPlaceholderText, getByText } = render(<UpdatePasswordScreen />);
 
     const passwordInput = getByPlaceholderText('New password');
-
     const confirmInput = getByPlaceholderText('Confirm password');
 
     fireEvent.changeText(passwordInput, 'newmemantra123');
-
     fireEvent.changeText(confirmInput, 'newmemantra123');
 
     const saveButton = getByText('Save Password');
-
     fireEvent.press(saveButton);
 
     await waitFor(() => {
       expect(authService.updatePassword).toHaveBeenCalledWith('newmemantra123', 'mock-token');
-
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to update password.');
     });
   });
@@ -211,7 +192,6 @@ describe('UpdatePasswordScreen', () => {
     (authService.updatePassword as jest.Mock).mockResolvedValue({ success: true });
 
     let alertCallback: any;
-
     (Alert.alert as jest.Mock).mockImplementation((title, message, buttons) => {
       if (buttons && buttons[0]) {
         alertCallback = buttons[0].onPress;
@@ -221,15 +201,12 @@ describe('UpdatePasswordScreen', () => {
     const { getByPlaceholderText, getByText } = render(<UpdatePasswordScreen />);
 
     const passwordInput = getByPlaceholderText('New password');
-
     const confirmInput = getByPlaceholderText('Confirm password');
 
     fireEvent.changeText(passwordInput, 'newpassword123');
-
     fireEvent.changeText(confirmInput, 'newpassword123');
 
     const saveButton = getByText('Save Password');
-
     fireEvent.press(saveButton);
 
     await waitFor(() => {
@@ -238,7 +215,6 @@ describe('UpdatePasswordScreen', () => {
 
     if (alertCallback) {
       alertCallback();
-
       expect(logoutUser).toHaveBeenCalled();
     }
   });
@@ -247,11 +223,9 @@ describe('UpdatePasswordScreen', () => {
     const { getByPlaceholderText } = render(<UpdatePasswordScreen />);
 
     const passwordInput = getByPlaceholderText('New password');
-
     const confirmInput = getByPlaceholderText('Confirm password');
 
     expect(passwordInput.props.secureTextEntry).toBe(true);
-
     expect(confirmInput.props.secureTextEntry).toBe(true);
   });
 });

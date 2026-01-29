@@ -40,7 +40,7 @@ describe('ChatController', () => {
     it('should return all users except current user', async () => {
       const mockUsers = [
         { user_id: 1, username: 'user1', email: 'user1@example.com', auth_provider: 'local', created_at: '2024-01-01' },
-        { user_id: 2, username: 'user2', email: 'user2@example.com', auth_provider: 'google', created_at: '2024-01-02' },
+        { user_id: 2, username: 'user2', email: 'user2@example.com', auth_provider: 'local', created_at: '2024-01-02' },
         { user_id: 3, username: 'user3', email: 'user3@example.com', auth_provider: 'local', created_at: '2024-01-03' },
       ];
       (UserModel.findAll as jest.Mock).mockResolvedValue(mockUsers);

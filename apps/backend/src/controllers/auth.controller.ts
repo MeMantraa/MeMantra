@@ -1,13 +1,10 @@
 import { Request, Response } from 'express';
-import crypto from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import { UserModel } from '../models/user.model';
 import { PasswordResetTokenModel } from '../models/password-reset-token.model';
 import { generateToken } from '../utils/jwt.utils';
 import { RegisterInput, LoginInput } from '../validators/auth.validator';
-import { OAuth2Client } from 'google-auth-library';
 import { emailService } from '../services/email.service';
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Helper function to verify reset code and return user
 async function verifyResetCodeAndGetUser(email: string, code: string) {

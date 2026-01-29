@@ -7,8 +7,11 @@ import { logoutUser } from '../utils/auth';
 import { profileSettingsStyles as styles } from '../styles/profileSettings.styles';
 import AppText from '../components/UI/textWrapper';
 import AppTextInput from '../components/UI/textInputWrapper';
+import { useTheme } from '../context/ThemeContext';
+//import  back from './assets/back.html';
 
 export default function UpdateEmailScreen() {
+  const { colors } = useTheme();
   const navigation = useNavigation();
   const [email, setEmail] = useState('');
 
@@ -49,16 +52,19 @@ export default function UpdateEmailScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View
+      className="flex-1 pt-16 px-10"
+      style={[styles.container, { backgroundColor: colors.white }]}
+    >
       {/* Back Button */}
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <AppText style={styles.backText}>← Back</AppText>
+        <AppText style={[styles.backText, { color: colors.primaryDark }]}>Back</AppText>
       </TouchableOpacity>
 
-      <AppText style={styles.title}>Update Email</AppText>
+      <AppText style={[styles.title, { color: colors.black }]}>Update Email</AppText>
 
       <AppTextInput
-        style={styles.input}
+        style={[styles.input, { borderColor: colors.primary, color: colors.black }]}
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
@@ -67,8 +73,11 @@ export default function UpdateEmailScreen() {
         placeholderTextColor="#aaa"
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleUpdate}>
-        <AppText style={styles.buttonText}>Save Email</AppText>
+      <TouchableOpacity
+        style={[styles.button, { backgroundColor: colors.settings }]}
+        onPress={handleUpdate}
+      >
+        <AppText style={[styles.buttonText, { color: colors.black }]}>Save Email</AppText>
       </TouchableOpacity>
     </View>
   );

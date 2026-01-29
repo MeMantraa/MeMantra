@@ -12,10 +12,6 @@ export interface RegisterCredentials {
   device_token?: string;
 }
 
-export interface GoogleAuthCredentials {
-  idToken: string;
-}
-
 export interface AuthResponse {
   status: string;
   message: string;
@@ -53,11 +49,6 @@ export const authService = {
         Authorization: `Bearer ${token}`,
       },
     });
-    return response.data;
-  },
-
-  async googleAuth({ idToken }: GoogleAuthCredentials): Promise<AuthResponse> {
-    const response = await apiClient.post<AuthResponse>('/auth/google', { idToken });
     return response.data;
   },
 

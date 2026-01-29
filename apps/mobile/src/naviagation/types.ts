@@ -7,11 +7,10 @@ export type RootStackParamList = {
   Signup: undefined;
   UpdateEmail: undefined;
   UpdatePassword: undefined;
-  NotificationSettings: undefined;
   Chat: undefined;
   Conversation: { conversation: Conversation };
   Focus: { mantra: Mantra };
-  Notifications: undefined;
   Liked: undefined;
   Settings: undefined;
+  NotificationSettings: undefined;
 };
