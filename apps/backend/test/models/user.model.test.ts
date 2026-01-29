@@ -252,4 +252,38 @@ describe('UserModel', () => {
 
     expect(result).toBe(false);
   });
+
+  it('finds all users with a specific flag', async () => {
+    const fakeUsers = [
+      { user_id: 1, username: 'user1', feature_flags: ['DARK_MODE'] },
+      { user_id: 2, username: 'user2', feature_flags: ['DARK_MODE', 'BETA'] },
+    ];
+
+    const executeMock = jest.fn().mockResolvedValue(fakeUsers);
+    const selectAllMock = jest.fn().mockReturnValue({ execute: executeMock });
+    const whereMock = jest.fn().mockReturnValue({ selectAll: selectAllMock });
+    selectFromMock.mockReturnValue({ where: whereMock });
+
+    const result = await UserModel.findUsersWithFlag('DARK_MODE');
+
+    expect(selectFromMock).toHaveBeenCalledWith('User');
+    expect(result).toEqual(fakeUsers);
+  });
+
+  it('finds all users without a specific flag', async () => {
+    const fakeUsers = [
+      { user_id: 3, username: 'user3', feature_flags: [] },
+      { user_id: 4, username: 'user4', feature_flags: ['BETA'] },
+    ];
+
+    const executeMock = jest.fn().mockResolvedValue(fakeUsers);
+    const selectAllMock = jest.fn().mockReturnValue({ execute: executeMock });
+    const whereMock = jest.fn().mockReturnValue({ selectAll: selectAllMock });
+    selectFromMock.mockReturnValue({ where: whereMock });
+
+    const result = await UserModel.findUsersWithoutFlag('DARK_MODE');
+
+    expect(selectFromMock).toHaveBeenCalledWith('User');
+    expect(result).toEqual(fakeUsers);
+  });
 });

@@ -673,6 +673,30 @@ describe('Password Reset Flow', () => {
       });
     });
 
+    it('should return error if code format is invalid (not 6 digits)', async () => {
+      const res = await request(app)
+        .post('/verify-reset-code')
+        .send({ email: 'user@example.com', code: '12345' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Invalid verification code format',
+      });
+    });
+
+    it('should return error if code contains non-digits', async () => {
+      const res = await request(app)
+        .post('/verify-reset-code')
+        .send({ email: 'user@example.com', code: 'abc123' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Invalid verification code format',
+      });
+    });
+
     it('should return error if user does not exist', async () => {
       (UserModel.findByEmail as jest.Mock).mockResolvedValue(null);
 
@@ -910,6 +934,247 @@ describe('Password Reset Flow', () => {
       expect(res.body).toMatchObject({
         status: 'error',
         message: 'Error resetting password',
+      });
+    });
+  });
+
+  describe('googleAuth', () => {
+    const { OAuth2Client } = require('google-auth-library');
+    
+    app.post('/google-auth', AuthController.googleAuth);
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+
+    it('should return error if idToken is missing', async () => {
+      const res = await request(app)
+        .post('/google-auth')
+        .send({});
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Google ID token is required',
+      });
+    });
+
+    it('should return error if idToken is not a string', async () => {
+      const res = await request(app)
+        .post('/google-auth')
+        .send({ idToken: 123 });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Google ID token is required',
+      });
+    });
+
+    it('should return error if idToken is empty string', async () => {
+      const res = await request(app)
+        .post('/google-auth')
+        .send({ idToken: '   ' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Google ID token is required',
+      });
+    });
+
+    it('should return error if Google token verification fails', async () => {
+      const mockVerifyIdToken = jest.fn().mockRejectedValue(new Error('Invalid token'));
+      OAuth2Client.prototype.verifyIdToken = mockVerifyIdToken;
+
+      const res = await request(app)
+        .post('/google-auth')
+        .send({ idToken: 'invalid-token' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Invalid Google token',
+      });
+    });
+
+    it('should return error if payload has no email', async () => {
+      const mockGetPayload = jest.fn().mockReturnValue({ sub: 'google123' });
+      const mockVerifyIdToken = jest.fn().mockResolvedValue({
+        getPayload: mockGetPayload,
+      });
+      OAuth2Client.prototype.verifyIdToken = mockVerifyIdToken;
+
+      const res = await request(app)
+        .post('/google-auth')
+        .send({ idToken: 'valid-token-no-email' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Invalid Google token',
+      });
+    });
+
+    it('should authenticate existing Google user successfully', async () => {
+      const mockGetPayload = jest.fn().mockReturnValue({
+        email: 'existing@gmail.com',
+        name: 'Existing User',
+        sub: 'google123',
+      });
+      const mockVerifyIdToken = jest.fn().mockResolvedValue({
+        getPayload: mockGetPayload,
+      });
+      OAuth2Client.prototype.verifyIdToken = mockVerifyIdToken;
+
+      (UserModel.findByEmail as jest.Mock).mockResolvedValue({
+        user_id: 5,
+        username: 'existinguser',
+        email: 'existing@gmail.com',
+        feature_flags: ['feature1'],
+      });
+      (jwtUtils.generateToken as jest.Mock).mockReturnValue('jwt-token-google');
+
+      const res = await request(app)
+        .post('/google-auth')
+        .send({ idToken: 'valid-google-token' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Google authentication successful',
+        data: {
+          user: {
+            user_id: 5,
+            username: 'existinguser',
+            email: 'existing@gmail.com',
+            feature_flags: ['feature1'],
+          },
+          token: 'jwt-token-google',
+        },
+      });
+    });
+
+    it('should create new user for first-time Google login', async () => {
+      const mockGetPayload = jest.fn().mockReturnValue({
+        email: 'newuser@gmail.com',
+        name: 'New User',
+        sub: 'google456',
+      });
+      const mockVerifyIdToken = jest.fn().mockResolvedValue({
+        getPayload: mockGetPayload,
+      });
+      OAuth2Client.prototype.verifyIdToken = mockVerifyIdToken;
+
+      (UserModel.findByEmail as jest.Mock).mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-random-password');
+      (UserModel.create as jest.Mock).mockResolvedValue({
+        user_id: 10,
+        username: 'newuser',
+        email: 'newuser@gmail.com',
+        feature_flags: [],
+      });
+      (jwtUtils.generateToken as jest.Mock).mockReturnValue('jwt-token-new-user');
+
+      const res = await request(app)
+        .post('/google-auth')
+        .send({ idToken: 'valid-google-token-new' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Google authentication successful',
+        data: {
+          user: {
+            user_id: 10,
+            username: 'newuser',
+            email: 'newuser@gmail.com',
+            feature_flags: [],
+          },
+          token: 'jwt-token-new-user',
+        },
+      });
+
+      expect(UserModel.create).toHaveBeenCalledWith({
+        email: 'newuser@gmail.com',
+        username: 'newuser',
+        password: 'hashed-random-password',
+        google_id: 'google456',
+        auth_provider: 'google',
+      });
+    });
+
+    it('should generate username from email if name is not provided', async () => {
+      const mockGetPayload = jest.fn().mockReturnValue({
+        email: 'noname@gmail.com',
+        sub: 'google789',
+      });
+      const mockVerifyIdToken = jest.fn().mockResolvedValue({
+        getPayload: mockGetPayload,
+      });
+      OAuth2Client.prototype.verifyIdToken = mockVerifyIdToken;
+
+      (UserModel.findByEmail as jest.Mock).mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-random-password');
+      (UserModel.create as jest.Mock).mockResolvedValue({
+        user_id: 11,
+        username: 'noname',
+        email: 'noname@gmail.com',
+        feature_flags: [],
+      });
+      (jwtUtils.generateToken as jest.Mock).mockReturnValue('jwt-token');
+
+      const res = await request(app)
+        .post('/google-auth')
+        .send({ idToken: 'valid-token-no-name' });
+
+      expect(res.status).toBe(200);
+      expect(UserModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          username: 'noname',
+          email: 'noname@gmail.com',
+        })
+      );
+    });
+
+    it('should handle errors during Google authentication', async () => {
+      const mockVerifyIdToken = jest.fn().mockRejectedValue(new Error('Network error'));
+      OAuth2Client.prototype.verifyIdToken = mockVerifyIdToken;
+
+      const res = await request(app)
+        .post('/google-auth')
+        .send({ idToken: 'some-token' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Invalid Google token',
+      });
+    });
+
+    it('should handle database errors during user creation', async () => {
+      const mockGetPayload = jest.fn().mockReturnValue({
+        email: 'error@gmail.com',
+        name: 'Error User',
+        sub: 'google999',
+      });
+      const mockVerifyIdToken = jest.fn().mockResolvedValue({
+        getPayload: mockGetPayload,
+      });
+      OAuth2Client.prototype.verifyIdToken = mockVerifyIdToken;
+
+      (UserModel.findByEmail as jest.Mock).mockResolvedValue(null);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
+      (UserModel.create as jest.Mock).mockRejectedValue(new Error('Database error'));
+
+      const res = await request(app)
+        .post('/google-auth')
+        .send({ idToken: 'valid-token' });
+
+      expect(res.status).toBe(500);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Error during Google authentication',
       });
     });
   });
