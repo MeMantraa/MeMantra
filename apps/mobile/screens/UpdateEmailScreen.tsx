@@ -8,7 +8,6 @@ import { profileSettingsStyles as styles } from '../styles/profileSettings.style
 import AppText from '../components/UI/textWrapper';
 import AppTextInput from '../components/UI/textInputWrapper';
 import { useTheme } from '../context/ThemeContext';
-//import  back from './assets/back.html';
 
 export default function UpdateEmailScreen() {
   const { colors } = useTheme();
