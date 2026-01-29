@@ -87,7 +87,7 @@ export const NotificationService = {
       to: deviceToken,
       title,
       body,
-      data: data || {},
+      data: data ?? {},
       sound: 'default',
       priority: 'high',
     };
@@ -112,7 +112,7 @@ export const NotificationService = {
       to: token,
       title,
       body,
-      data: data || {},
+      data: data ?? {},
       sound: 'default',
       priority: 'high',
     }));
@@ -272,10 +272,10 @@ export const NotificationService = {
       to: options.to,
       title: options.title,
       body: options.body,
-      data: options.data || {},
+      data: options.data ?? {},
       sound: options.sound !== undefined ? options.sound : 'default',
       badge: options.badge,
-      priority: options.priority || 'default',
+      priority: options.priority ?? 'default',
       ttl: options.ttl,
       channelId: options.channelId,
     };
