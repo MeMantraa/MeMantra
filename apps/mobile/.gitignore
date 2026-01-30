@@ -43,6 +43,5 @@ services/api.config.local.ts
 /ios
 /android
 
-
 # Expo
 .expo/
