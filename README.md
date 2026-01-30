@@ -71,8 +71,7 @@
 | [reminder-model-test](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/test/models/reminder.model.test.ts)     | Validates data integrity and proper handling of reminder frequencies, statuses, and timestamps.                       |
 | [verify-code-test](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/screens/VerifyCodeScreen.tsx)   | Ensures secure and user-friendly password recovery experience with proper error handling.         |
 | [chat-controller-test](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/controllers/chat.controller.ts)                  | Ensures proper authentication, authorization, and data validation for the entire chat feature.
-                     |
-
+                
 
 ---
 
