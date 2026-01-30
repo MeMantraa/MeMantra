@@ -39,6 +39,43 @@
 
 ---
 
+# RELEASE 2
+
+## Release 2 Presentation/Demo
+
+[Release 2 Demo](https://drive.google.com/file/d/1vS2S6Cnms2yjnlFLUvKy-Zr_2-aZawmF/view)
+
+## Release 2 Slides
+
+[Google Slides](https://docs.google.com/presentation/d/1LqgYqo8ehFkUz9KPZCNf5ntn-AIookAULcwsbX_AwfM/edit?usp=sharing)
+
+## Important files (Release 2)
+
+### Top 5 files
+
+| File path with clickable link                                                                                        | Purpose (1 line description)                                                     |
+| -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| [chat.service.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/services/chat.service.ts)              | Message API layer for the mobile app to communicate with the backend.            |
+| [chat.controller.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/controllers/chat.controller.ts)| HTTP requests for the chat feature and perform database operations.              |
+| [notif.service.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/services/notification.service.ts)     | Handles communication with Notification Service.                                 |
+| [notif-backend](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/services/notification.service.ts)   | Registers tokens, and configures how notifications behave with the device.       |
+| [admin.Screen](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/screens/adminScreen.tsx)                  | Admin UI for managing mantras and users with mode toggles                        |
+
+
+### Top 5 test files
+
+| File path with clickable link                                                                                        | Purpose (1 line description)                                                     |
+| -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
+| [reminder-test](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/test/services/reminder-scheduler.service.test.ts)              | Validates scheduling logic, notification delivery for both individual mantras and collections, and proper error handling.           |
+| [notif-test](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/test/services/notification.service.test.ts)| Ensures reliable communication with Expo's notification infrastructure and proper message formatting.              |
+| [reminder-model-test](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/test/models/reminder.model.test.ts)     | Validates data integrity and proper handling of reminder frequencies, statuses, and timestamps.                       |
+| [verify-code-test](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/screens/VerifyCodeScreen.tsx)   | Ensures secure and user-friendly password recovery experience with proper error handling.         |
+| [chat-controller-test](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/controllers/chat.controller.ts)                  | Ensures proper authentication, authorization, and data validation for the entire chat feature.
+                     |
+
+
+---
+
 ## Quick Links
 
 - **[Project Board](https://github.com/users/YFrancis10/projects/1)**
@@ -70,7 +107,7 @@ We use **GitHub Actions** to maintain quality and stability:
 Add video links (YouTube/Drive/Zoom) for each release:
 
 - [Release 1 Demo](https://drive.google.com/file/d/1zlSbubmLPZzgIaNzuCQcqTayMiFuy-BO/view)
-- **Release 2 Demo:** _coming soon_
+- [Release 2 Demo](https://drive.google.com/file/d/1vS2S6Cnms2yjnlFLUvKy-Zr_2-aZawmF/view)
 - **Release 3 (Release 1) Demo:** _coming soon_
 - **Final Release Demo:** _coming soon_
 
