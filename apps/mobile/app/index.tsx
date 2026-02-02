@@ -27,6 +27,8 @@ import ShareMantraScreen from '../screens/ShareMantraScreen';
 import BookmarkScreen from '../screens/bookmarkScreen';
 import LikedScreen from '../screens/LikedScreen';
 import SettingsScreen from '../screens/SettingsScreen';
+import JournalEditorScreen from '../screens/JournalEditorScreen';
+import JournalDetailScreen from '../screens/JournalDetailScreen';
 
 const Stack = createStackNavigator();
 
@@ -319,6 +321,8 @@ export default function MainNavigator() {
           />
           <Stack.Screen name="Liked" component={LikedScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="JournalEditor" component={JournalEditorScreen} />
+          <Stack.Screen name="JournalDetail" component={JournalDetailScreen} />
         </Stack.Navigator>
       </SavedProvider>
     </ThemeProvider>

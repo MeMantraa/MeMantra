@@ -10,6 +10,7 @@ import {
   Platform,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../src/navigation/types';
 import {
@@ -21,7 +22,7 @@ import { notificationService } from '../services/notification.service';
 type NotificationSettingsNavProp = StackNavigationProp<RootStackParamList>;
 
 export default function NotificationSettingsScreen() {
-  const _navigation = useNavigation<NotificationSettingsNavProp>();
+  const navigation = useNavigation<NotificationSettingsNavProp>();
   const [settings, setSettings] = useState<NotificationSettings>({
     enabled: true,
     quietHoursEnabled: false,
@@ -213,6 +214,17 @@ export default function NotificationSettingsScreen() {
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
+        {/* Header with Back Button */}
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
+
         <Text style={styles.title}>Notification Settings</Text>
 
         {/* Permission Status */}
@@ -325,6 +337,14 @@ const styles = StyleSheet.create({
     paddingTop: 70,
     paddingHorizontal: 20,
     paddingBottom: 40,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  backButton: {
+    padding: 4,
   },
   title: {
     fontSize: 34,
