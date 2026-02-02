@@ -15,8 +15,6 @@ import { journalService, JournalEntry, MOOD_OPTIONS } from '../services/journal.
 import { storage } from '../utils/storage';
 import { useFocusEffect } from '@react-navigation/native';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-
 export default function JournalScreen({ navigation }: any) {
   const { colors } = useTheme();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
