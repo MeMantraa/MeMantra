@@ -22,18 +22,7 @@ import {
 } from '../services/journal.service';
 import { storage } from '../utils/storage';
 
-interface JournalEditorScreenProps {
-  navigation: any;
-  route: {
-    params?: {
-      entry?: JournalEntry;
-      mantraId?: number;
-      mantraTitle?: string;
-    };
-  };
-}
-
-export default function JournalEditorScreen({ navigation, route }: JournalEditorScreenProps) {
+export default function JournalEditorScreen({ navigation, route }: any) {
   const { colors } = useTheme();
   const existingEntry = route.params?.entry;
   const preselectedMantraId = route.params?.mantraId;
