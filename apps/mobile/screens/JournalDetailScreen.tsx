@@ -5,16 +5,7 @@ import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { JournalEntry, MOOD_OPTIONS } from '../services/journal.service';
 
-interface JournalDetailScreenProps {
-  navigation: any;
-  route: {
-    params: {
-      entry: JournalEntry;
-    };
-  };
-}
-
-export default function JournalDetailScreen({ navigation, route }: JournalDetailScreenProps) {
+export default function JournalDetailScreen({ navigation, route }: any) {
   const { colors } = useTheme();
   const { entry } = route.params;
 
