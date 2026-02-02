@@ -104,7 +104,7 @@ export default function JournalScreen({ navigation }: any) {
       activeOpacity={0.8}
     >
       <View className="flex-row justify-between items-start mb-2">
-        <View className="flex-1">
+        <View className="flex-1 pr-2">
           <AppText className="text-lg font-bold" style={{ color: colors.text }} numberOfLines={1}>
             {item.title || 'Untitled Entry'}
           </AppText>
@@ -112,11 +112,20 @@ export default function JournalScreen({ navigation }: any) {
             {formatDate(item.created_at)}
           </AppText>
         </View>
-        {item.mood && (
-          <View className="ml-2">
-            <AppText className="text-2xl">{getMoodEmoji(item.mood)}</AppText>
-          </View>
-        )}
+        <View className="flex-row items-center gap-2">
+          {item.mood && (
+            <View>
+              <AppText className="text-2xl">{getMoodEmoji(item.mood)}</AppText>
+            </View>
+          )}
+          <TouchableOpacity
+            className="p-1"
+            onPress={() => handleDeleteEntry(item.journal_id)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="trash-outline" size={18} color={colors.text} style={{ opacity: 0.5 }} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <AppText
@@ -163,14 +172,6 @@ export default function JournalScreen({ navigation }: any) {
           )}
         </View>
       )}
-
-      <TouchableOpacity
-        className="absolute top-3 right-3 p-1"
-        onPress={() => handleDeleteEntry(item.journal_id)}
-        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-      >
-        <Ionicons name="trash-outline" size={18} color={colors.text} style={{ opacity: 0.5 }} />
-      </TouchableOpacity>
     </TouchableOpacity>
   );
 
