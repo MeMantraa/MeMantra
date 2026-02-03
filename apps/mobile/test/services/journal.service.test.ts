@@ -324,7 +324,7 @@ describe('journalService', () => {
         headers: { Authorization: `Bearer ${mockToken}` },
       });
       expect(result.status).toBe('success');
-      expect(result.data.entry.content).toBe('Simple entry');
+      expect(result.data!.entry.content).toBe('Simple entry');
     });
 
     it('should handle validation errors', async () => {
@@ -376,7 +376,7 @@ describe('journalService', () => {
       });
       expect(result).toEqual(mockResponse);
       expect(result.status).toBe('success');
-      expect(result.data.entry.title).toBe('Updated Title');
+      expect(result.data!.entry.title).toBe('Updated Title');
     });
 
     it('should update only specific fields', async () => {
@@ -406,7 +406,7 @@ describe('journalService', () => {
 
       const result = await journalService.updateJournalEntry(1, payload, mockToken);
 
-      expect(result.data.entry.mood).toBe('calm');
+      expect(result.data!.entry.mood).toBe('calm');
     });
 
     it('should handle update errors', async () => {
