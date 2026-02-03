@@ -56,25 +56,27 @@ export default function JournalScreen({ navigation }: any) {
     loadJournalEntries();
   };
 
+  const performDeletion = async (journalId: number) => {
+    try {
+      const token = (await storage.getToken()) || '';
+      const response = await journalService.deleteJournalEntry(journalId, token);
+      if (response.status === 'success') {
+        setEntries((prev) => prev.filter((e) => e.journal_id !== journalId));
+        setTotalEntries((prev) => prev - 1);
+      }
+    } catch (err) {
+      console.error('Error deleting journal entry:', err);
+      Alert.alert('Error', 'Failed to delete journal entry');
+    }
+  };
+
   const handleDeleteEntry = async (journalId: number) => {
     Alert.alert('Delete Entry', 'Are you sure you want to delete this journal entry?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: async () => {
-          try {
-            const token = (await storage.getToken()) || '';
-            const response = await journalService.deleteJournalEntry(journalId, token);
-            if (response.status === 'success') {
-              setEntries((prev) => prev.filter((e) => e.journal_id !== journalId));
-              setTotalEntries((prev) => prev - 1);
-            }
-          } catch (err) {
-            console.error('Error deleting journal entry:', err);
-            Alert.alert('Error', 'Failed to delete journal entry');
-          }
-        },
+        onPress: () => performDeletion(journalId),
       },
     ]);
   };

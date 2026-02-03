@@ -53,6 +53,14 @@ export default function JournalEditorScreen({ navigation, route }: any) {
     setTags(tags.filter((t) => t !== tagToRemove));
   };
 
+  const buildPayload = () => ({
+    title: title.trim() || undefined,
+    content: content.trim(),
+    mood: mood || undefined,
+    tags: tags.length > 0 ? tags : undefined,
+    mantra_id: mantraId,
+  });
+
   const handleSave = async () => {
     if (!content.trim()) {
       Alert.alert('Required', 'Please write some content for your journal entry');
@@ -68,46 +76,18 @@ export default function JournalEditorScreen({ navigation, route }: any) {
         return;
       }
 
-      if (isEditing && existingEntry) {
-        const payload: UpdateJournalPayload = {
-          title: title.trim() || undefined,
-          content: content.trim(),
-          mood: mood || undefined,
-          tags: tags.length > 0 ? tags : undefined,
-          mantra_id: mantraId,
-        };
+      const payload = buildPayload();
+      const response =
+        isEditing && existingEntry
+          ? await journalService.updateJournalEntry(existingEntry.journal_id, payload, token)
+          : await journalService.createJournalEntry(payload, token);
 
-        const response = await journalService.updateJournalEntry(
-          existingEntry.journal_id,
-          payload,
-          token,
-        );
-
-        if (response.status === 'success') {
-          Alert.alert('Success', 'Journal entry updated', [
-            { text: 'OK', onPress: () => navigation.goBack() },
-          ]);
-        } else {
-          Alert.alert('Error', response.message || 'Failed to update entry');
-        }
+      if (response.status === 'success') {
+        const message = isEditing ? 'Journal entry updated' : 'Journal entry saved';
+        Alert.alert('Success', message, [{ text: 'OK', onPress: () => navigation.goBack() }]);
       } else {
-        const payload: CreateJournalPayload = {
-          title: title.trim() || undefined,
-          content: content.trim(),
-          mood: mood || undefined,
-          tags: tags.length > 0 ? tags : undefined,
-          mantra_id: mantraId,
-        };
-
-        const response = await journalService.createJournalEntry(payload, token);
-
-        if (response.status === 'success') {
-          Alert.alert('Success', 'Journal entry saved', [
-            { text: 'OK', onPress: () => navigation.goBack() },
-          ]);
-        } else {
-          Alert.alert('Error', response.message || 'Failed to save entry');
-        }
+        const errorMessage = isEditing ? 'Failed to update entry' : 'Failed to save entry';
+        Alert.alert('Error', response.message || errorMessage);
       }
     } catch (err) {
       console.error('Error saving journal entry:', err);
