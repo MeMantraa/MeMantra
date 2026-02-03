@@ -12,13 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
-import {
-  journalService,
-  MoodType,
-  MOOD_OPTIONS,
-  CreateJournalPayload,
-  UpdateJournalPayload,
-} from '../services/journal.service';
+import { journalService, MoodType, MOOD_OPTIONS } from '../services/journal.service';
 import { storage } from '../utils/storage';
 
 export default function JournalEditorScreen({ navigation, route }: any) {
@@ -233,9 +227,9 @@ export default function JournalEditorScreen({ navigation, route }: any) {
             Tags
           </AppText>
           <View className="flex-row flex-wrap mb-2">
-            {tags.map((tag, index) => (
+            {tags.map((tag) => (
               <TouchableOpacity
-                key={index}
+                key={tag}
                 className="flex-row items-center px-3 py-1 rounded-full mr-2 mb-2"
                 style={{ backgroundColor: colors.secondary + '30' }}
                 onPress={() => handleRemoveTag(tag)}
