@@ -127,9 +127,9 @@ export default function JournalDetailScreen({ navigation, route }: any) {
               Tags
             </AppText>
             <View className="flex-row flex-wrap">
-              {entry.tags.map((tag: string, index: number) => (
+              {entry.tags.map((tag: string) => (
                 <View
-                  key={index}
+                  key={tag}
                   className="px-3 py-1 rounded-full mr-2 mb-2"
                   style={{ backgroundColor: colors.secondary + '30' }}
                 >

@@ -76,7 +76,9 @@ export default function JournalScreen({ navigation }: any) {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: () => performDeletion(journalId),
+        onPress: () => {
+          void performDeletion(journalId);
+        },
       },
     ]);
   };
@@ -155,9 +157,9 @@ export default function JournalScreen({ navigation }: any) {
 
       {item.tags && item.tags.length > 0 && (
         <View className="flex-row flex-wrap mt-2">
-          {item.tags.slice(0, 3).map((tag, index) => (
+          {item.tags.slice(0, 3).map((tag) => (
             <View
-              key={index}
+              key={tag}
               className="px-2 py-1 rounded-full mr-1 mb-1"
               style={{ backgroundColor: colors.secondary + '30' }}
             >
