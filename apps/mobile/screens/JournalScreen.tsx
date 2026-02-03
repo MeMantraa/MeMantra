@@ -3,7 +3,6 @@ import {
   View,
   FlatList,
   TouchableOpacity,
-  Dimensions,
   ActivityIndicator,
   Alert,
   RefreshControl,
@@ -21,12 +20,6 @@ export default function JournalScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [totalEntries, setTotalEntries] = useState(0);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadJournalEntries();
-    }, []),
-  );
 
   const loadJournalEntries = async () => {
     try {
@@ -50,6 +43,13 @@ export default function JournalScreen({ navigation }: any) {
       setRefreshing(false);
     }
   };
+
+  useFocusEffect(
+    useCallback(() => {
+      loadJournalEntries();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []),
+  );
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -117,6 +117,7 @@ export default function JournalScreen({ navigation }: any) {
             </View>
           )}
           <TouchableOpacity
+            testID="delete-button"
             className="p-1"
             onPress={() => handleDeleteEntry(item.journal_id)}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -181,7 +182,7 @@ export default function JournalScreen({ navigation }: any) {
             Journal
           </AppText>
         </View>
-        <View className="flex-1 justify-center items-center">
+        <View testID="journal-loading" className="flex-1 justify-center items-center">
           <ActivityIndicator size="large" color={colors.secondary} />
           <AppText className="mt-3 text-base" style={{ color: colors.text }}>
             Loading journal...
@@ -204,9 +205,10 @@ export default function JournalScreen({ navigation }: any) {
           </AppText>
         </View>
         <TouchableOpacity
+          testID="create-journal-button"
           className="w-12 h-12 rounded-full items-center justify-center"
           style={{ backgroundColor: colors.secondary }}
-          onPress={() => navigation.navigate('JournalEditor')}
+          onPress={() => navigation.navigate('JournalEditor', {})}
         >
           <Ionicons name="add" size={28} color={colors.primaryDark} />
         </TouchableOpacity>
@@ -236,7 +238,7 @@ export default function JournalScreen({ navigation }: any) {
         </View>
       ) : (
         <FlatList
-          testID="journal-list"
+          testID="journal-flatlist"
           data={entries}
           keyExtractor={(item) => item.journal_id.toString()}
           renderItem={renderEntry}

@@ -3,7 +3,7 @@ import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
-import { JournalEntry, MOOD_OPTIONS } from '../services/journal.service';
+import { MOOD_OPTIONS } from '../services/journal.service';
 
 export default function JournalDetailScreen({ navigation, route }: any) {
   const { colors } = useTheme();
@@ -39,6 +39,7 @@ export default function JournalDetailScreen({ navigation, route }: any) {
       {/* Header */}
       <View className="pt-16 pb-4 px-5 flex-row items-center justify-between">
         <TouchableOpacity
+          testID="back-button"
           onPress={() => navigation.goBack()}
           className="p-1"
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -46,6 +47,7 @@ export default function JournalDetailScreen({ navigation, route }: any) {
           <Ionicons name="arrow-back" size={28} color={colors.text} />
         </TouchableOpacity>
         <TouchableOpacity
+          testID="edit-button"
           onPress={() => navigation.navigate('JournalEditor', { entry })}
           className="p-1"
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
