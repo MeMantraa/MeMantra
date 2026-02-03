@@ -14,7 +14,6 @@ import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import {
   journalService,
-  JournalEntry,
   MoodType,
   MOOD_OPTIONS,
   CreateJournalPayload,
@@ -127,6 +126,7 @@ export default function JournalEditorScreen({ navigation, route }: any) {
       {/* Header */}
       <View className="pt-16 pb-4 px-5 flex-row items-center justify-between">
         <TouchableOpacity
+          testID="back-button"
           onPress={() => navigation.goBack()}
           className="p-1"
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -137,6 +137,7 @@ export default function JournalEditorScreen({ navigation, route }: any) {
           {isEditing ? 'Edit Entry' : 'New Entry'}
         </AppText>
         <TouchableOpacity
+          testID="save-button"
           onPress={handleSave}
           disabled={saving || !content.trim()}
           className="px-4 py-2 rounded-full"
@@ -176,6 +177,7 @@ export default function JournalEditorScreen({ navigation, route }: any) {
               Reflecting on: {mantraTitle}
             </AppText>
             <TouchableOpacity
+              testID="remove-mantra-button"
               onPress={() => {
                 setMantraId(null);
                 setMantraTitle(null);
@@ -223,6 +225,7 @@ export default function JournalEditorScreen({ navigation, route }: any) {
             {MOOD_OPTIONS.map((option) => (
               <TouchableOpacity
                 key={option.value}
+                testID={`mood-button-${option.value}`}
                 className="items-center mr-3 p-2 rounded-xl"
                 style={{
                   backgroundColor:
