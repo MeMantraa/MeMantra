@@ -58,6 +58,12 @@ jest.mock('../../screens/chatScreen', () => {
   return () => React.createElement(Text, null, 'Chat Screen');
 });
 
+jest.mock('../../screens/JournalScreen', () => {
+  const React = jest.requireActual('react');
+  const { Text } = jest.requireActual('react-native');
+  return () => React.createElement(Text, null, 'Journal Screen');
+});
+
 jest.mock('../../utils/storage', () => ({
   storage: {
     getUserData: jest.fn(),

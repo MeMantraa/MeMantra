@@ -14,6 +14,10 @@ export default function FocusScreen({ route, navigation }: any) {
 
   const { colors } = useTheme();
 
+  const handleJournal = (mantraId: number, mantraTitle: string) => {
+    navigation.navigate('JournalEditor', { mantraId, mantraTitle });
+  };
+
   return (
     <View className="flex-1" style={{ backgroundColor: colors.primary }}>
       <TouchableOpacity
@@ -26,10 +30,22 @@ export default function FocusScreen({ route, navigation }: any) {
         <Ionicons name="chevron-back" size={32} color={colors.text} />
       </TouchableOpacity>
 
+      {/* Journal button in top-right corner */}
+      <TouchableOpacity
+        onPress={() => handleJournal(mantra.mantra_id, mantra.title)}
+        className="absolute z-20 p-2"
+        style={{ top: 60, right: 20 }}
+        testID="journal-button"
+        accessibilityRole="button"
+      >
+        <Ionicons name="book-outline" size={28} color={colors.text} />
+      </TouchableOpacity>
+
       <MantraCarousel
         item={mantra}
         onLike={onLike}
         onSave={onSave}
+        onJournal={handleJournal}
         showButtons={false}
         isFocusMode={true}
       />

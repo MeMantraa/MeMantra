@@ -17,6 +17,7 @@ export interface Database {
   Message: MessageTable;
   MessageReaction: MessageReactionTable;
   Rating: RatingTable;
+  JournalEntry: JournalEntryTable;
 }
 
 //table interfaces
@@ -152,6 +153,19 @@ export interface RatingTable {
   updated_at: string | null;
 }
 
+export interface JournalEntryTable {
+  journal_id: Generated<number>;
+  user_id: number;
+  mantra_id: number | null;
+  title: string | null;
+  content: string;
+  mood: string | null;
+  tags: string[] | null;
+  is_private: boolean | null;
+  created_at: string | null;
+  updated_at: string | null;
+}
+
 //types for type safe operations (typescript ting)
 export type User = Selectable<UserTable>;
 export type NewUser = Insertable<UserTable>;
@@ -209,3 +223,7 @@ export type MessageReactionUpdate = Updateable<MessageReactionTable>;
 export type Rating = Selectable<RatingTable>;
 export type NewRating = Insertable<RatingTable>;
 export type RatingUpdate = Updateable<RatingTable>;
+
+export type JournalEntry = Selectable<JournalEntryTable>;
+export type NewJournalEntry = Insertable<JournalEntryTable>;
+export type JournalEntryUpdate = Updateable<JournalEntryTable>;
