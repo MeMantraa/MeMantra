@@ -295,14 +295,7 @@ export default function MainNavigator() {
             name="Conversation"
             component={ConversationScreen}
             options={{
-              headerShown: true,
-              headerStyle: {
-                backgroundColor: '#9AA793',
-              },
-              headerTintColor: '#ffffff',
-              headerTitleStyle: {
-                fontFamily: 'LibreBaskerville-Regular',
-              },
+              headerShown: false,
             }}
           />
           <Stack.Screen
