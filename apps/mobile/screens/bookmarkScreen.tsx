@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   FlatList,
@@ -7,11 +7,13 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { Mantra } from '../services/mantra.service';
 import { collectionService } from '../services/collection.service';
+import { reminderService } from '../services/reminder.service';
 import { storage } from '../utils/storage';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -26,10 +28,47 @@ export default function BookmarkScreen({ navigation, route }: any) {
   const [mantras, setMantras] = useState<Mantra[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [remindersByMantra, setRemindersByMantra] = useState<
+    Map<number, { reminder_id: number; status: string | null }>
+  >(new Map());
+  const [collectionReminder, setCollectionReminder] = useState<{
+    reminder_id: number;
+    status: string | null;
+  } | null>(null);
 
   useEffect(() => {
     loadCollectionMantras();
   }, [collectionId]);
+
+  const loadReminders = useCallback(async () => {
+    try {
+      const token = await storage.getToken();
+      if (!token) return;
+      const res = await reminderService.getReminders(token);
+      if (res.status === 'success') {
+        const map = new Map<number, { reminder_id: number; status: string | null }>();
+        let colReminder: { reminder_id: number; status: string | null } | null = null;
+        for (const r of res.data.reminders) {
+          if (r.mantra_id !== null) {
+            map.set(r.mantra_id, { reminder_id: r.reminder_id, status: r.status });
+          }
+          if (r.collection_id === collectionId) {
+            colReminder = { reminder_id: r.reminder_id, status: r.status };
+          }
+        }
+        setRemindersByMantra(map);
+        setCollectionReminder(colReminder);
+      }
+    } catch {
+      // non-critical
+    }
+  }, [collectionId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadReminders();
+    }, [loadReminders]),
+  );
 
   const loadCollectionMantras = async () => {
     try {
@@ -53,28 +92,96 @@ export default function BookmarkScreen({ navigation, route }: any) {
     loadCollectionMantras();
   };
 
+  const showReminderActions = (existing: { reminder_id: number; status: string | null }) => {
+    const isPaused = existing.status === 'paused';
+    Alert.alert('Reminder', undefined, [
+      {
+        text: isPaused ? 'Resume' : 'Pause',
+        onPress: async () => {
+          try {
+            const token = await storage.getToken();
+            if (!token) return;
+            await reminderService.updateReminder(
+              existing.reminder_id,
+              { status: isPaused ? 'active' : 'paused' },
+              token,
+            );
+            loadReminders();
+          } catch {
+            Alert.alert('Error', 'Failed to update reminder');
+          }
+        },
+      },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const token = await storage.getToken();
+            if (!token) return;
+            await reminderService.deleteReminder(existing.reminder_id, token);
+            loadReminders();
+          } catch {
+            Alert.alert('Error', 'Failed to delete reminder');
+          }
+        },
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
+  const handleMantraReminder = (mantraId: number) => {
+    const existing = remindersByMantra.get(mantraId);
+    if (existing) {
+      showReminderActions(existing);
+    } else {
+      navigation.navigate('CreateReminder', { mantraId });
+    }
+  };
+
+  const handleCollectionReminder = () => {
+    if (collectionReminder) {
+      showReminderActions(collectionReminder);
+    } else {
+      navigation.navigate('CreateReminder', { collectionId });
+    }
+  };
+
   const renderItem = ({ item }: { item: Mantra }) => (
-    <TouchableOpacity
-      className="justify-center items-center rounded-xl p-2.5 shadow-sm android:elevation-4"
-      style={{
-        backgroundColor: colors.primaryDark,
-        width: ITEM_SIZE,
-        height: ITEM_SIZE * 0.75,
-      }}
-      onPress={() =>
-        navigation.navigate('Focus', {
-          mantra: item,
-        })
-      }
-    >
-      <AppText
-        className="text-lg font-bold text-center leading-tight"
-        style={{ color: colors.text }}
-        numberOfLines={3}
+    <View style={{ width: ITEM_SIZE, height: ITEM_SIZE * 0.75 }}>
+      <TouchableOpacity
+        className="justify-center items-center rounded-xl p-2.5 shadow-sm android:elevation-4"
+        style={{
+          backgroundColor: colors.primaryDark,
+          width: ITEM_SIZE,
+          height: ITEM_SIZE * 0.75,
+        }}
+        onPress={() =>
+          navigation.navigate('Focus', {
+            mantra: item,
+          })
+        }
       >
-        {item.title}
-      </AppText>
-    </TouchableOpacity>
+        <AppText
+          className="text-lg font-bold text-center leading-tight"
+          style={{ color: colors.text }}
+          numberOfLines={3}
+        >
+          {item.title}
+        </AppText>
+      </TouchableOpacity>
+      <TouchableOpacity
+        className="absolute bottom-2 right-2 p-1"
+        onPress={() => handleMantraReminder(item.mantra_id)}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Ionicons
+          name={remindersByMantra.has(item.mantra_id) ? 'notifications' : 'notifications-outline'}
+          size={18}
+          color={remindersByMantra.has(item.mantra_id) ? colors.secondary : colors.text}
+        />
+      </TouchableOpacity>
+    </View>
   );
 
   if (loading) {
@@ -131,6 +238,18 @@ export default function BookmarkScreen({ navigation, route }: any) {
         >
           {collectionName}
         </AppText>
+        <TouchableOpacity
+          testID="collection-reminder-button"
+          onPress={handleCollectionReminder}
+          className="ml-2 p-1"
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons
+            name={collectionReminder ? 'notifications' : 'notifications-outline'}
+            size={24}
+            color={collectionReminder ? colors.secondary : colors.text}
+          />
+        </TouchableOpacity>
       </View>
 
       {mantras.length === 0 ? (

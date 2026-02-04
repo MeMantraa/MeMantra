@@ -9,6 +9,8 @@ export type Reminder = {
   frequency: string | null;
   status: string | null;
   last_sent_at: string | null;
+  mantra_title: string | null;
+  collection_name: string | null;
 };
 
 export interface RemindersResponse {

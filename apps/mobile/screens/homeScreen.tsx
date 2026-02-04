@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   View,
   FlatList,
@@ -9,10 +9,12 @@ import {
   Text,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import MantraCarousel from '../components/carousel';
 import { mantraService, Mantra } from '../services/mantra.service';
 import { collectionService, Collection } from '../services/collection.service';
 import { ratingService } from '../services/rating.service';
+import { reminderService } from '../services/reminder.service';
 import { storage } from '../utils/storage';
 import SearchBar from '../components/UI/searchBar';
 import IconButton from '../components/UI/iconButton';
@@ -40,6 +42,10 @@ export default function HomeScreen({ navigation, route }: any) {
 
   const { colors } = useTheme();
 
+  const [remindersByMantra, setRemindersByMantra] = useState<
+    Map<number, { reminder_id: number; status: string | null }>
+  >(new Map());
+
   const listRef = useRef<FlatList<Mantra>>(null);
   const { setSavedMantras } = useSavedMantras();
 
@@ -47,6 +53,31 @@ export default function HomeScreen({ navigation, route }: any) {
     loadMantras();
     loadCollections();
   }, []);
+
+  const loadReminders = useCallback(async () => {
+    try {
+      const token = await storage.getToken();
+      if (!token) return;
+      const res = await reminderService.getReminders(token);
+      if (res.status === 'success') {
+        const map = new Map<number, { reminder_id: number; status: string | null }>();
+        for (const r of res.data.reminders) {
+          if (r.mantra_id !== null) {
+            map.set(r.mantra_id, { reminder_id: r.reminder_id, status: r.status });
+          }
+        }
+        setRemindersByMantra(map);
+      }
+    } catch {
+      // non-critical, ignore
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadReminders();
+    }, [loadReminders]),
+  );
 
   const loadMantras = async () => {
     try {
@@ -198,6 +229,50 @@ export default function HomeScreen({ navigation, route }: any) {
     navigation.navigate('JournalEditor', { mantraId, mantraTitle });
   };
 
+  const handleReminder = (mantraId: number) => {
+    const existing = remindersByMantra.get(mantraId);
+    if (!existing) {
+      navigation.navigate('CreateReminder', { mantraId });
+      return;
+    }
+
+    const isPaused = existing.status === 'paused';
+    Alert.alert('Reminder', undefined, [
+      {
+        text: isPaused ? 'Resume' : 'Pause',
+        onPress: async () => {
+          try {
+            const token = await storage.getToken();
+            if (!token) return;
+            await reminderService.updateReminder(
+              existing.reminder_id,
+              { status: isPaused ? 'active' : 'paused' },
+              token,
+            );
+            loadReminders();
+          } catch {
+            Alert.alert('Error', 'Failed to update reminder');
+          }
+        },
+      },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const token = await storage.getToken();
+            if (!token) return;
+            await reminderService.deleteReminder(existing.reminder_id, token);
+            loadReminders();
+          } catch {
+            Alert.alert('Error', 'Failed to delete reminder');
+          }
+        },
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
   const handleSelectCollection = async (collectionId: number) => {
     if (!currentMantraId) {
       Alert.alert('Error', 'No mantra selected');
@@ -331,6 +406,8 @@ export default function HomeScreen({ navigation, route }: any) {
             onSave={handleSave}
             onShare={handleShare}
             onJournal={handleJournal}
+            onReminder={handleReminder}
+            hasReminder={remindersByMantra.has(item.mantra_id)}
             onPress={() =>
               navigation.navigate('Focus', {
                 mantra: item,

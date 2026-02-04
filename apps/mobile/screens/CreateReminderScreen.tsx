@@ -77,9 +77,21 @@ export default function CreateReminderScreen() {
         collectionService.getUserCollections(token),
       ]);
 
-      if (savedMantras) {
-        setMantras(Array.isArray(savedMantras) ? savedMantras : []);
+      let mantraList = Array.isArray(savedMantras) ? savedMantras : [];
+
+      // If a mantra was preselected but isn't in the saved list, fetch it
+      if (preselectedMantraId && !mantraList.some((m) => m.mantra_id === preselectedMantraId)) {
+        try {
+          const res = await mantraService.getMantraById(preselectedMantraId, token);
+          if (res.status === 'success' && res.data?.mantra) {
+            mantraList = [res.data.mantra, ...mantraList];
+          }
+        } catch {
+          // Mantra may have been deleted; ignore
+        }
       }
+
+      setMantras(mantraList);
       if (collectionRes.data?.collections) {
         setCollections(collectionRes.data.collections);
       }

@@ -95,8 +95,8 @@ export default function MainNavigator() {
       // Fetch the mantra details
       const response = await mantraService.getMantraById(mantraId, token);
 
-      if (response.status === 'success' && response.data) {
-        const mantra: Mantra = response.data;
+      if (response.status === 'success' && response.data?.mantra) {
+        const mantra: Mantra = response.data.mantra;
 
         // Create simple like/save handlers for deep-linked mantra
         const handleLike = async (id: number) => {

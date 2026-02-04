@@ -34,7 +34,7 @@ describe('ReminderController', () => {
         { reminder_id: 1, user_id: 1, mantra_id: 5, time: '2025-01-20T10:00:00Z' },
         { reminder_id: 2, user_id: 1, mantra_id: 6, time: '2025-01-21T10:00:00Z' },
       ];
-      (ReminderModel.findByUserId as jest.Mock).mockResolvedValue(mockReminders);
+      (ReminderModel.findByUserIdWithNames as jest.Mock).mockResolvedValue(mockReminders);
 
       const app = setupAppWithUser(1, 'test@test.com');
       const res = await request(app).get('/reminders');
@@ -44,7 +44,7 @@ describe('ReminderController', () => {
         status: 'success',
         data: { reminders: mockReminders },
       });
-      expect(ReminderModel.findByUserId).toHaveBeenCalledWith(1);
+      expect(ReminderModel.findByUserIdWithNames).toHaveBeenCalledWith(1);
     });
 
     it('should return 401 if not authenticated', async () => {
@@ -58,8 +58,41 @@ describe('ReminderController', () => {
       });
     });
 
+    it('should include mantra_title and collection_name in response', async () => {
+      const mockReminders = [
+        {
+          reminder_id: 1,
+          user_id: 1,
+          mantra_id: 5,
+          collection_id: null,
+          time: '2025-01-20T10:00:00Z',
+          mantra_title: 'Test Mantra',
+          collection_name: null,
+        },
+        {
+          reminder_id: 2,
+          user_id: 1,
+          mantra_id: null,
+          collection_id: 3,
+          time: '2025-01-21T10:00:00Z',
+          mantra_title: null,
+          collection_name: 'My Collection',
+        },
+      ];
+      (ReminderModel.findByUserIdWithNames as jest.Mock).mockResolvedValue(mockReminders);
+
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app).get('/reminders');
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.reminders[0].mantra_title).toBe('Test Mantra');
+      expect(res.body.data.reminders[0].collection_name).toBeNull();
+      expect(res.body.data.reminders[1].mantra_title).toBeNull();
+      expect(res.body.data.reminders[1].collection_name).toBe('My Collection');
+    });
+
     it('should handle errors', async () => {
-      (ReminderModel.findByUserId as jest.Mock).mockRejectedValue(new Error('DB error'));
+      (ReminderModel.findByUserIdWithNames as jest.Mock).mockRejectedValue(new Error('DB error'));
 
       const app = setupAppWithUser(1, 'test@test.com');
       const res = await request(app).get('/reminders');

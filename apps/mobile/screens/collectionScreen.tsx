@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { collectionService, Collection } from '../services/collection.service';
+import { reminderService } from '../services/reminder.service';
 import { storage } from '../utils/storage';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -23,14 +24,81 @@ export default function CollectionsScreen({ navigation }: any) {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [remindersByCollection, setRemindersByCollection] = useState<
+    Map<number, { reminder_id: number; status: string | null }>
+  >(new Map());
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadCollections();
+      loadReminders();
     });
 
     return unsubscribe;
   }, [navigation]);
+
+  const loadReminders = async () => {
+    try {
+      const token = await storage.getToken();
+      if (!token) return;
+      const res = await reminderService.getReminders(token);
+      if (res.status === 'success') {
+        const map = new Map<number, { reminder_id: number; status: string | null }>();
+        for (const r of res.data.reminders) {
+          if (r.collection_id !== null) {
+            map.set(r.collection_id, { reminder_id: r.reminder_id, status: r.status });
+          }
+        }
+        setRemindersByCollection(map);
+      }
+    } catch {
+      // non-critical
+    }
+  };
+
+  const handleCollectionReminder = (collection: Collection) => {
+    const existing = remindersByCollection.get(collection.collection_id);
+    if (!existing) {
+      navigation.navigate('CreateReminder', { collectionId: collection.collection_id });
+      return;
+    }
+
+    const isPaused = existing.status === 'paused';
+    Alert.alert('Reminder', undefined, [
+      {
+        text: isPaused ? 'Resume' : 'Pause',
+        onPress: async () => {
+          try {
+            const token = await storage.getToken();
+            if (!token) return;
+            await reminderService.updateReminder(
+              existing.reminder_id,
+              { status: isPaused ? 'active' : 'paused' },
+              token,
+            );
+            loadReminders();
+          } catch {
+            Alert.alert('Error', 'Failed to update reminder');
+          }
+        },
+      },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            const token = await storage.getToken();
+            if (!token) return;
+            await reminderService.deleteReminder(existing.reminder_id, token);
+            loadReminders();
+          } catch {
+            Alert.alert('Error', 'Failed to delete reminder');
+          }
+        },
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
 
   const loadCollections = async () => {
     try {
@@ -140,6 +208,23 @@ export default function CollectionsScreen({ navigation }: any) {
             {item.description}
           </AppText>
         )}
+      </TouchableOpacity>
+
+      {/* Reminder button */}
+      <TouchableOpacity
+        className="absolute bottom-2 right-2 p-1"
+        onPress={() => handleCollectionReminder(item)}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Ionicons
+          name={
+            remindersByCollection.has(item.collection_id)
+              ? 'notifications'
+              : 'notifications-outline'
+          }
+          size={20}
+          color={remindersByCollection.has(item.collection_id) ? colors.secondary : colors.text}
+        />
       </TouchableOpacity>
 
       {/* Delete button - only show if not "Saved Mantras" */}

@@ -101,6 +101,7 @@ export default function RemindersScreen() {
   const renderReminder = ({ item }: { item: Reminder }) => {
     const isMantra = item.mantra_id !== null;
     const typeLabel = isMantra ? 'Mantra' : 'Collection';
+    const linkedName = isMantra ? item.mantra_title : item.collection_name;
     const isActive = item.status === 'active';
     const isCompleted = item.status === 'completed';
 
@@ -121,6 +122,12 @@ export default function RemindersScreen() {
             </Text>
           </View>
         </View>
+
+        {linkedName ? (
+          <Text style={styles.linkedName} numberOfLines={2}>
+            {linkedName}
+          </Text>
+        ) : null}
 
         <View style={styles.reminderBody}>
           <View style={styles.reminderInfo}>
@@ -294,6 +301,12 @@ const styles = StyleSheet.create({
   },
   pausedText: {
     color: '#92400E',
+  },
+  linkedName: {
+    fontSize: 16,
+    fontFamily: 'Red_Hat_Text-SemiBold',
+    color: '#333',
+    marginBottom: 10,
   },
   reminderBody: {
     gap: 8,
