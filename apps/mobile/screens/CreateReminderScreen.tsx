@@ -178,6 +178,7 @@ export default function CreateReminderScreen() {
             : { collection_id: selectedCollectionId }),
           time: time.toISOString(),
           frequency,
+          status: 'active',
         },
         token,
       );
