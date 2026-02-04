@@ -14,4 +14,5 @@ export type RootStackParamList = {
   Notifications: undefined;
   Liked: undefined;
   Settings: undefined;
+  Themes: undefined;
 };
