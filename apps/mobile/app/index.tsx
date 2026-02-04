@@ -29,6 +29,8 @@ import LikedScreen from '../screens/LikedScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import JournalEditorScreen from '../screens/JournalEditorScreen';
 import JournalDetailScreen from '../screens/JournalDetailScreen';
+import RemindersScreen from '../screens/RemindersScreen';
+import CreateReminderScreen from '../screens/CreateReminderScreen';
 
 const Stack = createStackNavigator();
 
@@ -323,6 +325,8 @@ export default function MainNavigator() {
           <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="JournalEditor" component={JournalEditorScreen} />
           <Stack.Screen name="JournalDetail" component={JournalDetailScreen} />
+          <Stack.Screen name="Reminders" component={RemindersScreen} />
+          <Stack.Screen name="CreateReminder" component={CreateReminderScreen} />
         </Stack.Navigator>
       </SavedProvider>
     </ThemeProvider>

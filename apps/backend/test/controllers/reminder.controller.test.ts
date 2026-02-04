@@ -216,7 +216,7 @@ describe('ReminderController', () => {
   });
 
   describe('createReminder', () => {
-    it('should create reminder', async () => {
+    it('should create reminder with mantra_id', async () => {
       const futureDate = new Date(Date.now() + 86400000).toISOString();
       const newReminder = {
         mantra_id: 5,
@@ -238,6 +238,33 @@ describe('ReminderController', () => {
         message: 'Reminder created successfully',
         data: { reminder: createdReminder },
       });
+    });
+
+    it('should create reminder with collection_id', async () => {
+      const futureDate = new Date(Date.now() + 86400000).toISOString();
+      const newReminder = {
+        collection_id: 3,
+        time: futureDate,
+        frequency: 'weekly',
+        status: 'active',
+      };
+      const createdReminder = { reminder_id: 2, user_id: 1, mantra_id: null, ...newReminder };
+      (ReminderModel.create as jest.Mock).mockResolvedValue(createdReminder);
+
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app)
+        .post('/reminders')
+        .send(newReminder);
+
+      expect(res.status).toBe(201);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Reminder created successfully',
+        data: { reminder: createdReminder },
+      });
+      expect(ReminderModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({ collection_id: 3, user_id: 1 }),
+      );
     });
 
     it('should return 400 if time is in the past', async () => {
