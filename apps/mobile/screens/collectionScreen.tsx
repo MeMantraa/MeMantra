@@ -11,8 +11,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { collectionService, Collection } from '../services/collection.service';
-import { reminderService } from '../services/reminder.service';
 import { storage } from '../utils/storage';
+import { useReminders } from '../hooks/useReminders';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ITEM_MARGIN = 12;
@@ -24,84 +24,18 @@ export default function CollectionsScreen({ navigation }: any) {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [remindersByCollection, setRemindersByCollection] = useState<
-    Map<number, { reminder_id: number; status: string | null }>
-  >(new Map());
+  const { remindersByCollection, handleReminderPress } = useReminders();
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
       loadCollections();
-      loadReminders();
     });
 
     return unsubscribe;
   }, [navigation]);
 
-  const loadReminders = async () => {
-    try {
-      const token = await storage.getToken();
-      if (!token) return;
-      const res = await reminderService.getReminders(token);
-      if (res.status === 'success') {
-        const map = new Map<number, { reminder_id: number; status: string | null }>();
-        for (const r of res.data.reminders) {
-          if (r.collection_id !== null) {
-            map.set(r.collection_id, { reminder_id: r.reminder_id, status: r.status });
-          }
-        }
-        setRemindersByCollection(map);
-      }
-    } catch {
-      // non-critical
-    }
-  };
-
   const handleCollectionReminder = (collection: Collection) => {
-    const existing = remindersByCollection.get(collection.collection_id);
-    if (!existing) {
-      navigation.navigate('CreateReminder', { collectionId: collection.collection_id });
-      return;
-    }
-
-    const isPaused = existing.status === 'paused';
-    Alert.alert('Reminder', undefined, [
-      {
-        text: isPaused ? 'Resume' : 'Pause',
-        onPress: () => {
-          void (async () => {
-            try {
-              const token = await storage.getToken();
-              if (!token) return;
-              await reminderService.updateReminder(
-                existing.reminder_id,
-                { status: isPaused ? 'active' : 'paused' },
-                token,
-              );
-              loadReminders();
-            } catch {
-              Alert.alert('Error', 'Failed to update reminder');
-            }
-          })();
-        },
-      },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          void (async () => {
-            try {
-              const token = await storage.getToken();
-              if (!token) return;
-              await reminderService.deleteReminder(existing.reminder_id, token);
-              loadReminders();
-            } catch {
-              Alert.alert('Error', 'Failed to update reminder');
-            }
-          })();
-        },
-      },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
+    handleReminderPress('collection', collection.collection_id, navigation);
   };
 
   const loadCollections = async () => {

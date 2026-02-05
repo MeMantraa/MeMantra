@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   FlatList,
@@ -7,14 +7,13 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { Mantra } from '../services/mantra.service';
 import { collectionService } from '../services/collection.service';
-import { reminderService } from '../services/reminder.service';
 import { storage } from '../utils/storage';
+import { useReminders } from '../hooks/useReminders';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ITEM_MARGIN = 12;
@@ -28,47 +27,12 @@ export default function BookmarkScreen({ navigation, route }: any) {
   const [mantras, setMantras] = useState<Mantra[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [remindersByMantra, setRemindersByMantra] = useState<
-    Map<number, { reminder_id: number; status: string | null }>
-  >(new Map());
-  const [collectionReminder, setCollectionReminder] = useState<{
-    reminder_id: number;
-    status: string | null;
-  } | null>(null);
+  const { remindersByMantra, getReminderForCollection, handleReminderPress } = useReminders();
+  const collectionReminder = getReminderForCollection(collectionId);
 
   useEffect(() => {
     loadCollectionMantras();
   }, [collectionId]);
-
-  const loadReminders = useCallback(async () => {
-    try {
-      const token = await storage.getToken();
-      if (!token) return;
-      const res = await reminderService.getReminders(token);
-      if (res.status === 'success') {
-        const map = new Map<number, { reminder_id: number; status: string | null }>();
-        let colReminder: { reminder_id: number; status: string | null } | null = null;
-        for (const r of res.data.reminders) {
-          if (r.mantra_id !== null) {
-            map.set(r.mantra_id, { reminder_id: r.reminder_id, status: r.status });
-          }
-          if (r.collection_id === collectionId) {
-            colReminder = { reminder_id: r.reminder_id, status: r.status };
-          }
-        }
-        setRemindersByMantra(map);
-        setCollectionReminder(colReminder);
-      }
-    } catch {
-      // non-critical
-    }
-  }, [collectionId]);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadReminders();
-    }, [loadReminders]),
-  );
 
   const loadCollectionMantras = async () => {
     try {
@@ -92,63 +56,12 @@ export default function BookmarkScreen({ navigation, route }: any) {
     loadCollectionMantras();
   };
 
-  const showReminderActions = (existing: { reminder_id: number; status: string | null }) => {
-    const isPaused = existing.status === 'paused';
-    Alert.alert('Reminder', undefined, [
-      {
-        text: isPaused ? 'Resume' : 'Pause',
-        onPress: () => {
-          void (async () => {
-            try {
-              const token = await storage.getToken();
-              if (!token) return;
-              await reminderService.updateReminder(
-                existing.reminder_id,
-                { status: isPaused ? 'active' : 'paused' },
-                token,
-              );
-              loadReminders();
-            } catch {
-              Alert.alert('Error', 'Failed to update reminder');
-            }
-          })();
-        },
-      },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          void (async () => {
-            try {
-              const token = await storage.getToken();
-              if (!token) return;
-              await reminderService.deleteReminder(existing.reminder_id, token);
-              loadReminders();
-            } catch {
-              Alert.alert('Error', 'Failed to delete reminder');
-            }
-          })();
-        },
-      },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
-  };
-
   const handleMantraReminder = (mantraId: number) => {
-    const existing = remindersByMantra.get(mantraId);
-    if (existing) {
-      showReminderActions(existing);
-    } else {
-      navigation.navigate('CreateReminder', { mantraId });
-    }
+    handleReminderPress('mantra', mantraId, navigation);
   };
 
   const handleCollectionReminder = () => {
-    if (collectionReminder) {
-      showReminderActions(collectionReminder);
-    } else {
-      navigation.navigate('CreateReminder', { collectionId });
-    }
+    handleReminderPress('collection', collectionId, navigation);
   };
 
   const renderItem = ({ item }: { item: Mantra }) => (
