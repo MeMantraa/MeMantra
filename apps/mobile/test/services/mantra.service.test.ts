@@ -70,9 +70,11 @@ jest.mock('../../services/api.config', () => ({
             data: {
               status: 'success',
               data: {
-                ...mantra,
-                isLiked: mockState.likedMantras.has(mantra.mantra_id),
-                isSaved: mockState.savedMantras.has(mantra.mantra_id),
+                mantra: {
+                  ...mantra,
+                  isLiked: mockState.likedMantras.has(mantra.mantra_id),
+                  isSaved: mockState.savedMantras.has(mantra.mantra_id),
+                },
               },
             },
           });
