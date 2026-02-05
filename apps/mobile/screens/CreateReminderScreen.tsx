@@ -51,12 +51,8 @@ export default function CreateReminderScreen() {
   const [frequency, setFrequency] = useState<Frequency>('daily');
   const [submitting, setSubmitting] = useState(false);
 
-  // Picker visibility — on Android each mode opens a native dialog,
-  // on iOS we show an inline spinner inside a bottom-sheet modal.
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-
-  // Temporary value while the iOS modal is open so the user can cancel
   const [tempDate, setTempDate] = useState(time);
 
   const [mantras, setMantras] = useState<Mantra[]>([]);
@@ -79,7 +75,6 @@ export default function CreateReminderScreen() {
 
       let mantraList = Array.isArray(savedMantras) ? savedMantras : [];
 
-      // If a mantra was preselected but isn't in the saved list, fetch it
       if (preselectedMantraId && !mantraList.some((m) => m.mantra_id === preselectedMantraId)) {
         try {
           const res = await mantraService.getMantraById(preselectedMantraId, token);
@@ -101,8 +96,6 @@ export default function CreateReminderScreen() {
       setLoadingItems(false);
     }
   };
-
-  // ---- Date / Time handlers ----
 
   const openDatePicker = () => {
     setTempDate(time);
@@ -159,8 +152,6 @@ export default function CreateReminderScreen() {
     else setShowTimePicker(false);
   };
 
-  // ---- Submit ----
-
   const handleSubmit = async () => {
     if (reminderType === 'mantra' && !selectedMantraId) {
       Alert.alert('Select a Mantra', 'Please select a mantra for this reminder.');
@@ -209,8 +200,6 @@ export default function CreateReminderScreen() {
   const selectedMantra = mantras.find((m) => m.mantra_id === selectedMantraId);
   const selectedCollection = collections.find((c) => c.collection_id === selectedCollectionId);
 
-  // ---- iOS picker modal (renders inline spinner with confirm/cancel) ----
-
   const renderIOSPickerModal = (
     visible: boolean,
     mode: 'date' | 'time',
@@ -249,14 +238,17 @@ export default function CreateReminderScreen() {
             onPress={() => navigation.goBack()}
             style={styles.backButton}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            testID="back-button"
           >
             <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.title}>Create Reminder</Text>
+        {/* ADDED testID="screen-title" */}
+        <Text style={styles.title} testID="screen-title">
+          Create Reminder
+        </Text>
 
-        {/* Reminder Type Selector */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Remind me about</Text>
           <View style={styles.typeSelector}>
@@ -305,7 +297,6 @@ export default function CreateReminderScreen() {
           </View>
         </View>
 
-        {/* Item Selector */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             {reminderType === 'mantra' ? 'Select Mantra' : 'Select Collection'}
@@ -378,7 +369,7 @@ export default function CreateReminderScreen() {
           )}
 
           {selectedMantra && (
-            <View style={styles.selectedPreview}>
+            <View style={styles.selectedPreview} testID="selected-item-preview">
               <Ionicons name="checkmark-circle" size={16} color="#8E9A86" />
               <Text style={styles.selectedPreviewText} numberOfLines={2}>
                 {selectedMantra.title}
@@ -386,7 +377,7 @@ export default function CreateReminderScreen() {
             </View>
           )}
           {selectedCollection && (
-            <View style={styles.selectedPreview}>
+            <View style={styles.selectedPreview} testID="selected-item-preview">
               <Ionicons name="checkmark-circle" size={16} color="#8E9A86" />
               <Text style={styles.selectedPreviewText} numberOfLines={1}>
                 {selectedCollection.name}
@@ -395,7 +386,6 @@ export default function CreateReminderScreen() {
           )}
         </View>
 
-        {/* Date & Time */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>When</Text>
           <View style={styles.dateTimeRow}>
@@ -421,7 +411,6 @@ export default function CreateReminderScreen() {
           </View>
         </View>
 
-        {/* Android pickers — rendered as native dialogs */}
         {Platform.OS === 'android' && showDatePicker && (
           <DateTimePicker
             value={time}
@@ -435,11 +424,9 @@ export default function CreateReminderScreen() {
           <DateTimePicker value={time} mode="time" display="default" onChange={onTimeChange} />
         )}
 
-        {/* iOS pickers — rendered in a bottom-sheet modal */}
         {Platform.OS === 'ios' && renderIOSPickerModal(showDatePicker, 'date', onDateChange)}
         {Platform.OS === 'ios' && renderIOSPickerModal(showTimePicker, 'time', onTimeChange)}
 
-        {/* Frequency */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>How often</Text>
           <View style={styles.frequencyGrid}>
@@ -465,11 +452,12 @@ export default function CreateReminderScreen() {
           </View>
         </View>
 
-        {/* Submit */}
+        {/* ADDED testID="create-reminder-button" */}
         <TouchableOpacity
           style={[styles.submitButton, submitting && styles.submitButtonDisabled]}
           onPress={handleSubmit}
           disabled={submitting}
+          testID="create-reminder-button"
         >
           {submitting ? (
             <ActivityIndicator size="small" color="#FFFFFF" />
@@ -648,7 +636,6 @@ const styles = StyleSheet.create({
     fontFamily: 'Red_Hat_Text-SemiBold',
     color: '#FFFFFF',
   },
-  // iOS picker modal styles
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -675,15 +662,16 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   modalCancel: {
+    color: '#EF4444',
     fontSize: 16,
-    color: '#6B7280',
+    fontFamily: 'Red_Hat_Text-Regular',
   },
   modalDone: {
+    color: '#059669',
     fontSize: 16,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: '#8E9A86',
+    fontFamily: 'Red_Hat_Text-Bold',
   },
   iosPicker: {
-    height: 200,
+    backgroundColor: 'white',
   },
 });
