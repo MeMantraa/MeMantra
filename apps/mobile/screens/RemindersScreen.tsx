@@ -167,6 +167,7 @@ export default function RemindersScreen() {
       <View style={styles.content}>
         <View style={styles.header}>
           <TouchableOpacity
+            testID="back-button"
             onPress={() => navigation.goBack()}
             style={styles.backButton}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
@@ -178,6 +179,7 @@ export default function RemindersScreen() {
         <View style={styles.titleRow}>
           <Text style={styles.title}>Reminders</Text>
           <TouchableOpacity
+            testID="add-reminder-button"
             style={styles.addButton}
             onPress={() => navigation.navigate('CreateReminder' as any)}
           >

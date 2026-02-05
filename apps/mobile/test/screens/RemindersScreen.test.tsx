@@ -439,6 +439,40 @@ describe('RemindersScreen', () => {
     });
   });
 
+  it('navigates back when back button is pressed', async () => {
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { reminders: [] },
+    });
+
+    const { getByTestId } = render(<RemindersScreen />);
+
+    await waitFor(() => {
+      expect(getByTestId('back-button')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('back-button'));
+
+    expect(mockGoBack).toHaveBeenCalled();
+  });
+
+  it('navigates to CreateReminder when header add button is pressed', async () => {
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { reminders: mockReminders },
+    });
+
+    const { getByTestId } = render(<RemindersScreen />);
+
+    await waitFor(() => {
+      expect(getByTestId('add-reminder-button')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('add-reminder-button'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('CreateReminder');
+  });
+
   it('handles reminder without linked name', async () => {
     const reminderNoName = {
       ...mockReminders[0],

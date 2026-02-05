@@ -244,7 +244,6 @@ export default function CreateReminderScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* ADDED testID="screen-title" */}
         <Text style={styles.title} testID="screen-title">
           Create Reminder
         </Text>
@@ -389,7 +388,11 @@ export default function CreateReminderScreen() {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>When</Text>
           <View style={styles.dateTimeRow}>
-            <TouchableOpacity style={styles.dateTimeButton} onPress={openDatePicker}>
+            <TouchableOpacity
+              testID="date-picker-button"
+              style={styles.dateTimeButton}
+              onPress={openDatePicker}
+            >
               <Ionicons name="calendar-outline" size={20} color="#8E9A86" />
               <Text style={styles.dateTimeText}>
                 {time.toLocaleDateString(undefined, {
@@ -399,7 +402,11 @@ export default function CreateReminderScreen() {
                 })}
               </Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.dateTimeButton} onPress={openTimePicker}>
+            <TouchableOpacity
+              testID="time-picker-button"
+              style={styles.dateTimeButton}
+              onPress={openTimePicker}
+            >
               <Ionicons name="time-outline" size={20} color="#8E9A86" />
               <Text style={styles.dateTimeText}>
                 {time.toLocaleTimeString(undefined, {
@@ -452,7 +459,6 @@ export default function CreateReminderScreen() {
           </View>
         </View>
 
-        {/* ADDED testID="create-reminder-button" */}
         <TouchableOpacity
           style={[styles.submitButton, submitting && styles.submitButtonDisabled]}
           onPress={handleSubmit}

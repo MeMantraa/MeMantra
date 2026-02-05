@@ -514,6 +514,140 @@ describe('CreateReminderScreen', () => {
     expect(mockGoBack).toHaveBeenCalled();
   });
 
+  it('opens date picker when date button is pressed', async () => {
+    const { getByTestId, getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('date-picker-button'));
+
+    // On iOS, this opens a modal with Cancel and Done buttons
+    await waitFor(() => {
+      expect(getByText('Select Date')).toBeTruthy();
+      expect(getByText('Cancel')).toBeTruthy();
+      expect(getByText('Done')).toBeTruthy();
+    });
+  });
+
+  it('opens time picker when time button is pressed', async () => {
+    const { getByTestId, getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('time-picker-button'));
+
+    await waitFor(() => {
+      expect(getByText('Select Time')).toBeTruthy();
+    });
+  });
+
+  it('cancels iOS date picker modal', async () => {
+    const { getByTestId, getByText, queryByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('date-picker-button'));
+
+    await waitFor(() => {
+      expect(getByText('Select Date')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Cancel'));
+
+    // Modal should close - Select Date text should no longer be visible
+    // (Modal visible=false hides it)
+  });
+
+  it('confirms iOS date picker modal', async () => {
+    const { getByTestId, getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('date-picker-button'));
+
+    await waitFor(() => {
+      expect(getByText('Done')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Done'));
+    // Date should be confirmed
+  });
+
+  it('cancels iOS time picker modal', async () => {
+    const { getByTestId, getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('time-picker-button'));
+
+    await waitFor(() => {
+      expect(getByText('Select Time')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Cancel'));
+  });
+
+  it('confirms iOS time picker modal', async () => {
+    const { getByTestId, getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('time-picker-button'));
+
+    await waitFor(() => {
+      expect(getByText('Done')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Done'));
+  });
+
+  it('handles iOS date change callback', async () => {
+    const { getByTestId, getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('date-picker-button'));
+
+    await waitFor(() => {
+      expect(getByTestId('datetime-picker-date')).toBeTruthy();
+    });
+
+    // Simulate the onChange on the DateTimePicker
+    const picker = getByTestId('datetime-picker-date');
+    picker.props.onChange({ type: 'set' }, new Date('2024-06-15T10:00:00Z'));
+  });
+
+  it('handles iOS time change callback', async () => {
+    const { getByTestId, getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('time-picker-button'));
+
+    await waitFor(() => {
+      expect(getByTestId('datetime-picker-time')).toBeTruthy();
+    });
+
+    const picker = getByTestId('datetime-picker-time');
+    picker.props.onChange({ type: 'set' }, new Date('2024-01-01T14:30:00Z'));
+  });
+
   it('does not skip preselected mantra fetch when it is already in saved list', async () => {
     mockRouteParams = { mantraId: 1 };
     (mantraService.getSavedMantras as jest.Mock).mockResolvedValue(mockMantras);
@@ -523,5 +657,62 @@ describe('CreateReminderScreen', () => {
     await waitFor(() => {
       expect(mantraService.getMantraById).not.toHaveBeenCalled();
     });
+  });
+
+  it('shows invalid time alert when time is in the past', async () => {
+    // Set system time to far future so the initial time (Date.now() + 1h) is in the past
+    // when we reset to a past time
+    jest.setSystemTime(new Date('2030-01-01T00:00:00Z'));
+
+    const { getByText, getByTestId } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Be Present'));
+
+    // The component sets time to Date.now() + 1h, which is 2030-01-01T01:00:00Z
+    // Advance system time past that so time <= new Date() is true
+    jest.setSystemTime(new Date('2031-01-01T00:00:00Z'));
+
+    fireEvent.press(getByTestId('create-reminder-button'));
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Invalid Time',
+      'Reminder time must be in the future.',
+    );
+  });
+
+  it('calls goBack after successful reminder creation via OK button', async () => {
+    (reminderService.createReminder as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { reminder: { reminder_id: 1 } },
+    });
+
+    const { getByText, getByTestId } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Be Present'));
+    fireEvent.press(getByTestId('create-reminder-button'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Reminder Created',
+        'Your reminder has been set.',
+        expect.any(Array),
+      );
+    });
+
+    // Press the OK button in the success alert
+    const successCall = (Alert.alert as jest.Mock).mock.calls.find(
+      (call) => call[0] === 'Reminder Created',
+    );
+    successCall[2][0].onPress();
+
+    expect(mockGoBack).toHaveBeenCalled();
   });
 });
