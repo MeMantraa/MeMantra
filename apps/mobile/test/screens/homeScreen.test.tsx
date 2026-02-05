@@ -90,6 +90,18 @@ jest.mock('../../components/collectionsSheet', () => {
   };
 });
 
+jest.mock('@react-navigation/native', () => {
+  const React = jest.requireActual('react');
+  return {
+    ...jest.requireActual('@react-navigation/native'),
+    useFocusEffect: (callback: () => void) => {
+      React.useEffect(() => {
+        callback();
+      }, []);
+    },
+  };
+});
+
 jest.mock('../../services/mantra.service', () => ({
   mantraService: {
     getFeedMantras: jest.fn(),
@@ -105,6 +117,14 @@ jest.mock('../../services/collection.service', () => ({
     getUserCollections: jest.fn(),
     addMantraToCollection: jest.fn(),
     createCollection: jest.fn(),
+  },
+}));
+
+jest.mock('../../services/reminder.service', () => ({
+  reminderService: {
+    getReminders: jest.fn().mockResolvedValue({ status: 'success', data: { reminders: [] } }),
+    updateReminder: jest.fn(),
+    deleteReminder: jest.fn(),
   },
 }));
 

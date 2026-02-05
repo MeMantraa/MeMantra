@@ -10,9 +10,29 @@ jest.mock('@expo/vector-icons', () => ({
   Ionicons: () => null,
 }));
 
+jest.mock('@react-navigation/native', () => {
+  const React = jest.requireActual('react');
+  return {
+    ...jest.requireActual('@react-navigation/native'),
+    useFocusEffect: (callback: () => void) => {
+      React.useEffect(() => {
+        callback();
+      }, []);
+    },
+  };
+});
+
 jest.mock('../../services/collection.service', () => ({
   collectionService: {
     getCollectionById: jest.fn(),
+  },
+}));
+
+jest.mock('../../services/reminder.service', () => ({
+  reminderService: {
+    getReminders: jest.fn().mockResolvedValue({ status: 'success', data: { reminders: [] } }),
+    updateReminder: jest.fn(),
+    deleteReminder: jest.fn(),
   },
 }));
 
