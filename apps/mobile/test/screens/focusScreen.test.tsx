@@ -12,6 +12,32 @@ jest.mock('../../components/carousel', () => {
   return jest.fn(() => null);
 });
 
+jest.mock('@react-navigation/native', () => {
+  const React = jest.requireActual('react');
+  return {
+    ...jest.requireActual('@react-navigation/native'),
+    useFocusEffect: (callback: () => void) => {
+      React.useEffect(() => {
+        callback();
+      }, []);
+    },
+  };
+});
+
+jest.mock('../../services/reminder.service', () => ({
+  reminderService: {
+    getReminders: jest.fn().mockResolvedValue({ status: 'success', data: { reminders: [] } }),
+    updateReminder: jest.fn(),
+    deleteReminder: jest.fn(),
+  },
+}));
+
+jest.mock('../../utils/storage', () => ({
+  storage: {
+    getToken: jest.fn().mockResolvedValue('mock-token'),
+  },
+}));
+
 describe('FocusScreen', () => {
   const mockGoBack = jest.fn();
   const mockOnLike = jest.fn();
