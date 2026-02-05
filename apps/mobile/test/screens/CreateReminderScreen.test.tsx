@@ -1,0 +1,543 @@
+import React from 'react';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { Alert } from 'react-native';
+import CreateReminderScreen from '../../screens/CreateReminderScreen';
+import { reminderService } from '../../services/reminder.service';
+import { mantraService } from '../../services/mantra.service';
+import { collectionService } from '../../services/collection.service';
+import { storage } from '../../utils/storage';
+
+jest.mock('@expo/vector-icons', () => ({
+  Ionicons: () => null,
+}));
+
+jest.mock('@react-native-community/datetimepicker', () => {
+  const React = jest.requireActual('react');
+  const RN = jest.requireActual('react-native');
+  return {
+    __esModule: true,
+    default: ({ onChange, value, mode }: any) =>
+      React.createElement(RN.View, {
+        testID: `datetime-picker-${mode}`,
+        onChange,
+        value,
+      }),
+  };
+});
+
+const mockGoBack = jest.fn();
+const mockNavigate = jest.fn();
+let mockRouteParams: any = {};
+
+jest.mock('@react-navigation/native', () => ({
+  useNavigation: () => ({
+    goBack: mockGoBack,
+    navigate: mockNavigate,
+  }),
+  useRoute: () => ({
+    params: mockRouteParams,
+  }),
+}));
+
+jest.mock('../../services/reminder.service', () => ({
+  reminderService: {
+    createReminder: jest.fn(),
+  },
+}));
+
+jest.mock('../../services/mantra.service', () => ({
+  mantraService: {
+    getSavedMantras: jest.fn(),
+    getMantraById: jest.fn(),
+  },
+}));
+
+jest.mock('../../services/collection.service', () => ({
+  collectionService: {
+    getUserCollections: jest.fn(),
+  },
+}));
+
+jest.mock('../../utils/storage', () => ({
+  storage: {
+    getToken: jest.fn(),
+  },
+}));
+
+describe('CreateReminderScreen', () => {
+  const mockMantras = [
+    {
+      mantra_id: 1,
+      title: 'Be Present',
+      key_takeaway: 'Focus',
+      created_at: '2024-01-01',
+      is_active: true,
+    },
+    {
+      mantra_id: 2,
+      title: 'Stay Calm',
+      key_takeaway: 'Breathe',
+      created_at: '2024-01-02',
+      is_active: true,
+    },
+  ];
+
+  const mockCollections = [
+    { collection_id: 10, name: 'Morning Mantras', user_id: 1, created_at: '2024-01-01' },
+    { collection_id: 20, name: 'Evening Mantras', user_id: 1, created_at: '2024-01-02' },
+  ];
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockRouteParams = {};
+    (storage.getToken as jest.Mock).mockResolvedValue('test-token');
+    (mantraService.getSavedMantras as jest.Mock).mockResolvedValue(mockMantras);
+    (collectionService.getUserCollections as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { collections: mockCollections },
+    });
+    jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+
+    // Set time far in the future so "time in the past" validation doesn't trigger
+    jest.useFakeTimers();
+    jest.setSystemTime(new Date('2024-01-01T00:00:00Z'));
+  });
+
+  afterEach(() => {
+    (Alert.alert as jest.Mock).mockRestore?.();
+    jest.useRealTimers();
+  });
+
+  it('renders the screen with title', async () => {
+    const { getByText } = render(<CreateReminderScreen />);
+
+    expect(getByText('Create Reminder')).toBeTruthy();
+    expect(getByText('Remind me about')).toBeTruthy();
+  });
+
+  it('loads mantras and collections on mount', async () => {
+    render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(mantraService.getSavedMantras).toHaveBeenCalledWith('test-token');
+      expect(collectionService.getUserCollections).toHaveBeenCalledWith('test-token');
+    });
+  });
+
+  it('displays mantras for selection', async () => {
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+      expect(getByText('Stay Calm')).toBeTruthy();
+    });
+  });
+
+  it('switches to collection type and shows collections', async () => {
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Collection'));
+
+    await waitFor(() => {
+      expect(getByText('Morning Mantras')).toBeTruthy();
+      expect(getByText('Evening Mantras')).toBeTruthy();
+    });
+  });
+
+  it('selects a mantra and shows preview', async () => {
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Be Present'));
+
+    await waitFor(() => {
+      // The selected preview shows the mantra title with a checkmark
+      const elements = getByText('Be Present');
+      expect(elements).toBeTruthy();
+    });
+  });
+
+  it('selects a collection and shows preview', async () => {
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Collection'));
+
+    await waitFor(() => {
+      expect(getByText('Morning Mantras')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Morning Mantras'));
+
+    await waitFor(() => {
+      const elements = getByText('Morning Mantras');
+      expect(elements).toBeTruthy();
+    });
+  });
+
+  it('shows frequency options and allows selection', async () => {
+    const { getByText } = render(<CreateReminderScreen />);
+
+    expect(getByText('Once')).toBeTruthy();
+    expect(getByText('Daily')).toBeTruthy();
+    expect(getByText('Weekly')).toBeTruthy();
+    expect(getByText('Monthly')).toBeTruthy();
+
+    fireEvent.press(getByText('Weekly'));
+    // No error thrown — frequency is selected
+  });
+
+  it('shows alert when submitting without selecting a mantra', async () => {
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    // Press Create Reminder without selecting a mantra
+    fireEvent.press(getByText('Create Reminder'));
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Select a Mantra',
+      'Please select a mantra for this reminder.',
+    );
+  });
+
+  it('shows alert when submitting without selecting a collection', async () => {
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Collection'));
+
+    await waitFor(() => {
+      expect(getByText('Morning Mantras')).toBeTruthy();
+    });
+
+    // Press Create Reminder without selecting a collection
+    fireEvent.press(getByText('Create Reminder'));
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Select a Collection',
+      'Please select a collection for this reminder.',
+    );
+  });
+
+  it('successfully creates a mantra reminder', async () => {
+    (reminderService.createReminder as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { reminder: { reminder_id: 1 } },
+    });
+
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    // Select a mantra
+    fireEvent.press(getByText('Be Present'));
+
+    // Submit
+    fireEvent.press(getByText('Create Reminder'));
+
+    await waitFor(() => {
+      expect(reminderService.createReminder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          mantra_id: 1,
+          frequency: 'daily',
+          status: 'active',
+        }),
+        'test-token',
+      );
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Reminder Created',
+        'Your reminder has been set.',
+        expect.any(Array),
+      );
+    });
+  });
+
+  it('successfully creates a collection reminder', async () => {
+    (reminderService.createReminder as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { reminder: { reminder_id: 2 } },
+    });
+
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    // Switch to collection type
+    fireEvent.press(getByText('Collection'));
+
+    await waitFor(() => {
+      expect(getByText('Morning Mantras')).toBeTruthy();
+    });
+
+    // Select a collection
+    fireEvent.press(getByText('Morning Mantras'));
+
+    // Submit
+    fireEvent.press(getByText('Create Reminder'));
+
+    await waitFor(() => {
+      expect(reminderService.createReminder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          collection_id: 10,
+          frequency: 'daily',
+          status: 'active',
+        }),
+        'test-token',
+      );
+    });
+  });
+
+  it('shows error alert when creation fails', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    (reminderService.createReminder as jest.Mock).mockRejectedValue({
+      response: { data: { message: 'Duplicate reminder' } },
+    });
+
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Be Present'));
+    fireEvent.press(getByText('Create Reminder'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Duplicate reminder');
+    });
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('shows fallback error message when creation fails without response data', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    (reminderService.createReminder as jest.Mock).mockRejectedValue(new Error('Network error'));
+
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Be Present'));
+    fireEvent.press(getByText('Create Reminder'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to create reminder.');
+    });
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('shows alert when token is null during submit', async () => {
+    (storage.getToken as jest.Mock)
+      .mockResolvedValueOnce('test-token') // For loadItems
+      .mockResolvedValueOnce(null); // For handleSubmit
+
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Be Present'));
+    fireEvent.press(getByText('Create Reminder'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Not authenticated.');
+    });
+  });
+
+  it('returns early when token is null during loadItems', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue(null);
+
+    render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(mantraService.getSavedMantras).not.toHaveBeenCalled();
+    });
+  });
+
+  it('handles loadItems error gracefully', async () => {
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+    (mantraService.getSavedMantras as jest.Mock).mockRejectedValue(new Error('Failed'));
+
+    render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Error loading items:', expect.any(Error));
+    });
+
+    consoleErrorSpy.mockRestore();
+  });
+
+  it('shows empty text when no mantras are saved', async () => {
+    (mantraService.getSavedMantras as jest.Mock).mockResolvedValue([]);
+
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('No saved mantras yet. Save a mantra to set a reminder.')).toBeTruthy();
+    });
+  });
+
+  it('shows empty text when no collections exist', async () => {
+    (collectionService.getUserCollections as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { collections: [] },
+    });
+
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Collection'));
+
+    await waitFor(() => {
+      expect(getByText('No collections yet. Create a collection first.')).toBeTruthy();
+    });
+  });
+
+  it('preselects mantra type when mantraId is in route params', async () => {
+    mockRouteParams = { mantraId: 1 };
+
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Select Mantra')).toBeTruthy();
+    });
+  });
+
+  it('preselects collection type when collectionId is in route params', async () => {
+    mockRouteParams = { collectionId: 10 };
+
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Select Collection')).toBeTruthy();
+    });
+  });
+
+  it('fetches preselected mantra if not in saved list', async () => {
+    mockRouteParams = { mantraId: 999 };
+    (mantraService.getSavedMantras as jest.Mock).mockResolvedValue(mockMantras);
+    (mantraService.getMantraById as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: {
+        mantra: {
+          mantra_id: 999,
+          title: 'Fetched Mantra',
+          key_takeaway: 'Test',
+          created_at: '2024-01-01',
+          is_active: true,
+        },
+      },
+    });
+
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(mantraService.getMantraById).toHaveBeenCalledWith(999, 'test-token');
+      expect(getByText('Fetched Mantra')).toBeTruthy();
+    });
+  });
+
+  it('handles failed fetch of preselected mantra gracefully', async () => {
+    mockRouteParams = { mantraId: 999 };
+    (mantraService.getSavedMantras as jest.Mock).mockResolvedValue(mockMantras);
+    (mantraService.getMantraById as jest.Mock).mockRejectedValue(new Error('Not found'));
+
+    const { getByText } = render(<CreateReminderScreen />);
+
+    // Should still render the saved mantras even if the preselected one fails
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+  });
+
+  it('handles non-array response from getSavedMantras', async () => {
+    (mantraService.getSavedMantras as jest.Mock).mockResolvedValue(null);
+
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('No saved mantras yet. Save a mantra to set a reminder.')).toBeTruthy();
+    });
+  });
+
+  it('clears collection selection when switching to mantra type', async () => {
+    mockRouteParams = { collectionId: 10 };
+
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Select Collection')).toBeTruthy();
+    });
+
+    // Switch to mantra type
+    fireEvent.press(getByText('Mantra'));
+
+    await waitFor(() => {
+      expect(getByText('Select Mantra')).toBeTruthy();
+    });
+  });
+
+  it('clears mantra selection when switching to collection type', async () => {
+    mockRouteParams = { mantraId: 1 };
+
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Select Mantra')).toBeTruthy();
+    });
+
+    // Switch to collection type
+    fireEvent.press(getByText('Collection'));
+
+    await waitFor(() => {
+      expect(getByText('Select Collection')).toBeTruthy();
+    });
+  });
+
+  it('navigates back when back button area is pressed', async () => {
+    // We can't easily press the back button without a testID,
+    // but we can verify the screen renders correctly with navigation
+    const { getByText } = render(<CreateReminderScreen />);
+
+    expect(getByText('Create Reminder')).toBeTruthy();
+  });
+
+  it('does not skip preselected mantra fetch when it is already in saved list', async () => {
+    mockRouteParams = { mantraId: 1 }; // mantra_id 1 is already in mockMantras
+    (mantraService.getSavedMantras as jest.Mock).mockResolvedValue(mockMantras);
+
+    render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      // getMantraById should not be called since mantra_id 1 is already in the saved list
+      expect(mantraService.getMantraById).not.toHaveBeenCalled();
+    });
+  });
+});

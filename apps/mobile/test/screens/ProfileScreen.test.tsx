@@ -80,6 +80,19 @@ describe('ProfileScreen', () => {
     expect(usernameElement).toBeNull();
   });
 
+  it('navigates to Reminders screen when Reminders is pressed', async () => {
+    const { getByText } = render(<ProfileScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Reminders')).toBeTruthy();
+    });
+
+    const remindersButton = getByText('Reminders');
+    fireEvent.press(remindersButton);
+
+    expect(mockNavigate).toHaveBeenCalledWith('Reminders');
+  });
+
   it('navigates to NotificationSettings screen when Notifications is pressed', async () => {
     const { getByText } = render(<ProfileScreen />);
 
