@@ -97,33 +97,37 @@ export default function BookmarkScreen({ navigation, route }: any) {
     Alert.alert('Reminder', undefined, [
       {
         text: isPaused ? 'Resume' : 'Pause',
-        onPress: async () => {
-          try {
-            const token = await storage.getToken();
-            if (!token) return;
-            await reminderService.updateReminder(
-              existing.reminder_id,
-              { status: isPaused ? 'active' : 'paused' },
-              token,
-            );
-            loadReminders();
-          } catch {
-            Alert.alert('Error', 'Failed to update reminder');
-          }
+        onPress: () => {
+          void (async () => {
+            try {
+              const token = await storage.getToken();
+              if (!token) return;
+              await reminderService.updateReminder(
+                existing.reminder_id,
+                { status: isPaused ? 'active' : 'paused' },
+                token,
+              );
+              loadReminders();
+            } catch {
+              Alert.alert('Error', 'Failed to update reminder');
+            }
+          })();
         },
       },
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: async () => {
-          try {
-            const token = await storage.getToken();
-            if (!token) return;
-            await reminderService.deleteReminder(existing.reminder_id, token);
-            loadReminders();
-          } catch {
-            Alert.alert('Error', 'Failed to delete reminder');
-          }
+        onPress: () => {
+          void (async () => {
+            try {
+              const token = await storage.getToken();
+              if (!token) return;
+              await reminderService.deleteReminder(existing.reminder_id, token);
+              loadReminders();
+            } catch {
+              Alert.alert('Error', 'Failed to delete reminder');
+            }
+          })();
         },
       },
       { text: 'Cancel', style: 'cancel' },

@@ -82,17 +82,19 @@ export default function RemindersScreen() {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: async () => {
-          try {
-            const token = await storage.getToken();
-            if (!token) return;
+        onPress: () => {
+          void (async () => {
+            try {
+              const token = await storage.getToken();
+              if (!token) return;
 
-            await reminderService.deleteReminder(reminder.reminder_id, token);
-            await loadReminders();
-          } catch (error) {
-            console.error('Error deleting reminder:', error);
-            Alert.alert('Error', 'Failed to delete reminder');
-          }
+              await reminderService.deleteReminder(reminder.reminder_id, token);
+              await loadReminders();
+            } catch (error) {
+              console.error('Error deleting reminder:', error);
+              Alert.alert('Error', 'Failed to delete reminder');
+            }
+          })();
         },
       },
     ]);
