@@ -150,6 +150,7 @@ export default function CollectionsScreen({ navigation }: any) {
 
       {/* Reminder button */}
       <TouchableOpacity
+        testID={`collection-reminder-${item.collection_id}`}
         className="absolute bottom-2 right-2 p-1"
         onPress={() => handleCollectionReminder(item)}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}

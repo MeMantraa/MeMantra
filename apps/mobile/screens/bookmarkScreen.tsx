@@ -88,6 +88,7 @@ export default function BookmarkScreen({ navigation, route }: any) {
         </AppText>
       </TouchableOpacity>
       <TouchableOpacity
+        testID={`mantra-reminder-${item.mantra_id}`}
         className="absolute bottom-2 right-2 p-1"
         onPress={() => handleMantraReminder(item.mantra_id)}
         hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}

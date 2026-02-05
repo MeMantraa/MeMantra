@@ -415,6 +415,62 @@ describe('useReminders', () => {
     expect(reminderService.getReminders).toHaveBeenCalledTimes(2);
   });
 
+  it('Pause/Resume does nothing when token is null at press time', async () => {
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { reminders: [] },
+    });
+
+    const { result } = renderHook(() => useReminders());
+
+    await waitFor(() => {
+      expect(reminderService.getReminders).toHaveBeenCalled();
+    });
+
+    act(() => {
+      result.current.showReminderActions({ reminder_id: 1, status: 'active' });
+    });
+
+    // Token becomes null after the hook has loaded
+    (storage.getToken as jest.Mock).mockResolvedValue(null);
+
+    const buttons = (Alert.alert as jest.Mock).mock.calls[0][2];
+
+    await act(async () => {
+      buttons[0].onPress();
+    });
+
+    expect(reminderService.updateReminder).not.toHaveBeenCalled();
+  });
+
+  it('Delete does nothing when token is null at press time', async () => {
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { reminders: [] },
+    });
+
+    const { result } = renderHook(() => useReminders());
+
+    await waitFor(() => {
+      expect(reminderService.getReminders).toHaveBeenCalled();
+    });
+
+    act(() => {
+      result.current.showReminderActions({ reminder_id: 1, status: 'active' });
+    });
+
+    // Token becomes null after the hook has loaded
+    (storage.getToken as jest.Mock).mockResolvedValue(null);
+
+    const buttons = (Alert.alert as jest.Mock).mock.calls[0][2];
+
+    await act(async () => {
+      buttons[1].onPress();
+    });
+
+    expect(reminderService.deleteReminder).not.toHaveBeenCalled();
+  });
+
   it('does not update state when response status is not success', async () => {
     (reminderService.getReminders as jest.Mock).mockResolvedValue({
       status: 'error',
