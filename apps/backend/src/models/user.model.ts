@@ -114,6 +114,26 @@ export const UserModel = {
       .set({ email })
       .where('user_id', '=', userId)
       .executeTakeFirst();
-  }
+  },
+  // Theme functions
+async updateTheme(userId: number, theme: string): Promise<User | undefined> {
+  const user = await db
+    .updateTable('User')
+    .set({ theme })
+    .where('user_id', '=', userId)
+    .returningAll()
+    .executeTakeFirst();
+  return user;
+},
+
+async getTheme(userId: number): Promise<string | undefined> {
+  const user = await db
+    .selectFrom('User')
+    .select('theme')
+    .where('user_id', '=', userId)
+    .executeTakeFirst();
+  return user?.theme || 'default';
+}
+
 };
 

@@ -11,6 +11,7 @@ import chatRoutes from './chat.routes';
 import notificationRoutes from './notification.routes';
 import ratingRoutes from './rating.routes';
 import journalRoutes from './journal.routes';
+import themeRoutes from './theme.routes';
 
 const router = Router();
 
@@ -43,10 +44,14 @@ router.use('/chat', chatRoutes);
 
 // Notification routes
 router.use('/notifications', notificationRoutes);
+
 // Rating routes
 router.use('/ratings', ratingRoutes); 
 
 // Journal routes
 router.use('/journal', journalRoutes);
+
+// Theme routes
+router.use('/theme', themeRoutes);
 
 export default router;
