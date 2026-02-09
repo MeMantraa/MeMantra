@@ -43,7 +43,7 @@
 
 ## Release 2 Presentation/Demo
 
-[Release 2 Demo](https://drive.google.com/file/d/1vS2S6Cnms2yjnlFLUvKy-Zr_2-aZawmF/view)
+[Release 2 Demo](https://drive.google.com/file/d/1vS2S6Cnms2yjnlFLUvKy-Zr_2-aZawmF/view)<br>
 [Downloadable APK file for android](https://drive.google.com/file/d/1bdrPrvdbgvckegNrdY3f9d00Ez--hKir/view?usp=sharing)
 
 
