@@ -86,7 +86,6 @@ export const UserController = {
         username,
         email,
         password,
-        auth_provider: 'local',
       });
 
       return res.status(201).json({

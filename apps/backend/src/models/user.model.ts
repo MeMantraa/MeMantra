@@ -8,8 +8,6 @@ interface CreateUserData {
   email: string;
   password: string;
   device_token?: string | null;
-  google_id?: string | null;
-  auth_provider?: 'local' | 'google';
 }
 
 export const UserModel = {

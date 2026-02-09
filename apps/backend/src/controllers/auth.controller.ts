@@ -1,14 +1,10 @@
 import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
-import crypto from 'crypto';
-import { OAuth2Client } from 'google-auth-library';
 import { UserModel } from '../models/user.model';
 import { PasswordResetTokenModel } from '../models/password-reset-token.model';
 import { generateToken } from '../utils/jwt.utils';
 import { RegisterInput, LoginInput } from '../validators/auth.validator';
 import { emailService } from '../services/email.service';
-
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // Helper function to verify reset code and return user
 async function verifyResetCodeAndGetUser(email: string, code: string) {
@@ -171,60 +167,6 @@ export const AuthController = {
         status: 'error',
         message: 'Error retrieving user profile',
       });
-    }
-  },
-
-  async googleAuth(req: Request, res: Response) {
-    try {
-      const rawIdToken = req.body?.idToken;
-      if (typeof rawIdToken !== 'string' || rawIdToken.trim() === '') {
-        return res.status(400).json({ status: 'error', message: 'Google ID token is required' });
-      }
-      const idToken = rawIdToken.trim();
-
-      // Delegate actual validity check to Google's verifyIdToken.
-      let ticket;
-      try {
-        ticket = await client.verifyIdToken({ idToken, audience: process.env.GOOGLE_CLIENT_ID });
-      } catch (verifyError) {
-        console.error('Google verify error:', verifyError);
-        // Verification errors should be reported as a 400 (invalid token)
-        return res.status(400).json({ status: 'error', message: 'Invalid Google token' });
-      }
-
-      const payload = ticket.getPayload();
-
-      if (!payload?.email) {
-        return res.status(400).json({ status: 'error', message: 'Invalid Google token' });
-      }
-
-      const { email, name, sub: googleId } = payload;
-
-      let user = await UserModel.findByEmail(email);
-
-      if (!user) {
-        const randomPassword = crypto.randomBytes(16).toString('hex');
-        const passwordHash = await bcrypt.hash(randomPassword, 10);
-        const username = name ? name.replaceAll(' ', '').toLowerCase() : email.split('@')[0];
-        user = await UserModel.create({
-          email: email.toLowerCase(),
-          username,
-          password: passwordHash,
-          google_id: googleId,
-          auth_provider: 'google',
-        });
-      }
-
-      const token = generateToken({ userId: user.user_id, email: user.email || '' });
-
-      return res.status(200).json({
-        status: 'success',
-        message: 'Google authentication successful',
-        data: { user: { user_id: user.user_id, username: user.username, email: user.email, feature_flags: user.feature_flags ?? [], }, token },
-      });
-    } catch (error) {
-      console.error('Google auth error:', error);
-      return res.status(500).json({ status: 'error', message: 'Error during Google authentication' });
     }
   },
 
