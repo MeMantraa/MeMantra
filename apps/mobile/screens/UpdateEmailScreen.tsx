@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, TouchableOpacity, Alert } from 'react-native';
 import { storage } from '../utils/storage';
 import { useNavigation } from '@react-navigation/native';
@@ -12,17 +12,21 @@ import { useTheme } from '../context/ThemeContext';
 export default function UpdateEmailScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation();
-  const [email, setEmail] = useState('');
-
-  useEffect(() => {
-    const load = async () => {
-      const userData = await storage.getUserData();
-      setEmail(userData?.email || '');
-    };
-    load();
-  }, []);
+  const [oldEmail, setOldEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [newEmail, setNewEmail] = useState('');
 
   const handleUpdate = async () => {
+    if (!oldEmail.trim() || !password.trim() || !newEmail.trim()) {
+      Alert.alert('Error', 'All fields are required');
+      return;
+    }
+
+    if (oldEmail === newEmail) {
+      Alert.alert('Error', 'New email must be different from old email');
+      return;
+    }
+
     try {
       const token = await storage.getToken();
       if (!token) {
@@ -30,7 +34,7 @@ export default function UpdateEmailScreen() {
         return;
       }
 
-      await authService.updateEmail(email, token);
+      await authService.updateEmail(newEmail, token);
 
       Alert.alert(
         'Email Updated',
@@ -64,11 +68,31 @@ export default function UpdateEmailScreen() {
 
       <AppTextInput
         style={[styles.input, { borderColor: colors.primary, color: colors.black }]}
-        value={email}
-        onChangeText={setEmail}
+        value={oldEmail}
+        onChangeText={setOldEmail}
         autoCapitalize="none"
         keyboardType="email-address"
-        placeholder="Enter new email"
+        placeholder="Current email"
+        placeholderTextColor="#aaa"
+      />
+
+      <AppTextInput
+        style={[styles.input, { borderColor: colors.primary, color: colors.black }]}
+        value={password}
+        onChangeText={setPassword}
+        autoCapitalize="none"
+        placeholder="Current password"
+        placeholderTextColor="#aaa"
+        secureTextEntry
+      />
+
+      <AppTextInput
+        style={[styles.input, { borderColor: colors.primary, color: colors.black }]}
+        value={newEmail}
+        onChangeText={setNewEmail}
+        autoCapitalize="none"
+        keyboardType="email-address"
+        placeholder="New email"
         placeholderTextColor="#aaa"
       />
 
