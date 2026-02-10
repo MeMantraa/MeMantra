@@ -114,6 +114,8 @@ describe('AdminScreen', () => {
     );
 
     fireEvent.press(getByText('Manage'));
+    await waitFor(() => expect(getByText('View All Users')).toBeTruthy());
+    fireEvent.press(getByText('View All Users'));
     await waitFor(
       () => {
         expect(getByText('alice')).toBeTruthy();
@@ -182,6 +184,7 @@ describe('AdminScreen', () => {
     fireEvent.changeText(getByPlaceholderText('Username *'), 'alice');
     fireEvent.changeText(getByPlaceholderText('Email *'), 'alice@example.com');
     fireEvent.changeText(getByPlaceholderText('Password *'), 'password123');
+    fireEvent.changeText(getByPlaceholderText('Confirm Password *'), 'password123');
     fireEvent.press(getByText('Add User'));
 
     await waitFor(() => {
@@ -319,6 +322,7 @@ describe('AdminScreen (extended coverage)', () => {
     fireEvent.changeText(getByPlaceholderText('Username *'), 'alice');
     fireEvent.changeText(getByPlaceholderText('Email *'), 'alice@example.com');
     fireEvent.changeText(getByPlaceholderText('Password *'), 'password123');
+    fireEvent.changeText(getByPlaceholderText('Confirm Password *'), 'password123');
     fireEvent.press(getByText('Add User'));
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'User exists');
@@ -337,6 +341,9 @@ describe('AdminScreen (extended coverage)', () => {
     fireEvent.press(getByText('Users'));
     await waitFor(() => expect(getByText('Manage')).toBeTruthy());
     fireEvent.press(getByText('Manage'));
+    await waitFor(() => expect(getByText('View All Users')).toBeTruthy());
+    fireEvent.press(getByText('View All Users'));
+    await waitFor(() => expect(getByText('Edit')).toBeTruthy());
     fireEvent.press(getByText('Edit'));
     fireEvent.press(getByText('Update User'));
     await waitFor(() => {
@@ -356,6 +363,9 @@ describe('AdminScreen (extended coverage)', () => {
     fireEvent.press(getByText('Users'));
     await waitFor(() => expect(getByText('Manage')).toBeTruthy());
     fireEvent.press(getByText('Manage'));
+    await waitFor(() => expect(getByText('View All Users')).toBeTruthy());
+    fireEvent.press(getByText('View All Users'));
+    await waitFor(() => expect(getByText('Delete')).toBeTruthy());
     fireEvent.press(getByText('Delete'));
 
     // Simulate pressing "Delete" on the alert dialog
@@ -401,6 +411,9 @@ describe('AdminScreen (extended coverage)', () => {
     fireEvent.press(getByText('Users'));
     await waitFor(() => expect(getByText('Manage')).toBeTruthy());
     fireEvent.press(getByText('Manage'));
+    await waitFor(() => expect(getByText('View All Users')).toBeTruthy());
+    fireEvent.press(getByText('View All Users'));
+    await waitFor(() => expect(getByText('Edit')).toBeTruthy());
     fireEvent.press(getByText('Edit'));
     fireEvent.changeText(getByPlaceholderText('Username *'), 'bob');
     fireEvent.press(getByText('Update User')); // NOT "Save Changes"
@@ -436,6 +449,9 @@ describe('AdminScreen (extended coverage)', () => {
     fireEvent.press(getByText('Users'));
     await waitFor(() => expect(getByText('Manage')).toBeTruthy());
     fireEvent.press(getByText('Manage'));
+    await waitFor(() => expect(getByText('View All Users')).toBeTruthy());
+    fireEvent.press(getByText('View All Users'));
+    await waitFor(() => expect(getByText('Delete')).toBeTruthy());
     fireEvent.press(getByText('Delete'));
     expect(Alert.alert).toHaveBeenCalledWith(
       'Delete User',

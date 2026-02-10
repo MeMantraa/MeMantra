@@ -16,6 +16,7 @@ const baseFormData = {
   username: '',
   email: '',
   password: '',
+  confirmPassword: '',
 };
 
 describe('UserForm component', () => {
@@ -33,11 +34,12 @@ describe('UserForm component', () => {
     expect(getByPlaceholderText('Username *')).toBeTruthy();
     expect(getByPlaceholderText('Email *')).toBeTruthy();
     expect(getByPlaceholderText('Password *')).toBeTruthy();
+    expect(getByPlaceholderText('Confirm Password *')).toBeTruthy();
     expect(getByText('Add User')).toBeTruthy();
   });
 
   it('renders Edit User and Update User when isEdit=true', () => {
-    const { getByText, getByPlaceholderText } = render(
+    const { getByText, getByPlaceholderText, queryByPlaceholderText } = render(
       <UserForm
         formData={baseFormData}
         onFormChange={jest.fn()}
@@ -49,6 +51,7 @@ describe('UserForm component', () => {
     expect(getByText('Edit User')).toBeTruthy();
     expect(getByText('Update User')).toBeTruthy();
     expect(getByPlaceholderText('Password (leave empty to keep current)')).toBeTruthy();
+    expect(queryByPlaceholderText('Confirm Password *')).toBeNull();
   });
 
   it('calls onFormChange when input values change', () => {
@@ -71,6 +74,9 @@ describe('UserForm component', () => {
 
     fireEvent.changeText(getByPlaceholderText('Password *'), 'secret');
     expect(onFormChangeMock).toHaveBeenCalledWith('password', 'secret');
+
+    fireEvent.changeText(getByPlaceholderText('Confirm Password *'), 'secret');
+    expect(onFormChangeMock).toHaveBeenCalledWith('confirmPassword', 'secret');
   });
 
   it('calls onFormChange for edit password field', () => {
