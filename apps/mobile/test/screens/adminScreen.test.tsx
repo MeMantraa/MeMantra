@@ -216,6 +216,27 @@ describe('AdminScreen', () => {
     });
   });
 
+  it('shows alert when passwords do not match', async () => {
+    (userService.getAllUsers as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { users: [] },
+    });
+
+    const { getByText, getByPlaceholderText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Users'));
+    await waitFor(() => {});
+
+    fireEvent.changeText(getByPlaceholderText('Username *'), 'alice');
+    fireEvent.changeText(getByPlaceholderText('Email *'), 'alice@example.com');
+    fireEvent.changeText(getByPlaceholderText('Password *'), 'password123');
+    fireEvent.changeText(getByPlaceholderText('Confirm Password *'), 'password456');
+    fireEvent.press(getByText('Add User'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Passwords do not match');
+    });
+  });
+
   it('shows and closes edit modal when clicking Edit in Manage', async () => {
     (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
       status: 'success',
@@ -530,6 +551,98 @@ describe('AdminScreen (extended coverage)', () => {
     fireEvent.press(getByText('Users'));
     await waitFor(() => {
       expect(getByPlaceholderText('Username *').props.value).toBe('');
+    });
+  });
+
+  it('toggles between Add and Manage actions', async () => {
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: fakeMantras,
+    });
+    const { getByText, getAllByText } = render(<AdminScreen />);
+
+    // Start on Add by default
+    await waitFor(() => expect(getByText('Add a new mantra')).toBeTruthy());
+
+    // Toggle to Manage
+    fireEvent.press(getByText('Manage'));
+    await waitFor(() => expect(getByText('Test Mantra')).toBeTruthy());
+
+    // Toggle back to Add
+    const addButtons = getAllByText('Add');
+    fireEvent.press(addButtons[0]); // Press the toggle button
+    await waitFor(() => expect(getByText('Add a new mantra')).toBeTruthy());
+  });
+
+  it('filters users by username in search', async () => {
+    const multipleUsers = [
+      {
+        user_id: 1,
+        username: 'alice',
+        email: 'alice@example.com',
+        auth_provider: 'local',
+        created_at: '2024-01-01T00:00:00Z',
+      },
+      {
+        user_id: 2,
+        username: 'bob',
+        email: 'bob@example.com',
+        auth_provider: 'local',
+        created_at: '2024-01-02T00:00:00Z',
+      },
+    ];
+    (userService.getAllUsers as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { users: multipleUsers },
+    });
+
+    const { getByText, getByPlaceholderText, queryByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Users'));
+    await waitFor(() => expect(getByText('Manage')).toBeTruthy());
+    fireEvent.press(getByText('Manage'));
+
+    // Type in search box
+    fireEvent.changeText(getByPlaceholderText('Search user here'), 'alice');
+
+    await waitFor(() => {
+      expect(getByText('alice')).toBeTruthy();
+      expect(queryByText('bob')).toBeNull();
+    });
+  });
+
+  it('filters users by email in search', async () => {
+    const multipleUsers = [
+      {
+        user_id: 1,
+        username: 'alice',
+        email: 'alice@example.com',
+        auth_provider: 'local',
+        created_at: '2024-01-01T00:00:00Z',
+      },
+      {
+        user_id: 2,
+        username: 'bob',
+        email: 'bob@example.com',
+        auth_provider: 'local',
+        created_at: '2024-01-02T00:00:00Z',
+      },
+    ];
+    (userService.getAllUsers as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { users: multipleUsers },
+    });
+
+    const { getByText, getByPlaceholderText, queryByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Users'));
+    await waitFor(() => expect(getByText('Manage')).toBeTruthy());
+    fireEvent.press(getByText('Manage'));
+
+    // Type email in search box
+    fireEvent.changeText(getByPlaceholderText('Search user here'), 'bob@example');
+
+    await waitFor(() => {
+      expect(getByText('bob')).toBeTruthy();
+      expect(queryByText('alice')).toBeNull();
     });
   });
 });
