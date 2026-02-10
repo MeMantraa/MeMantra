@@ -97,6 +97,22 @@ describe('UpdatePasswordScreen', () => {
     expect(backButton).toBeTruthy();
   });
 
+  it('shows error when current password is missing', () => {
+    const { getByPlaceholderText, getByText } = render(<UpdatePasswordScreen />);
+
+    const passwordInput = getByPlaceholderText('New password');
+    const confirmInput = getByPlaceholderText('Confirm password');
+
+    fireEvent.changeText(passwordInput, 'newpassword123');
+    fireEvent.changeText(confirmInput, 'newpassword123');
+
+    const saveButton = getByText('Save Password');
+    fireEvent.press(saveButton);
+
+    expect(Alert.alert).toHaveBeenCalledWith('Error', 'Current password is required.');
+    expect(authService.updatePassword).not.toHaveBeenCalled();
+  });
+
   it('shows error when password is less than 6 characters', () => {
     const { getByPlaceholderText, getByText } = render(<UpdatePasswordScreen />);
 
