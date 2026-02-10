@@ -196,6 +196,10 @@ export default function HomeScreen({ navigation, route }: any) {
     navigation.navigate('ShareMantra', { mantra });
   };
 
+  const handleJournal = (mantraId: number, mantraTitle: string) => {
+    navigation.navigate('JournalEditor', { mantraId, mantraTitle });
+  };
+
   const handleSelectCollection = async (collectionId: number) => {
     if (!currentMantraId) {
       Alert.alert('Error', 'No mantra selected');
@@ -328,6 +332,7 @@ export default function HomeScreen({ navigation, route }: any) {
             onLike={handleLike}
             onSave={handleSave}
             onShare={handleShare}
+            onJournal={handleJournal}
             onPress={() =>
               navigation.navigate('Focus', {
                 mantra: item,

@@ -12,6 +12,7 @@ interface MantraCarouselProps {
   readonly onLike?: (mantraId: number) => void;
   readonly onSave?: (mantraId: number) => void;
   readonly onShare?: (mantraId: number) => void;
+  readonly onJournal?: (mantraId: number, mantraTitle: string) => void;
   readonly showButtons?: boolean;
   readonly onPress?: () => void;
   readonly isFocusMode?: boolean;
@@ -22,6 +23,7 @@ export default function MantraCarousel({
   onLike,
   onSave,
   onShare,
+  onJournal,
   showButtons = true,
   onPress,
   isFocusMode = false,
@@ -63,6 +65,10 @@ export default function MantraCarousel({
     if (onShare) onShare(item.mantra_id);
   };
 
+  const handleJournal = () => {
+    if (onJournal) onJournal(item.mantra_id, item.title);
+  };
+
   return (
     <View
       style={{ height: SCREEN_HEIGHT, width: SCREEN_WIDTH }}
@@ -97,8 +103,8 @@ export default function MantraCarousel({
                 /* MANTRA PAGE */
                 <TouchableWithoutFeedback onPress={onPress}>
                   <View
-                    className="w-full max-w-[500px] justify-center items-center"
-                    style={{ height: SCREEN_HEIGHT * 0.5 }}
+                    className="w-full justify-center items-center"
+                    style={{ height: SCREEN_HEIGHT * 0.5, maxWidth: SCREEN_WIDTH - 100 }}
                   >
                     <AppText
                       style={{ color: colors.text }}
@@ -160,9 +166,10 @@ export default function MantraCarousel({
       </View>
 
       {showButtons && (
-        <View className="absolute right-6 bottom-40 items-center">
-          <IconButton type="save" active={!!item.isSaved} onPress={handleSave} className="mb-6" />
-          <IconButton type="share" onPress={handleShare} className="mb-6" />
+        <View className="absolute right-4 bottom-36 items-center">
+          <IconButton type="save" active={!!item.isSaved} onPress={handleSave} className="mb-3" />
+          <IconButton type="share" onPress={handleShare} className="mb-3" />
+          <IconButton type="journal" onPress={handleJournal} className="mb-3" />
           <View className="items-center">
             <IconButton type="like" active={!!item.isLiked} onPress={handleLike} />
             {item.like_count !== undefined && (

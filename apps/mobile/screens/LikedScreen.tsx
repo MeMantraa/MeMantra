@@ -1,6 +1,5 @@
 import React from 'react';
-import { View } from 'react-native';
-import { TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity } from 'react-native';
 import AppText from '../components/UI/textWrapper';
 import { profileSettingsStyles as styles } from '../styles/profileSettings.styles';
 import { useNavigation } from '@react-navigation/native';

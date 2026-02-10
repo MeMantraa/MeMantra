@@ -83,15 +83,13 @@ export default function SettingsScreen() {
   );
 }
 
-function SettingsOption({
-  label,
-  onPress,
-  destructive = false,
-}: {
+interface SettingsOptionProps {
   label: string;
   onPress: () => void;
   destructive?: boolean;
-}) {
+}
+
+function SettingsOption({ label, onPress, destructive = false }: Readonly<SettingsOptionProps>) {
   const { colors } = useTheme();
 
   return (

@@ -51,8 +51,8 @@ export const NotificationController = {
         });
       }
 
-      const safePlatform = platform ? String(platform).replace(/[\r\n]/g, '') : '';
-      const safeDeviceName = deviceName ? String(deviceName).replace(/[\r\n]/g, '') : '';
+      const safePlatform = platform ? String(platform).replaceAll(/[\r\n]/g, '') : '';
+      const safeDeviceName = deviceName ? String(deviceName).replaceAll(/[\r\n]/g, '') : '';
       console.log(`Device token registered for user ${userId}: ${safePlatform} - ${safeDeviceName}`);
 
       return res.status(200).json({
@@ -108,7 +108,7 @@ export const NotificationController = {
       // Get user's device token
       const user = await UserModel.findById(userId);
 
-      if (!user || !user.device_token) {
+      if (!user?.device_token) {
         return res.status(400).json({
           status: 'error',
           message: 'No device token registered for this user',
@@ -211,7 +211,7 @@ export const NotificationController = {
     try {
       const user = await UserModel.findById(userId);
 
-      if (!user || !user.device_token) {
+      if (!user?.device_token) {
         return res.status(400).json({
           status: 'error',
           message: 'No device token registered. Please enable notifications in the app.',
