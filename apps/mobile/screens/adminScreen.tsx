@@ -10,6 +10,7 @@ import UserForm from '../components/admin/UserForm';
 import UserList from '../components/admin/UserList';
 import AppText from '../components/UI/textWrapper';
 import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 type AdminMode = 'mantras' | 'users';
 type ActionMode = 'add' | 'manage';
@@ -110,18 +111,23 @@ const AdminScreen: React.FC = () => {
       return;
     }
 
+    posthog.capture('admin_mantra_create_submit');
     setSubmitting(true);
     try {
       const token = (await storage.getToken()) || 'mock-token';
       const response = await mantraService.createMantra(mantraForm, token);
 
       if (response.status === 'success') {
+        posthog.capture('admin_mantra_create_success', {
+          mantra_id: response.data.mantra?.mantra_id,
+        });
         setMantras([response.data.mantra, ...mantras]);
         resetMantraForm();
         Alert.alert('Success', 'Mantra created successfully');
       }
     } catch (error) {
       console.error('Failed to create mantra:', error);
+      posthog.capture('admin_mantra_create_failed', { reason: 'exception' });
       Alert.alert('Error', 'Failed to create mantra');
     } finally {
       setSubmitting(false);
@@ -131,12 +137,14 @@ const AdminScreen: React.FC = () => {
   const handleUpdateMantra = async () => {
     if (!editingMantra) return;
 
+    posthog.capture('admin_mantra_update_submit', { mantra_id: editingMantra.mantra_id });
     setSubmitting(true);
     try {
       const token = (await storage.getToken()) || 'mock-token';
       const response = await mantraService.updateMantra(editingMantra.mantra_id, mantraForm, token);
 
       if (response.status === 'success') {
+        posthog.capture('admin_mantra_update_success', { mantra_id: editingMantra.mantra_id });
         setMantras(
           mantras.map((m) => (m.mantra_id === editingMantra.mantra_id ? response.data.mantra : m)),
         );
@@ -146,6 +154,7 @@ const AdminScreen: React.FC = () => {
       }
     } catch (error) {
       console.error('Failed to update mantra:', error);
+      posthog.capture('admin_mantra_update_failed', { mantra_id: editingMantra.mantra_id });
       Alert.alert('Error', 'Failed to update mantra');
     } finally {
       setSubmitting(false);
@@ -153,14 +162,17 @@ const AdminScreen: React.FC = () => {
   };
 
   const handleDeleteMantra = async (mantraId: number) => {
+    posthog.capture('admin_mantra_delete_submit', { mantra_id: mantraId });
     setDeletingId(mantraId);
     try {
       const token = (await storage.getToken()) || 'mock-token';
       await mantraService.deleteMantra(mantraId, token);
       setMantras(mantras.filter((m) => m.mantra_id !== mantraId));
+      posthog.capture('admin_mantra_delete_success', { mantra_id: mantraId });
       Alert.alert('Success', 'Mantra deleted');
     } catch (error) {
       console.error('Failed to delete mantra:', error);
+      posthog.capture('admin_mantra_delete_failed', { mantra_id: mantraId });
       Alert.alert('Error', 'Failed to delete mantra');
     } finally {
       setDeletingId(null);
@@ -173,17 +185,20 @@ const AdminScreen: React.FC = () => {
       return;
     }
 
+    posthog.capture('admin_user_create_submit');
     setSubmitting(true);
     try {
       const token = (await storage.getToken()) || 'mock-token';
       const response = await userService.createUser(userForm, token);
 
       if (response.status === 'success') {
+        posthog.capture('admin_user_create_success', { user_id: response.data.user?.user_id });
         setUsers([response.data.user, ...users]);
         resetUserForm();
         Alert.alert('Success', 'User created successfully');
       }
     } catch (error: any) {
+      posthog.capture('admin_user_create_failed', { reason: 'exception' });
       Alert.alert('Error', error.response?.data?.message || 'Failed to create user');
     } finally {
       setSubmitting(false);
@@ -193,6 +208,7 @@ const AdminScreen: React.FC = () => {
   const handleUpdateUser = async () => {
     if (!editingUser) return;
 
+    posthog.capture('admin_user_update_submit', { user_id: editingUser.user_id });
     setSubmitting(true);
     try {
       const token = (await storage.getToken()) || 'mock-token';
@@ -202,12 +218,14 @@ const AdminScreen: React.FC = () => {
       const response = await userService.updateUser(editingUser.user_id, payload, token);
 
       if (response.status === 'success') {
+        posthog.capture('admin_user_update_success', { user_id: editingUser.user_id });
         setUsers(users.map((u) => (u.user_id === editingUser.user_id ? response.data.user : u)));
         resetUserForm();
         setEditModalVisible(false);
         Alert.alert('Success', 'User updated successfully');
       }
     } catch (error: any) {
+      posthog.capture('admin_user_update_failed', { user_id: editingUser.user_id });
       Alert.alert('Error', error.response?.data?.message || 'Failed to update user');
     } finally {
       setSubmitting(false);
@@ -215,13 +233,16 @@ const AdminScreen: React.FC = () => {
   };
 
   const handleDeleteUser = async (userId: number) => {
+    posthog.capture('admin_user_delete_submit', { user_id: userId });
     setDeletingId(userId);
     try {
       const token = (await storage.getToken()) || 'mock-token';
       await userService.deleteUser(userId, token);
       setUsers(users.filter((u) => u.user_id !== userId));
+      posthog.capture('admin_user_delete_success', { user_id: userId });
       Alert.alert('Success', 'User deleted');
     } catch (error: any) {
+      posthog.capture('admin_user_delete_failed', { user_id: userId });
       Alert.alert('Error', error.response?.data?.message || 'Failed to delete user');
     } finally {
       setDeletingId(null);
@@ -229,6 +250,7 @@ const AdminScreen: React.FC = () => {
   };
 
   const openEditMantra = (mantra: Mantra) => {
+    posthog.capture('admin_mantra_edit_opened', { mantra_id: mantra.mantra_id });
     setEditingMantra(mantra);
     setMantraForm({
       title: mantra.title,
@@ -245,6 +267,7 @@ const AdminScreen: React.FC = () => {
   };
 
   const openEditUser = (user: User) => {
+    posthog.capture('admin_user_edit_opened', { user_id: user.user_id });
     setEditingUser(user);
     setUserForm({
       username: user.username || '',
@@ -296,6 +319,7 @@ const AdminScreen: React.FC = () => {
           <TouchableOpacity
             className="flex-1 rounded-full px-4 py-3"
             onPress={() => {
+              posthog.capture('admin_mode_changed', { mode: 'mantras' });
               setMode('mantras');
               setAction('add');
               resetMantraForm();
@@ -313,6 +337,7 @@ const AdminScreen: React.FC = () => {
           <TouchableOpacity
             className="flex-1 rounded-full px-4 py-3"
             onPress={() => {
+              posthog.capture('admin_mode_changed', { mode: 'users' });
               setMode('users');
               setAction('add');
               resetMantraForm();
@@ -336,7 +361,10 @@ const AdminScreen: React.FC = () => {
         >
           <TouchableOpacity
             className="flex-1 rounded-full px-4 py-2"
-            onPress={() => setAction('add')}
+            onPress={() => {
+              posthog.capture('admin_action_changed', { action: 'add' });
+              setAction('add');
+            }}
             style={{ backgroundColor: action === 'add' ? colors.secondary : 'transparent' }}
           >
             <AppText
@@ -348,7 +376,10 @@ const AdminScreen: React.FC = () => {
           </TouchableOpacity>
           <TouchableOpacity
             className="flex-1 rounded-full px-4 py-2"
-            onPress={() => setAction('manage')}
+            onPress={() => {
+              posthog.capture('admin_action_changed', { action: 'manage' });
+              setAction('manage');
+            }}
             style={{ backgroundColor: action === 'manage' ? colors.secondary : 'transparent' }}
           >
             <AppText
@@ -412,6 +443,7 @@ const AdminScreen: React.FC = () => {
               </AppText>
               <TouchableOpacity
                 onPress={() => {
+                  posthog.capture('admin_edit_modal_closed');
                   setEditModalVisible(false);
                   resetMantraForm();
                   resetUserForm();

@@ -14,6 +14,7 @@ import { Mantra } from '../services/mantra.service';
 import { collectionService } from '../services/collection.service';
 import { storage } from '../utils/storage';
 import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ITEM_MARGIN = 12;
@@ -50,7 +51,13 @@ export default function BookmarkScreen({ navigation, route }: any) {
     loadCollectionMantras();
   }, [loadCollectionMantras]);
 
+  const handleBack = () => {
+    posthog.capture('bookmark_back_pressed', { collection_id: collectionId });
+    navigation.goBack();
+  };
+
   const handleRefresh = () => {
+    posthog.capture('bookmark_refresh', { collection_id: collectionId });
     setRefreshing(true);
     loadCollectionMantras();
   };
@@ -63,11 +70,15 @@ export default function BookmarkScreen({ navigation, route }: any) {
         width: ITEM_SIZE,
         height: ITEM_SIZE * 0.75,
       }}
-      onPress={() =>
+      onPress={() => {
+        posthog.capture('bookmark_open_mantra', {
+          collection_id: collectionId,
+          mantra_id: item.mantra_id,
+        });
         navigation.navigate('Focus', {
           mantra: item,
-        })
-      }
+        });
+      }}
     >
       <AppText
         className="text-lg font-bold text-center leading-tight"
@@ -88,7 +99,7 @@ export default function BookmarkScreen({ navigation, route }: any) {
         >
           <TouchableOpacity
             testID="back-button-empty"
-            onPress={() => navigation.goBack()}
+            onPress={handleBack}
             className="mr-3 p-1"
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
@@ -120,7 +131,7 @@ export default function BookmarkScreen({ navigation, route }: any) {
       >
         <TouchableOpacity
           testID="back-button"
-          onPress={() => navigation.goBack()}
+          onPress={handleBack}
           className="mr-3 p-1"
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >

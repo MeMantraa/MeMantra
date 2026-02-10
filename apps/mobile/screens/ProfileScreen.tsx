@@ -9,6 +9,7 @@ import AppText from '../components/UI/textWrapper';
 import { profileSettingsStyles as styles } from '../styles/profileSettings.styles';
 import { Ionicons } from '@expo/vector-icons';
 import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 type ProfileNavProp = StackNavigationProp<RootStackParamList>;
 
@@ -38,7 +39,10 @@ export default function ProfileScreen() {
         <TouchableOpacity
           className="flex-row justify-between"
           style={[styles.button, { backgroundColor: colors.primaryDark }]}
-          onPress={() => navigation.navigate('NotificationSettings')}
+          onPress={() => {
+            posthog.capture('profile_notifications_opened');
+            navigation.navigate('NotificationSettings');
+          }}
         >
           <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
             Notifications
@@ -48,7 +52,10 @@ export default function ProfileScreen() {
         <TouchableOpacity
           className="flex-row justify-between"
           style={[styles.button, { backgroundColor: colors.primaryDark }]}
-          onPress={() => navigation.navigate('Liked')}
+          onPress={() => {
+            posthog.capture('profile_liked_opened');
+            navigation.navigate('Liked');
+          }}
         >
           <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
             Liked
@@ -58,7 +65,10 @@ export default function ProfileScreen() {
         <TouchableOpacity
           className="flex-row justify-between"
           style={[styles.button, { backgroundColor: colors.primaryDark }]}
-          onPress={() => navigation.navigate('Settings')}
+          onPress={() => {
+            posthog.capture('profile_settings_opened');
+            navigation.navigate('Settings');
+          }}
         >
           <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
             Settings

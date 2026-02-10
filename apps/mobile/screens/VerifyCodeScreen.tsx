@@ -6,6 +6,7 @@ import { authService } from '../services/auth.service';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 export default function VerifyCodeScreen({ route, navigation }: any) {
   usePostHogScreen();
@@ -60,11 +61,13 @@ export default function VerifyCodeScreen({ route, navigation }: any) {
       return;
     }
 
+    posthog.capture('verify_code_submit');
     setLoading(true);
     try {
       const response = await authService.verifyResetCode(email, finalCode);
 
       if (response.status === 'success') {
+        posthog.capture('verify_code_success');
         Alert.alert('Success', 'Code verified successfully!', [
           {
             text: 'OK',
@@ -74,6 +77,7 @@ export default function VerifyCodeScreen({ route, navigation }: any) {
           },
         ]);
       } else {
+        posthog.capture('verify_code_failed', { reason: 'api_error' });
         Alert.alert('Error', response.message || 'Invalid verification code');
         // Clear code inputs on error
         setCode(['', '', '', '', '', '']);
@@ -81,6 +85,7 @@ export default function VerifyCodeScreen({ route, navigation }: any) {
       }
     } catch (error: any) {
       console.error('Verify code error:', error);
+      posthog.capture('verify_code_failed', { reason: 'exception' });
       const errorMessage =
         error.response?.data?.message || 'Invalid or expired code. Please try again.';
       Alert.alert('Error', errorMessage);
@@ -97,17 +102,20 @@ export default function VerifyCodeScreen({ route, navigation }: any) {
       return;
     }
 
+    posthog.capture('verify_code_resend');
     setLoading(true);
     try {
       const response = await authService.forgotPassword(email);
 
       if (response.status === 'success') {
+        posthog.capture('verify_code_resend_success');
         Alert.alert('Success', 'A new verification code has been sent to your email');
         setResendCooldown(60);
         setCode(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
       } else {
         // Handle rate limiting
+        posthog.capture('verify_code_resend_failed', { reason: 'api_error' });
         if (response.waitTime) {
           setResendCooldown(response.waitTime);
         }
@@ -115,6 +123,7 @@ export default function VerifyCodeScreen({ route, navigation }: any) {
       }
     } catch (error: any) {
       console.error('Resend code error:', error);
+      posthog.capture('verify_code_resend_failed', { reason: 'exception' });
       const errorMessage =
         error.response?.data?.message || 'Failed to resend code. Please try again.';
       const waitTime = error.response?.data?.waitTime;

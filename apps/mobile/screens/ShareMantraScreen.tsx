@@ -8,6 +8,7 @@ import { chatService } from '../services/chat.service';
 import { storage } from '../utils/storage';
 import { Mantra } from '../services/mantra.service';
 import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 export default function ShareMantraScreen({ route, navigation }: any) {
   usePostHogScreen();
@@ -38,6 +39,10 @@ export default function ShareMantraScreen({ route, navigation }: any) {
 
   const sendToConversation = async (conversation: Conversation) => {
     try {
+      posthog.capture('share_mantra_send', {
+        conversation_id: conversation.conversation_id,
+        mantra_id: mantra.mantra_id,
+      });
       const token = await storage.getToken();
 
       //send payload of mantra to show in the text messages
@@ -52,12 +57,17 @@ export default function ShareMantraScreen({ route, navigation }: any) {
         token || 'mock-token',
       );
 
+      posthog.capture('share_mantra_success', {
+        conversation_id: conversation.conversation_id,
+        mantra_id: mantra.mantra_id,
+      });
       navigation.navigate('MainApp', {
         screen: 'Home',
         params: { returnToMantraId: mantra.mantra_id },
       });
     } catch (err) {
       console.error(err);
+      posthog.capture('share_mantra_failed', { mantra_id: mantra.mantra_id });
       Alert.alert('Error', 'Failed to share the mantra');
     }
   };

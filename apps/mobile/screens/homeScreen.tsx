@@ -23,6 +23,7 @@ import { useSavedMantras } from '../context/SavedContext';
 import SavedPopupBar from '../components/UI/savedPopupBar';
 import CollectionsSheet from '../components/collectionsSheet';
 import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -125,6 +126,10 @@ export default function HomeScreen({ navigation, route }: any) {
       const token = (await storage.getToken()) || 'mock-token';
       const mantra = feedData.find((m) => m.mantra_id === mantraId);
       const isCurrentlyLiked = mantra?.isLiked || false;
+      posthog.capture('home_like_toggled', {
+        mantra_id: mantraId,
+        action: isCurrentlyLiked ? 'unlike' : 'like',
+      });
 
       setFeedData((prev) =>
         prev.map((m) =>
@@ -164,6 +169,10 @@ export default function HomeScreen({ navigation, route }: any) {
     try {
       const token = (await storage.getToken()) || 'mock-token';
       const isCurrentlySaved = feedData.find((m) => m.mantra_id === mantraId)?.isSaved || false;
+      posthog.capture('home_save_toggled', {
+        mantra_id: mantraId,
+        action: isCurrentlySaved ? 'unsave' : 'save',
+      });
 
       setFeedData((prev) =>
         prev.map((m) => (m.mantra_id === mantraId ? { ...m, isSaved: !m.isSaved } : m)),
@@ -193,10 +202,12 @@ export default function HomeScreen({ navigation, route }: any) {
     const mantra = feedData.find((m) => m.mantra_id === mantraId);
     if (!mantra) return;
 
+    posthog.capture('home_share_pressed', { mantra_id: mantraId });
     navigation.navigate('ShareMantra', { mantra });
   };
 
   const handleJournal = (mantraId: number, mantraTitle: string) => {
+    posthog.capture('home_journal_pressed', { mantra_id: mantraId });
     navigation.navigate('JournalEditor', { mantraId, mantraTitle });
   };
 
@@ -207,6 +218,10 @@ export default function HomeScreen({ navigation, route }: any) {
     }
 
     try {
+      posthog.capture('home_collection_selected', {
+        collection_id: collectionId,
+        mantra_id: currentMantraId,
+      });
       const token = (await storage.getToken()) || 'mock-token';
       const response = await collectionService.addMantraToCollection(
         collectionId,
@@ -229,19 +244,23 @@ export default function HomeScreen({ navigation, route }: any) {
 
   const handleCreateCollection = async (name: string): Promise<number> => {
     try {
+      posthog.capture('home_collection_create_submit');
       const token = (await storage.getToken()) || 'mock-token';
       const response = await collectionService.createCollection(name, undefined, token);
 
       if (response.status === 'success' && response.data) {
         const newCollection = response.data.collection;
+        posthog.capture('home_collection_created', { collection_id: newCollection.collection_id });
         setCollections((prev) => [newCollection, ...prev]);
         return newCollection.collection_id;
       } else {
+        posthog.capture('home_collection_create_failed', { reason: 'api_error' });
         Alert.alert('Error', response.message || 'Failed to create collection');
         throw new Error('Failed to create collection');
       }
     } catch (err) {
       console.error('Error creating collection:', err);
+      posthog.capture('home_collection_create_failed', { reason: 'exception' });
       Alert.alert('Error', 'Failed to create collection');
       throw err;
     }
@@ -249,6 +268,7 @@ export default function HomeScreen({ navigation, route }: any) {
 
   const handleRate = async (mantraId: number, rating: number) => {
     try {
+      posthog.capture('home_rate_submitted', { mantra_id: mantraId, rating });
       const token = (await storage.getToken()) || 'mock-token';
       const response = await ratingService.rateMantra(mantraId, rating, undefined, token);
 
@@ -266,6 +286,7 @@ export default function HomeScreen({ navigation, route }: any) {
   const handleSearch = (query: string) => console.log('Searching for:', query);
 
   const handleUserPress = () => {
+    posthog.capture('home_profile_pressed');
     Alert.alert(
       'Account',
       'Are you sure you want to log out?',
@@ -281,6 +302,11 @@ export default function HomeScreen({ navigation, route }: any) {
       ],
       { cancelable: true },
     );
+  };
+
+  const handleRefresh = () => {
+    posthog.capture('home_refresh_pressed');
+    loadMantras();
   };
 
   let content;
@@ -309,7 +335,7 @@ export default function HomeScreen({ navigation, route }: any) {
         </AppText>
         <TouchableOpacity
           className="rounded-full px-6 py-3 mt-6"
-          onPress={loadMantras}
+          onPress={handleRefresh}
           accessibilityRole="button"
           style={{ backgroundColor: colors.secondary }}
         >
@@ -333,13 +359,14 @@ export default function HomeScreen({ navigation, route }: any) {
             onSave={handleSave}
             onShare={handleShare}
             onJournal={handleJournal}
-            onPress={() =>
+            onPress={() => {
+              posthog.capture('home_focus_opened', { mantra_id: item.mantra_id });
               navigation.navigate('Focus', {
                 mantra: item,
                 onLike: handleLike,
                 onSave: handleSave,
-              })
-            }
+              });
+            }}
           />
         )}
         keyExtractor={(item) => item.mantra_id.toString()}
@@ -375,6 +402,7 @@ export default function HomeScreen({ navigation, route }: any) {
         visible={showSavedPopup}
         onHide={() => setShowSavedPopup(false)}
         onPressCollections={() => {
+          posthog.capture('home_saved_popup_collections_pressed');
           setShowSavedPopup(false);
           setShowCollectionsSheet(true);
         }}

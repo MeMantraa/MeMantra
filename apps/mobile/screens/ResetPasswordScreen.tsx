@@ -7,6 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 import AppTextInput from '../components/UI/textInputWrapper';
 import AppText from '../components/UI/textWrapper';
 import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 export default function ResetPasswordScreen({ route, navigation }: any) {
   usePostHogScreen();
@@ -17,6 +18,7 @@ export default function ResetPasswordScreen({ route, navigation }: any) {
   const { colors } = useTheme();
 
   const handleResetPassword = async () => {
+    posthog.capture('reset_password_submit');
     if (!newPassword || !confirmPassword) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
@@ -37,6 +39,7 @@ export default function ResetPasswordScreen({ route, navigation }: any) {
       const response = await authService.resetPassword(email, code, newPassword.trim());
 
       if (response.status === 'success') {
+        posthog.capture('reset_password_success');
         Alert.alert('Success', 'Your password has been reset successfully!', [
           {
             text: 'OK',
@@ -49,10 +52,12 @@ export default function ResetPasswordScreen({ route, navigation }: any) {
           },
         ]);
       } else {
+        posthog.capture('reset_password_failed', { reason: 'api_error' });
         Alert.alert('Error', response.message || 'Failed to reset password');
       }
     } catch (error: any) {
       console.error('Reset password error:', error);
+      posthog.capture('reset_password_failed', { reason: 'exception' });
       const errorMessage =
         error.response?.data?.message || 'Failed to reset password. Please try again.';
       Alert.alert('Error', errorMessage);

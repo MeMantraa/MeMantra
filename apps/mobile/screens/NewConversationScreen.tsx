@@ -6,6 +6,7 @@ import { User, userService } from '../services/user.service';
 import { chatService } from '../services/chat.service';
 import { storage } from '../utils/storage';
 import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 export default function NewConversationScreen({ navigation }: any) {
   usePostHogScreen();
@@ -44,6 +45,11 @@ export default function NewConversationScreen({ navigation }: any) {
     loadUsers();
   }, [loadUsers]);
 
+  const handleBack = () => {
+    posthog.capture('new_conversation_back_pressed');
+    navigation.goBack();
+  };
+
   const filterUsers = useCallback(() => {
     const q = searchText.trim().toLowerCase();
 
@@ -63,6 +69,7 @@ export default function NewConversationScreen({ navigation }: any) {
 
   const handleUserSelect = async (user: User) => {
     try {
+      posthog.capture('new_conversation_user_selected', { user_id: user.user_id });
       setCreating(true);
       const token = await storage.getToken();
 
@@ -72,8 +79,12 @@ export default function NewConversationScreen({ navigation }: any) {
       );
 
       navigation.replace('Conversation', { conversation });
+      posthog.capture('new_conversation_create_success', {
+        conversation_id: conversation.conversation_id,
+      });
     } catch (err) {
       console.error('Error creating conversation:', err);
+      posthog.capture('new_conversation_create_failed');
       alert('Failed to start conversation. Please try again.');
     } finally {
       setCreating(false);
@@ -127,7 +138,7 @@ export default function NewConversationScreen({ navigation }: any) {
           className="flex-row justify-between items-center pt-6 pb-4 px-5"
           style={{ backgroundColor: colors.primary }}
         >
-          <TouchableOpacity onPress={() => navigation.goBack()}>
+          <TouchableOpacity onPress={handleBack}>
             <AppText style={{ color: colors.secondary, fontSize: 16, fontWeight: '600' }}>
               ← Back
             </AppText>
@@ -154,7 +165,7 @@ export default function NewConversationScreen({ navigation }: any) {
         className="flex-row justify-between items-center pt-6 pb-4 px-5"
         style={{ backgroundColor: colors.primary }}
       >
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={handleBack}>
           <AppText style={{ color: colors.secondary, fontSize: 16, fontWeight: '600' }}>
             ← Back
           </AppText>

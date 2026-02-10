@@ -14,9 +14,12 @@ import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { journalService, MoodType, MOOD_OPTIONS } from '../services/journal.service';
 import { storage } from '../utils/storage';
+import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 export default function JournalEditorScreen({ navigation, route }: any) {
   const { colors } = useTheme();
+  usePostHogScreen();
   const existingEntry = route.params?.entry;
   const preselectedMantraId = route.params?.mantraId;
   const preselectedMantraTitle = route.params?.mantraTitle;
@@ -38,12 +41,14 @@ export default function JournalEditorScreen({ navigation, route }: any) {
   const handleAddTag = () => {
     const trimmedTag = tagInput.trim().toLowerCase();
     if (trimmedTag && !tags.includes(trimmedTag) && tags.length < 10) {
+      posthog.capture('journal_editor_tag_added');
       setTags([...tags, trimmedTag]);
       setTagInput('');
     }
   };
 
   const handleRemoveTag = (tagToRemove: string) => {
+    posthog.capture('journal_editor_tag_removed');
     setTags(tags.filter((t) => t !== tagToRemove));
   };
 
@@ -61,6 +66,7 @@ export default function JournalEditorScreen({ navigation, route }: any) {
       return;
     }
 
+    posthog.capture('journal_editor_save_pressed', { is_editing: isEditing });
     setSaving(true);
 
     try {
@@ -77,14 +83,20 @@ export default function JournalEditorScreen({ navigation, route }: any) {
           : await journalService.createJournalEntry(payload, token);
 
       if (response.status === 'success') {
+        posthog.capture('journal_editor_save_success', {
+          is_editing: isEditing,
+          journal_id: response.data?.journal_id ?? existingEntry?.journal_id,
+        });
         const message = isEditing ? 'Journal entry updated' : 'Journal entry saved';
         Alert.alert('Success', message, [{ text: 'OK', onPress: () => navigation.goBack() }]);
       } else {
+        posthog.capture('journal_editor_save_failed', { reason: 'api_error' });
         const errorMessage = isEditing ? 'Failed to update entry' : 'Failed to save entry';
         Alert.alert('Error', response.message || errorMessage);
       }
     } catch (err) {
       console.error('Error saving journal entry:', err);
+      posthog.capture('journal_editor_save_failed', { reason: 'exception' });
       Alert.alert('Error', 'Failed to save journal entry');
     } finally {
       setSaving(false);
@@ -101,7 +113,10 @@ export default function JournalEditorScreen({ navigation, route }: any) {
       <View className="pt-16 pb-4 px-5 flex-row items-center justify-between">
         <TouchableOpacity
           testID="back-button"
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            posthog.capture('journal_editor_back_pressed', { is_editing: isEditing });
+            navigation.goBack();
+          }}
           className="p-1"
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
@@ -153,6 +168,7 @@ export default function JournalEditorScreen({ navigation, route }: any) {
             <TouchableOpacity
               testID="remove-mantra-button"
               onPress={() => {
+                posthog.capture('journal_editor_remove_mantra');
                 setMantraId(null);
                 setMantraTitle(null);
               }}
@@ -207,7 +223,10 @@ export default function JournalEditorScreen({ navigation, route }: any) {
                   borderWidth: mood === option.value ? 2 : 0,
                   borderColor: colors.secondary,
                 }}
-                onPress={() => setMood(mood === option.value ? null : option.value)}
+                onPress={() => {
+                  posthog.capture('journal_editor_mood_toggled', { mood: option.value });
+                  setMood(mood === option.value ? null : option.value);
+                }}
               >
                 <AppText className="text-2xl mb-1">{option.emoji}</AppText>
                 <AppText

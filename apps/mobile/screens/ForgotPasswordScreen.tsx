@@ -7,6 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 import AppTextInput from '../components/UI/textInputWrapper';
 import AppText from '../components/UI/textWrapper';
 import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 export default function ForgotPasswordScreen({ navigation }: any) {
   usePostHogScreen();
@@ -35,11 +36,13 @@ export default function ForgotPasswordScreen({ navigation }: any) {
       return;
     }
 
+    posthog.capture('forgot_password_send_code');
     setLoading(true);
     try {
       const response = await authService.forgotPassword(email.trim().toLowerCase());
 
       if (response.status === 'success') {
+        posthog.capture('forgot_password_success');
         Alert.alert('Success', response.message, [
           {
             text: 'OK',
@@ -49,10 +52,12 @@ export default function ForgotPasswordScreen({ navigation }: any) {
           },
         ]);
       } else {
+        posthog.capture('forgot_password_failed', { reason: 'api_error' });
         Alert.alert('Error', response.message || 'Failed to send verification code');
       }
     } catch (error: any) {
       console.error('Forgot password error:', error);
+      posthog.capture('forgot_password_failed', { reason: 'exception' });
       const errorMessage =
         error.response?.data?.message || 'Failed to send verification code. Please try again.';
       Alert.alert('Error', errorMessage);
@@ -62,6 +67,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
   };
 
   const handleBackToLogin = () => {
+    posthog.capture('forgot_password_back_to_login');
     navigation.navigate('Login');
   };
 

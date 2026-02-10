@@ -18,11 +18,14 @@ import {
   NotificationSettings,
 } from '../services/notification-settings.service';
 import { notificationService } from '../services/notification.service';
+import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 type NotificationSettingsNavProp = StackNavigationProp<RootStackParamList>;
 
 export default function NotificationSettingsScreen() {
   const navigation = useNavigation<NotificationSettingsNavProp>();
+  usePostHogScreen();
   const [settings, setSettings] = useState<NotificationSettings>({
     enabled: true,
     quietHoursEnabled: false,
@@ -63,6 +66,7 @@ export default function NotificationSettingsScreen() {
       // Request permissions if enabling notifications
       const result = await notificationService.requestPermissions();
       if (!result.granted) {
+        posthog.capture('notification_permission_denied');
         Alert.alert(
           'Permissions Required',
           'Please enable notifications in your device settings to receive mantra reminders.',
@@ -74,36 +78,42 @@ export default function NotificationSettingsScreen() {
     }
 
     try {
+      posthog.capture('notification_toggle_enabled', { enabled: value });
       const updatedSettings = await notificationSettingsService.updateSettings({
         enabled: value,
       });
       setSettings(updatedSettings);
     } catch (error) {
       console.error('Error updating notification enabled:', error);
+      posthog.capture('notification_toggle_enabled_failed');
       Alert.alert('Error', 'Failed to update notification settings');
     }
   };
 
   const handleToggleQuietHours = async (value: boolean) => {
     try {
+      posthog.capture('notification_toggle_quiet_hours', { enabled: value });
       const updatedSettings = await notificationSettingsService.updateSettings({
         quietHoursEnabled: value,
       });
       setSettings(updatedSettings);
     } catch (error) {
       console.error('Error updating quiet hours:', error);
+      posthog.capture('notification_toggle_quiet_hours_failed');
       Alert.alert('Error', 'Failed to update quiet hours settings');
     }
   };
 
   const handleTimeChange = async (field: 'quietHoursStart' | 'quietHoursEnd', time: string) => {
     try {
+      posthog.capture('notification_time_changed', { field, time });
       const updatedSettings = await notificationSettingsService.updateSettings({
         [field]: time,
       });
       setSettings(updatedSettings);
     } catch (error) {
       console.error('Error updating time:', error);
+      posthog.capture('notification_time_change_failed', { field });
       Alert.alert('Error', 'Failed to update time settings');
     }
   };
@@ -123,6 +133,7 @@ export default function NotificationSettingsScreen() {
     }
 
     try {
+      posthog.capture('notification_test_pressed');
       await notificationService.scheduleLocalNotification(
         'Test Notification',
         'This is a test notification from MeMantra',
@@ -130,14 +141,17 @@ export default function NotificationSettingsScreen() {
         null, // Send immediately
         false, // Don't respect settings for test notifications
       );
+      posthog.capture('notification_test_success');
       Alert.alert('Success', 'Test notification sent!');
     } catch (error) {
       console.error('Error sending test notification:', error);
+      posthog.capture('notification_test_failed');
       Alert.alert('Error', 'Failed to send test notification');
     }
   };
 
   const handleResetSettings = () => {
+    posthog.capture('notification_reset_prompted');
     Alert.alert(
       'Reset Settings',
       'Are you sure you want to reset notification settings to defaults?',
@@ -152,9 +166,11 @@ export default function NotificationSettingsScreen() {
                 await notificationSettingsService.resetSettings();
                 const defaultSettings = notificationSettingsService.getDefaultSettings();
                 setSettings(defaultSettings);
+                posthog.capture('notification_reset_success');
                 Alert.alert('Success', 'Settings reset to defaults');
               } catch (error) {
                 console.error('Error resetting settings:', error);
+                posthog.capture('notification_reset_failed');
                 Alert.alert('Error', 'Failed to reset settings');
               }
             })();
@@ -217,7 +233,10 @@ export default function NotificationSettingsScreen() {
         {/* Header with Back Button */}
         <View style={styles.header}>
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={() => {
+              posthog.capture('notification_settings_back_pressed');
+              navigation.goBack();
+            }}
             style={styles.backButton}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
@@ -279,7 +298,10 @@ export default function NotificationSettingsScreen() {
             <View style={styles.timePickersContainer}>
               <TouchableOpacity
                 style={styles.timePickerButton}
-                onPress={() => showTimePicker('quietHoursStart')}
+                onPress={() => {
+                  posthog.capture('notification_time_picker_opened', { field: 'quietHoursStart' });
+                  showTimePicker('quietHoursStart');
+                }}
               >
                 <Text style={styles.timePickerLabel}>Start Time</Text>
                 <Text style={styles.timePickerValue}>{settings.quietHoursStart}</Text>
@@ -287,7 +309,10 @@ export default function NotificationSettingsScreen() {
 
               <TouchableOpacity
                 style={styles.timePickerButton}
-                onPress={() => showTimePicker('quietHoursEnd')}
+                onPress={() => {
+                  posthog.capture('notification_time_picker_opened', { field: 'quietHoursEnd' });
+                  showTimePicker('quietHoursEnd');
+                }}
               >
                 <Text style={styles.timePickerLabel}>End Time</Text>
                 <Text style={styles.timePickerValue}>{settings.quietHoursEnd}</Text>

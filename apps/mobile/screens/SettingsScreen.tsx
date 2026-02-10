@@ -8,14 +8,18 @@ import { authService } from '../services/auth.service';
 import AppText from '../components/UI/textWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { profileSettingsStyles as styles } from '../styles/profileSettings.styles';
+import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 type ProfileNavProp = StackNavigationProp<RootStackParamList>;
 
 export default function SettingsScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation<ProfileNavProp>();
+  usePostHogScreen();
 
   const confirmDeleteAccount = () => {
+    posthog.capture('settings_delete_prompted');
     Alert.alert(
       'Delete Account',
       'Are you absolutely sure you want to permanently delete your account? This action cannot be undone.',
@@ -25,6 +29,7 @@ export default function SettingsScreen() {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
+            posthog.capture('settings_delete_confirmed');
             deleteAccount();
           },
         },
@@ -36,14 +41,17 @@ export default function SettingsScreen() {
       const token = await storage.getToken();
 
       if (!token) {
+        posthog.capture('settings_delete_failed', { reason: 'not_authenticated' });
         Alert.alert('Error', 'Not authenticated.');
         return;
       }
 
       await authService.deleteAccount(token);
+      posthog.capture('settings_delete_success');
       showDeletedAlert();
     } catch (err: any) {
       console.error('Delete account error:', err);
+      posthog.capture('settings_delete_failed', { reason: 'exception' });
       Alert.alert('Error', err?.response?.data?.message || 'Failed to delete account.');
     }
   };
@@ -63,21 +71,48 @@ export default function SettingsScreen() {
 
   return (
     <View className="flex-1 pt-16 px-10" style={{ backgroundColor: colors.white }}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+      <TouchableOpacity
+        onPress={() => {
+          posthog.capture('settings_back_pressed');
+          navigation.goBack();
+        }}
+        style={styles.backButton}
+      >
         <AppText style={[styles.backText, { color: colors.primaryDark }]}>Back</AppText>
       </TouchableOpacity>
       <AppText className="text-center text-[30px] pt-5" style={{ color: colors.black }}>
         Settings
       </AppText>
       <View className="mt-20 mb-10 gap-2.5">
-        <SettingsOption label="Survey" onPress={() => navigation.navigate('PostHogSurvey')} />
-        <SettingsOption label="Update Email" onPress={() => navigation.navigate('UpdateEmail')} />
+        <SettingsOption
+          label="Survey"
+          onPress={() => {
+            posthog.capture('settings_open_survey');
+            navigation.navigate('PostHogSurvey');
+          }}
+        />
+        <SettingsOption
+          label="Update Email"
+          onPress={() => {
+            posthog.capture('settings_open_update_email');
+            navigation.navigate('UpdateEmail');
+          }}
+        />
         <SettingsOption
           label="Update Password"
-          onPress={() => navigation.navigate('UpdatePassword')}
+          onPress={() => {
+            posthog.capture('settings_open_update_password');
+            navigation.navigate('UpdatePassword');
+          }}
         />
         <SettingsOption label="Delete Account" onPress={confirmDeleteAccount} destructive />
-        <SettingsOption label="Sign Out" onPress={handleLogout} />
+        <SettingsOption
+          label="Sign Out"
+          onPress={() => {
+            posthog.capture('settings_sign_out_pressed');
+            handleLogout();
+          }}
+        />
       </View>
     </View>
   );

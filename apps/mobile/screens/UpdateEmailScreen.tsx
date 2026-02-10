@@ -9,6 +9,7 @@ import AppText from '../components/UI/textWrapper';
 import AppTextInput from '../components/UI/textInputWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 export default function UpdateEmailScreen() {
   const { colors } = useTheme();
@@ -26,13 +27,16 @@ export default function UpdateEmailScreen() {
 
   const handleUpdate = async () => {
     try {
+      posthog.capture('update_email_save_tapped');
       const token = await storage.getToken();
       if (!token) {
+        posthog.capture('update_email_not_authenticated');
         Alert.alert('Error', 'Not authenticated.');
         return;
       }
 
       await authService.updateEmail(email, token);
+      posthog.capture('update_email_success');
 
       Alert.alert(
         'Email Updated',
@@ -48,6 +52,10 @@ export default function UpdateEmailScreen() {
       );
     } catch (err: any) {
       console.error(err);
+      posthog.capture('update_email_failed', {
+        error_name: err?.name || 'unknown',
+        has_message: Boolean(err?.message),
+      });
       Alert.alert('Error', err.message || 'Failed to update email.');
     }
   };
@@ -58,7 +66,13 @@ export default function UpdateEmailScreen() {
       style={[styles.container, { backgroundColor: colors.white }]}
     >
       {/* Back Button */}
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+      <TouchableOpacity
+        onPress={() => {
+          posthog.capture('update_email_back_pressed');
+          navigation.goBack();
+        }}
+        style={styles.backButton}
+      >
         <AppText style={[styles.backText, { color: colors.primaryDark }]}>Back</AppText>
       </TouchableOpacity>
 

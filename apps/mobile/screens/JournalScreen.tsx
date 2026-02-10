@@ -13,9 +13,12 @@ import AppText from '../components/UI/textWrapper';
 import { journalService, JournalEntry, MOOD_OPTIONS } from '../services/journal.service';
 import { storage } from '../utils/storage';
 import { useFocusEffect } from '@react-navigation/native';
+import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 export default function JournalScreen({ navigation }: any) {
   const { colors } = useTheme();
+  usePostHogScreen();
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -52,6 +55,7 @@ export default function JournalScreen({ navigation }: any) {
   );
 
   const handleRefresh = () => {
+    posthog.capture('journal_refresh');
     setRefreshing(true);
     loadJournalEntries();
   };
@@ -61,22 +65,26 @@ export default function JournalScreen({ navigation }: any) {
       const token = (await storage.getToken()) || '';
       const response = await journalService.deleteJournalEntry(journalId, token);
       if (response.status === 'success') {
+        posthog.capture('journal_entry_deleted', { journal_id: journalId });
         setEntries((prev) => prev.filter((e) => e.journal_id !== journalId));
         setTotalEntries((prev) => prev - 1);
       }
     } catch (err) {
       console.error('Error deleting journal entry:', err);
+      posthog.capture('journal_entry_delete_failed', { journal_id: journalId });
       Alert.alert('Error', 'Failed to delete journal entry');
     }
   };
 
   const handleDeleteEntry = async (journalId: number) => {
+    posthog.capture('journal_delete_prompted', { journal_id: journalId });
     Alert.alert('Delete Entry', 'Are you sure you want to delete this journal entry?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
         onPress: () => {
+          posthog.capture('journal_delete_confirmed', { journal_id: journalId });
           void performDeletion(journalId);
         },
       },
@@ -102,7 +110,10 @@ export default function JournalScreen({ navigation }: any) {
     <TouchableOpacity
       className="rounded-xl p-4 mb-3 mx-4"
       style={{ backgroundColor: colors.primaryDark }}
-      onPress={() => navigation.navigate('JournalDetail', { entry: item })}
+      onPress={() => {
+        posthog.capture('journal_entry_opened', { journal_id: item.journal_id });
+        navigation.navigate('JournalDetail', { entry: item });
+      }}
       activeOpacity={0.8}
     >
       <View className="flex-row justify-between items-start mb-2">
@@ -212,7 +223,10 @@ export default function JournalScreen({ navigation }: any) {
           testID="create-journal-button"
           className="w-12 h-12 rounded-full items-center justify-center"
           style={{ backgroundColor: colors.secondary }}
-          onPress={() => navigation.navigate('JournalEditor', {})}
+          onPress={() => {
+            posthog.capture('journal_create_pressed');
+            navigation.navigate('JournalEditor', {});
+          }}
         >
           <Ionicons name="add" size={28} color={colors.primaryDark} />
         </TouchableOpacity>
@@ -233,7 +247,10 @@ export default function JournalScreen({ navigation }: any) {
           <TouchableOpacity
             className="mt-6 px-6 py-3 rounded-full"
             style={{ backgroundColor: colors.secondary }}
-            onPress={() => navigation.navigate('JournalEditor')}
+            onPress={() => {
+              posthog.capture('journal_write_first_entry_pressed');
+              navigation.navigate('JournalEditor');
+            }}
           >
             <AppText className="text-base font-bold" style={{ color: colors.primaryDark }}>
               Write First Entry

@@ -9,6 +9,7 @@ import AppTextInput from '../components/UI/textInputWrapper';
 import AppText from '../components/UI/textWrapper';
 import TextButton from '../components/UI/textButton';
 import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 export default function LoginScreen({ navigation }: any) {
   usePostHogScreen();
@@ -23,6 +24,7 @@ export default function LoginScreen({ navigation }: any) {
       return;
     }
 
+    posthog.capture('login_submit');
     setLoading(true);
     try {
       const response = await authService.login({
@@ -31,6 +33,7 @@ export default function LoginScreen({ navigation }: any) {
       });
 
       if (response.status === 'success') {
+        posthog.capture('login_success');
         await storage.saveToken(response.data.token);
         await storage.saveUserData(response.data.user);
 
@@ -39,10 +42,12 @@ export default function LoginScreen({ navigation }: any) {
           routes: [{ name: 'MainApp' }],
         });
       } else {
+        posthog.capture('login_failed', { reason: 'api_error' });
         Alert.alert('Login Failed', response.message || 'Please try again.');
       }
     } catch (error: any) {
       console.error('Login error:', error);
+      posthog.capture('login_failed', { reason: 'exception' });
       const errorMessage = error.response?.data?.message || 'Login failed. Please try again.';
       Alert.alert('Login Failed', errorMessage);
     } finally {
@@ -51,6 +56,7 @@ export default function LoginScreen({ navigation }: any) {
   };
 
   const handleSignUp = () => {
+    posthog.capture('login_signup_pressed');
     navigation.navigate('Signup');
   };
 
@@ -97,7 +103,10 @@ export default function LoginScreen({ navigation }: any) {
 
             <TextButton
               className="mt-[16px] items-center"
-              onPress={() => navigation.navigate('ForgotPassword')}
+              onPress={() => {
+                posthog.capture('login_forgot_password_pressed');
+                navigation.navigate('ForgotPassword');
+              }}
               textClassName="text-[#ffffff] text-[14px] underline"
               disabled={loading}
             >

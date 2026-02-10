@@ -5,6 +5,7 @@ import MantraCarousel from '../components/carousel';
 import { Mantra } from '../services/mantra.service';
 import { useTheme } from '../context/ThemeContext';
 import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 export default function FocusScreen({ route, navigation }: any) {
   usePostHogScreen();
@@ -17,13 +18,17 @@ export default function FocusScreen({ route, navigation }: any) {
   const { colors } = useTheme();
 
   const handleJournal = (mantraId: number, mantraTitle: string) => {
+    posthog.capture('focus_journal_pressed', { mantra_id: mantraId });
     navigation.navigate('JournalEditor', { mantraId, mantraTitle });
   };
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.primary }}>
       <TouchableOpacity
-        onPress={() => navigation.goBack()}
+        onPress={() => {
+          posthog.capture('focus_back_pressed');
+          navigation.goBack();
+        }}
         className="absolute z-20 p-2"
         style={{ top: 60, left: 20 }}
         testID="back-button"

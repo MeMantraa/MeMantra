@@ -7,6 +7,7 @@ import { Conversation } from '../types/chat.types';
 import { chatService } from '../services/chat.service';
 import { storage } from '../utils/storage';
 import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 export default function ChatScreen({ navigation }: any) {
   usePostHogScreen();
@@ -36,12 +37,14 @@ export default function ChatScreen({ navigation }: any) {
   };
 
   const handleConversationPress = (conversation: Conversation) => {
+    posthog.capture('chat_open_conversation', { conversation_id: conversation.conversation_id });
     navigation.navigate('Conversation', {
       conversation,
     });
   };
 
   const handleNewConversation = () => {
+    posthog.capture('chat_new_conversation_pressed');
     navigation.navigate('NewConversation');
   };
 

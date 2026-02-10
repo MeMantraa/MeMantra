@@ -13,6 +13,7 @@ import AppText from '../components/UI/textWrapper';
 import { collectionService, Collection } from '../services/collection.service';
 import { storage } from '../utils/storage';
 import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ITEM_MARGIN = 12;
@@ -58,11 +59,13 @@ export default function CollectionsScreen({ navigation }: any) {
   };
 
   const handleRefresh = () => {
+    posthog.capture('collections_refresh');
     setRefreshing(true);
     loadCollections();
   };
 
   const handleCollectionPress = (collection: Collection) => {
+    posthog.capture('collections_open', { collection_id: collection.collection_id });
     navigation.navigate('CollectionDetail', {
       collectionId: collection.collection_id,
       collectionName: collection.name,
@@ -77,14 +80,17 @@ export default function CollectionsScreen({ navigation }: any) {
       // Remove from local state
       setCollections((prev) => prev.filter((c) => c.collection_id !== collection.collection_id));
 
+      posthog.capture('collections_delete_success', { collection_id: collection.collection_id });
       Alert.alert('Success', 'Collection deleted successfully');
     } catch (err) {
       console.error('Error deleting collection:', err);
+      posthog.capture('collections_delete_failed', { collection_id: collection.collection_id });
       Alert.alert('Error', 'Failed to delete collection');
     }
   };
 
   const handleDeleteCollection = (collection: Collection) => {
+    posthog.capture('collections_delete_prompted', { collection_id: collection.collection_id });
     Alert.alert(
       'Delete Collection',
       `Are you sure you want to delete "${collection.name}"? This action cannot be undone.`,
@@ -97,6 +103,9 @@ export default function CollectionsScreen({ navigation }: any) {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
+            posthog.capture('collections_delete_confirmed', {
+              collection_id: collection.collection_id,
+            });
             void performDeleteCollection(collection);
           },
         },

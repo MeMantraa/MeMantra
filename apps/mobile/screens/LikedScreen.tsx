@@ -4,14 +4,23 @@ import AppText from '../components/UI/textWrapper';
 import { profileSettingsStyles as styles } from '../styles/profileSettings.styles';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
+import { posthog } from '../services/posthog';
+import { usePostHogScreen } from '../utils/posthog';
 
 export default function LikedScreen() {
   const navigation = useNavigation();
   const { colors } = useTheme();
+  usePostHogScreen();
 
   return (
     <View className="flex-1 pt-16 px-10" style={{ backgroundColor: colors.primary }}>
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+      <TouchableOpacity
+        onPress={() => {
+          posthog.capture('liked_back_pressed');
+          navigation.goBack();
+        }}
+        style={styles.backButton}
+      >
         <AppText style={[styles.backText, { color: colors.text }]}>Back</AppText>
       </TouchableOpacity>
       <View className="flex-1 justify-center items-center">

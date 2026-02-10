@@ -10,6 +10,7 @@ import AppTextInput from '../components/UI/textInputWrapper';
 
 import { useTheme } from '../context/ThemeContext';
 import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 export default function UpdatePasswordScreen() {
   const { colors } = useTheme();
@@ -27,13 +28,16 @@ export default function UpdatePasswordScreen() {
     }
 
     try {
+      posthog.capture('update_password_save_tapped');
       const token = await storage.getToken();
       if (!token) {
+        posthog.capture('update_password_not_authenticated');
         Alert.alert('Error', 'Not authenticated.');
         return;
       }
 
       await authService.updatePassword(password, token);
+      posthog.capture('update_password_success');
 
       Alert.alert(
         'Password Updated',
@@ -49,6 +53,7 @@ export default function UpdatePasswordScreen() {
       );
     } catch (err: any) {
       console.error('Update password error:', err);
+      posthog.capture('update_password_failed', { reason: 'exception' });
       Alert.alert('Error', 'Failed to update password.');
     }
   };
@@ -56,7 +61,13 @@ export default function UpdatePasswordScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.white }]}>
       {/* Back Button */}
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+      <TouchableOpacity
+        onPress={() => {
+          posthog.capture('update_password_back_pressed');
+          navigation.goBack();
+        }}
+        style={styles.backButton}
+      >
         <AppText style={[styles.backText, { color: colors.primaryDark }]}>Back</AppText>
       </TouchableOpacity>
 

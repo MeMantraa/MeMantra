@@ -4,9 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { MOOD_OPTIONS } from '../services/journal.service';
+import { usePostHogScreen } from '../utils/posthog';
+import { posthog } from '../services/posthog';
 
 export default function JournalDetailScreen({ navigation, route }: any) {
   const { colors } = useTheme();
+  usePostHogScreen();
   const { entry } = route.params;
 
   const getMoodInfo = (mood: string | null) => {
@@ -40,7 +43,10 @@ export default function JournalDetailScreen({ navigation, route }: any) {
       <View className="pt-16 pb-4 px-5 flex-row items-center justify-between">
         <TouchableOpacity
           testID="back-button"
-          onPress={() => navigation.goBack()}
+          onPress={() => {
+            posthog.capture('journal_detail_back_pressed', { journal_id: entry.journal_id });
+            navigation.goBack();
+          }}
           className="p-1"
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
@@ -48,7 +54,10 @@ export default function JournalDetailScreen({ navigation, route }: any) {
         </TouchableOpacity>
         <TouchableOpacity
           testID="edit-button"
-          onPress={() => navigation.navigate('JournalEditor', { entry })}
+          onPress={() => {
+            posthog.capture('journal_detail_edit_pressed', { journal_id: entry.journal_id });
+            navigation.navigate('JournalEditor', { entry });
+          }}
           className="p-1"
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
