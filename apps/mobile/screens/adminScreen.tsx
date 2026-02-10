@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, TouchableOpacity, Alert, KeyboardAvoidingView, Platform, Modal } from 'react-native';
+import {
+  View,
+  TouchableOpacity,
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Modal,
+  TextInput,
+} from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { Mantra, mantraService } from '../services/mantra.service';
 import { User, userService } from '../services/user.service';
@@ -44,7 +52,10 @@ const AdminScreen: React.FC = () => {
     username: '',
     email: '',
     password: '',
+    confirmPassword: '',
   });
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [viewAllUsers, setViewAllUsers] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -90,8 +101,10 @@ const AdminScreen: React.FC = () => {
   };
 
   const resetUserForm = () => {
-    setUserForm({ username: '', email: '', password: '' });
+    setUserForm({ username: '', email: '', password: '', confirmPassword: '' });
     setEditingUser(null);
+    setUserSearchQuery('');
+    setViewAllUsers(false);
   };
 
   const handleMantraFormChange = (field: string, value: string) => {
@@ -168,6 +181,11 @@ const AdminScreen: React.FC = () => {
   const handleCreateUser = async () => {
     if (!userForm.username.trim() || !userForm.email.trim() || !userForm.password.trim()) {
       Alert.alert('Error', 'All fields are required');
+      return;
+    }
+
+    if (userForm.password !== userForm.confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match');
       return;
     }
 
@@ -248,6 +266,7 @@ const AdminScreen: React.FC = () => {
       username: user.username || '',
       email: user.email || '',
       password: '',
+      confirmPassword: '',
     });
     setEditModalVisible(true);
   };
@@ -388,13 +407,43 @@ const AdminScreen: React.FC = () => {
         )}
 
         {mode === 'users' && action === 'manage' && (
-          <UserList
-            users={users}
-            loading={loading}
-            deletingId={deletingId}
-            onEdit={openEditUser}
-            onDelete={confirmDeleteUser}
-          />
+          <View className="flex-1">
+            <TextInput
+              className="bg-black/30 text-white p-4 rounded-xl mb-4"
+              placeholder="Search user here"
+              placeholderTextColor="rgba(255, 255, 255, 0.5)"
+              value={userSearchQuery}
+              onChangeText={setUserSearchQuery}
+            />
+
+            <TouchableOpacity
+              className="mb-4 p-3 rounded-lg flex-row justify-center"
+              style={{ backgroundColor: colors.secondary }}
+              onPress={() => setViewAllUsers(!viewAllUsers)}
+            >
+              <AppText className="font-semibold" style={{ color: colors.primaryDark }}>
+                {viewAllUsers ? 'Hide All Users' : 'View All Users'}
+              </AppText>
+            </TouchableOpacity>
+
+            {(userSearchQuery.trim() !== '' || viewAllUsers) && (
+              <UserList
+                users={
+                  viewAllUsers
+                    ? users
+                    : users.filter(
+                        (u) =>
+                          u.username?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
+                          u.email?.toLowerCase().includes(userSearchQuery.toLowerCase()),
+                      )
+                }
+                loading={loading}
+                deletingId={deletingId}
+                onEdit={openEditUser}
+                onDelete={confirmDeleteUser}
+              />
+            )}
+          </View>
         )}
 
         {/* Edit Modal */}
