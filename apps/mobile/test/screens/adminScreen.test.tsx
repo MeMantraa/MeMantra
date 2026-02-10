@@ -459,4 +459,77 @@ describe('AdminScreen (extended coverage)', () => {
       expect.any(Array),
     );
   });
+
+  it('successfully deletes a mantra and shows success alert', async () => {
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: fakeMantras,
+    });
+    (mantraService.deleteMantra as jest.Mock).mockResolvedValue({});
+    const { getByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Manage'));
+    await waitFor(() => expect(getByText('Delete')).toBeTruthy());
+    fireEvent.press(getByText('Delete'));
+
+    // Simulate pressing "Delete" on the alert dialog
+    const deleteCallback = (Alert.alert as jest.Mock).mock.calls[0][2][1].onPress;
+    deleteCallback();
+
+    await waitFor(() => {
+      expect(mantraService.deleteMantra).toHaveBeenCalledWith(1, 'mock-token');
+      expect(Alert.alert).toHaveBeenCalledWith('Success', 'Mantra deleted');
+    });
+  });
+
+  it('successfully deletes a user and shows success alert', async () => {
+    (userService.getAllUsers as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { users: fakeUsers },
+    });
+    (userService.deleteUser as jest.Mock).mockResolvedValue({});
+    const { getByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Users'));
+    await waitFor(() => expect(getByText('Manage')).toBeTruthy());
+    fireEvent.press(getByText('Manage'));
+    await waitFor(() => expect(getByText('View All Users')).toBeTruthy());
+    fireEvent.press(getByText('View All Users'));
+    await waitFor(() => expect(getByText('Delete')).toBeTruthy());
+    fireEvent.press(getByText('Delete'));
+
+    // Simulate pressing "Delete" on the alert dialog
+    const deleteCallback = (Alert.alert as jest.Mock).mock.calls[0][2][1].onPress;
+    deleteCallback();
+
+    await waitFor(() => {
+      expect(userService.deleteUser).toHaveBeenCalledWith(1, 'mock-token');
+      expect(Alert.alert).toHaveBeenCalledWith('Success', 'User deleted');
+    });
+  });
+
+  it('resets forms when switching from Users to Mantras', async () => {
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: fakeMantras,
+    });
+    (userService.getAllUsers as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { users: fakeUsers },
+    });
+    const { getByText, getByPlaceholderText } = render(<AdminScreen />);
+
+    // Switch to Users and fill in some form data
+    fireEvent.press(getByText('Users'));
+    await waitFor(() => expect(getByText('Add a new user')).toBeTruthy());
+    fireEvent.changeText(getByPlaceholderText('Username *'), 'testuser');
+
+    // Switch back to Mantras
+    fireEvent.press(getByText('Mantras'));
+    await waitFor(() => expect(getByText('Add a new mantra')).toBeTruthy());
+
+    // Switch back to Users and verify form is reset
+    fireEvent.press(getByText('Users'));
+    await waitFor(() => {
+      expect(getByPlaceholderText('Username *').props.value).toBe('');
+    });
+  });
 });
