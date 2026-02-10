@@ -13,6 +13,7 @@ import {
   Dimensions,
   ActivityIndicator,
 } from 'react-native';
+import { useTheme } from '../context/ThemeContext';
 
 export type Collection = {
   collection_id: number;
@@ -48,6 +49,7 @@ export default function CollectionsSheet({
   title = 'Save to collection',
   loading = false,
 }: Props) {
+  const { colors } = useTheme();
   const slide = useRef(new Animated.Value(0)).current;
   const dragY = useRef(new Animated.Value(0)).current;
   const [isCreating, setIsCreating] = useState(false);
@@ -182,7 +184,7 @@ export default function CollectionsSheet({
               <View className="h-1 w-10 rounded-full" style={{ backgroundColor: '#9CA3AF' }} />
             </View>
             <View className="mb-3">
-              <Text className="text-[22px] font-bold" style={{ color: '#111827' }}>
+              <Text className="text-[22px] font-bold" style={{ color: colors.black }}>
                 {title}
               </Text>
             </View>
@@ -229,7 +231,7 @@ export default function CollectionsSheet({
               }}
               disabled={isProcessing}
             >
-              <Text className="font-semibold" style={{ color: '#111827' }}>
+              <Text className="font-semibold" style={{ color: colors.black }}>
                 + Create new collection
               </Text>
             </Pressable>

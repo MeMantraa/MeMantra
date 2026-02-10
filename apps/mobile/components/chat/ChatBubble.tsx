@@ -90,12 +90,12 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
           return (
             <TouchableOpacity
               key={`${reaction.emoji}-${index}`}
-              className={`flex-row items-center px-2 py-1 rounded-xl gap-1 ${
+              className={`flex-row items-center pl-1 rounded-xl gap-1 ${
                 userReacted ? 'border-[1.5px]' : 'border-0'
               }`}
               style={{
-                backgroundColor: userReacted ? colors.secondary : `${colors.primaryDark}20`,
-                borderColor: userReacted ? colors.primaryDark : 'transparent',
+                backgroundColor: 'transparent',
+                borderColor: 'transparent',
               }}
               onPress={() => handleEmojiSelect(reaction.emoji)}
               activeOpacity={0.7}
@@ -138,7 +138,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
         <View
           className="rounded-2xl p-5 w-4/5 max-w-[300px] shadow-lg"
           style={{
-            backgroundColor: colors.primary,
+            backgroundColor: colors.white,
             shadowColor: '#000',
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.25,
@@ -279,7 +279,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
             onLongPress={handleLongPress}
             className="max-w-[75%] px-4 py-[10px] rounded-[18px]"
             style={{
-              backgroundColor: isOwnMessage ? colors.secondary : colors.primaryDark,
+              backgroundColor: isOwnMessage ? colors.white : colors.primaryDark,
             }}
           >
             {/* Show reply context if this is a reply */}

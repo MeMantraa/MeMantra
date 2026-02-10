@@ -160,10 +160,10 @@ export default function JournalScreen({ navigation }: any) {
           {item.tags.slice(0, 3).map((tag) => (
             <View
               key={tag}
-              className="px-2 py-1 rounded-full mr-1 mb-1"
-              style={{ backgroundColor: colors.secondary + '30' }}
+              className="px-4 py-2 rounded-full mr-1 mb-1"
+              style={{ backgroundColor: colors.secondary }}
             >
-              <AppText className="text-xs" style={{ color: colors.secondary }}>
+              <AppText className="text-xs" style={{ color: colors.white }}>
                 #{tag}
               </AppText>
             </View>
@@ -181,8 +181,8 @@ export default function JournalScreen({ navigation }: any) {
   if (loading) {
     return (
       <View className="flex-1" style={{ backgroundColor: colors.primary }}>
-        <View className="pt-16 pb-4 px-5 flex-row items-center justify-between">
-          <AppText className="text-3xl font-bold" style={{ color: colors.text }}>
+        <View className="pt-[60px] pb-4 px-[30px]" style={{ backgroundColor: colors.primary }}>
+          <AppText className="text-[30px] font-bold" style={{ color: colors.text }}>
             Journal
           </AppText>
         </View>
@@ -199,9 +199,9 @@ export default function JournalScreen({ navigation }: any) {
   return (
     <View className="flex-1" style={{ backgroundColor: colors.primary }}>
       {/* Header */}
-      <View className="pt-16 pb-4 px-5 flex-row items-center justify-between">
+      <View className="pt-[60px] pb-4 px-[30px] flex-row items-center justify-between">
         <View>
-          <AppText className="text-3xl font-bold" style={{ color: colors.text }}>
+          <AppText className="text-[30px] font-bold" style={{ color: colors.text }}>
             Journal
           </AppText>
           <AppText className="text-sm mt-1" style={{ color: colors.text, opacity: 0.6 }}>
@@ -232,10 +232,10 @@ export default function JournalScreen({ navigation }: any) {
           </AppText>
           <TouchableOpacity
             className="mt-6 px-6 py-3 rounded-full"
-            style={{ backgroundColor: colors.secondary }}
+            style={{ backgroundColor: colors.primaryDark }}
             onPress={() => navigation.navigate('JournalEditor')}
           >
-            <AppText className="text-base font-bold" style={{ color: colors.primaryDark }}>
+            <AppText className="text-base font-bold" style={{ color: colors.white }}>
               Write First Entry
             </AppText>
           </TouchableOpacity>

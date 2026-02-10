@@ -105,7 +105,7 @@ export default function JournalEditorScreen({ navigation, route }: any) {
           className="p-1"
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="close" size={28} color={colors.text} />
+          <Ionicons name="close" size={28} color={colors.text} className="pr-10" />
         </TouchableOpacity>
         <AppText className="text-xl font-bold" style={{ color: colors.text }}>
           {isEditing ? 'Edit Entry' : 'New Entry'}
@@ -114,9 +114,9 @@ export default function JournalEditorScreen({ navigation, route }: any) {
           testID="save-button"
           onPress={handleSave}
           disabled={saving || !content.trim()}
-          className="px-4 py-2 rounded-full"
+          className="px-6 py-3 rounded-full"
           style={{
-            backgroundColor: content.trim() ? colors.secondary : colors.primaryDark,
+            backgroundColor: colors.primaryDark,
           }}
         >
           {saving ? (
@@ -125,8 +125,7 @@ export default function JournalEditorScreen({ navigation, route }: any) {
             <AppText
               className="font-bold"
               style={{
-                color: content.trim() ? colors.primaryDark : colors.text,
-                opacity: content.trim() ? 1 : 0.5,
+                color: colors.text,
               }}
             >
               Save
@@ -170,7 +169,7 @@ export default function JournalEditorScreen({ navigation, route }: any) {
         {/* Title Input */}
         <TextInput
           className="text-2xl font-bold mb-4"
-          style={{ color: colors.text }}
+          style={{ fontFamily: 'LibreBaskerville-Regular', color: colors.text }}
           placeholder="Title (optional)"
           placeholderTextColor={colors.text + '60'}
           value={title}
@@ -181,7 +180,7 @@ export default function JournalEditorScreen({ navigation, route }: any) {
         {/* Content Input */}
         <TextInput
           className="text-base leading-6 mb-6"
-          style={{ color: colors.text, minHeight: 200 }}
+          style={{ fontFamily: 'LibreBaskerville-Regular', color: colors.text, minHeight: 200 }}
           placeholder="What's on your mind? Reflect on your thoughts, feelings, and experiences..."
           placeholderTextColor={colors.text + '60'}
           value={content}
@@ -192,7 +191,7 @@ export default function JournalEditorScreen({ navigation, route }: any) {
 
         {/* Mood Selection */}
         <View className="mb-6">
-          <AppText className="text-sm font-bold mb-3" style={{ color: colors.text, opacity: 0.7 }}>
+          <AppText className="text-sm font-bold mb-3" style={{ color: colors.text }}>
             How are you feeling?
           </AppText>
           <ScrollView horizontal showsHorizontalScrollIndicator={false}>
@@ -223,36 +222,31 @@ export default function JournalEditorScreen({ navigation, route }: any) {
 
         {/* Tags */}
         <View className="mb-6">
-          <AppText className="text-sm font-bold mb-3" style={{ color: colors.text, opacity: 0.7 }}>
+          <AppText className="text-sm font-bold mb-3" style={{ color: colors.text }}>
             Tags
           </AppText>
-          <View className="flex-row flex-wrap mb-2">
+          <View className="flex-row flex-wrap">
             {tags.map((tag) => (
               <TouchableOpacity
                 key={tag}
-                className="flex-row items-center px-3 py-1 rounded-full mr-2 mb-2"
-                style={{ backgroundColor: colors.secondary + '30' }}
+                className="flex-row items-center px-4 py-2 rounded-full mr-2 mb-2"
+                style={{ backgroundColor: colors.secondary }}
                 onPress={() => handleRemoveTag(tag)}
               >
-                <AppText className="text-sm" style={{ color: colors.secondary }}>
+                <AppText className="text-sm" style={{ color: colors.white }}>
                   #{tag}
                 </AppText>
-                <Ionicons
-                  name="close"
-                  size={14}
-                  color={colors.secondary}
-                  style={{ marginLeft: 4 }}
-                />
+                <Ionicons name="close" size={14} color={colors.white} style={{ marginLeft: 4 }} />
               </TouchableOpacity>
             ))}
           </View>
           {tags.length < 10 && (
             <View className="flex-row items-center">
               <TextInput
-                className="flex-1 px-3 py-2 rounded-lg"
-                style={{ backgroundColor: colors.primaryDark, color: colors.text }}
+                className="flex-1 min-h-[40px] max-h-[100px] rounded-[20px] px-4 pb-2 text-[16px]"
+                style={{ fontFamily: 'LibreBaskerville-Regular', backgroundColor: colors.white }}
                 placeholder="Add a tag..."
-                placeholderTextColor={colors.text + '60'}
+                placeholderTextColor={colors.primaryDark + '80'}
                 value={tagInput}
                 onChangeText={setTagInput}
                 onSubmitEditing={handleAddTag}
@@ -260,11 +254,11 @@ export default function JournalEditorScreen({ navigation, route }: any) {
                 maxLength={50}
               />
               <TouchableOpacity
-                className="ml-2 p-2 rounded-lg"
-                style={{ backgroundColor: colors.secondary }}
+                className="ml-2 p-2 rounded-full"
+                style={{ backgroundColor: colors.primaryDark }}
                 onPress={handleAddTag}
               >
-                <Ionicons name="add" size={20} color={colors.primaryDark} />
+                <Ionicons name="add" size={20} color={colors.white} />
               </TouchableOpacity>
             </View>
           )}
