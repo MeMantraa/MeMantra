@@ -52,7 +52,7 @@ export const ReminderController = {
     if (!userId) return;
 
     try {
-      const reminders = await ReminderModel.findByUserId(userId);
+      const reminders = await ReminderModel.findByUserIdWithNames(userId);
       return res.status(200).json({ status: 'success', data: { reminders } });
     } catch (error) {
       return handleError(res, 'Error retrieving reminders', error);

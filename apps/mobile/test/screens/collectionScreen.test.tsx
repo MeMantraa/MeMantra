@@ -3,16 +3,37 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import CollectionsScreen from '../../screens/collectionScreen';
 import { collectionService } from '../../services/collection.service';
+import { reminderService } from '../../services/reminder.service';
 import { storage } from '../../utils/storage';
 
 jest.mock('@expo/vector-icons', () => ({
   Ionicons: () => null,
 }));
 
+jest.mock('@react-navigation/native', () => {
+  const React = jest.requireActual('react');
+  return {
+    ...jest.requireActual('@react-navigation/native'),
+    useFocusEffect: (callback: () => void) => {
+      React.useEffect(() => {
+        callback();
+      }, []);
+    },
+  };
+});
+
 jest.mock('../../services/collection.service', () => ({
   collectionService: {
     getUserCollections: jest.fn(),
     deleteCollection: jest.fn(),
+  },
+}));
+
+jest.mock('../../services/reminder.service', () => ({
+  reminderService: {
+    getReminders: jest.fn().mockResolvedValue({ status: 'success', data: { reminders: [] } }),
+    updateReminder: jest.fn(),
+    deleteReminder: jest.fn(),
   },
 }));
 
@@ -377,5 +398,46 @@ describe('CollectionsScreen', () => {
     await waitFor(() => {
       expect(getByText('Another Collection')).toBeTruthy();
     });
+  });
+
+  it('navigates to CreateReminder when collection reminder pressed with no existing reminder', async () => {
+    (collectionService.getUserCollections as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { collections: mockCollections },
+    });
+
+    const { getByTestId } = renderScreen();
+
+    await waitFor(() => {
+      expect(getByTestId('collection-reminder-2')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('collection-reminder-2'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('CreateReminder', { collectionId: 2 });
+  });
+
+  it('shows reminder alert when collection reminder pressed with existing reminder', async () => {
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: {
+        reminders: [{ reminder_id: 99, mantra_id: null, collection_id: 2, status: 'active' }],
+      },
+    });
+    (collectionService.getUserCollections as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { collections: mockCollections },
+    });
+
+    const { getByTestId } = renderScreen();
+
+    await waitFor(() => {
+      expect(getByTestId('collection-reminder-2')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('collection-reminder-2'));
+
+    expect(mockNavigate).not.toHaveBeenCalledWith('CreateReminder', expect.anything());
+    expect(Alert.alert).toHaveBeenCalledWith('Reminder', undefined, expect.any(Array));
   });
 });

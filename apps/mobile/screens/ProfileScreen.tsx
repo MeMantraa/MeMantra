@@ -36,6 +36,16 @@ export default function ProfileScreen() {
         <TouchableOpacity
           className="flex-row justify-between"
           style={[styles.button, { backgroundColor: colors.primaryDark }]}
+          onPress={() => navigation.navigate('Reminders')}
+        >
+          <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
+            Reminders
+          </AppText>
+          <Ionicons name="chevron-forward" size={24} color={colors.white} />
+        </TouchableOpacity>
+        <TouchableOpacity
+          className="flex-row justify-between"
+          style={[styles.button, { backgroundColor: colors.primaryDark }]}
           onPress={() => navigation.navigate('NotificationSettings')}
         >
           <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>

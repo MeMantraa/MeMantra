@@ -115,4 +115,50 @@ describe('IconButton Component', () => {
 
     expect(icon.props.color).toBe('white');
   });
+
+  it('renders share button correctly', () => {
+    const { getByTestId, UNSAFE_getByType } = render(
+      <IconButton type="share" onPress={mockOnPress} />,
+    );
+
+    expect(getByTestId('share-button')).toBeTruthy();
+
+    const icon = UNSAFE_getByType(Ionicons);
+    expect(icon.props.name).toBe('paper-plane-outline');
+    expect(icon.props.color).toBe('white');
+  });
+
+  it('renders journal button correctly', () => {
+    const { getByTestId, UNSAFE_getByType } = render(
+      <IconButton type="journal" onPress={mockOnPress} />,
+    );
+
+    expect(getByTestId('journal-button')).toBeTruthy();
+
+    const icon = UNSAFE_getByType(Ionicons);
+    expect(icon.props.name).toBe('book-outline');
+    expect(icon.props.color).toBe('white');
+  });
+
+  it('renders reminder button (inactive) correctly', () => {
+    const { getByTestId, UNSAFE_getByType } = render(
+      <IconButton type="reminder" onPress={mockOnPress} />,
+    );
+
+    expect(getByTestId('reminder-button')).toBeTruthy();
+
+    const icon = UNSAFE_getByType(Ionicons);
+    expect(icon.props.name).toBe('notifications-outline');
+    expect(icon.props.color).toBe('white');
+  });
+
+  it('renders reminder button (active) with filled icon and theme color', () => {
+    const { UNSAFE_getByType } = render(
+      <IconButton type="reminder" active onPress={mockOnPress} />,
+    );
+
+    const icon = UNSAFE_getByType(Ionicons);
+    expect(icon.props.name).toBe('notifications');
+    expect(icon.props.color).toBe(mockColors.secondary);
+  });
 });

@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 
 type IconButtonProps = {
-  type: 'like' | 'save' | 'share' | 'profile' | 'journal';
+  type: 'like' | 'save' | 'share' | 'profile' | 'journal' | 'reminder';
   active?: boolean;
   onPress: () => void;
   testID?: string;
@@ -65,6 +65,15 @@ const IconButton: React.FC<IconButtonProps> = ({
           iconName: 'book-outline',
           iconColor: 'white',
           defaultTestID: 'journal-button',
+          backgroundColor: colors.primaryDark,
+          iconSize: 35,
+          buttonSize: 55,
+        };
+      case 'reminder':
+        return {
+          iconName: active ? 'notifications' : 'notifications-outline',
+          iconColor: active ? colors.secondary : 'white',
+          defaultTestID: 'reminder-button',
           backgroundColor: colors.primaryDark,
           iconSize: 35,
           buttonSize: 55,

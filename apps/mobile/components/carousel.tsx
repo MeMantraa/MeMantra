@@ -13,6 +13,8 @@ interface MantraCarouselProps {
   readonly onSave?: (mantraId: number) => void;
   readonly onShare?: (mantraId: number) => void;
   readonly onJournal?: (mantraId: number, mantraTitle: string) => void;
+  readonly onReminder?: (mantraId: number) => void;
+  readonly hasReminder?: boolean;
   readonly showButtons?: boolean;
   readonly onPress?: () => void;
   readonly isFocusMode?: boolean;
@@ -24,6 +26,8 @@ export default function MantraCarousel({
   onSave,
   onShare,
   onJournal,
+  onReminder,
+  hasReminder = false,
   showButtons = true,
   onPress,
   isFocusMode = false,
@@ -67,6 +71,10 @@ export default function MantraCarousel({
 
   const handleJournal = () => {
     if (onJournal) onJournal(item.mantra_id, item.title);
+  };
+
+  const handleReminder = () => {
+    if (onReminder) onReminder(item.mantra_id);
   };
 
   return (
@@ -167,6 +175,12 @@ export default function MantraCarousel({
 
       {showButtons && (
         <View className="absolute right-4 bottom-36 items-center">
+          <IconButton
+            type="reminder"
+            active={hasReminder}
+            onPress={handleReminder}
+            className="mb-3"
+          />
           <IconButton type="save" active={!!item.isSaved} onPress={handleSave} className="mb-3" />
           <IconButton type="share" onPress={handleShare} className="mb-3" />
           <IconButton type="journal" onPress={handleJournal} className="mb-3" />

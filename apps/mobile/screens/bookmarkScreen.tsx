@@ -13,6 +13,7 @@ import AppText from '../components/UI/textWrapper';
 import { Mantra } from '../services/mantra.service';
 import { collectionService } from '../services/collection.service';
 import { storage } from '../utils/storage';
+import { useReminders } from '../hooks/useReminders';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ITEM_MARGIN = 12;
@@ -26,6 +27,8 @@ export default function BookmarkScreen({ navigation, route }: any) {
   const [mantras, setMantras] = useState<Mantra[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const { remindersByMantra, getReminderForCollection, handleReminderPress } = useReminders();
+  const collectionReminder = getReminderForCollection(collectionId);
 
   useEffect(() => {
     loadCollectionMantras();
@@ -53,28 +56,50 @@ export default function BookmarkScreen({ navigation, route }: any) {
     loadCollectionMantras();
   };
 
+  const handleMantraReminder = (mantraId: number) => {
+    handleReminderPress('mantra', mantraId, navigation);
+  };
+
+  const handleCollectionReminder = () => {
+    handleReminderPress('collection', collectionId, navigation);
+  };
+
   const renderItem = ({ item }: { item: Mantra }) => (
-    <TouchableOpacity
-      className="justify-center items-center rounded-xl p-2.5 shadow-sm android:elevation-4"
-      style={{
-        backgroundColor: colors.primaryDark,
-        width: ITEM_SIZE,
-        height: ITEM_SIZE * 0.75,
-      }}
-      onPress={() =>
-        navigation.navigate('Focus', {
-          mantra: item,
-        })
-      }
-    >
-      <AppText
-        className="text-lg font-bold text-center leading-tight"
-        style={{ color: colors.text }}
-        numberOfLines={3}
+    <View style={{ width: ITEM_SIZE, height: ITEM_SIZE * 0.75 }}>
+      <TouchableOpacity
+        className="justify-center items-center rounded-xl p-2.5 shadow-sm android:elevation-4"
+        style={{
+          backgroundColor: colors.primaryDark,
+          width: ITEM_SIZE,
+          height: ITEM_SIZE * 0.75,
+        }}
+        onPress={() =>
+          navigation.navigate('Focus', {
+            mantra: item,
+          })
+        }
       >
-        {item.title}
-      </AppText>
-    </TouchableOpacity>
+        <AppText
+          className="text-lg font-bold text-center leading-tight"
+          style={{ color: colors.text }}
+          numberOfLines={3}
+        >
+          {item.title}
+        </AppText>
+      </TouchableOpacity>
+      <TouchableOpacity
+        testID={`mantra-reminder-${item.mantra_id}`}
+        className="absolute bottom-2 right-2 p-1"
+        onPress={() => handleMantraReminder(item.mantra_id)}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Ionicons
+          name={remindersByMantra.has(item.mantra_id) ? 'notifications' : 'notifications-outline'}
+          size={18}
+          color={remindersByMantra.has(item.mantra_id) ? colors.secondary : colors.text}
+        />
+      </TouchableOpacity>
+    </View>
   );
 
   if (loading) {
@@ -131,6 +156,18 @@ export default function BookmarkScreen({ navigation, route }: any) {
         >
           {collectionName}
         </AppText>
+        <TouchableOpacity
+          testID="collection-reminder-button"
+          onPress={handleCollectionReminder}
+          className="ml-2 p-1"
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons
+            name={collectionReminder ? 'notifications' : 'notifications-outline'}
+            size={24}
+            color={collectionReminder ? colors.secondary : colors.text}
+          />
+        </TouchableOpacity>
       </View>
 
       {mantras.length === 0 ? (
