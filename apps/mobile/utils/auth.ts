@@ -1,19 +1,23 @@
 import { Alert } from 'react-native';
 import { storage } from './storage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const THEME_STORAGE_KEY = '@app_theme';
 
 export const logoutUser = async (navigation: any) => {
   try {
-    if (typeof storage.removeToken === 'function') {
-      await storage.removeToken();
-    } else if (typeof storage.saveToken === 'function') {
-      await storage.saveToken('');
-    }
+    // Execute all cleanup operations in parallel
+    await Promise.all([
+      // Remove theme
+      AsyncStorage.removeItem(THEME_STORAGE_KEY),
+      // Remove token
+      typeof storage.removeToken === 'function' ? storage.removeToken() : storage.saveToken(''),
 
-    if (typeof storage.removeUserData === 'function') {
-      await storage.removeUserData();
-    } else if (typeof storage.saveUserData === 'function') {
-      await storage.saveUserData(null);
-    }
+      // Remove user data
+      typeof storage.removeUserData === 'function'
+        ? storage.removeUserData()
+        : storage.saveUserData(null),
+    ]);
 
     navigation.reset({
       index: 0,

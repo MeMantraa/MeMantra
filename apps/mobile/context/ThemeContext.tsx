@@ -37,8 +37,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Check immediately
     checkToken();
 
-    // Check periodically (every 500ms) to catch login/logout
-    const interval = setInterval(checkToken, 500);
+    // Check periodically (every 50ms) to catch login/logout
+    const interval = setInterval(checkToken, 50);
     return () => clearInterval(interval);
   }, []);
 

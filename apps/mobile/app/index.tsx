@@ -246,9 +246,53 @@ export default function MainNavigator() {
           }}
         >
           {/* Always register MainApp so Login can navigate to it */}
-          <Stack.Screen name="MainApp" component={BottomTabNavigator} />
-          <Stack.Screen name="Login" component={Login} options={{ headerTitle: 'Login' }} />
-          <Stack.Screen name="Signup" component={Signup} options={{ headerTitle: 'Signup' }} />
+          <Stack.Screen
+            name="MainApp"
+            component={BottomTabNavigator}
+            options={{
+              cardStyleInterpolator: ({ current }) => ({
+                cardStyle: {
+                  opacity: current.progress,
+                },
+              }),
+              transitionSpec: {
+                open: { animation: 'timing', config: { duration: 400 } },
+                close: { animation: 'timing', config: { duration: 400 } },
+              },
+            }}
+          />
+          <Stack.Screen
+            name="Login"
+            component={Login}
+            options={{
+              headerTitle: 'Login',
+              cardStyleInterpolator: ({ current }) => ({
+                cardStyle: {
+                  opacity: current.progress,
+                },
+              }),
+              transitionSpec: {
+                open: { animation: 'timing', config: { duration: 400 } },
+                close: { animation: 'timing', config: { duration: 400 } },
+              },
+            }}
+          />
+          <Stack.Screen
+            name="Signup"
+            component={Signup}
+            options={{
+              headerTitle: 'Signup',
+              cardStyleInterpolator: ({ current }) => ({
+                cardStyle: {
+                  opacity: current.progress,
+                },
+              }),
+              transitionSpec: {
+                open: { animation: 'timing', config: { duration: 400 } },
+                close: { animation: 'timing', config: { duration: 400 } },
+              },
+            }}
+          />
           <Stack.Screen
             name="ForgotPassword"
             component={ForgotPasswordScreen}
