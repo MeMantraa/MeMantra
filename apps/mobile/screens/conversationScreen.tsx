@@ -184,7 +184,6 @@ export default function ConversationScreen({ route, navigation }: any) {
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         {renderContent()}
 
