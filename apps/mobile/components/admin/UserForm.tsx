@@ -9,6 +9,7 @@ interface UserFormProps {
     username: string;
     email: string;
     password: string;
+    confirmPassword: string;
   };
   onFormChange: (field: string, value: string) => void;
   onSubmit: () => void;
@@ -55,7 +56,7 @@ export default function UserForm({
       />
 
       <AppTextInput
-        className="rounded-2xl px-4 py-3 mb-4 text-base"
+        className="rounded-2xl px-4 py-3 mb-3 text-base"
         placeholder={isEdit ? 'Password (leave empty to keep current)' : 'Password *'}
         placeholderTextColor="#d9d9d9"
         value={formData.password}
@@ -65,6 +66,20 @@ export default function UserForm({
         autoCapitalize="none"
         style={{ backgroundColor: '#ffffff' }}
       />
+
+      {!isEdit && (
+        <AppTextInput
+          className="rounded-2xl px-4 py-3 mb-4 text-base"
+          placeholder="Confirm Password *"
+          placeholderTextColor="#d9d9d9"
+          value={formData.confirmPassword}
+          onChangeText={(text) => onFormChange('confirmPassword', text)}
+          secureTextEntry
+          editable={!submitting}
+          autoCapitalize="none"
+          style={{ backgroundColor: '#ffffff' }}
+        />
+      )}
 
       <TouchableOpacity
         accessibilityRole="button"

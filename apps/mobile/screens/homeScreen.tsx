@@ -22,6 +22,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useSavedMantras } from '../context/SavedContext';
 import SavedPopupBar from '../components/UI/savedPopupBar';
 import CollectionsSheet from '../components/collectionsSheet';
+import { useReminders } from '../hooks/useReminders';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -39,6 +40,7 @@ export default function HomeScreen({ navigation, route }: any) {
   const [readyToShowFeed, setReadyToShowFeed] = useState(false);
 
   const { colors } = useTheme();
+  const { remindersByMantra, handleReminderPress } = useReminders();
 
   const listRef = useRef<FlatList<Mantra>>(null);
   const { setSavedMantras } = useSavedMantras();
@@ -198,6 +200,10 @@ export default function HomeScreen({ navigation, route }: any) {
     navigation.navigate('JournalEditor', { mantraId, mantraTitle });
   };
 
+  const handleReminder = (mantraId: number) => {
+    handleReminderPress('mantra', mantraId, navigation);
+  };
+
   const handleSelectCollection = async (collectionId: number) => {
     if (!currentMantraId) {
       Alert.alert('Error', 'No mantra selected');
@@ -331,6 +337,8 @@ export default function HomeScreen({ navigation, route }: any) {
             onSave={handleSave}
             onShare={handleShare}
             onJournal={handleJournal}
+            onReminder={handleReminder}
+            hasReminder={remindersByMantra.has(item.mantra_id)}
             onPress={() =>
               navigation.navigate('Focus', {
                 mantra: item,

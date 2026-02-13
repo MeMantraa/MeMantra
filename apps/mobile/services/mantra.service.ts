@@ -64,7 +64,7 @@ export interface MantraDetailResponse {
 export interface SingleMantraResponse {
   status: string;
   message?: string;
-  data: Mantra;
+  data: { mantra: Mantra };
 }
 
 export interface MantraMutationResponse {
@@ -290,9 +290,11 @@ const mockMantraService = {
     return {
       status: 'success',
       data: {
-        ...mantra,
-        isLiked: mockUserState.likedMantras.has(mantra.mantra_id),
-        isSaved: mockUserState.savedMantras.has(mantra.mantra_id),
+        mantra: {
+          ...mantra,
+          isLiked: mockUserState.likedMantras.has(mantra.mantra_id),
+          isSaved: mockUserState.savedMantras.has(mantra.mantra_id),
+        },
       },
     };
   },

@@ -68,19 +68,23 @@ describe('UpdatePasswordScreen', () => {
     expect(getByText('Update Password')).toBeTruthy();
     expect(getByText('Back')).toBeTruthy();
     expect(getByText('Save Password')).toBeTruthy();
+    expect(getByPlaceholderText('Current password')).toBeTruthy();
     expect(getByPlaceholderText('New password')).toBeTruthy();
     expect(getByPlaceholderText('Confirm password')).toBeTruthy();
   });
 
-  it('updates password and confirm password inputs when user types', () => {
+  it('updates password inputs when user types', () => {
     const { getByPlaceholderText } = render(<UpdatePasswordScreen />);
 
+    const oldPasswordInput = getByPlaceholderText('Current password');
     const passwordInput = getByPlaceholderText('New password');
     const confirmInput = getByPlaceholderText('Confirm password');
 
+    fireEvent.changeText(oldPasswordInput, 'oldpassword123');
     fireEvent.changeText(passwordInput, 'memantra123');
     fireEvent.changeText(confirmInput, 'memantra123');
 
+    expect(oldPasswordInput.props.value).toBe('oldpassword123');
     expect(passwordInput.props.value).toBe('memantra123');
     expect(confirmInput.props.value).toBe('memantra123');
   });
@@ -93,10 +97,29 @@ describe('UpdatePasswordScreen', () => {
     expect(backButton).toBeTruthy();
   });
 
-  it('shows error when password is less than 6 characters', () => {
+  it('shows error when current password is missing', () => {
     const { getByPlaceholderText, getByText } = render(<UpdatePasswordScreen />);
 
     const passwordInput = getByPlaceholderText('New password');
+    const confirmInput = getByPlaceholderText('Confirm password');
+
+    fireEvent.changeText(passwordInput, 'newpassword123');
+    fireEvent.changeText(confirmInput, 'newpassword123');
+
+    const saveButton = getByText('Save Password');
+    fireEvent.press(saveButton);
+
+    expect(Alert.alert).toHaveBeenCalledWith('Error', 'Current password is required.');
+    expect(authService.updatePassword).not.toHaveBeenCalled();
+  });
+
+  it('shows error when password is less than 6 characters', () => {
+    const { getByPlaceholderText, getByText } = render(<UpdatePasswordScreen />);
+
+    const oldPasswordInput = getByPlaceholderText('Current password');
+    const passwordInput = getByPlaceholderText('New password');
+
+    fireEvent.changeText(oldPasswordInput, 'oldpassword');
     fireEvent.changeText(passwordInput, 'mema');
 
     const saveButton = getByText('Save Password');
@@ -109,9 +132,11 @@ describe('UpdatePasswordScreen', () => {
   it('shows error when passwords do not match', () => {
     const { getByPlaceholderText, getByText } = render(<UpdatePasswordScreen />);
 
+    const oldPasswordInput = getByPlaceholderText('Current password');
     const passwordInput = getByPlaceholderText('New password');
     const confirmInput = getByPlaceholderText('Confirm password');
 
+    fireEvent.changeText(oldPasswordInput, 'oldpassword');
     fireEvent.changeText(passwordInput, 'memantra123');
     fireEvent.changeText(confirmInput, 'memantra456');
 
@@ -127,9 +152,11 @@ describe('UpdatePasswordScreen', () => {
 
     const { getByPlaceholderText, getByText } = render(<UpdatePasswordScreen />);
 
+    const oldPasswordInput = getByPlaceholderText('Current password');
     const passwordInput = getByPlaceholderText('New password');
     const confirmInput = getByPlaceholderText('Confirm password');
 
+    fireEvent.changeText(oldPasswordInput, 'oldpassword');
     fireEvent.changeText(passwordInput, 'memantra123');
     fireEvent.changeText(confirmInput, 'memantra123');
 
@@ -147,9 +174,11 @@ describe('UpdatePasswordScreen', () => {
 
     const { getByPlaceholderText, getByText } = render(<UpdatePasswordScreen />);
 
+    const oldPasswordInput = getByPlaceholderText('Current password');
     const passwordInput = getByPlaceholderText('New password');
     const confirmInput = getByPlaceholderText('Confirm password');
 
+    fireEvent.changeText(oldPasswordInput, 'oldpassword');
     fireEvent.changeText(passwordInput, 'newmemantra123');
     fireEvent.changeText(confirmInput, 'newmemantra123');
 
@@ -173,9 +202,11 @@ describe('UpdatePasswordScreen', () => {
 
     const { getByPlaceholderText, getByText } = render(<UpdatePasswordScreen />);
 
+    const oldPasswordInput = getByPlaceholderText('Current password');
     const passwordInput = getByPlaceholderText('New password');
     const confirmInput = getByPlaceholderText('Confirm password');
 
+    fireEvent.changeText(oldPasswordInput, 'oldpassword');
     fireEvent.changeText(passwordInput, 'newmemantra123');
     fireEvent.changeText(confirmInput, 'newmemantra123');
 
@@ -200,9 +231,11 @@ describe('UpdatePasswordScreen', () => {
 
     const { getByPlaceholderText, getByText } = render(<UpdatePasswordScreen />);
 
+    const oldPasswordInput = getByPlaceholderText('Current password');
     const passwordInput = getByPlaceholderText('New password');
     const confirmInput = getByPlaceholderText('Confirm password');
 
+    fireEvent.changeText(oldPasswordInput, 'oldpassword');
     fireEvent.changeText(passwordInput, 'newpassword123');
     fireEvent.changeText(confirmInput, 'newpassword123');
 
@@ -219,12 +252,14 @@ describe('UpdatePasswordScreen', () => {
     }
   });
 
-  it('secureTextEntry is enabled for both password inputs', () => {
+  it('secureTextEntry is enabled for all password inputs', () => {
     const { getByPlaceholderText } = render(<UpdatePasswordScreen />);
 
+    const oldPasswordInput = getByPlaceholderText('Current password');
     const passwordInput = getByPlaceholderText('New password');
     const confirmInput = getByPlaceholderText('Confirm password');
 
+    expect(oldPasswordInput.props.secureTextEntry).toBe(true);
     expect(passwordInput.props.secureTextEntry).toBe(true);
     expect(confirmInput.props.secureTextEntry).toBe(true);
   });

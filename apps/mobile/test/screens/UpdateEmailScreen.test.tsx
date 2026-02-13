@@ -70,29 +70,23 @@ describe('UpdateEmailScreen', () => {
       expect(getByText('Update Email')).toBeTruthy();
       expect(getByText('Back')).toBeTruthy();
       expect(getByText('Save Email')).toBeTruthy();
-      expect(getByPlaceholderText('Enter new email')).toBeTruthy();
+      expect(getByPlaceholderText('Current email')).toBeTruthy();
+      expect(getByPlaceholderText('Current password')).toBeTruthy();
+      expect(getByPlaceholderText('New email')).toBeTruthy();
     });
   });
 
-  it('loads and displays current email from storage', async () => {
+  it('starts with empty input fields', async () => {
     const { getByPlaceholderText } = render(<UpdateEmailScreen />);
 
     await waitFor(() => {
-      const input = getByPlaceholderText('Enter new email');
-      expect(input.props.value).toBe('test@memantra.com');
-    });
+      const oldEmailInput = getByPlaceholderText('Current email');
+      const passwordInput = getByPlaceholderText('Current password');
+      const newEmailInput = getByPlaceholderText('New email');
 
-    expect(storage.getUserData).toHaveBeenCalledTimes(1);
-  });
-
-  it('handles missing email in userData by setting empty string', async () => {
-    (storage.getUserData as jest.Mock).mockResolvedValue({ email: null });
-
-    const { getByPlaceholderText } = render(<UpdateEmailScreen />);
-
-    await waitFor(() => {
-      const input = getByPlaceholderText('Enter new email');
-      expect(input.props.value).toBe('');
+      expect(oldEmailInput.props.value).toBe('');
+      expect(passwordInput.props.value).toBe('');
+      expect(newEmailInput.props.value).toBe('');
     });
   });
 
@@ -108,17 +102,48 @@ describe('UpdateEmailScreen', () => {
     expect(backButton).toBeTruthy();
   });
 
-  it('updates email input when user types', async () => {
+  it('shows error when required fields are missing', () => {
+    const { getByText } = render(<UpdateEmailScreen />);
+
+    const saveButton = getByText('Save Email');
+    fireEvent.press(saveButton);
+
+    expect(Alert.alert).toHaveBeenCalledWith('Error', 'All fields are required');
+    expect(authService.updateEmail).not.toHaveBeenCalled();
+  });
+
+  it('shows error when new email is same as old email', () => {
+    const { getByPlaceholderText, getByText } = render(<UpdateEmailScreen />);
+
+    const oldEmailInput = getByPlaceholderText('Current email');
+    const passwordInput = getByPlaceholderText('Current password');
+    const newEmailInput = getByPlaceholderText('New email');
+
+    fireEvent.changeText(oldEmailInput, 'same@memantra.com');
+    fireEvent.changeText(passwordInput, 'password123');
+    fireEvent.changeText(newEmailInput, 'same@memantra.com');
+
+    const saveButton = getByText('Save Email');
+    fireEvent.press(saveButton);
+
+    expect(Alert.alert).toHaveBeenCalledWith('Error', 'New email must be different from old email');
+    expect(authService.updateEmail).not.toHaveBeenCalled();
+  });
+
+  it('updates email inputs when user types', async () => {
     const { getByPlaceholderText } = render(<UpdateEmailScreen />);
 
-    await waitFor(() => {
-      const input = getByPlaceholderText('Enter new email');
-      expect(input).toBeTruthy();
-    });
+    const oldEmailInput = getByPlaceholderText('Current email');
+    const passwordInput = getByPlaceholderText('Current password');
+    const newEmailInput = getByPlaceholderText('New email');
 
-    const input = getByPlaceholderText('Enter new email');
-    fireEvent.changeText(input, 'newemail@memantra.com');
-    expect(input.props.value).toBe('newemail@memantra.com');
+    fireEvent.changeText(oldEmailInput, 'old@memantra.com');
+    fireEvent.changeText(passwordInput, 'password123');
+    fireEvent.changeText(newEmailInput, 'newemail@memantra.com');
+
+    expect(oldEmailInput.props.value).toBe('old@memantra.com');
+    expect(passwordInput.props.value).toBe('password123');
+    expect(newEmailInput.props.value).toBe('newemail@memantra.com');
   });
 
   it('successfully updates email and logs out user', async () => {
@@ -126,13 +151,13 @@ describe('UpdateEmailScreen', () => {
 
     const { getByPlaceholderText, getByText } = render(<UpdateEmailScreen />);
 
-    await waitFor(() => {
-      const input = getByPlaceholderText('Enter new email');
-      expect(input).toBeTruthy();
-    });
+    const oldEmailInput = getByPlaceholderText('Current email');
+    const passwordInput = getByPlaceholderText('Current password');
+    const newEmailInput = getByPlaceholderText('New email');
 
-    const input = getByPlaceholderText('Enter new email');
-    fireEvent.changeText(input, 'newemail@memantra.com');
+    fireEvent.changeText(oldEmailInput, 'old@memantra.com');
+    fireEvent.changeText(passwordInput, 'password123');
+    fireEvent.changeText(newEmailInput, 'newemail@memantra.com');
 
     const saveButton = getByText('Save Email');
     fireEvent.press(saveButton);
@@ -150,11 +175,15 @@ describe('UpdateEmailScreen', () => {
   it('shows error when token is not available', async () => {
     (storage.getToken as jest.Mock).mockResolvedValue(null);
 
-    const { getByText } = render(<UpdateEmailScreen />);
+    const { getByPlaceholderText, getByText } = render(<UpdateEmailScreen />);
 
-    await waitFor(() => {
-      expect(getByText('Save Email')).toBeTruthy();
-    });
+    const oldEmailInput = getByPlaceholderText('Current email');
+    const passwordInput = getByPlaceholderText('Current password');
+    const newEmailInput = getByPlaceholderText('New email');
+
+    fireEvent.changeText(oldEmailInput, 'old@memantra.com');
+    fireEvent.changeText(passwordInput, 'password123');
+    fireEvent.changeText(newEmailInput, 'new@memantra.com');
 
     const saveButton = getByText('Save Email');
     fireEvent.press(saveButton);
@@ -173,13 +202,13 @@ describe('UpdateEmailScreen', () => {
 
     const { getByPlaceholderText, getByText } = render(<UpdateEmailScreen />);
 
-    await waitFor(() => {
-      const input = getByPlaceholderText('Enter new email');
-      expect(input).toBeTruthy();
-    });
+    const oldEmailInput = getByPlaceholderText('Current email');
+    const passwordInput = getByPlaceholderText('Current password');
+    const newEmailInput = getByPlaceholderText('New email');
 
-    const input = getByPlaceholderText('Enter new email');
-    fireEvent.changeText(input, 'existing@memantra.com');
+    fireEvent.changeText(oldEmailInput, 'old@memantra.com');
+    fireEvent.changeText(passwordInput, 'password123');
+    fireEvent.changeText(newEmailInput, 'existing@memantra.com');
 
     const saveButton = getByText('Save Email');
     fireEvent.press(saveButton);
@@ -195,13 +224,13 @@ describe('UpdateEmailScreen', () => {
 
     const { getByPlaceholderText, getByText } = render(<UpdateEmailScreen />);
 
-    await waitFor(() => {
-      const input = getByPlaceholderText('Enter new email');
-      expect(input).toBeTruthy();
-    });
+    const oldEmailInput = getByPlaceholderText('Current email');
+    const passwordInput = getByPlaceholderText('Current password');
+    const newEmailInput = getByPlaceholderText('New email');
 
-    const input = getByPlaceholderText('Enter new email');
-    fireEvent.changeText(input, 'test@memantra.com');
+    fireEvent.changeText(oldEmailInput, 'old@memantra.com');
+    fireEvent.changeText(passwordInput, 'password123');
+    fireEvent.changeText(newEmailInput, 'test@memantra.com');
 
     const saveButton = getByText('Save Email');
     fireEvent.press(saveButton);

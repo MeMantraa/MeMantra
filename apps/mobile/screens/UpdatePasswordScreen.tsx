@@ -12,10 +12,14 @@ import { useTheme } from '../context/ThemeContext';
 export default function UpdatePasswordScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation();
+  const [oldPassword, setOldPassword] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
 
   const handleUpdate = async () => {
+    if (!oldPassword.trim()) {
+      return Alert.alert('Error', 'Current password is required.');
+    }
     if (password.length < 6) {
       return Alert.alert('Error', 'Password must be at least 6 characters.');
     }
@@ -58,6 +62,15 @@ export default function UpdatePasswordScreen() {
       </TouchableOpacity>
 
       <AppText style={[styles.title, { color: colors.black }]}>Update Password</AppText>
+
+      <AppTextInput
+        style={[styles.input, { borderColor: colors.primary }]}
+        secureTextEntry
+        placeholder="Current password"
+        placeholderTextColor="#aaa"
+        value={oldPassword}
+        onChangeText={setOldPassword}
+      />
 
       <AppTextInput
         style={[styles.input, { borderColor: colors.primary }]}

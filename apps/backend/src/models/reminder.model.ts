@@ -32,6 +32,29 @@ export const ReminderModel = {
       .execute();
   },
 
+  // Get all reminders for a user with linked mantra/collection names
+  async findByUserIdWithNames(userId: number): Promise<Array<Reminder & { mantra_title: string | null; collection_name: string | null }>> {
+    return await db
+      .selectFrom('Reminder')
+      .leftJoin('Mantra', 'Mantra.mantra_id', 'Reminder.mantra_id')
+      .leftJoin('Collection', 'Collection.collection_id', 'Reminder.collection_id')
+      .where('Reminder.user_id', '=', userId)
+      .select([
+        'Reminder.reminder_id',
+        'Reminder.user_id',
+        'Reminder.mantra_id',
+        'Reminder.collection_id',
+        'Reminder.time',
+        'Reminder.frequency',
+        'Reminder.status',
+        'Reminder.last_sent_at',
+        'Mantra.title as mantra_title',
+        'Collection.name as collection_name',
+      ])
+      .orderBy('Reminder.time', 'asc')
+      .execute();
+  },
+
   // Get all reminders for a specific mantra
   async findByMantraId(mantraId: number): Promise<Reminder[]> {
     return await db

@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import MantraCarousel from '../components/carousel';
 import { Mantra } from '../services/mantra.service';
 import { useTheme } from '../context/ThemeContext';
+import { useReminders } from '../hooks/useReminders';
 
 export default function FocusScreen({ route, navigation }: any) {
   const { mantra, onLike, onSave } = route.params as {
@@ -13,9 +14,15 @@ export default function FocusScreen({ route, navigation }: any) {
   };
 
   const { colors } = useTheme();
+  const { getReminderForMantra, handleReminderPress } = useReminders();
+  const mantraReminder = getReminderForMantra(mantra.mantra_id);
 
   const handleJournal = (mantraId: number, mantraTitle: string) => {
     navigation.navigate('JournalEditor', { mantraId, mantraTitle });
+  };
+
+  const handleReminder = () => {
+    handleReminderPress('mantra', mantra.mantra_id, navigation);
   };
 
   return (
@@ -28,6 +35,21 @@ export default function FocusScreen({ route, navigation }: any) {
         accessibilityRole="button"
       >
         <Ionicons name="chevron-back" size={32} color={colors.text} />
+      </TouchableOpacity>
+
+      {/* Reminder button next to journal */}
+      <TouchableOpacity
+        onPress={handleReminder}
+        className="absolute z-20 p-2"
+        style={{ top: 60, right: 60 }}
+        testID="reminder-button"
+        accessibilityRole="button"
+      >
+        <Ionicons
+          name={mantraReminder ? 'notifications' : 'notifications-outline'}
+          size={28}
+          color={mantraReminder ? colors.secondary : colors.text}
+        />
       </TouchableOpacity>
 
       {/* Journal button in top-right corner */}
