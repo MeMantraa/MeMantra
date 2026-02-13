@@ -6,18 +6,22 @@ const THEME_STORAGE_KEY = '@app_theme';
 
 export const logoutUser = async (navigation: any) => {
   try {
-    // Execute all cleanup operations in parallel
-    await Promise.all([
-      // Remove theme
-      AsyncStorage.removeItem(THEME_STORAGE_KEY),
-      // Remove token
-      typeof storage.removeToken === 'function' ? storage.removeToken() : storage.saveToken(''),
+    // Remove theme
+    await AsyncStorage.removeItem(THEME_STORAGE_KEY);
 
-      // Remove user data
-      typeof storage.removeUserData === 'function'
-        ? storage.removeUserData()
-        : storage.saveUserData(null),
-    ]);
+    if (typeof storage.removeToken === 'function') {
+      await storage.removeToken();
+    } else if (typeof storage.saveToken === 'function') {
+      await storage.saveToken('');
+    }
+
+    if (typeof storage.removeUserData === 'function') {
+      await storage.removeUserData();
+    } else if (typeof storage.saveUserData === 'function') {
+      await storage.saveUserData(null);
+    }
+    // Small delay to let theme context update
+    await new Promise((resolve) => setTimeout(resolve, 50));
 
     navigation.reset({
       index: 0,
