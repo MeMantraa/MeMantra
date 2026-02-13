@@ -1,4 +1,3 @@
-// context/ThemeContext.tsx
 import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { themes, ThemeName } from '../styles/theme';
@@ -11,7 +10,7 @@ type ThemeContextType = {
   theme: ThemeName;
   colors: ThemeColors;
   setTheme: (themeName: ThemeName) => void;
-  resetToDefault: () => void; // Add this
+  resetToDefault: () => void;
 };
 
 const ThemeContext = createContext<ThemeContextType>({
@@ -37,22 +36,19 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Check immediately
     checkToken();
 
-    // Check periodically (every 50ms) to catch login/logout
     const interval = setInterval(checkToken, 50);
     return () => clearInterval(interval);
   }, []);
 
-  // Load theme whenever auth token changes
   useEffect(() => {
     const loadTheme = async () => {
       if (!authToken) {
-        // No token = logged out, reset to default
         setThemeState('default');
         await AsyncStorage.removeItem(THEME_STORAGE_KEY);
         return;
       }
 
-      // User is logged in - fetch their theme
+      // Login fetch user theme
       try {
         const response = await userService.getTheme(authToken);
         const serverTheme = response.data.theme as ThemeName;
@@ -69,7 +65,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
 
     loadTheme();
-  }, [authToken]); // Re-run whenever authToken changes
+  }, [authToken]);
 
   const setTheme = async (themeName: ThemeName) => {
     setThemeState(themeName);

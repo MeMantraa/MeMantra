@@ -2,17 +2,38 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import { ThemeProvider, useTheme, ThemeContext } from '../../context/ThemeContext';
 import { themes } from '../../styles/theme';
-import { Text, Button } from 'react-native';
+import { Button } from 'react-native';
 import AppText from '../../components/UI/textWrapper';
 
-const TestComponent = () => {
-  const { theme, colors, toggleTheme } = useTheme();
+jest.mock('@react-native-async-storage/async-storage', () => ({
+  __esModule: true,
+  default: {
+    setItem: jest.fn(() => Promise.resolve()),
+    getItem: jest.fn(() => Promise.resolve(null)),
+    removeItem: jest.fn(() => Promise.resolve()),
+  },
+}));
 
+jest.mock('../../utils/storage', () => ({
+  storage: {
+    getToken: jest.fn(() => Promise.resolve(null)),
+  },
+}));
+
+jest.mock('../../services/user.service', () => ({
+  userService: {
+    getTheme: jest.fn(),
+    updateTheme: jest.fn(),
+  },
+}));
+
+const TestComponent = () => {
+  const { theme, colors, setTheme } = useTheme();
   return (
     <>
       <AppText>{theme}</AppText>
       <AppText>{colors.primary}</AppText>
-      <Button title="toggle" onPress={toggleTheme} />
+      <Button title="toggle" onPress={() => setTheme('default')} />
     </>
   );
 };
@@ -29,9 +50,7 @@ describe('ThemeContext', () => {
     expect(screen.getByText(themes.default.primary)).toBeTruthy();
   });
 
-  it('calls toggleTheme and logs message', () => {
-    const logSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
-
+  it('calls setTheme when button is pressed', () => {
     render(
       <ThemeProvider>
         <TestComponent />
@@ -40,24 +59,20 @@ describe('ThemeContext', () => {
 
     fireEvent.press(screen.getByText('toggle'));
 
-    expect(logSpy).toHaveBeenCalledWith('Only one theme available for now');
-
-    logSpy.mockRestore();
+    expect(screen.getByText('default')).toBeTruthy();
   });
 
   describe('ThemeContext default value', () => {
-    it('toggleTheme default function can be called', () => {
+    it('setTheme default function can be called', () => {
       let called = false;
-
       const TestComponent = () => {
-        const { toggleTheme } = React.useContext(ThemeContext);
-        toggleTheme();
+        const { setTheme } = React.useContext(ThemeContext);
+        setTheme('default');
         called = true;
         return null;
       };
 
       render(<TestComponent />);
-
       expect(called).toBe(true);
     });
   });

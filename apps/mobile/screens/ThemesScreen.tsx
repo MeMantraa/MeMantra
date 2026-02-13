@@ -1,4 +1,3 @@
-// screens/ThemesScreen.tsx
 import React from 'react';
 import { View, TouchableOpacity, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
