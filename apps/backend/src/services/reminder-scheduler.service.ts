@@ -179,10 +179,16 @@ export const ReminderSchedulerService = {
   },
 
   /**
-   * Process a single reminder
-   * @param reminder - Reminder with user and mantra details
+   * Shared processing logic for both mantra and collection reminders.
+   * Handles frequency checks, base validation, content validation,
+   * notification sending, and post-send updates.
    */
-  async processReminder(reminder: ReminderWithDetails): Promise<ProcessResult> {
+  async processReminderGeneric<T extends BaseReminderDetails>(
+    reminder: T,
+    reminderType: 'Reminder' | 'Collection Reminder',
+    validateContent: (r: T) => string | null,
+    sendNotification: (r: T) => Promise<void>,
+  ): Promise<ProcessResult> {
     const { reminder_id, frequency, last_sent_at } = reminder;
 
     try {
@@ -201,33 +207,52 @@ export const ReminderSchedulerService = {
       }
 
       // Validate base requirements
-      const baseError = this.validateReminderBase(reminder, 'Reminder');
+      const baseError = this.validateReminderBase(reminder, reminderType);
       if (baseError) {
         return { reminderId: reminder_id, success: false, error: baseError };
       }
 
-      // Validate mantra-specific requirements
-      if (!reminder.mantra_key_takeaway) {
-        console.warn(
-          `⚠️  Reminder ${reminder_id}: Mantra has no key takeaway, skipping`
-        );
-        return { reminderId: reminder_id, success: false, error: 'No mantra content' };
+      // Validate content-specific requirements
+      const contentError = validateContent(reminder);
+      if (contentError) {
+        return { reminderId: reminder_id, success: false, error: contentError };
       }
 
       // Send the notification
-      await this.sendReminderNotification(reminder);
+      await sendNotification(reminder);
       await this.updateReminderAfterSend(reminder_id, frequency);
 
-      console.log(`✅ Reminder ${reminder_id} sent successfully`);
+      console.log(`✅ ${reminderType} ${reminder_id} sent successfully`);
       return { reminderId: reminder_id, success: true };
     } catch (error) {
-      console.error(`❌ Error processing reminder ${reminder_id}:`, error);
+      console.error(`❌ Error processing ${reminderType.toLowerCase()} ${reminder_id}:`, error);
       return {
         reminderId: reminder_id,
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
+  },
+
+  /**
+   * Process a single reminder
+   * @param reminder - Reminder with user and mantra details
+   */
+  async processReminder(reminder: ReminderWithDetails): Promise<ProcessResult> {
+    return this.processReminderGeneric(
+      reminder,
+      'Reminder',
+      (r) => {
+        if (!r.mantra_key_takeaway) {
+          console.warn(
+            `⚠️  Reminder ${r.reminder_id}: Mantra has no key takeaway, skipping`
+          );
+          return 'No mantra content';
+        }
+        return null;
+      },
+      (r) => this.sendReminderNotification(r),
+    );
   },
 
   /**
@@ -290,8 +315,8 @@ export const ReminderSchedulerService = {
       hour12: false,
     });
     const parts = formatter.formatToParts(now);
-    const hour = parseInt(parts.find(p => p.type === 'hour')?.value ?? '0', 10);
-    const minute = parseInt(parts.find(p => p.type === 'minute')?.value ?? '0', 10);
+    const hour = Number.parseInt(parts.find(p => p.type === 'hour')?.value ?? '0', 10);
+    const minute = Number.parseInt(parts.find(p => p.type === 'minute')?.value ?? '0', 10);
     const weekdayStr = parts.find(p => p.type === 'weekday')?.value ?? 'Sun';
     const dayOfWeek = DAY_MAP[weekdayStr] ?? 0;
     return { hour, minute, dayOfWeek };
@@ -366,51 +391,20 @@ export const ReminderSchedulerService = {
    * @param reminder - Collection reminder with user and collection details
    */
   async processCollectionReminder(reminder: CollectionReminderWithDetails): Promise<ProcessResult> {
-    const { reminder_id, frequency, last_sent_at } = reminder;
-
-    try {
-      // Check if reminder should be sent based on frequency
-      if (frequency === 'routine') {
-        if (!this.shouldSendRoutineReminder(
-          reminder.schedule_times,
-          reminder.schedule_days,
-          reminder.timezone,
-          last_sent_at
-        )) {
-          return { reminderId: reminder_id, success: true };
+    return this.processReminderGeneric(
+      reminder,
+      'Collection Reminder',
+      (r) => {
+        if (!r.collection_name) {
+          console.warn(
+            `⚠️  Collection Reminder ${r.reminder_id}: Collection has no name, skipping`
+          );
+          return 'No collection name';
         }
-      } else if (!this.shouldSendReminder(frequency, last_sent_at)) {
-        return { reminderId: reminder_id, success: true };
-      }
-
-      // Validate base requirements
-      const baseError = this.validateReminderBase(reminder, 'Collection Reminder');
-      if (baseError) {
-        return { reminderId: reminder_id, success: false, error: baseError };
-      }
-
-      // Validate collection-specific requirements
-      if (!reminder.collection_name) {
-        console.warn(
-          `⚠️  Collection Reminder ${reminder_id}: Collection has no name, skipping`
-        );
-        return { reminderId: reminder_id, success: false, error: 'No collection name' };
-      }
-
-      // Send the notification
-      await this.sendCollectionReminderNotification(reminder);
-      await this.updateReminderAfterSend(reminder_id, frequency);
-
-      console.log(`✅ Collection Reminder ${reminder_id} sent successfully`);
-      return { reminderId: reminder_id, success: true };
-    } catch (error) {
-      console.error(`❌ Error processing collection reminder ${reminder_id}:`, error);
-      return {
-        reminderId: reminder_id,
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
-    }
+        return null;
+      },
+      (r) => this.sendCollectionReminderNotification(r),
+    );
   },
 
   /**

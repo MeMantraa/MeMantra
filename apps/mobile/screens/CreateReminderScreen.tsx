@@ -39,7 +39,15 @@ const SIMPLE_FREQUENCIES: { label: string; value: SimpleFrequency }[] = [
   { label: 'Monthly', value: 'monthly' },
 ];
 
-const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const DAYS_OF_WEEK = [
+  { key: 'sun', label: 'S', day: 0 },
+  { key: 'mon', label: 'M', day: 1 },
+  { key: 'tue', label: 'T', day: 2 },
+  { key: 'wed', label: 'W', day: 3 },
+  { key: 'thu', label: 'T', day: 4 },
+  { key: 'fri', label: 'F', day: 5 },
+  { key: 'sat', label: 'S', day: 6 },
+];
 
 type ReminderType = 'mantra' | 'collection';
 
@@ -684,13 +692,7 @@ export default function CreateReminderScreen() {
                 <View key={`${t}-${index}`} style={styles.timeSlotRow}>
                   <TouchableOpacity
                     style={styles.timeSlotButton}
-                    onPress={() => {
-                      if (Platform.OS === 'ios') {
-                        openRoutineTimePicker(index);
-                      } else {
-                        openRoutineTimePicker(index);
-                      }
-                    }}
+                    onPress={() => openRoutineTimePicker(index)}
                   >
                     <Ionicons name="time-outline" size={20} color="#8E9A86" />
                     <Text style={styles.timeSlotText}>
@@ -736,19 +738,19 @@ export default function CreateReminderScreen() {
               </View>
               {dayPreset === 'custom' && (
                 <View style={styles.dayGrid}>
-                  {DAY_LABELS.map((label, index) => (
+                  {DAYS_OF_WEEK.map(({ key, label, day }) => (
                     <TouchableOpacity
-                      key={index}
+                      key={key}
                       style={[
                         styles.dayCircle,
-                        scheduleDays.includes(index) && styles.dayCircleActive,
+                        scheduleDays.includes(day) && styles.dayCircleActive,
                       ]}
-                      onPress={() => toggleDay(index)}
+                      onPress={() => toggleDay(day)}
                     >
                       <Text
                         style={[
                           styles.dayCircleText,
-                          scheduleDays.includes(index) && styles.dayCircleTextActive,
+                          scheduleDays.includes(day) && styles.dayCircleTextActive,
                         ]}
                       >
                         {label}

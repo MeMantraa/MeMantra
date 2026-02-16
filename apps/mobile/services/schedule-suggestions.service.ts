@@ -85,7 +85,7 @@ export const scheduleSuggestionsService = {
       });
       const parts = formatter.formatToParts(new Date());
       const tzAbbrev = parts.find((p) => p.type === 'timeZoneName')?.value || timezone;
-      const location = timezone.split('/').pop()?.replace(/_/g, ' ') || timezone;
+      const location = timezone.split('/').pop()?.replaceAll('_', ' ') || timezone;
       return `${location} (${tzAbbrev})`;
     } catch {
       return timezone;
@@ -94,9 +94,10 @@ export const scheduleSuggestionsService = {
 
   formatTimeForDisplay(timeStr: string): string {
     const [h, m] = timeStr.split(':');
-    const hour = parseInt(h, 10);
+    const hour = Number.parseInt(h, 10);
     const ampm = hour >= 12 ? 'PM' : 'AM';
-    const displayHour = hour === 0 ? 12 : hour > 12 ? hour - 12 : hour;
+    let displayHour = hour % 12;
+    if (displayHour === 0) displayHour = 12;
     return `${displayHour}:${m} ${ampm}`;
   },
 

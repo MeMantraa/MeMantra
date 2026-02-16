@@ -1,6 +1,31 @@
 import { db } from '../db';
 import { Reminder, NewReminder, ReminderUpdate } from '../types/database.types';
 
+/**
+ * Shared WHERE filter for due-reminder queries.
+ * Matches legacy time-based reminders that are due OR routine reminders
+ * (whose time/day matching is handled by the scheduler).
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function buildDueReminderFilter(eb: any, nowIso: string) {
+  return eb.or([
+    eb.and([
+      eb('Reminder.time', '<=', nowIso),
+      eb.or([
+        eb.and([
+          eb('Reminder.frequency', '=', 'once'),
+          eb('Reminder.last_sent_at', 'is', null),
+        ]),
+        eb.and([
+          eb('Reminder.frequency', '!=', 'once'),
+          eb('Reminder.frequency', '!=', 'routine'),
+        ]),
+      ]),
+    ]),
+    eb('Reminder.frequency', '=', 'routine'),
+  ]);
+}
+
 export const ReminderModel = {
   // Create a new reminder
   async create(reminderData: NewReminder): Promise<Reminder> {
@@ -330,26 +355,7 @@ export const ReminderModel = {
       .innerJoin('Mantra', 'Mantra.mantra_id', 'Reminder.mantra_id')
       .where('Reminder.status', '=', 'active')
       .where('Reminder.collection_id', 'is', null)
-      .where((eb) =>
-        eb.or([
-          // Legacy time-based reminders where time has passed
-          eb.and([
-            eb('Reminder.time', '<=', now.toISOString()),
-            eb.or([
-              eb.and([
-                eb('Reminder.frequency', '=', 'once'),
-                eb('Reminder.last_sent_at', 'is', null),
-              ]),
-              eb.and([
-                eb('Reminder.frequency', '!=', 'once'),
-                eb('Reminder.frequency', '!=', 'routine'),
-              ]),
-            ]),
-          ]),
-          // Routine reminders (scheduler checks time/day match)
-          eb('Reminder.frequency', '=', 'routine'),
-        ])
-      )
+      .where((eb) => buildDueReminderFilter(eb, now.toISOString()))
       .select([
         'Reminder.reminder_id',
         'Reminder.user_id',
@@ -396,26 +402,7 @@ export const ReminderModel = {
       .innerJoin('Collection', 'Collection.collection_id', 'Reminder.collection_id')
       .where('Reminder.status', '=', 'active')
       .where('Reminder.collection_id', 'is not', null)
-      .where((eb) =>
-        eb.or([
-          // Legacy time-based reminders where time has passed
-          eb.and([
-            eb('Reminder.time', '<=', now.toISOString()),
-            eb.or([
-              eb.and([
-                eb('Reminder.frequency', '=', 'once'),
-                eb('Reminder.last_sent_at', 'is', null),
-              ]),
-              eb.and([
-                eb('Reminder.frequency', '!=', 'once'),
-                eb('Reminder.frequency', '!=', 'routine'),
-              ]),
-            ]),
-          ]),
-          // Routine reminders (scheduler checks time/day match)
-          eb('Reminder.frequency', '=', 'routine'),
-        ])
-      )
+      .where((eb) => buildDueReminderFilter(eb, now.toISOString()))
       .select([
         'Reminder.reminder_id',
         'Reminder.user_id',
