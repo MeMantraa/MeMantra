@@ -189,6 +189,9 @@ describe('CreateReminderScreen', () => {
   it('shows frequency options and allows selection', async () => {
     const { getByText } = render(<CreateReminderScreen />);
 
+    // Switch to Simple mode (screen defaults to Routine)
+    fireEvent.press(getByText('Simple'));
+
     expect(getByText('Once')).toBeTruthy();
     expect(getByText('Daily')).toBeTruthy();
     expect(getByText('Weekly')).toBeTruthy();
@@ -249,15 +252,17 @@ describe('CreateReminderScreen', () => {
 
     fireEvent.press(getByText('Be Present'));
 
-    // Use testID to target the actual button
+    // Use testID to target the actual button (default mode is routine)
     fireEvent.press(getByTestId('create-reminder-button'));
 
     await waitFor(() => {
       expect(reminderService.createReminder).toHaveBeenCalledWith(
         expect.objectContaining({
           mantra_id: 1,
-          frequency: 'daily',
+          frequency: 'routine',
           status: 'active',
+          schedule_times: expect.any(Array),
+          timezone: expect.any(String),
         }),
         'test-token',
       );
@@ -289,15 +294,17 @@ describe('CreateReminderScreen', () => {
 
     fireEvent.press(getByText('Morning Mantras'));
 
-    // Use testID to target the actual button
+    // Use testID to target the actual button (default mode is routine)
     fireEvent.press(getByTestId('create-reminder-button'));
 
     await waitFor(() => {
       expect(reminderService.createReminder).toHaveBeenCalledWith(
         expect.objectContaining({
           collection_id: 10,
-          frequency: 'daily',
+          frequency: 'routine',
           status: 'active',
+          schedule_times: expect.any(Array),
+          timezone: expect.any(String),
         }),
         'test-token',
       );
@@ -521,6 +528,9 @@ describe('CreateReminderScreen', () => {
       expect(getByText('Be Present')).toBeTruthy();
     });
 
+    // Switch to Simple mode (screen defaults to Routine)
+    fireEvent.press(getByText('Simple'));
+
     fireEvent.press(getByTestId('date-picker-button'));
 
     // On iOS, this opens a modal with Cancel and Done buttons
@@ -538,6 +548,9 @@ describe('CreateReminderScreen', () => {
       expect(getByText('Be Present')).toBeTruthy();
     });
 
+    // Switch to Simple mode (screen defaults to Routine)
+    fireEvent.press(getByText('Simple'));
+
     fireEvent.press(getByTestId('time-picker-button'));
 
     await waitFor(() => {
@@ -551,6 +564,9 @@ describe('CreateReminderScreen', () => {
     await waitFor(() => {
       expect(getByText('Be Present')).toBeTruthy();
     });
+
+    // Switch to Simple mode (screen defaults to Routine)
+    fireEvent.press(getByText('Simple'));
 
     fireEvent.press(getByTestId('date-picker-button'));
 
@@ -571,6 +587,9 @@ describe('CreateReminderScreen', () => {
       expect(getByText('Be Present')).toBeTruthy();
     });
 
+    // Switch to Simple mode (screen defaults to Routine)
+    fireEvent.press(getByText('Simple'));
+
     fireEvent.press(getByTestId('date-picker-button'));
 
     await waitFor(() => {
@@ -588,6 +607,9 @@ describe('CreateReminderScreen', () => {
       expect(getByText('Be Present')).toBeTruthy();
     });
 
+    // Switch to Simple mode (screen defaults to Routine)
+    fireEvent.press(getByText('Simple'));
+
     fireEvent.press(getByTestId('time-picker-button'));
 
     await waitFor(() => {
@@ -604,6 +626,9 @@ describe('CreateReminderScreen', () => {
       expect(getByText('Be Present')).toBeTruthy();
     });
 
+    // Switch to Simple mode (screen defaults to Routine)
+    fireEvent.press(getByText('Simple'));
+
     fireEvent.press(getByTestId('time-picker-button'));
 
     await waitFor(() => {
@@ -619,6 +644,9 @@ describe('CreateReminderScreen', () => {
     await waitFor(() => {
       expect(getByText('Be Present')).toBeTruthy();
     });
+
+    // Switch to Simple mode (screen defaults to Routine)
+    fireEvent.press(getByText('Simple'));
 
     fireEvent.press(getByTestId('date-picker-button'));
 
@@ -637,6 +665,9 @@ describe('CreateReminderScreen', () => {
     await waitFor(() => {
       expect(getByText('Be Present')).toBeTruthy();
     });
+
+    // Switch to Simple mode (screen defaults to Routine)
+    fireEvent.press(getByText('Simple'));
 
     fireEvent.press(getByTestId('time-picker-button'));
 
@@ -671,6 +702,9 @@ describe('CreateReminderScreen', () => {
     });
 
     fireEvent.press(getByText('Be Present'));
+
+    // Switch to Simple mode (screen defaults to Routine)
+    fireEvent.press(getByText('Simple'));
 
     // The component sets time to Date.now() + 1h, which is 2030-01-01T01:00:00Z
     // Advance system time past that so time <= new Date() is true
