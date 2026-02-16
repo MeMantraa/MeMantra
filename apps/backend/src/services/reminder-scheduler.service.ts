@@ -25,6 +25,9 @@ interface BaseReminderDetails {
   status: string | null;
   last_sent_at: string | null;
   user_device_token: string | null;
+  schedule_times: string[] | null;
+  schedule_days: number[] | null;
+  timezone: string | null;
 }
 
 interface ReminderWithDetails extends BaseReminderDetails {
@@ -44,6 +47,10 @@ interface ProcessResult {
   success: boolean;
   error?: string;
 }
+
+const DAY_MAP: Record<string, number> = {
+  Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+};
 
 export const ReminderSchedulerService = {
   cronTask: null as cron.ScheduledTask | null,
@@ -180,7 +187,16 @@ export const ReminderSchedulerService = {
 
     try {
       // Check if reminder should be sent based on frequency
-      if (!this.shouldSendReminder(frequency, last_sent_at)) {
+      if (frequency === 'routine') {
+        if (!this.shouldSendRoutineReminder(
+          reminder.schedule_times,
+          reminder.schedule_days,
+          reminder.timezone,
+          last_sent_at
+        )) {
+          return { reminderId: reminder_id, success: true };
+        }
+      } else if (!this.shouldSendReminder(frequency, last_sent_at)) {
         return { reminderId: reminder_id, success: true };
       }
 
@@ -261,6 +277,71 @@ export const ReminderSchedulerService = {
   },
 
   /**
+   * Get the current time components in a given IANA timezone
+   * Uses Intl.DateTimeFormat (no external dependencies)
+   */
+  getCurrentTimeInTimezone(timezone: string): { hour: number; minute: number; dayOfWeek: number } {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      minute: 'numeric',
+      weekday: 'short',
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(now);
+    const hour = parseInt(parts.find(p => p.type === 'hour')?.value ?? '0', 10);
+    const minute = parseInt(parts.find(p => p.type === 'minute')?.value ?? '0', 10);
+    const weekdayStr = parts.find(p => p.type === 'weekday')?.value ?? 'Sun';
+    const dayOfWeek = DAY_MAP[weekdayStr] ?? 0;
+    return { hour, minute, dayOfWeek };
+  },
+
+  /**
+   * Check if a routine reminder should fire in the current minute
+   * @param scheduleTimes - Array of "HH:MM" strings
+   * @param scheduleDays - Array of day-of-week (0-6), null = every day
+   * @param timezone - IANA timezone string
+   * @param lastSentAt - ISO timestamp of last send
+   */
+  shouldSendRoutineReminder(
+    scheduleTimes: string[] | null,
+    scheduleDays: number[] | null,
+    timezone: string | null,
+    lastSentAt: string | null
+  ): boolean {
+    if (!scheduleTimes || scheduleTimes.length === 0) return false;
+
+    const tz = timezone || 'UTC';
+    const { hour, minute, dayOfWeek } = this.getCurrentTimeInTimezone(tz);
+
+    // Check if today is a scheduled day (null/empty = every day)
+    if (scheduleDays && scheduleDays.length > 0 && !scheduleDays.includes(dayOfWeek)) {
+      return false;
+    }
+
+    // Format current time as HH:MM
+    const currentTimeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+
+    // Check if any schedule time matches the current minute
+    if (!scheduleTimes.includes(currentTimeStr)) {
+      return false;
+    }
+
+    // Guard against double-sends: skip if last sent within 2 minutes
+    if (lastSentAt) {
+      const lastSent = new Date(lastSentAt);
+      const now = new Date();
+      const diffMs = now.getTime() - lastSent.getTime();
+      if (diffMs < 2 * 60 * 1000) {
+        return false;
+      }
+    }
+
+    return true;
+  },
+
+  /**
    * Send the actual notification for a reminder
    */
   async sendReminderNotification(reminder: ReminderWithDetails): Promise<void> {
@@ -289,7 +370,16 @@ export const ReminderSchedulerService = {
 
     try {
       // Check if reminder should be sent based on frequency
-      if (!this.shouldSendReminder(frequency, last_sent_at)) {
+      if (frequency === 'routine') {
+        if (!this.shouldSendRoutineReminder(
+          reminder.schedule_times,
+          reminder.schedule_days,
+          reminder.timezone,
+          last_sent_at
+        )) {
+          return { reminderId: reminder_id, success: true };
+        }
+      } else if (!this.shouldSendReminder(frequency, last_sent_at)) {
         return { reminderId: reminder_id, success: true };
       }
 

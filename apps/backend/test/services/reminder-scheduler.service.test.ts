@@ -264,6 +264,9 @@ describe('ReminderSchedulerService', () => {
           user_device_token: 'ExponentPushToken[xxx]',
           mantra_title: 'Test Mantra',
           mantra_key_takeaway: 'Test takeaway',
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -306,6 +309,9 @@ describe('ReminderSchedulerService', () => {
           user_device_token: null, // No device token
           mantra_title: 'Test Mantra',
           mantra_key_takeaway: 'Test takeaway',
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -341,6 +347,9 @@ describe('ReminderSchedulerService', () => {
           user_device_token: 'ExponentPushToken[xxx]',
           mantra_title: 'Test Mantra',
           mantra_key_takeaway: 'Test takeaway',
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -376,6 +385,9 @@ describe('ReminderSchedulerService', () => {
           user_device_token: 'ExponentPushToken[xxx]',
           mantra_title: 'Test Mantra',
           mantra_key_takeaway: 'Test takeaway',
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -430,6 +442,9 @@ describe('ReminderSchedulerService', () => {
           user_device_token: 'ExponentPushToken[yyy]',
           collection_name: 'My Collection',
           collection_description: 'Test collection',
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -473,6 +488,9 @@ describe('ReminderSchedulerService', () => {
           user_device_token: null,
           collection_name: 'My Collection',
           collection_description: 'Test collection',
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -509,6 +527,9 @@ describe('ReminderSchedulerService', () => {
           user_device_token: 'ExponentPushToken[yyy]',
           collection_name: 'My Collection',
           collection_description: 'Test collection',
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -545,6 +566,9 @@ describe('ReminderSchedulerService', () => {
           user_device_token: 'ExponentPushToken[xxx]',
           mantra_title: 'Test Mantra',
           mantra_key_takeaway: 'Test takeaway',
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -560,6 +584,9 @@ describe('ReminderSchedulerService', () => {
           user_device_token: 'ExponentPushToken[yyy]',
           collection_name: 'My Collection',
           collection_description: 'Test collection',
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -605,6 +632,9 @@ describe('ReminderSchedulerService', () => {
           user_device_token: 'ExponentPushToken[yyy]',
           collection_name: null,
           collection_description: 'Test collection',
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -641,6 +671,9 @@ describe('ReminderSchedulerService', () => {
           user_device_token: 'ExponentPushToken[xxx]',
           mantra_title: 'Test Mantra',
           mantra_key_takeaway: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -672,6 +705,9 @@ describe('ReminderSchedulerService', () => {
           user_device_token: 'ExponentPushToken[xxx]',
           mantra_title: 'Test Mantra',
           mantra_key_takeaway: 'Test takeaway',
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -706,6 +742,9 @@ describe('ReminderSchedulerService', () => {
           user_device_token: 'ExponentPushToken[yyy]',
           collection_name: 'My Collection',
           collection_description: 'Test collection',
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -745,6 +784,9 @@ describe('ReminderSchedulerService', () => {
           user_device_token: 'ExponentPushToken[yyy]',
           collection_name: 'My Collection',
           collection_description: 'Test collection',
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -776,6 +818,9 @@ describe('ReminderSchedulerService', () => {
         status: 'active',
         last_sent_at: null,
         user_device_token: 'ExponentPushToken[xxx]',
+        schedule_times: null,
+        schedule_days: null,
+        timezone: null,
       };
 
       const error = ReminderSchedulerService.validateReminderBase(reminder, 'Reminder');
@@ -791,6 +836,9 @@ describe('ReminderSchedulerService', () => {
         status: 'active',
         last_sent_at: null,
         user_device_token: null,
+        schedule_times: null,
+        schedule_days: null,
+        timezone: null,
       };
 
       jest.spyOn(console, 'warn').mockImplementation();

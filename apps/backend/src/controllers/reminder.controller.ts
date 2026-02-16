@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { ReminderModel } from '../models/reminder.model';
-import { CreateReminderInput, UpdateReminderInput } from '../validators/reminder.validator';
+import { CreateReminderInput, UpdateReminderInput, SchedulePreviewInput } from '../validators/reminder.validator';
 
 // --- Utility helpers ---
 const handleError = (res: Response, message: string, error?: any, status = 500) => {
@@ -41,6 +41,10 @@ const validateFutureTime = (res: Response, time: string | Date): boolean => {
     return false;
   }
   return true;
+};
+
+const DAY_MAP: Record<string, number> = {
+  Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
 };
 
 // --- Controller ---
@@ -112,11 +116,17 @@ export const ReminderController = {
 
     try {
       const data = req.body as CreateReminderInput;
-      if (!validateFutureTime(res, data.time)) return;
+
+      // Only validate future time for non-routine reminders
+      if (data.frequency !== 'routine') {
+        if (!data.time || !validateFutureTime(res, data.time)) return;
+      }
 
       const newReminder = await ReminderModel.create({
         ...data,
         user_id: userId,
+        // Routine reminders use schedule_times instead of time
+        time: data.frequency === 'routine' ? null : (data.time ?? null),
       });
 
       return res.status(201).json({
@@ -185,6 +195,90 @@ export const ReminderController = {
       return res.status(200).json({ status: 'success', data: { reminders } });
     } catch (error) {
       return handleError(res, 'Error retrieving reminders by frequency', error);
+    }
+  },
+
+  // POST /api/reminders/preview-schedule
+  async getSchedulePreview(req: Request, res: Response) {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
+    try {
+      const { schedule_times, schedule_days, timezone } = req.body as SchedulePreviewInput;
+
+      const preview: Array<{ day: string; date: string; times: string[] }> = [];
+      const now = new Date();
+
+      for (let i = 0; i < 7; i++) {
+        const date = new Date(now);
+        date.setDate(date.getDate() + i);
+
+        // Get day-of-week in the user's timezone
+        const dayFormatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: timezone,
+          weekday: 'short',
+        });
+        const dayStr = dayFormatter.format(date);
+        const dayOfWeek = DAY_MAP[dayStr] ?? 0;
+
+        // Check if this day is scheduled
+        const isDayActive = !schedule_days || schedule_days.length === 0 || schedule_days.includes(dayOfWeek);
+
+        if (isDayActive) {
+          const dateFormatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: timezone,
+            weekday: 'long',
+            month: 'short',
+            day: 'numeric',
+          });
+
+          preview.push({
+            day: dateFormatter.format(date),
+            date: date.toISOString().split('T')[0],
+            times: schedule_times,
+          });
+        }
+      }
+
+      return res.status(200).json({
+        status: 'success',
+        data: {
+          timezone,
+          preview,
+          total_notifications_per_week: preview.length * schedule_times.length,
+        },
+      });
+    } catch (error) {
+      return handleError(res, 'Error generating schedule preview', error);
+    }
+  },
+
+  // GET /api/reminders/suggestions
+  async getSuggestions(req: Request, res: Response) {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
+    try {
+      const suggestions = {
+        templates: [
+          { name: 'Morning', icon: 'sunny-outline', times: ['07:00'], description: 'Start your day mindfully' },
+          { name: 'Lunch', icon: 'restaurant-outline', times: ['12:00'], description: 'Midday mindfulness break' },
+          { name: 'Bedtime', icon: 'moon-outline', times: ['22:00'], description: 'End your day with intention' },
+        ],
+        recommended_times: ['07:00', '12:00', '18:00', '22:00'],
+        day_presets: [
+          { name: 'Every Day', days: [0, 1, 2, 3, 4, 5, 6] },
+          { name: 'Weekdays', days: [1, 2, 3, 4, 5] },
+          { name: 'Weekends', days: [0, 6] },
+        ],
+      };
+
+      return res.status(200).json({
+        status: 'success',
+        data: { suggestions },
+      });
+    } catch (error) {
+      return handleError(res, 'Error getting suggestions', error);
     }
   },
 };

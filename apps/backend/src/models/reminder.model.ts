@@ -48,6 +48,9 @@ export const ReminderModel = {
         'Reminder.frequency',
         'Reminder.status',
         'Reminder.last_sent_at',
+        'Reminder.schedule_times',
+        'Reminder.schedule_days',
+        'Reminder.timezone',
         'Mantra.title as mantra_title',
         'Collection.name as collection_name',
       ])
@@ -268,6 +271,9 @@ export const ReminderModel = {
         'Reminder.frequency',
         'Reminder.status',
         'Reminder.last_sent_at',
+        'Reminder.schedule_times',
+        'Reminder.schedule_days',
+        'Reminder.timezone',
         'User.device_token as user_device_token',
         'Mantra.title as mantra_title',
         'Mantra.key_takeaway as mantra_key_takeaway',
@@ -286,6 +292,9 @@ export const ReminderModel = {
         frequency: result.frequency,
         status: result.status,
         last_sent_at: result.last_sent_at,
+        schedule_times: result.schedule_times,
+        schedule_days: result.schedule_days,
+        timezone: result.timezone,
       },
       user_device_token: result.user_device_token,
       mantra_title: result.mantra_title,
@@ -309,6 +318,9 @@ export const ReminderModel = {
     user_device_token: string | null;
     mantra_title: string | null;
     mantra_key_takeaway: string | null;
+    schedule_times: string[] | null;
+    schedule_days: number[] | null;
+    timezone: string | null;
   }>> {
     const now = new Date();
 
@@ -317,17 +329,25 @@ export const ReminderModel = {
       .innerJoin('User', 'User.user_id', 'Reminder.user_id')
       .innerJoin('Mantra', 'Mantra.mantra_id', 'Reminder.mantra_id')
       .where('Reminder.status', '=', 'active')
-      .where('Reminder.time', '<=', now.toISOString())
       .where('Reminder.collection_id', 'is', null)
       .where((eb) =>
         eb.or([
-          // One-time reminders that haven't been sent
+          // Legacy time-based reminders where time has passed
           eb.and([
-            eb('Reminder.frequency', '=', 'once'),
-            eb('Reminder.last_sent_at', 'is', null),
+            eb('Reminder.time', '<=', now.toISOString()),
+            eb.or([
+              eb.and([
+                eb('Reminder.frequency', '=', 'once'),
+                eb('Reminder.last_sent_at', 'is', null),
+              ]),
+              eb.and([
+                eb('Reminder.frequency', '!=', 'once'),
+                eb('Reminder.frequency', '!=', 'routine'),
+              ]),
+            ]),
           ]),
-          // Recurring reminders
-          eb('Reminder.frequency', '!=', 'once'),
+          // Routine reminders (scheduler checks time/day match)
+          eb('Reminder.frequency', '=', 'routine'),
         ])
       )
       .select([
@@ -338,6 +358,9 @@ export const ReminderModel = {
         'Reminder.frequency',
         'Reminder.status',
         'Reminder.last_sent_at',
+        'Reminder.schedule_times',
+        'Reminder.schedule_days',
+        'Reminder.timezone',
         'User.device_token as user_device_token',
         'Mantra.title as mantra_title',
         'Mantra.key_takeaway as mantra_key_takeaway',
@@ -361,6 +384,9 @@ export const ReminderModel = {
     user_device_token: string | null;
     collection_name: string | null;
     collection_description: string | null;
+    schedule_times: string[] | null;
+    schedule_days: number[] | null;
+    timezone: string | null;
   }>> {
     const now = new Date();
 
@@ -369,17 +395,25 @@ export const ReminderModel = {
       .innerJoin('User', 'User.user_id', 'Reminder.user_id')
       .innerJoin('Collection', 'Collection.collection_id', 'Reminder.collection_id')
       .where('Reminder.status', '=', 'active')
-      .where('Reminder.time', '<=', now.toISOString())
       .where('Reminder.collection_id', 'is not', null)
       .where((eb) =>
         eb.or([
-          // One-time reminders that haven't been sent
+          // Legacy time-based reminders where time has passed
           eb.and([
-            eb('Reminder.frequency', '=', 'once'),
-            eb('Reminder.last_sent_at', 'is', null),
+            eb('Reminder.time', '<=', now.toISOString()),
+            eb.or([
+              eb.and([
+                eb('Reminder.frequency', '=', 'once'),
+                eb('Reminder.last_sent_at', 'is', null),
+              ]),
+              eb.and([
+                eb('Reminder.frequency', '!=', 'once'),
+                eb('Reminder.frequency', '!=', 'routine'),
+              ]),
+            ]),
           ]),
-          // Recurring reminders
-          eb('Reminder.frequency', '!=', 'once'),
+          // Routine reminders (scheduler checks time/day match)
+          eb('Reminder.frequency', '=', 'routine'),
         ])
       )
       .select([
@@ -390,6 +424,9 @@ export const ReminderModel = {
         'Reminder.frequency',
         'Reminder.status',
         'Reminder.last_sent_at',
+        'Reminder.schedule_times',
+        'Reminder.schedule_days',
+        'Reminder.timezone',
         'User.device_token as user_device_token',
         'Collection.name as collection_name',
         'Collection.description as collection_description',
