@@ -11,6 +11,31 @@ export interface DayPreset {
   days: number[];
 }
 
+/**
+ * Compare two HH:MM time strings alphabetically using localeCompare.
+ * Suitable as a comparator for Array.prototype.sort().
+ */
+export function compareTimeSlots(a: string, b: string): number {
+  return a.localeCompare(b);
+}
+
+/**
+ * Convert a Date to a HH:MM time slot string.
+ */
+export function dateToTimeSlot(date: Date): string {
+  const hh = date.getHours().toString().padStart(2, '0');
+  const mm = date.getMinutes().toString().padStart(2, '0');
+  return `${hh}:${mm}`;
+}
+
+/**
+ * Check if a time string already exists in the schedule, optionally
+ * excluding a specific index (useful when editing an existing slot).
+ */
+export function hasTimeConflict(times: string[], newTime: string, excludeIndex?: number): boolean {
+  return times.some((t, i) => t === newTime && i !== excludeIndex);
+}
+
 export const scheduleSuggestionsService = {
   getTemplates(): ScheduleTemplate[] {
     return [
@@ -77,7 +102,7 @@ export const scheduleSuggestionsService = {
 
   formatDaysForDisplay(days: number[] | null): string {
     if (!days || days.length === 0 || days.length === 7) return 'Every day';
-    const sorted = [...days].sort();
+    const sorted = [...days].sort((a, b) => a - b);
     if (sorted.length === 5 && sorted.join(',') === '1,2,3,4,5') return 'Weekdays';
     if (sorted.length === 2 && sorted.join(',') === '0,6') return 'Weekends';
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];

@@ -19,7 +19,12 @@ import { storage } from '../utils/storage';
 import { reminderService } from '../services/reminder.service';
 import { mantraService, Mantra } from '../services/mantra.service';
 import { collectionService, Collection } from '../services/collection.service';
-import { scheduleSuggestionsService } from '../services/schedule-suggestions.service';
+import {
+  scheduleSuggestionsService,
+  compareTimeSlots,
+  dateToTimeSlot,
+  hasTimeConflict,
+} from '../services/schedule-suggestions.service';
 
 type CreateReminderNavProp = StackNavigationProp<RootStackParamList>;
 
@@ -184,15 +189,34 @@ export default function CreateReminderScreen() {
 
   // --- Routine mode helpers ---
 
+  const clearPreview = () => {
+    setShowPreview(false);
+    setPreviewData(null);
+  };
+
+  const updateTimesAndClearPreview = (times: string[]) => {
+    setScheduleTimes([...times].sort(compareTimeSlots));
+    clearPreview();
+  };
+
+  const applyTimeSlotChange = (newTime: string, editIndex: number): boolean => {
+    if (hasTimeConflict(scheduleTimes, newTime, editIndex)) {
+      Alert.alert('Duplicate Time', 'This time is already in your schedule.');
+      return false;
+    }
+    const updated = [...scheduleTimes];
+    updated[editIndex] = newTime;
+    updateTimesAndClearPreview(updated);
+    return true;
+  };
+
   const addTemplateTime = (templateTime: string) => {
-    if (scheduleTimes.includes(templateTime)) return;
+    if (hasTimeConflict(scheduleTimes, templateTime)) return;
     if (scheduleTimes.length >= 5) {
       Alert.alert('Limit Reached', 'You can set up to 5 reminder times.');
       return;
     }
-    setScheduleTimes([...scheduleTimes, templateTime].sort());
-    setShowPreview(false);
-    setPreviewData(null);
+    updateTimesAndClearPreview([...scheduleTimes, templateTime]);
   };
 
   const removeTime = (index: number) => {
@@ -201,8 +225,7 @@ export default function CreateReminderScreen() {
       return;
     }
     setScheduleTimes(scheduleTimes.filter((_, i) => i !== index));
-    setShowPreview(false);
-    setPreviewData(null);
+    clearPreview();
   };
 
   const openRoutineTimePicker = (index: number) => {
@@ -217,21 +240,7 @@ export default function CreateReminderScreen() {
     if (Platform.OS === 'android') {
       setActiveTimePickerIndex(null);
       if (_event.type === 'set' && selected && activeTimePickerIndex !== null) {
-        const hh = selected.getHours().toString().padStart(2, '0');
-        const mm = selected.getMinutes().toString().padStart(2, '0');
-        const newTime = `${hh}:${mm}`;
-        const isDuplicate = scheduleTimes.some(
-          (t, i) => t === newTime && i !== activeTimePickerIndex,
-        );
-        if (isDuplicate) {
-          Alert.alert('Duplicate Time', 'This time is already in your schedule.');
-          return;
-        }
-        const updated = [...scheduleTimes];
-        updated[activeTimePickerIndex] = newTime;
-        setScheduleTimes(updated.sort());
-        setShowPreview(false);
-        setPreviewData(null);
+        applyTimeSlotChange(dateToTimeSlot(selected), activeTimePickerIndex);
       }
     } else if (selected) {
       setTempTime(selected);
@@ -240,22 +249,10 @@ export default function CreateReminderScreen() {
 
   const confirmRoutineTimePicker = () => {
     if (activeTimePickerIndex !== null) {
-      const hh = tempTime.getHours().toString().padStart(2, '0');
-      const mm = tempTime.getMinutes().toString().padStart(2, '0');
-      const newTime = `${hh}:${mm}`;
-      const isDuplicate = scheduleTimes.some(
-        (t, i) => t === newTime && i !== activeTimePickerIndex,
-      );
-      if (isDuplicate) {
-        Alert.alert('Duplicate Time', 'This time is already in your schedule.');
+      if (!applyTimeSlotChange(dateToTimeSlot(tempTime), activeTimePickerIndex)) {
         setActiveTimePickerIndex(null);
         return;
       }
-      const updated = [...scheduleTimes];
-      updated[activeTimePickerIndex] = newTime;
-      setScheduleTimes(updated.sort());
-      setShowPreview(false);
-      setPreviewData(null);
     }
     setActiveTimePickerIndex(null);
   };
@@ -265,16 +262,13 @@ export default function CreateReminderScreen() {
       Alert.alert('Limit Reached', 'You can set up to 5 reminder times.');
       return;
     }
-    // Find a default time that isn't already used
     const defaults = ['12:00', '08:00', '18:00', '09:00', '15:00'];
-    const newTime = defaults.find((t) => !scheduleTimes.includes(t)) ?? '12:00';
-    if (scheduleTimes.includes(newTime)) {
+    const newTime = defaults.find((t) => !hasTimeConflict(scheduleTimes, t)) ?? '12:00';
+    if (hasTimeConflict(scheduleTimes, newTime)) {
       Alert.alert('Duplicate Time', 'This time is already in your schedule.');
       return;
     }
-    setScheduleTimes([...scheduleTimes, newTime].sort());
-    setShowPreview(false);
-    setPreviewData(null);
+    updateTimesAndClearPreview([...scheduleTimes, newTime]);
   };
 
   const selectDayPreset = (preset: DayPresetKey) => {
@@ -283,8 +277,7 @@ export default function CreateReminderScreen() {
     if (found && preset !== 'custom') {
       setScheduleDays(found.days);
     }
-    setShowPreview(false);
-    setPreviewData(null);
+    clearPreview();
   };
 
   const toggleDay = (day: number) => {
@@ -297,8 +290,7 @@ export default function CreateReminderScreen() {
     }
     setScheduleDays(updated);
     setDayPreset('custom');
-    setShowPreview(false);
-    setPreviewData(null);
+    clearPreview();
   };
 
   const fetchPreview = async () => {

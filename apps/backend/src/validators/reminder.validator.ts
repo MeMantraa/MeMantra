@@ -16,6 +16,10 @@ const dayOfWeekSchema = z.number().int().min(0).max(6);
 // IANA timezone validator
 const timezoneSchema = z.string().min(1).max(64);
 
+// Reusable schedule_times schema with uniqueness check
+const uniqueScheduleTimesSchema = z.array(timeSlotSchema).min(1).max(5)
+  .refine((times) => new Set(times).size === times.length, { message: 'Duplicate times are not allowed' });
+
 // Create reminder schema - requires either mantra_id or collection_id (not both)
 export const createReminderSchema = z.object({
   body: z.object({
@@ -24,9 +28,7 @@ export const createReminderSchema = z.object({
     time: z.string().datetime('Must be a valid ISO 8601 datetime').optional(),
     frequency: reminderFrequencyEnum,
     status: reminderStatusEnum.optional().default('active'),
-    schedule_times: z.array(timeSlotSchema).min(1).max(5)
-      .refine((times) => new Set(times).size === times.length, { message: 'Duplicate times are not allowed' })
-      .optional(),
+    schedule_times: uniqueScheduleTimesSchema.optional(),
     schedule_days: z.array(dayOfWeekSchema).min(1).max(7).optional(),
     timezone: timezoneSchema.optional(),
   })
@@ -54,9 +56,7 @@ export const updateReminderSchema = z.object({
     time: z.string().datetime().optional(),
     frequency: reminderFrequencyEnum.optional(),
     status: reminderStatusEnum.optional(),
-    schedule_times: z.array(timeSlotSchema).min(1).max(5)
-      .refine((times) => new Set(times).size === times.length, { message: 'Duplicate times are not allowed' })
-      .optional(),
+    schedule_times: uniqueScheduleTimesSchema.optional(),
     schedule_days: z.array(dayOfWeekSchema).min(1).max(7).optional(),
     timezone: timezoneSchema.optional(),
   }),
@@ -86,8 +86,7 @@ export const frequencyQuerySchema = z.object({
 // Schedule preview schema
 export const schedulePreviewSchema = z.object({
   body: z.object({
-    schedule_times: z.array(timeSlotSchema).min(1).max(5)
-      .refine((times) => new Set(times).size === times.length, { message: 'Duplicate times are not allowed' }),
+    schedule_times: uniqueScheduleTimesSchema,
     schedule_days: z.array(dayOfWeekSchema).min(1).max(7).optional(),
     timezone: timezoneSchema,
   }),
