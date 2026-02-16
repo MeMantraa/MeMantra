@@ -25,7 +25,7 @@ export const createReminderSchema = z.object({
   body: z.object({
     mantra_id: z.number().int().positive('Mantra ID must be a positive integer').optional(),
     collection_id: z.number().int().positive('Collection ID must be a positive integer').optional(),
-    time: z.string().datetime('Must be a valid ISO 8601 datetime').optional(),
+    time: z.iso.datetime({ message: 'Must be a valid ISO 8601 datetime' }).optional(),
     frequency: reminderFrequencyEnum,
     status: reminderStatusEnum.optional().default('active'),
     schedule_times: uniqueScheduleTimesSchema.optional(),
@@ -53,7 +53,7 @@ export const updateReminderSchema = z.object({
   body: z.object({
     mantra_id: z.number().int().positive().optional(),
     collection_id: z.number().int().positive().optional(),
-    time: z.string().datetime().optional(),
+    time: z.iso.datetime().optional(),
     frequency: reminderFrequencyEnum.optional(),
     status: reminderStatusEnum.optional(),
     schedule_times: uniqueScheduleTimesSchema.optional(),
