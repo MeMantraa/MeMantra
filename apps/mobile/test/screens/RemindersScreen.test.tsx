@@ -493,4 +493,62 @@ describe('RemindersScreen', () => {
     // "Be Present" should not be displayed since mantra_title is null
     expect(queryByText('Be Present')).toBeNull();
   });
+
+  it('displays schedule times for routine reminders', async () => {
+    const routineReminder = {
+      reminder_id: 3,
+      user_id: 1,
+      mantra_id: 10,
+      collection_id: null,
+      time: null,
+      frequency: 'routine',
+      status: 'active',
+      last_sent_at: null,
+      mantra_title: 'Be Present',
+      collection_name: null,
+      schedule_times: ['07:00', '12:00'],
+      schedule_days: [1, 2, 3, 4, 5],
+      timezone: 'America/New_York',
+    };
+
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { reminders: [routineReminder] },
+    });
+
+    const { getByText } = render(<RemindersScreen />);
+
+    await waitFor(() => {
+      expect(getByText('7:00 AM, 12:00 PM')).toBeTruthy();
+    });
+  });
+
+  it('displays "No times set" for routine reminders without schedule_times', async () => {
+    const routineReminder = {
+      reminder_id: 4,
+      user_id: 1,
+      mantra_id: 10,
+      collection_id: null,
+      time: null,
+      frequency: 'routine',
+      status: 'active',
+      last_sent_at: null,
+      mantra_title: 'Be Present',
+      collection_name: null,
+      schedule_times: null,
+      schedule_days: null,
+      timezone: null,
+    };
+
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { reminders: [routineReminder] },
+    });
+
+    const { getByText } = render(<RemindersScreen />);
+
+    await waitFor(() => {
+      expect(getByText('No times set')).toBeTruthy();
+    });
+  });
 });

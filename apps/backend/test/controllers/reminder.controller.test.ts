@@ -16,7 +16,9 @@ function setupAppWithUser(userId?: number, email?: string) {
   app.get('/reminders/active', ReminderController.getActiveReminders);
   app.get('/reminders/upcoming', ReminderController.getUpcomingReminders);
   app.get('/reminders/frequency', ReminderController.getRemindersByFrequency);
+  app.get('/reminders/suggestions', ReminderController.getSuggestions);
   app.get('/reminders/:id', ReminderController.getReminderById);
+  app.post('/reminders/preview-schedule', ReminderController.getSchedulePreview);
   app.post('/reminders', ReminderController.createReminder);
   app.put('/reminders/:id', ReminderController.updateReminder);
   app.delete('/reminders/:id', ReminderController.deleteReminder);
@@ -519,6 +521,109 @@ describe('ReminderController', () => {
       expect(res.body).toMatchObject({
         status: 'error',
         message: 'Error retrieving reminders by frequency',
+      });
+    });
+  });
+
+  describe('getSchedulePreview', () => {
+    it('should return preview with schedule_times, schedule_days, timezone', async () => {
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app)
+        .post('/reminders/preview-schedule')
+        .send({
+          schedule_times: ['07:00', '12:00'],
+          schedule_days: [1, 2, 3, 4, 5],
+          timezone: 'America/New_York',
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('success');
+      expect(res.body.data.timezone).toBe('America/New_York');
+      expect(Array.isArray(res.body.data.preview)).toBe(true);
+      expect(typeof res.body.data.total_notifications_per_week).toBe('number');
+
+      // Each preview entry should have day, date, and times
+      for (const entry of res.body.data.preview) {
+        expect(entry).toHaveProperty('day');
+        expect(entry).toHaveProperty('date');
+        expect(entry.times).toEqual(['07:00', '12:00']);
+      }
+    });
+
+    it('should return preview without schedule_days (defaults to all days)', async () => {
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app)
+        .post('/reminders/preview-schedule')
+        .send({
+          schedule_times: ['09:00'],
+          timezone: 'UTC',
+        });
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('success');
+      // Without schedule_days, all 7 days should be active
+      expect(res.body.data.preview).toHaveLength(7);
+      expect(res.body.data.total_notifications_per_week).toBe(7);
+    });
+
+    it('should return 401 if not authenticated', async () => {
+      const app = setupAppWithUser();
+      const res = await request(app)
+        .post('/reminders/preview-schedule')
+        .send({
+          schedule_times: ['07:00'],
+          timezone: 'UTC',
+        });
+
+      expect(res.status).toBe(401);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Authentication required',
+      });
+    });
+
+    it('should handle errors', async () => {
+      const app = setupAppWithUser(1, 'test@test.com');
+      // Sending an invalid timezone will cause Intl.DateTimeFormat to throw
+      const res = await request(app)
+        .post('/reminders/preview-schedule')
+        .send({
+          schedule_times: ['07:00'],
+          timezone: 'Invalid/Timezone_That_Does_Not_Exist',
+        });
+
+      expect(res.status).toBe(500);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Error generating schedule preview',
+      });
+    });
+  });
+
+  describe('getSuggestions', () => {
+    it('should return suggestions with templates, recommended_times, day_presets', async () => {
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app).get('/reminders/suggestions');
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('success');
+
+      const { suggestions } = res.body.data;
+      expect(Array.isArray(suggestions.templates)).toBe(true);
+      expect(suggestions.templates.length).toBeGreaterThan(0);
+      expect(suggestions.recommended_times).toEqual(['07:00', '12:00', '18:00', '22:00']);
+      expect(Array.isArray(suggestions.day_presets)).toBe(true);
+      expect(suggestions.day_presets.length).toBeGreaterThan(0);
+    });
+
+    it('should return 401 if not authenticated', async () => {
+      const app = setupAppWithUser();
+      const res = await request(app).get('/reminders/suggestions');
+
+      expect(res.status).toBe(401);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Authentication required',
       });
     });
   });

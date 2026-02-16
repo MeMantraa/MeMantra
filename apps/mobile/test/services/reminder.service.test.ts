@@ -283,4 +283,72 @@ describe('reminderService', () => {
       await expect(reminderService.deleteReminder(5, mockToken)).rejects.toThrow('Delete failed');
     });
   });
+
+  describe('getSchedulePreview', () => {
+    it('should post schedule preview data', async () => {
+      const previewData = {
+        schedule_times: ['07:00', '12:00'],
+        schedule_days: [1, 2, 3, 4, 5],
+        timezone: 'America/New_York',
+      };
+      const mockResponse = {
+        status: 'success',
+        data: {
+          timezone: 'America/New_York',
+          preview: [{ day: 'Monday, Jan 1', date: '2024-01-01', times: ['07:00', '12:00'] }],
+          total_notifications_per_week: 10,
+        },
+      };
+
+      (apiClient.post as jest.Mock).mockResolvedValue({ data: mockResponse });
+
+      const result = await reminderService.getSchedulePreview(previewData, mockToken);
+
+      expect(apiClient.post).toHaveBeenCalledWith('/reminders/preview-schedule', previewData, {
+        headers: { Authorization: `Bearer ${mockToken}` },
+      });
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should handle API errors', async () => {
+      (apiClient.post as jest.Mock).mockRejectedValue(new Error('Server error'));
+
+      await expect(
+        reminderService.getSchedulePreview(
+          { schedule_times: ['07:00'], timezone: 'UTC' },
+          mockToken,
+        ),
+      ).rejects.toThrow('Server error');
+    });
+  });
+
+  describe('getSuggestions', () => {
+    it('should fetch suggestions', async () => {
+      const mockResponse = {
+        status: 'success',
+        data: {
+          suggestions: {
+            templates: [],
+            recommended_times: ['07:00'],
+            day_presets: [],
+          },
+        },
+      };
+
+      (apiClient.get as jest.Mock).mockResolvedValue({ data: mockResponse });
+
+      const result = await reminderService.getSuggestions(mockToken);
+
+      expect(apiClient.get).toHaveBeenCalledWith('/reminders/suggestions', {
+        headers: { Authorization: `Bearer ${mockToken}` },
+      });
+      expect(result).toEqual(mockResponse);
+    });
+
+    it('should handle API errors', async () => {
+      (apiClient.get as jest.Mock).mockRejectedValue(new Error('Network error'));
+
+      await expect(reminderService.getSuggestions(mockToken)).rejects.toThrow('Network error');
+    });
+  });
 });
