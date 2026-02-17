@@ -1,5 +1,4 @@
 import { apiClient } from './api.config';
-import Constants from 'expo-constants';
 
 const USE_MOCK_DATA = false;
 
