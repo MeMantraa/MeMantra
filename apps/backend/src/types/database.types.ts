@@ -100,6 +100,9 @@ export interface ReminderTable {
   frequency: string | null;
   status: string | null;
   last_sent_at: string | null;
+  schedule_times: string[] | null;
+  schedule_days: number[] | null;
+  timezone: string | null;
 }
 
 export interface RecommendationLogTable {

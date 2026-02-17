@@ -35,6 +35,9 @@ describe('ReminderModel', () => {
         frequency: 'daily',
         status: 'active',
         last_sent_at: null,
+        schedule_times: null,
+        schedule_days: null,
+        timezone: null,
       };
 
       const mockChain = {
@@ -64,6 +67,9 @@ describe('ReminderModel', () => {
         frequency: 'daily',
         status: 'active',
         last_sent_at: null,
+        schedule_times: null,
+        schedule_days: null,
+        timezone: null,
       };
 
       const mockChain = {
@@ -108,6 +114,9 @@ describe('ReminderModel', () => {
           frequency: 'daily',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
         {
           reminder_id: 2,
@@ -118,6 +127,9 @@ describe('ReminderModel', () => {
           frequency: 'weekly',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -151,6 +163,9 @@ describe('ReminderModel', () => {
           frequency: 'daily',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -183,6 +198,9 @@ describe('ReminderModel', () => {
           frequency: 'daily',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -219,6 +237,9 @@ describe('ReminderModel', () => {
         frequency: 'weekly',
         status: 'active',
         last_sent_at: null,
+        schedule_times: null,
+        schedule_days: null,
+        timezone: null,
       };
 
       const mockChain = {
@@ -250,6 +271,9 @@ describe('ReminderModel', () => {
         frequency: 'daily',
         status: 'paused',
         last_sent_at: null,
+        schedule_times: null,
+        schedule_days: null,
+        timezone: null,
       };
 
       const mockChain = {
@@ -359,6 +383,9 @@ describe('ReminderModel', () => {
           frequency: 'daily',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -393,6 +420,9 @@ describe('ReminderModel', () => {
           frequency: 'daily',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -425,6 +455,9 @@ describe('ReminderModel', () => {
           frequency: 'daily',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -458,6 +491,9 @@ describe('ReminderModel', () => {
           frequency: 'daily',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -508,6 +544,9 @@ describe('ReminderModel', () => {
           frequency: 'once',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -540,6 +579,9 @@ describe('ReminderModel', () => {
         frequency: 'daily',
         status: 'active',
         last_sent_at: '2024-12-01T09:00:00Z',
+        schedule_times: null,
+        schedule_days: null,
+        timezone: null,
       };
 
       const mockChain = {
@@ -571,6 +613,9 @@ describe('ReminderModel', () => {
         frequency: 'once',
         status: 'completed',
         last_sent_at: '2024-12-01T09:00:00Z',
+        schedule_times: null,
+        schedule_days: null,
+        timezone: null,
       };
 
       const mockChain = {
@@ -605,6 +650,9 @@ describe('ReminderModel', () => {
         frequency: 'daily',
         status: 'active',
         last_sent_at: null,
+        schedule_times: null,
+        schedule_days: null,
+        timezone: null,
         user_device_token: 'ExponentPushToken[xxx]',
         mantra_title: 'Test Mantra',
         mantra_key_takeaway: 'Test takeaway',
@@ -728,6 +776,9 @@ describe('ReminderModel', () => {
           frequency: 'daily',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -761,6 +812,9 @@ describe('ReminderModel', () => {
           frequency: 'daily',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 

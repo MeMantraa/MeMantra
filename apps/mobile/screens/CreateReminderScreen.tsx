@@ -19,19 +19,40 @@ import { storage } from '../utils/storage';
 import { reminderService } from '../services/reminder.service';
 import { mantraService, Mantra } from '../services/mantra.service';
 import { collectionService, Collection } from '../services/collection.service';
+import {
+  scheduleSuggestionsService,
+  compareTimeSlots,
+  dateToTimeSlot,
+  hasTimeConflict,
+} from '../services/schedule-suggestions.service';
 
 type CreateReminderNavProp = StackNavigationProp<RootStackParamList>;
 
-type Frequency = 'once' | 'daily' | 'weekly' | 'monthly';
+type SimpleFrequency = 'once' | 'daily' | 'weekly' | 'monthly';
+type ScheduleMode = 'simple' | 'routine';
+type DayPresetKey = 'everyday' | 'weekdays' | 'weekends' | 'custom';
 
-const FREQUENCIES: { label: string; value: Frequency }[] = [
+const SIMPLE_FREQUENCIES: { label: string; value: SimpleFrequency }[] = [
   { label: 'Once', value: 'once' },
   { label: 'Daily', value: 'daily' },
   { label: 'Weekly', value: 'weekly' },
   { label: 'Monthly', value: 'monthly' },
 ];
 
+const DAYS_OF_WEEK = [
+  { key: 'sun', label: 'S', day: 0 },
+  { key: 'mon', label: 'M', day: 1 },
+  { key: 'tue', label: 'T', day: 2 },
+  { key: 'wed', label: 'W', day: 3 },
+  { key: 'thu', label: 'T', day: 4 },
+  { key: 'fri', label: 'F', day: 5 },
+  { key: 'sat', label: 'S', day: 6 },
+];
+
 type ReminderType = 'mantra' | 'collection';
+
+const TEMPLATES = scheduleSuggestionsService.getTemplates();
+const DAY_PRESETS = scheduleSuggestionsService.getDayPresets();
 
 export default function CreateReminderScreen() {
   const navigation = useNavigation<CreateReminderNavProp>();
@@ -40,6 +61,7 @@ export default function CreateReminderScreen() {
   const preselectedMantraId = (route.params as any)?.mantraId as number | undefined;
   const preselectedCollectionId = (route.params as any)?.collectionId as number | undefined;
 
+  // Common state
   const [reminderType, setReminderType] = useState<ReminderType>(
     preselectedCollectionId ? 'collection' : 'mantra',
   );
@@ -47,17 +69,36 @@ export default function CreateReminderScreen() {
   const [selectedCollectionId, setSelectedCollectionId] = useState<number | undefined>(
     preselectedCollectionId,
   );
-  const [time, setTime] = useState(new Date(Date.now() + 60 * 60 * 1000));
-  const [frequency, setFrequency] = useState<Frequency>('daily');
   const [submitting, setSubmitting] = useState(false);
+  const [mantras, setMantras] = useState<Mantra[]>([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [loadingItems, setLoadingItems] = useState(true);
 
+  // Schedule mode
+  const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('routine');
+
+  // Simple mode state
+  const [time, setTime] = useState(new Date(Date.now() + 60 * 60 * 1000));
+  const [frequency, setFrequency] = useState<SimpleFrequency>('daily');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [tempDate, setTempDate] = useState(time);
 
-  const [mantras, setMantras] = useState<Mantra[]>([]);
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [loadingItems, setLoadingItems] = useState(true);
+  // Routine mode state
+  const [scheduleTimes, setScheduleTimes] = useState<string[]>(['07:00']);
+  const [scheduleDays, setScheduleDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
+  const [dayPreset, setDayPreset] = useState<DayPresetKey>('everyday');
+  const [userTimezone] = useState(scheduleSuggestionsService.getDeviceTimezone());
+  const [activeTimePickerIndex, setActiveTimePickerIndex] = useState<number | null>(null);
+  const [tempTime, setTempTime] = useState(new Date());
+
+  // Preview state
+  const [showPreview, setShowPreview] = useState(false);
+  const [previewData, setPreviewData] = useState<{
+    preview: Array<{ day: string; date: string; times: string[] }>;
+    total_notifications_per_week: number;
+  } | null>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
 
   useEffect(() => {
     loadItems();
@@ -97,12 +138,14 @@ export default function CreateReminderScreen() {
     }
   };
 
+  // --- Simple mode date/time pickers ---
+
   const openDatePicker = () => {
     setTempDate(time);
     setShowDatePicker(true);
   };
 
-  const openTimePicker = () => {
+  const openSimpleTimePicker = () => {
     setTempDate(time);
     setShowTimePicker(true);
   };
@@ -152,6 +195,137 @@ export default function CreateReminderScreen() {
     else setShowTimePicker(false);
   };
 
+  // --- Routine mode helpers ---
+
+  const clearPreview = () => {
+    setShowPreview(false);
+    setPreviewData(null);
+  };
+
+  const updateTimesAndClearPreview = (times: string[]) => {
+    setScheduleTimes([...times].sort(compareTimeSlots));
+    clearPreview();
+  };
+
+  const applyTimeSlotChange = (newTime: string, editIndex: number): boolean => {
+    if (hasTimeConflict(scheduleTimes, newTime, editIndex)) {
+      Alert.alert('Duplicate Time', 'This time is already in your schedule.');
+      return false;
+    }
+    const updated = [...scheduleTimes];
+    updated[editIndex] = newTime;
+    updateTimesAndClearPreview(updated);
+    return true;
+  };
+
+  const addTemplateTime = (templateTime: string) => {
+    if (hasTimeConflict(scheduleTimes, templateTime)) return;
+    if (scheduleTimes.length >= 5) {
+      Alert.alert('Limit Reached', 'You can set up to 5 reminder times.');
+      return;
+    }
+    updateTimesAndClearPreview([...scheduleTimes, templateTime]);
+  };
+
+  const removeTime = (index: number) => {
+    if (scheduleTimes.length <= 1) {
+      Alert.alert('At Least One', 'You need at least one reminder time.');
+      return;
+    }
+    setScheduleTimes(scheduleTimes.filter((_, i) => i !== index));
+    clearPreview();
+  };
+
+  const openRoutineTimePicker = (index: number) => {
+    const [h, m] = scheduleTimes[index].split(':').map(Number);
+    const d = new Date();
+    d.setHours(h, m, 0, 0);
+    setTempTime(d);
+    setActiveTimePickerIndex(index);
+  };
+
+  const onRoutineTimeChange = (_event: DateTimePickerEvent, selected?: Date) => {
+    if (Platform.OS === 'android') {
+      setActiveTimePickerIndex(null);
+      if (_event.type === 'set' && selected && activeTimePickerIndex !== null) {
+        applyTimeSlotChange(dateToTimeSlot(selected), activeTimePickerIndex);
+      }
+    } else if (selected) {
+      setTempTime(selected);
+    }
+  };
+
+  const confirmRoutineTimePicker = () => {
+    if (activeTimePickerIndex !== null) {
+      if (!applyTimeSlotChange(dateToTimeSlot(tempTime), activeTimePickerIndex)) {
+        setActiveTimePickerIndex(null);
+        return;
+      }
+    }
+    setActiveTimePickerIndex(null);
+  };
+
+  const addNewTimeSlot = () => {
+    if (scheduleTimes.length >= 5) {
+      Alert.alert('Limit Reached', 'You can set up to 5 reminder times.');
+      return;
+    }
+    const defaults = ['12:00', '08:00', '18:00', '09:00', '15:00'];
+    const newTime = defaults.find((t) => !hasTimeConflict(scheduleTimes, t)) ?? '12:00';
+    if (hasTimeConflict(scheduleTimes, newTime)) {
+      Alert.alert('Duplicate Time', 'This time is already in your schedule.');
+      return;
+    }
+    updateTimesAndClearPreview([...scheduleTimes, newTime]);
+  };
+
+  const selectDayPreset = (preset: DayPresetKey) => {
+    setDayPreset(preset);
+    const found = DAY_PRESETS.find((p) => p.key === preset);
+    if (found && preset !== 'custom') {
+      setScheduleDays(found.days);
+    }
+    clearPreview();
+  };
+
+  const toggleDay = (day: number) => {
+    const updated = scheduleDays.includes(day)
+      ? scheduleDays.filter((d) => d !== day)
+      : [...scheduleDays, day];
+    if (updated.length === 0) {
+      Alert.alert('At Least One', 'Select at least one day.');
+      return;
+    }
+    setScheduleDays(updated);
+    setDayPreset('custom');
+    clearPreview();
+  };
+
+  const fetchPreview = async () => {
+    try {
+      setLoadingPreview(true);
+      const token = await storage.getToken();
+      if (!token) return;
+
+      const response = await reminderService.getSchedulePreview(
+        { schedule_times: scheduleTimes, schedule_days: scheduleDays, timezone: userTimezone },
+        token,
+      );
+
+      if (response.status === 'success') {
+        setPreviewData(response.data);
+        setShowPreview(true);
+      }
+    } catch (error) {
+      console.error('Error fetching preview:', error);
+      Alert.alert('Error', 'Failed to load schedule preview.');
+    } finally {
+      setLoadingPreview(false);
+    }
+  };
+
+  // --- Submit ---
+
   const handleSubmit = async () => {
     if (reminderType === 'mantra' && !selectedMantraId) {
       Alert.alert('Select a Mantra', 'Please select a mantra for this reminder.');
@@ -161,7 +335,8 @@ export default function CreateReminderScreen() {
       Alert.alert('Select a Collection', 'Please select a collection for this reminder.');
       return;
     }
-    if (time <= new Date()) {
+
+    if (scheduleMode === 'simple' && time <= new Date()) {
       Alert.alert('Invalid Time', 'Reminder time must be in the future.');
       return;
     }
@@ -174,17 +349,34 @@ export default function CreateReminderScreen() {
         return;
       }
 
-      await reminderService.createReminder(
-        {
-          ...(reminderType === 'mantra'
-            ? { mantra_id: selectedMantraId }
-            : { collection_id: selectedCollectionId }),
-          time: time.toISOString(),
-          frequency,
-          status: 'active',
-        },
-        token,
-      );
+      const target =
+        reminderType === 'mantra'
+          ? { mantra_id: selectedMantraId }
+          : { collection_id: selectedCollectionId };
+
+      if (scheduleMode === 'routine') {
+        await reminderService.createReminder(
+          {
+            ...target,
+            frequency: 'routine',
+            schedule_times: scheduleTimes,
+            schedule_days: scheduleDays,
+            timezone: userTimezone,
+            status: 'active',
+          },
+          token,
+        );
+      } else {
+        await reminderService.createReminder(
+          {
+            ...target,
+            time: time.toISOString(),
+            frequency,
+            status: 'active',
+          },
+          token,
+        );
+      }
 
       Alert.alert('Reminder Created', 'Your reminder has been set.', [
         { text: 'OK', onPress: () => navigation.goBack() },
@@ -199,6 +391,8 @@ export default function CreateReminderScreen() {
 
   const selectedMantra = mantras.find((m) => m.mantra_id === selectedMantraId);
   const selectedCollection = collections.find((c) => c.collection_id === selectedCollectionId);
+
+  // --- Render helpers ---
 
   const renderIOSPickerModal = (
     visible: boolean,
@@ -230,6 +424,31 @@ export default function CreateReminderScreen() {
     </Modal>
   );
 
+  const renderRoutineTimePickerModal = () => (
+    <Modal visible={activeTimePickerIndex !== null} transparent animationType="slide">
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity onPress={() => setActiveTimePickerIndex(null)}>
+              <Text style={styles.modalCancel}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Select Time</Text>
+            <TouchableOpacity onPress={confirmRoutineTimePicker}>
+              <Text style={styles.modalDone}>Done</Text>
+            </TouchableOpacity>
+          </View>
+          <DateTimePicker
+            value={tempTime}
+            mode="time"
+            display="spinner"
+            onChange={onRoutineTimeChange}
+            style={styles.iosPicker}
+          />
+        </View>
+      </View>
+    </Modal>
+  );
+
   return (
     <ScrollView style={styles.container}>
       <View style={styles.content}>
@@ -248,6 +467,7 @@ export default function CreateReminderScreen() {
           Create Reminder
         </Text>
 
+        {/* Remind me about */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Remind me about</Text>
           <View style={styles.typeSelector}>
@@ -296,6 +516,7 @@ export default function CreateReminderScreen() {
           </View>
         </View>
 
+        {/* Select item */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>
             {reminderType === 'mantra' ? 'Select Mantra' : 'Select Collection'}
@@ -385,80 +606,299 @@ export default function CreateReminderScreen() {
           )}
         </View>
 
+        {/* Schedule Mode Toggle */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>When</Text>
-          <View style={styles.dateTimeRow}>
+          <Text style={styles.sectionTitle}>Schedule type</Text>
+          <View style={styles.typeSelector}>
             <TouchableOpacity
-              testID="date-picker-button"
-              style={styles.dateTimeButton}
-              onPress={openDatePicker}
+              style={[styles.typeOption, scheduleMode === 'routine' && styles.typeOptionActive]}
+              onPress={() => setScheduleMode('routine')}
             >
-              <Ionicons name="calendar-outline" size={20} color="#8E9A86" />
-              <Text style={styles.dateTimeText}>
-                {time.toLocaleDateString(undefined, {
-                  month: 'short',
-                  day: 'numeric',
-                  year: 'numeric',
-                })}
+              <Ionicons
+                name="calendar-outline"
+                size={20}
+                color={scheduleMode === 'routine' ? '#FFFFFF' : '#8E9A86'}
+              />
+              <Text
+                style={[
+                  styles.typeOptionText,
+                  scheduleMode === 'routine' && styles.typeOptionTextActive,
+                ]}
+              >
+                Routine
               </Text>
             </TouchableOpacity>
             <TouchableOpacity
-              testID="time-picker-button"
-              style={styles.dateTimeButton}
-              onPress={openTimePicker}
+              style={[styles.typeOption, scheduleMode === 'simple' && styles.typeOptionActive]}
+              onPress={() => setScheduleMode('simple')}
             >
-              <Ionicons name="time-outline" size={20} color="#8E9A86" />
-              <Text style={styles.dateTimeText}>
-                {time.toLocaleTimeString(undefined, {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+              <Ionicons
+                name="time-outline"
+                size={20}
+                color={scheduleMode === 'simple' ? '#FFFFFF' : '#8E9A86'}
+              />
+              <Text
+                style={[
+                  styles.typeOptionText,
+                  scheduleMode === 'simple' && styles.typeOptionTextActive,
+                ]}
+              >
+                Simple
               </Text>
             </TouchableOpacity>
           </View>
         </View>
 
-        {Platform.OS === 'android' && showDatePicker && (
+        {scheduleMode === 'routine' ? (
+          <>
+            {/* Quick Templates */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Quick templates</Text>
+              <View style={styles.templateRow}>
+                {TEMPLATES.map((tmpl) => {
+                  const isAdded = scheduleTimes.includes(tmpl.times[0]);
+                  return (
+                    <TouchableOpacity
+                      key={tmpl.name}
+                      style={[styles.templateChip, isAdded && styles.templateChipAdded]}
+                      onPress={() => addTemplateTime(tmpl.times[0])}
+                      disabled={isAdded}
+                    >
+                      <Ionicons
+                        name={tmpl.icon as any}
+                        size={18}
+                        color={isAdded ? '#FFFFFF' : '#8E9A86'}
+                      />
+                      <Text
+                        style={[styles.templateChipText, isAdded && styles.templateChipTextAdded]}
+                      >
+                        {tmpl.name}
+                      </Text>
+                      <Text
+                        style={[styles.templateChipTime, isAdded && styles.templateChipTimeAdded]}
+                      >
+                        {scheduleSuggestionsService.formatTimeForDisplay(tmpl.times[0])}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Reminder Times */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Reminder times ({scheduleTimes.length}/5)</Text>
+              {scheduleTimes.map((t, index) => (
+                <View key={`${t}-${index}`} style={styles.timeSlotRow}>
+                  <TouchableOpacity
+                    style={styles.timeSlotButton}
+                    onPress={() => openRoutineTimePicker(index)}
+                  >
+                    <Ionicons name="time-outline" size={20} color="#8E9A86" />
+                    <Text style={styles.timeSlotText}>
+                      {scheduleSuggestionsService.formatTimeForDisplay(t)}
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.removeTimeButton}
+                    onPress={() => removeTime(index)}
+                  >
+                    <Ionicons name="close-circle" size={24} color="#EF4444" />
+                  </TouchableOpacity>
+                </View>
+              ))}
+              {scheduleTimes.length < 5 && (
+                <TouchableOpacity style={styles.addTimeButton} onPress={addNewTimeSlot}>
+                  <Ionicons name="add-circle-outline" size={20} color="#8E9A86" />
+                  <Text style={styles.addTimeText}>Add time</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {/* Repeat Days */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Repeat days</Text>
+              <View style={styles.presetRow}>
+                {DAY_PRESETS.map((preset) => (
+                  <TouchableOpacity
+                    key={preset.key}
+                    style={[styles.presetChip, dayPreset === preset.key && styles.presetChipActive]}
+                    onPress={() => selectDayPreset(preset.key)}
+                  >
+                    <Text
+                      style={[
+                        styles.presetChipText,
+                        dayPreset === preset.key && styles.presetChipTextActive,
+                      ]}
+                    >
+                      {preset.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+              {dayPreset === 'custom' && (
+                <View style={styles.dayGrid}>
+                  {DAYS_OF_WEEK.map(({ key, label, day }) => (
+                    <TouchableOpacity
+                      key={key}
+                      style={[
+                        styles.dayCircle,
+                        scheduleDays.includes(day) && styles.dayCircleActive,
+                      ]}
+                      onPress={() => toggleDay(day)}
+                    >
+                      <Text
+                        style={[
+                          styles.dayCircleText,
+                          scheduleDays.includes(day) && styles.dayCircleTextActive,
+                        ]}
+                      >
+                        {label}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            {/* Timezone */}
+            <View style={styles.section}>
+              <View style={styles.timezoneRow}>
+                <Ionicons name="globe-outline" size={20} color="#6B7280" />
+                <Text style={styles.timezoneText}>
+                  {scheduleSuggestionsService.formatTimezoneDisplay(userTimezone)}
+                </Text>
+              </View>
+            </View>
+
+            {/* Preview */}
+            <TouchableOpacity
+              style={styles.previewButton}
+              onPress={fetchPreview}
+              disabled={loadingPreview}
+            >
+              {loadingPreview ? (
+                <ActivityIndicator size="small" color="#8E9A86" />
+              ) : (
+                <>
+                  <Ionicons name="eye-outline" size={20} color="#8E9A86" />
+                  <Text style={styles.previewButtonText}>Preview schedule</Text>
+                </>
+              )}
+            </TouchableOpacity>
+
+            {showPreview && previewData && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>
+                  {previewData.total_notifications_per_week} notifications per week
+                </Text>
+                {previewData.preview.map((day) => (
+                  <View key={day.date} style={styles.previewDay}>
+                    <Text style={styles.previewDayLabel}>{day.day}</Text>
+                    <Text style={styles.previewDayTimes}>
+                      {day.times
+                        .map((t) => scheduleSuggestionsService.formatTimeForDisplay(t))
+                        .join(', ')}
+                    </Text>
+                  </View>
+                ))}
+              </View>
+            )}
+          </>
+        ) : (
+          <>
+            {/* Simple mode: When */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>When</Text>
+              <View style={styles.dateTimeRow}>
+                <TouchableOpacity
+                  testID="date-picker-button"
+                  style={styles.dateTimeButton}
+                  onPress={openDatePicker}
+                >
+                  <Ionicons name="calendar-outline" size={20} color="#8E9A86" />
+                  <Text style={styles.dateTimeText}>
+                    {time.toLocaleDateString(undefined, {
+                      month: 'short',
+                      day: 'numeric',
+                      year: 'numeric',
+                    })}
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  testID="time-picker-button"
+                  style={styles.dateTimeButton}
+                  onPress={openSimpleTimePicker}
+                >
+                  <Ionicons name="time-outline" size={20} color="#8E9A86" />
+                  <Text style={styles.dateTimeText}>
+                    {time.toLocaleTimeString(undefined, {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {Platform.OS === 'android' && showDatePicker && (
+              <DateTimePicker
+                value={time}
+                mode="date"
+                display="default"
+                minimumDate={new Date()}
+                onChange={onDateChange}
+              />
+            )}
+            {Platform.OS === 'android' && showTimePicker && (
+              <DateTimePicker value={time} mode="time" display="default" onChange={onTimeChange} />
+            )}
+
+            {Platform.OS === 'ios' && renderIOSPickerModal(showDatePicker, 'date', onDateChange)}
+            {Platform.OS === 'ios' && renderIOSPickerModal(showTimePicker, 'time', onTimeChange)}
+
+            {/* Simple mode: How often */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>How often</Text>
+              <View style={styles.frequencyGrid}>
+                {SIMPLE_FREQUENCIES.map((freq) => (
+                  <TouchableOpacity
+                    key={freq.value}
+                    style={[
+                      styles.frequencyOption,
+                      frequency === freq.value && styles.frequencyOptionActive,
+                    ]}
+                    onPress={() => setFrequency(freq.value)}
+                  >
+                    <Text
+                      style={[
+                        styles.frequencyOptionText,
+                        frequency === freq.value && styles.frequencyOptionTextActive,
+                      ]}
+                    >
+                      {freq.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+          </>
+        )}
+
+        {/* Routine mode time picker (Android) */}
+        {Platform.OS === 'android' && activeTimePickerIndex !== null && (
           <DateTimePicker
-            value={time}
-            mode="date"
+            value={tempTime}
+            mode="time"
             display="default"
-            minimumDate={new Date()}
-            onChange={onDateChange}
+            onChange={onRoutineTimeChange}
           />
         )}
-        {Platform.OS === 'android' && showTimePicker && (
-          <DateTimePicker value={time} mode="time" display="default" onChange={onTimeChange} />
-        )}
 
-        {Platform.OS === 'ios' && renderIOSPickerModal(showDatePicker, 'date', onDateChange)}
-        {Platform.OS === 'ios' && renderIOSPickerModal(showTimePicker, 'time', onTimeChange)}
+        {/* Routine mode time picker (iOS) */}
+        {Platform.OS === 'ios' && renderRoutineTimePickerModal()}
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>How often</Text>
-          <View style={styles.frequencyGrid}>
-            {FREQUENCIES.map((freq) => (
-              <TouchableOpacity
-                key={freq.value}
-                style={[
-                  styles.frequencyOption,
-                  frequency === freq.value && styles.frequencyOptionActive,
-                ]}
-                onPress={() => setFrequency(freq.value)}
-              >
-                <Text
-                  style={[
-                    styles.frequencyOptionText,
-                    frequency === freq.value && styles.frequencyOptionTextActive,
-                  ]}
-                >
-                  {freq.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-
+        {/* Submit */}
         <TouchableOpacity
           style={[styles.submitButton, submitting && styles.submitButtonDisabled]}
           onPress={handleSubmit}
@@ -584,6 +1024,187 @@ const styles = StyleSheet.create({
     color: '#333',
     flex: 1,
   },
+
+  // Template styles
+  templateRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  templateChip: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    gap: 4,
+  },
+  templateChipAdded: {
+    backgroundColor: '#8E9A86',
+    borderColor: '#8E9A86',
+  },
+  templateChipText: {
+    fontSize: 12,
+    fontFamily: 'Red_Hat_Text-SemiBold',
+    color: '#333',
+  },
+  templateChipTextAdded: {
+    color: '#FFFFFF',
+  },
+  templateChipTime: {
+    fontSize: 11,
+    fontFamily: 'Red_Hat_Text-Regular',
+    color: '#6B7280',
+  },
+  templateChipTimeAdded: {
+    color: 'rgba(255,255,255,0.8)',
+  },
+
+  // Time slot styles
+  timeSlotRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  timeSlotButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#F3F4F6',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+  },
+  timeSlotText: {
+    fontSize: 16,
+    fontFamily: 'Red_Hat_Text-SemiBold',
+    color: '#333',
+  },
+  removeTimeButton: {
+    padding: 8,
+  },
+  addTimeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 10,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+    borderStyle: 'dashed',
+  },
+  addTimeText: {
+    fontSize: 14,
+    fontFamily: 'Red_Hat_Text-SemiBold',
+    color: '#8E9A86',
+  },
+
+  // Day preset styles
+  presetRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 4,
+  },
+  presetChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+  },
+  presetChipActive: {
+    backgroundColor: '#8E9A86',
+    borderColor: '#8E9A86',
+  },
+  presetChipText: {
+    fontSize: 13,
+    fontFamily: 'Red_Hat_Text-SemiBold',
+    color: '#6B7280',
+  },
+  presetChipTextActive: {
+    color: '#FFFFFF',
+  },
+  dayGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  dayCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: '#E5E7EB',
+  },
+  dayCircleActive: {
+    backgroundColor: '#8E9A86',
+    borderColor: '#8E9A86',
+  },
+  dayCircleText: {
+    fontSize: 14,
+    fontFamily: 'Red_Hat_Text-SemiBold',
+    color: '#6B7280',
+  },
+  dayCircleTextActive: {
+    color: '#FFFFFF',
+  },
+
+  // Timezone
+  timezoneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  timezoneText: {
+    fontSize: 14,
+    fontFamily: 'Red_Hat_Text-Regular',
+    color: '#6B7280',
+  },
+
+  // Preview
+  previewButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    paddingVertical: 14,
+    marginBottom: 16,
+    borderWidth: 2,
+    borderColor: '#8E9A86',
+  },
+  previewButtonText: {
+    fontSize: 15,
+    fontFamily: 'Red_Hat_Text-SemiBold',
+    color: '#8E9A86',
+  },
+  previewDay: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  previewDayLabel: {
+    fontSize: 14,
+    fontFamily: 'Red_Hat_Text-SemiBold',
+    color: '#333',
+  },
+  previewDayTimes: {
+    fontSize: 13,
+    fontFamily: 'Red_Hat_Text-Regular',
+    color: '#6B7280',
+  },
+
+  // Simple mode styles
   dateTimeRow: {
     flexDirection: 'row',
     gap: 12,
@@ -627,6 +1248,8 @@ const styles = StyleSheet.create({
   frequencyOptionTextActive: {
     color: '#FFFFFF',
   },
+
+  // Submit
   submitButton: {
     backgroundColor: '#6D7E68',
     paddingVertical: 16,
@@ -642,6 +1265,8 @@ const styles = StyleSheet.create({
     fontFamily: 'Red_Hat_Text-SemiBold',
     color: '#FFFFFF',
   },
+
+  // Modals
   modalOverlay: {
     flex: 1,
     justifyContent: 'flex-end',
