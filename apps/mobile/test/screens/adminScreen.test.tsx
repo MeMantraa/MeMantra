@@ -6,6 +6,7 @@ import AdminScreen from '../../screens/adminScreen';
 import * as ThemeContext from '../../context/ThemeContext';
 import { mantraService } from '../../services/mantra.service';
 import { userService } from '../../services/user.service';
+import { categoryService } from '../../services/category.service';
 
 jest.mock('../../services/mantra.service', () => ({
   mantraService: {
@@ -22,6 +23,18 @@ jest.mock('../../services/user.service', () => ({
     createUser: jest.fn(),
     updateUser: jest.fn(),
     deleteUser: jest.fn(),
+  },
+}));
+
+jest.mock('../../services/category.service', () => ({
+  categoryService: {
+    getAllCategories: jest.fn(),
+    createCategory: jest.fn(),
+    updateCategory: jest.fn(),
+    deleteCategory: jest.fn(),
+    addMantraToCategory: jest.fn(),
+    removeMantraFromCategory: jest.fn(),
+    getCategoriesForMantra: jest.fn(),
   },
 }));
 
@@ -53,6 +66,26 @@ const fakeMantras = [
     is_active: true,
   },
 ];
+const fakeCategories = [
+  {
+    category_id: 1,
+    name: 'Breathing',
+    description: 'Breathing exercises',
+    category_type: 'essential',
+    image_url: null,
+    parent_id: null,
+    is_active: true,
+  },
+  {
+    category_id: 2,
+    name: 'Productivity',
+    description: 'Productivity goals',
+    category_type: 'goal',
+    image_url: null,
+    parent_id: null,
+    is_active: true,
+  },
+];
 const fakeUsers = [
   {
     user_id: 1,
@@ -72,6 +105,15 @@ beforeEach(() => {
       primaryDark: '#111',
       text: '#222',
     },
+  });
+  // Default mock for categories
+  (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+    status: 'success',
+    data: { categories: fakeCategories },
+  });
+  (categoryService.getCategoriesForMantra as jest.Mock).mockResolvedValue({
+    status: 'success',
+    data: { categories: [] },
   });
 });
 
@@ -302,8 +344,9 @@ describe('AdminScreen (extended coverage)', () => {
     fireEvent.press(getByText('Manage'));
     await waitFor(() => expect(getByText('Edit')).toBeTruthy());
     fireEvent.press(getByText('Edit'));
-    // Press the correct button for editing.
-    fireEvent.press(getByText('Update Mantra')); // NOT "Save Changes"
+    // Wait for modal to open and render the button
+    await waitFor(() => expect(getByText('Update Mantra')).toBeTruthy());
+    fireEvent.press(getByText('Update Mantra'));
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to update mantra');
     });
@@ -320,7 +363,10 @@ describe('AdminScreen (extended coverage)', () => {
     await waitFor(() => expect(getByText('Delete')).toBeTruthy());
     fireEvent.press(getByText('Delete'));
 
-    // Simulate pressing "Delete" on the alert dialog
+    // Wait for Alert to be called then get the callback
+    await waitFor(() => {
+      expect((Alert.alert as jest.Mock).mock.calls.length).toBeGreaterThan(0);
+    });
     const deleteCallback = (Alert.alert as jest.Mock).mock.calls[0][2][1].onPress;
     deleteCallback();
 
@@ -389,7 +435,10 @@ describe('AdminScreen (extended coverage)', () => {
     await waitFor(() => expect(getByText('Delete')).toBeTruthy());
     fireEvent.press(getByText('Delete'));
 
-    // Simulate pressing "Delete" on the alert dialog
+    // Wait for Alert to be called then get the callback
+    await waitFor(() => {
+      expect((Alert.alert as jest.Mock).mock.calls.length).toBeGreaterThan(0);
+    });
     const deleteCallback = (Alert.alert as jest.Mock).mock.calls[0][2][1].onPress;
     deleteCallback();
 
@@ -411,8 +460,10 @@ describe('AdminScreen (extended coverage)', () => {
     fireEvent.press(getByText('Manage'));
     await waitFor(() => expect(getByText('Edit')).toBeTruthy());
     fireEvent.press(getByText('Edit'));
+    // Wait for modal to render and find the input
+    await waitFor(() => expect(getByPlaceholderText('Title *')).toBeTruthy());
     fireEvent.changeText(getByPlaceholderText('Title *'), 'Changed');
-    fireEvent.press(getByText('Update Mantra')); // NOT "Save Changes"
+    fireEvent.press(getByText('Update Mantra'));
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith('Success', 'Mantra updated successfully');
       expect(queryByText(/Edit Mantra/i)).toBeNull();
@@ -492,7 +543,10 @@ describe('AdminScreen (extended coverage)', () => {
     await waitFor(() => expect(getByText('Delete')).toBeTruthy());
     fireEvent.press(getByText('Delete'));
 
-    // Simulate pressing "Delete" on the alert dialog
+    // Wait for Alert to be called then get the callback
+    await waitFor(() => {
+      expect((Alert.alert as jest.Mock).mock.calls.length).toBeGreaterThan(0);
+    });
     const deleteCallback = (Alert.alert as jest.Mock).mock.calls[0][2][1].onPress;
     deleteCallback();
 
@@ -517,7 +571,10 @@ describe('AdminScreen (extended coverage)', () => {
     await waitFor(() => expect(getByText('Delete')).toBeTruthy());
     fireEvent.press(getByText('Delete'));
 
-    // Simulate pressing "Delete" on the alert dialog
+    // Wait for Alert to be called then get the callback
+    await waitFor(() => {
+      expect((Alert.alert as jest.Mock).mock.calls.length).toBeGreaterThan(0);
+    });
     const deleteCallback = (Alert.alert as jest.Mock).mock.calls[0][2][1].onPress;
     deleteCallback();
 
