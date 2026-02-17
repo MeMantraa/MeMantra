@@ -702,4 +702,397 @@ describe('AdminScreen (extended coverage)', () => {
       expect(queryByText('alice')).toBeNull();
     });
   });
+
+  it('switches to Categories mode and shows category controls', async () => {
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { categories: fakeCategories },
+    });
+
+    const { getByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Categories'));
+
+    await waitFor(
+      () => {
+        expect(getByText('Add a new category')).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
+  });
+
+  it('creates category with valid name and type', async () => {
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { categories: [] },
+    });
+    (categoryService.createCategory as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: {
+        category: {
+          category_id: 3,
+          name: 'Meditation',
+          description: 'Meditation techniques',
+          category_type: 'essential',
+          parent_id: null,
+          is_active: true,
+        },
+      },
+    });
+
+    const { getByText, getByPlaceholderText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Categories'));
+
+    await waitFor(() => expect(getByText('Add a new category')).toBeTruthy());
+
+    fireEvent.changeText(getByPlaceholderText('Category Name *'), 'Meditation');
+    fireEvent.changeText(getByPlaceholderText('Description'), 'Meditation techniques');
+    fireEvent.press(getByText('Essentials'));
+    fireEvent.press(getByText('Add Category'));
+
+    await waitFor(() => {
+      expect(categoryService.createCategory).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'Meditation',
+          description: 'Meditation techniques',
+          category_type: 'essential',
+        }),
+        'mock-token',
+      );
+      expect(Alert.alert).toHaveBeenCalledWith('Success', 'Category created successfully');
+    });
+  });
+
+  it('shows alert when category name is missing', async () => {
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { categories: [] },
+    });
+
+    const { getByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Categories'));
+
+    await waitFor(() => expect(getByText('Add a new category')).toBeTruthy());
+
+    fireEvent.press(getByText('Add Category'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Category name is required');
+    });
+  });
+
+  it('shows alert when category type is not selected', async () => {
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { categories: [] },
+    });
+
+    const { getByText, getByPlaceholderText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Categories'));
+
+    await waitFor(() => expect(getByText('Add a new category')).toBeTruthy());
+
+    fireEvent.changeText(getByPlaceholderText('Category Name *'), 'Test');
+    fireEvent.press(getByText('Add Category'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Please select a category layer');
+    });
+  });
+
+  it('shows error alert if create category API fails', async () => {
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { categories: [] },
+    });
+    (categoryService.createCategory as jest.Mock).mockRejectedValue(new Error('fail'));
+
+    const { getByText, getByPlaceholderText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Categories'));
+
+    await waitFor(() => expect(getByText('Add a new category')).toBeTruthy());
+
+    fireEvent.changeText(getByPlaceholderText('Category Name *'), 'Meditation');
+    fireEvent.press(getByText('Essentials'));
+    fireEvent.press(getByText('Add Category'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to create category');
+    });
+  });
+
+  it('displays categories in Manage view', async () => {
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { categories: fakeCategories },
+    });
+
+    const { getByText, queryByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Categories'));
+
+    // Wait for Manage button to appear, indicating load completed
+    await waitFor(() => expect(getByText('Manage')).toBeTruthy(), { timeout: 10000 });
+
+    fireEvent.press(getByText('Manage'));
+
+    // Now check for category names
+    await waitFor(
+      () => {
+        expect(getByText('Breathing')).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
+    expect(queryByText('Breathing')).toBeTruthy();
+  });
+
+  it('opens edit modal when Edit button is pressed for category', async () => {
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { categories: fakeCategories },
+    });
+
+    const { getByText, getAllByText, queryByTestId } = render(<AdminScreen />);
+    fireEvent.press(getByText('Categories'));
+
+    await waitFor(() => expect(getByText('Manage')).toBeTruthy(), { timeout: 10000 });
+    fireEvent.press(getByText('Manage'));
+
+    await waitFor(() => expect(getAllByText('Edit').length).toBeGreaterThan(0), { timeout: 10000 });
+
+    // Find and press the first Edit button (from the FlatList items, not the modal)
+    const editButtons = getAllByText('Edit');
+    fireEvent.press(editButtons[0]);
+
+    // Wait for the modal to render and have the Edit Category title
+    await waitFor(
+      () => {
+        const allEditCategoryTexts = getAllByText('Edit Category');
+        expect(allEditCategoryTexts.length).toBeGreaterThan(0);
+      },
+      { timeout: 10000 },
+    );
+  });
+
+  it('updates category with changed data', async () => {
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { categories: fakeCategories },
+    });
+    (categoryService.updateCategory as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: {
+        category: {
+          category_id: 1,
+          name: 'Updated Breathing',
+          description: 'Updated description',
+          category_type: 'goal',
+          parent_id: null,
+          is_active: true,
+        },
+      },
+    });
+
+    const { getByText, getByPlaceholderText, getAllByText, queryByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Categories'));
+
+    await waitFor(() => expect(getByText('Manage')).toBeTruthy(), { timeout: 10000 });
+    fireEvent.press(getByText('Manage'));
+
+    await waitFor(() => expect(getAllByText('Edit').length).toBeGreaterThan(0), { timeout: 10000 });
+
+    const editButtons = getAllByText('Edit');
+    fireEvent.press(editButtons[0]);
+
+    // Wait for modal to render
+    await waitFor(() => {
+      const allUpdateTexts = getAllByText('Update Category');
+      expect(allUpdateTexts.length).toBeGreaterThan(0);
+    });
+
+    fireEvent.changeText(getByPlaceholderText('Category Name *'), 'Updated Breathing');
+    fireEvent.press(getAllByText('Update Category')[0]);
+
+    await waitFor(() => {
+      expect(categoryService.updateCategory).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({ name: 'Updated Breathing' }),
+        'mock-token',
+      );
+      expect(Alert.alert).toHaveBeenCalledWith('Success', 'Category updated successfully');
+    });
+  });
+
+  it('shows error alert if update category API fails', async () => {
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { categories: fakeCategories },
+    });
+    (categoryService.updateCategory as jest.Mock).mockRejectedValue(new Error('fail'));
+
+    const { getByText, getAllByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Categories'));
+
+    await waitFor(() => expect(getByText('Manage')).toBeTruthy(), { timeout: 10000 });
+    fireEvent.press(getByText('Manage'));
+
+    await waitFor(() => expect(getAllByText('Edit').length).toBeGreaterThan(0), { timeout: 10000 });
+
+    const editButtons = getAllByText('Edit');
+    fireEvent.press(editButtons[0]);
+
+    // Wait for modal to render with Update button
+    await waitFor(() => {
+      const updateButtons = getAllByText('Update Category');
+      expect(updateButtons.length).toBeGreaterThan(0);
+    });
+
+    fireEvent.press(getAllByText('Update Category')[0]);
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to update category');
+    });
+  });
+
+  it('shows Alert on deleting category and confirms press', async () => {
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { categories: fakeCategories },
+    });
+
+    const { getByText, getAllByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Categories'));
+
+    await waitFor(() => expect(getByText('Manage')).toBeTruthy(), { timeout: 10000 });
+    fireEvent.press(getByText('Manage'));
+
+    await waitFor(() => expect(getAllByText('Delete').length).toBeGreaterThan(0), {
+      timeout: 10000,
+    });
+    fireEvent.press(getAllByText('Delete')[0]);
+
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Delete Category',
+      expect.stringContaining('Breathing'),
+      expect.any(Array),
+    );
+  });
+
+  it('successfully deletes a category and shows success alert', async () => {
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { categories: fakeCategories },
+    });
+    (categoryService.deleteCategory as jest.Mock).mockResolvedValue({});
+
+    const { getByText, getAllByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Categories'));
+
+    await waitFor(() => expect(getByText('Manage')).toBeTruthy(), { timeout: 10000 });
+    fireEvent.press(getByText('Manage'));
+
+    await waitFor(() => expect(getAllByText('Delete').length).toBeGreaterThan(0), {
+      timeout: 10000,
+    });
+    fireEvent.press(getAllByText('Delete')[0]);
+
+    // Wait for Alert to be called then get the callback
+    await waitFor(() => {
+      expect((Alert.alert as jest.Mock).mock.calls.length).toBeGreaterThan(0);
+    });
+    const deleteCallback = (Alert.alert as jest.Mock).mock.calls[
+      (Alert.alert as jest.Mock).mock.calls.length - 1
+    ][2][1].onPress;
+    deleteCallback();
+
+    await waitFor(
+      () => {
+        expect(categoryService.deleteCategory).toHaveBeenCalledWith(1, 'mock-token');
+        expect(Alert.alert).toHaveBeenCalledWith('Success', 'Category deleted');
+      },
+      { timeout: 10000 },
+    );
+  });
+
+  it('shows error alert if delete category API fails', async () => {
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { categories: fakeCategories },
+    });
+    (categoryService.deleteCategory as jest.Mock).mockRejectedValue(new Error('fail'));
+
+    const { getByText, getAllByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Categories'));
+
+    await waitFor(() => expect(getByText('Manage')).toBeTruthy(), { timeout: 10000 });
+    fireEvent.press(getByText('Manage'));
+
+    await waitFor(() => expect(getAllByText('Delete').length).toBeGreaterThan(0), {
+      timeout: 10000,
+    });
+    fireEvent.press(getAllByText('Delete')[0]);
+
+    // Wait for Alert to be called then get the callback
+    await waitFor(() => {
+      expect((Alert.alert as jest.Mock).mock.calls.length).toBeGreaterThan(0);
+    });
+    const deleteCallback = (Alert.alert as jest.Mock).mock.calls[
+      (Alert.alert as jest.Mock).mock.calls.length - 1
+    ][2][1].onPress;
+    deleteCallback();
+
+    await waitFor(
+      () => {
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to delete category');
+      },
+      { timeout: 10000 },
+    );
+  });
+
+  it('shows error alert if loading categories fails', async () => {
+    (categoryService.getAllCategories as jest.Mock).mockRejectedValue(new Error('API fail'));
+
+    const { getByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Categories'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to load categories');
+    });
+  });
+
+  it('resets category form after successful creation', async () => {
+    const mockNewCategory = {
+      category_id: 3,
+      name: 'Meditation',
+      description: 'Meditation techniques',
+      category_type: 'essential',
+      parent_id: null,
+      is_active: true,
+    };
+
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { categories: [] },
+    });
+    (categoryService.createCategory as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { category: mockNewCategory },
+    });
+
+    const { getByText, getByPlaceholderText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Categories'));
+
+    await waitFor(() => expect(getByText('Add a new category')).toBeTruthy());
+
+    fireEvent.changeText(getByPlaceholderText('Category Name *'), 'Meditation');
+    fireEvent.press(getByText('Essentials'));
+    fireEvent.press(getByText('Add Category'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Success', 'Category created successfully');
+    });
+
+    // Verify form is reset (placeholder text shows empty input)
+    await waitFor(() => {
+      expect(getByPlaceholderText('Category Name *').props.value).toBe('');
+    });
+  });
 });
