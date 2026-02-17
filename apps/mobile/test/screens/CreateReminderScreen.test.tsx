@@ -114,6 +114,11 @@ describe('CreateReminderScreen', () => {
     // Updated to use testID to differentiate from the button text
     expect(getByTestId('screen-title')).toBeTruthy();
     expect(getByText('Remind me about')).toBeTruthy();
+
+    // Wait for async loadItems to complete so state updates are flushed
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
   });
 
   it('loads mantras and collections on mount', async () => {
@@ -189,6 +194,11 @@ describe('CreateReminderScreen', () => {
 
   it('shows frequency options and allows selection', async () => {
     const { getByText } = render(<CreateReminderScreen />);
+
+    // Wait for async loadItems to complete
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
 
     // Switch to Simple mode (screen defaults to Routine)
     fireEvent.press(getByText('Simple'));
@@ -514,9 +524,13 @@ describe('CreateReminderScreen', () => {
   });
 
   it('navigates back when back button area is pressed', async () => {
-    const { getByTestId } = render(<CreateReminderScreen />);
+    const { getByTestId, getByText } = render(<CreateReminderScreen />);
 
-    // Now we can specifically test the back button press
+    // Wait for async loadItems to complete
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
     const backButton = getByTestId('back-button');
     fireEvent.press(backButton);
     expect(mockGoBack).toHaveBeenCalled();
@@ -657,7 +671,9 @@ describe('CreateReminderScreen', () => {
 
     // Simulate the onChange on the DateTimePicker
     const picker = getByTestId('datetime-picker-date');
-    picker.props.onChange({ type: 'set' }, new Date('2024-06-15T10:00:00Z'));
+    await act(async () => {
+      picker.props.onChange({ type: 'set' }, new Date('2024-06-15T10:00:00Z'));
+    });
   });
 
   it('handles iOS time change callback', async () => {
@@ -677,7 +693,9 @@ describe('CreateReminderScreen', () => {
     });
 
     const picker = getByTestId('datetime-picker-time');
-    picker.props.onChange({ type: 'set' }, new Date('2024-01-01T14:30:00Z'));
+    await act(async () => {
+      picker.props.onChange({ type: 'set' }, new Date('2024-01-01T14:30:00Z'));
+    });
   });
 
   it('does not skip preselected mantra fetch when it is already in saved list', async () => {
@@ -1347,17 +1365,7 @@ describe('CreateReminderScreen', () => {
     // Press "Weekends" preset
     fireEvent.press(getByText('Weekends'));
 
-    // The Weekends preset should now be active. Verify by submitting and
-    // checking the schedule_days in the createReminder call.
-    fireEvent.press(getByText('Be Present'));
-
-    (reminderService.createReminder as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminder: { reminder_id: 4 } },
-    });
-
-    const { getByTestId } = render(<CreateReminderScreen />);
-    // Instead, just verify the preset change was accepted and no errors occurred
+    // Verify the preset change was accepted and no errors occurred
     expect(getByText('Weekends')).toBeTruthy();
   });
 });
