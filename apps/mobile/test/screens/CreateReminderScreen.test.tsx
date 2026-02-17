@@ -111,12 +111,13 @@ describe('CreateReminderScreen', () => {
   it('renders the screen with title', async () => {
     const { getByTestId, getByText } = render(<CreateReminderScreen />);
 
-    // Updated to use testID to differentiate from the button text
     expect(getByTestId('screen-title')).toBeTruthy();
     expect(getByText('Remind me about')).toBeTruthy();
 
-    // Flush pending async state updates from loadItems
-    await act(async () => {});
+    // Wait for loadItems to settle so state updates don't leak
+    await waitFor(() => {
+      expect(mantraService.getSavedMantras).toHaveBeenCalled();
+    });
   });
 
   it('loads mantras and collections on mount', async () => {
@@ -193,8 +194,10 @@ describe('CreateReminderScreen', () => {
   it('shows frequency options and allows selection', async () => {
     const { getByText } = render(<CreateReminderScreen />);
 
-    // Flush pending async state updates from loadItems
-    await act(async () => {});
+    // Wait for loadItems to settle
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
 
     // Switch to Simple mode (screen defaults to Routine)
     fireEvent.press(getByText('Simple'));
@@ -259,26 +262,26 @@ describe('CreateReminderScreen', () => {
 
     fireEvent.press(getByText('Be Present'));
 
-    // Use testID to target the actual button (default mode is routine)
-    fireEvent.press(getByTestId('create-reminder-button'));
-
-    await waitFor(() => {
-      expect(reminderService.createReminder).toHaveBeenCalledWith(
-        expect.objectContaining({
-          mantra_id: 1,
-          frequency: 'routine',
-          status: 'active',
-          schedule_times: expect.any(Array),
-          timezone: expect.any(String),
-        }),
-        'test-token',
-      );
-      expect(Alert.alert).toHaveBeenCalledWith(
-        'Reminder Created',
-        'Your reminder has been set.',
-        expect.any(Array),
-      );
+    // Wrap submit in act so the full async handleSubmit chain resolves
+    await act(async () => {
+      fireEvent.press(getByTestId('create-reminder-button'));
     });
+
+    expect(reminderService.createReminder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        mantra_id: 1,
+        frequency: 'routine',
+        status: 'active',
+        schedule_times: expect.any(Array),
+        timezone: expect.any(String),
+      }),
+      'test-token',
+    );
+    expect(Alert.alert).toHaveBeenCalledWith(
+      'Reminder Created',
+      'Your reminder has been set.',
+      expect.any(Array),
+    );
   });
 
   it('successfully creates a collection reminder', async () => {
@@ -301,21 +304,21 @@ describe('CreateReminderScreen', () => {
 
     fireEvent.press(getByText('Morning Mantras'));
 
-    // Use testID to target the actual button (default mode is routine)
-    fireEvent.press(getByTestId('create-reminder-button'));
-
-    await waitFor(() => {
-      expect(reminderService.createReminder).toHaveBeenCalledWith(
-        expect.objectContaining({
-          collection_id: 10,
-          frequency: 'routine',
-          status: 'active',
-          schedule_times: expect.any(Array),
-          timezone: expect.any(String),
-        }),
-        'test-token',
-      );
+    // Wrap submit in act so the full async handleSubmit chain resolves
+    await act(async () => {
+      fireEvent.press(getByTestId('create-reminder-button'));
     });
+
+    expect(reminderService.createReminder).toHaveBeenCalledWith(
+      expect.objectContaining({
+        collection_id: 10,
+        frequency: 'routine',
+        status: 'active',
+        schedule_times: expect.any(Array),
+        timezone: expect.any(String),
+      }),
+      'test-token',
+    );
   });
 
   it('shows error alert when creation fails', async () => {
@@ -522,8 +525,10 @@ describe('CreateReminderScreen', () => {
   it('navigates back when back button area is pressed', async () => {
     const { getByTestId } = render(<CreateReminderScreen />);
 
-    // Flush pending async state updates from loadItems
-    await act(async () => {});
+    // Wait for loadItems to settle
+    await waitFor(() => {
+      expect(mantraService.getSavedMantras).toHaveBeenCalled();
+    });
 
     const backButton = getByTestId('back-button');
     fireEvent.press(backButton);
