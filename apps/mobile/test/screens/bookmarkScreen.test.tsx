@@ -5,14 +5,35 @@ import BookmarkScreen from '../../screens/bookmarkScreen';
 import { storage } from '../../utils/storage';
 import { SavedProvider } from '../../context/SavedContext';
 import { collectionService } from '../../services/collection.service';
+import { reminderService } from '../../services/reminder.service';
 
 jest.mock('@expo/vector-icons', () => ({
   Ionicons: () => null,
 }));
 
+jest.mock('@react-navigation/native', () => {
+  const React = jest.requireActual('react');
+  return {
+    ...jest.requireActual('@react-navigation/native'),
+    useFocusEffect: (callback: () => void) => {
+      React.useEffect(() => {
+        callback();
+      }, []);
+    },
+  };
+});
+
 jest.mock('../../services/collection.service', () => ({
   collectionService: {
     getCollectionById: jest.fn(),
+  },
+}));
+
+jest.mock('../../services/reminder.service', () => ({
+  reminderService: {
+    getReminders: jest.fn().mockResolvedValue({ status: 'success', data: { reminders: [] } }),
+    updateReminder: jest.fn(),
+    deleteReminder: jest.fn(),
   },
 }));
 
@@ -290,5 +311,87 @@ describe('BookmarkScreen', () => {
     await waitFor(() => {
       expect(collectionService.getCollectionById).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it('navigates to CreateReminder when mantra reminder pressed with no existing reminder', async () => {
+    (collectionService.getCollectionById as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { mantras: mockMantras },
+    });
+
+    const { getByTestId } = renderScreen();
+
+    await waitFor(() => {
+      expect(getByTestId('mantra-list')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('mantra-reminder-1'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('CreateReminder', { mantraId: 1 });
+  });
+
+  it('shows reminder alert when mantra reminder pressed with existing reminder', async () => {
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: {
+        reminders: [{ reminder_id: 50, mantra_id: 1, collection_id: null, status: 'active' }],
+      },
+    });
+    (collectionService.getCollectionById as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { mantras: mockMantras },
+    });
+
+    const { getByTestId } = renderScreen();
+
+    await waitFor(() => {
+      expect(getByTestId('mantra-list')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('mantra-reminder-1'));
+
+    expect(mockNavigate).not.toHaveBeenCalledWith('CreateReminder', expect.anything());
+    expect(Alert.alert).toHaveBeenCalledWith('Reminder', undefined, expect.any(Array));
+  });
+
+  it('navigates to CreateReminder when collection reminder pressed with no existing reminder', async () => {
+    (collectionService.getCollectionById as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { mantras: mockMantras },
+    });
+
+    const { getByTestId } = renderScreen();
+
+    await waitFor(() => {
+      expect(getByTestId('collection-reminder-button')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('collection-reminder-button'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('CreateReminder', { collectionId: 123 });
+  });
+
+  it('shows reminder alert when collection reminder pressed with existing reminder', async () => {
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: {
+        reminders: [{ reminder_id: 60, mantra_id: null, collection_id: 123, status: 'paused' }],
+      },
+    });
+    (collectionService.getCollectionById as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { mantras: mockMantras },
+    });
+
+    const { getByTestId } = renderScreen();
+
+    await waitFor(() => {
+      expect(getByTestId('collection-reminder-button')).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId('collection-reminder-button'));
+
+    expect(mockNavigate).not.toHaveBeenCalledWith('CreateReminder', expect.anything());
+    expect(Alert.alert).toHaveBeenCalledWith('Reminder', undefined, expect.any(Array));
   });
 });

@@ -109,7 +109,7 @@ export const CategoryModel = {
   },
 
   // Update category details
-  async update(categoryId: number, updates: Partial<Pick<Category, 'name' | 'description' | 'category_type' | 'image_url' | 'is_active'>>): Promise<Category | undefined> {
+  async update(categoryId: number, updates: Partial<Pick<Category, 'name' | 'description' | 'category_type' | 'parent_id' | 'image_url' | 'is_active'>>): Promise<Category | undefined> {
     return await db
       .updateTable('Category')
       .set(updates)
@@ -136,6 +136,40 @@ export const CategoryModel = {
       .where('category_id', '=', categoryId)
       .returningAll()
       .executeTakeFirst();
+  },
+
+  // Get child categories (subcategories) of a parent category
+  async getChildren(parentId: number): Promise<Category[]> {
+    return await db
+      .selectFrom('Category')
+      .where('parent_id', '=', parentId)
+      .where('is_active', '=', true)
+      .selectAll()
+      .orderBy('name', 'asc')
+      .execute();
+  },
+
+  // Get top-level categories (no parent)
+  async findTopLevel(): Promise<Category[]> {
+    return await db
+      .selectFrom('Category')
+      .where('parent_id', 'is', null)
+      .where('is_active', '=', true)
+      .selectAll()
+      .orderBy('name', 'asc')
+      .execute();
+  },
+
+  // Get top-level categories by type (no parent)
+  async findTopLevelByType(categoryType: string): Promise<Category[]> {
+    return await db
+      .selectFrom('Category')
+      .where('category_type', '=', categoryType)
+      .where('parent_id', 'is', null)
+      .where('is_active', '=', true)
+      .selectAll()
+      .orderBy('name', 'asc')
+      .execute();
   },
 };
 

@@ -120,4 +120,83 @@ describe('MantraCarousel', () => {
     const flatList = UNSAFE_getByType(FlatList);
     expect(() => flatList.props.onViewableItemsChanged({ viewableItems: [{}] })).not.toThrow();
   });
+
+  it('calls onShare when share button is pressed', () => {
+    const onShare = jest.fn();
+    const { getByTestId } = render(<MantraCarousel item={mockItem} onShare={onShare} />);
+
+    fireEvent.press(getByTestId('share-button'));
+
+    expect(onShare).toHaveBeenCalledWith(mockItem.mantra_id);
+  });
+
+  it('calls onJournal when journal button is pressed', () => {
+    const onJournal = jest.fn();
+    const { getByTestId } = render(<MantraCarousel item={mockItem} onJournal={onJournal} />);
+
+    fireEvent.press(getByTestId('journal-button'));
+
+    expect(onJournal).toHaveBeenCalledWith(mockItem.mantra_id, mockItem.title);
+  });
+
+  it('calls onReminder when reminder button is pressed', () => {
+    const onReminder = jest.fn();
+    const { getByTestId } = render(<MantraCarousel item={mockItem} onReminder={onReminder} />);
+
+    fireEvent.press(getByTestId('reminder-button'));
+
+    expect(onReminder).toHaveBeenCalledWith(mockItem.mantra_id);
+  });
+
+  it('does not call onShare, onJournal, or onReminder when not provided', () => {
+    const { getByTestId } = render(<MantraCarousel item={mockItem} />);
+
+    fireEvent.press(getByTestId('share-button'));
+    fireEvent.press(getByTestId('journal-button'));
+    fireEvent.press(getByTestId('reminder-button'));
+    // No errors thrown
+  });
+
+  it('hides buttons when showButtons is false', () => {
+    const onLike = jest.fn();
+    const { queryByTestId } = render(
+      <MantraCarousel item={mockItem} showButtons={false} onLike={onLike} />,
+    );
+
+    expect(queryByTestId('like-button')).toBeNull();
+    expect(queryByTestId('save-button')).toBeNull();
+    expect(queryByTestId('share-button')).toBeNull();
+    expect(queryByTestId('journal-button')).toBeNull();
+    expect(queryByTestId('reminder-button')).toBeNull();
+  });
+
+  it('displays like_count when provided', () => {
+    const itemWithLikes = { ...mockItem, like_count: 42 };
+    const { getByText } = render(<MantraCarousel item={itemWithLikes} />);
+
+    expect(getByText('42')).toBeTruthy();
+  });
+
+  it('does not display like_count when undefined', () => {
+    const itemNoLikes = { ...mockItem };
+    delete (itemNoLikes as any).like_count;
+    const { queryByText } = render(<MantraCarousel item={itemNoLikes} />);
+
+    expect(queryByText('42')).toBeNull();
+  });
+
+  it('applies isFocusMode text size class', () => {
+    const { getByText } = render(<MantraCarousel item={mockItem} isFocusMode />);
+    const mantraText = getByText('Be present');
+    expect(mantraText).toBeTruthy();
+  });
+
+  it('triggers onPress on mantra page tap', () => {
+    const onPress = jest.fn();
+    const { getByText } = render(<MantraCarousel item={mockItem} onPress={onPress} />);
+
+    fireEvent.press(getByText('Be present'));
+
+    expect(onPress).toHaveBeenCalled();
+  });
 });

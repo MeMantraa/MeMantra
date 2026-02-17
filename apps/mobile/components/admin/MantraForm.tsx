@@ -1,6 +1,7 @@
-import React from 'react';
-import { TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
+import { Category } from '../../services/category.service';
 import AppText from '../UI/textWrapper';
 import AppTextInput from '../UI/textInputWrapper';
 
@@ -20,6 +21,134 @@ interface MantraFormProps {
   onSubmit: () => void;
   submitting: boolean;
   isEdit?: boolean;
+  categories?: Category[];
+  selectedCategoryIds?: number[];
+  onToggleCategory?: (categoryId: number) => void;
+}
+
+const TYPE_ORDER = ['essential', 'goal', 'mood', 'scenario', 'time', 'theme'] as const;
+const TYPE_LABELS: Record<string, string> = {
+  essential: 'Essentials',
+  goal: 'Goals',
+  mood: 'Moods',
+  scenario: 'Life Scenarios',
+  time: 'Times of Day / Year',
+  theme: 'Values / Themes',
+};
+
+const TYPE_COLORS: Record<string, string> = {
+  essential: '#8B5CF6',
+  goal: '#3B82F6',
+  mood: '#EC4899',
+  scenario: '#10B981',
+  time: '#F59E0B',
+  theme: '#6366F1',
+};
+
+/* ─── Category Selector sub-component (grouped by layer) ─── */
+function CategorySelector({
+  categories,
+  selectedCategoryIds,
+  onToggleCategory,
+  submitting,
+}: Readonly<{
+  categories: Category[];
+  selectedCategoryIds: number[];
+  onToggleCategory: (id: number) => void;
+  submitting: boolean;
+}>) {
+  const [expandedLayers, setExpandedLayers] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(TYPE_ORDER.map((t) => [t, true])),
+  );
+
+  const grouped = useMemo(() => {
+    const map: Record<string, Category[]> = {};
+    for (const cat of categories) {
+      const type = cat.category_type || 'essential';
+      if (!map[type]) map[type] = [];
+      map[type].push(cat);
+    }
+
+    return map;
+  }, [categories]);
+
+  const toggleLayer = (layer: string) =>
+    setExpandedLayers((prev) => ({ ...prev, [layer]: !prev[layer] }));
+
+  const totalSelected = selectedCategoryIds.length;
+
+  return (
+    <View className="mb-4">
+      <AppText className="text-white text-sm font-semibold mb-2">
+        Categories{totalSelected > 0 ? ` (${totalSelected} selected)` : ''}
+      </AppText>
+
+      {TYPE_ORDER.map((layer) => {
+        const items = grouped[layer];
+        if (!items || items.length === 0) return null;
+        const expanded = expandedLayers[layer];
+        const layerSelectedCount = items.filter((c) =>
+          selectedCategoryIds.includes(c.category_id),
+        ).length;
+
+        return (
+          <View key={layer} className="mb-3">
+            {/* Section header */}
+            <TouchableOpacity
+              className="flex-row items-center justify-between rounded-xl px-3 py-2"
+              style={{ backgroundColor: `${TYPE_COLORS[layer]}22` }}
+              onPress={() => toggleLayer(layer)}
+            >
+              <View className="flex-row items-center gap-2">
+                <View
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: TYPE_COLORS[layer] }}
+                />
+                <AppText className="text-white text-sm font-semibold">{TYPE_LABELS[layer]}</AppText>
+              </View>
+              <View className="flex-row items-center gap-2">
+                {layerSelectedCount > 0 && (
+                  <View
+                    className="rounded-full px-2 py-0.5"
+                    style={{ backgroundColor: TYPE_COLORS[layer] }}
+                  >
+                    <AppText className="text-white text-xs font-bold">{layerSelectedCount}</AppText>
+                  </View>
+                )}
+                <AppText className="text-white/60 text-xs">{expanded ? '▲' : '▼'}</AppText>
+              </View>
+            </TouchableOpacity>
+
+            {/* Chips */}
+            {expanded && (
+              <View className="flex-row flex-wrap gap-2 mt-2 ml-1">
+                {items.map((cat) => {
+                  const isSelected = selectedCategoryIds.includes(cat.category_id);
+                  return (
+                    <TouchableOpacity
+                      key={cat.category_id}
+                      className="rounded-full px-3 py-1.5"
+                      style={{
+                        backgroundColor: isSelected
+                          ? TYPE_COLORS[layer]
+                          : `${TYPE_COLORS[layer]}20`,
+                      }}
+                      onPress={() => onToggleCategory(cat.category_id)}
+                      disabled={submitting}
+                    >
+                      <AppText className="text-xs font-semibold" style={{ color: '#ffffff' }}>
+                        {cat.name}
+                      </AppText>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+          </View>
+        );
+      })}
+    </View>
+  );
 }
 
 export default function MantraForm({
@@ -28,6 +157,9 @@ export default function MantraForm({
   onSubmit,
   submitting,
   isEdit = false,
+  categories = [],
+  selectedCategoryIds = [],
+  onToggleCategory,
 }: Readonly<MantraFormProps>) {
   const { colors } = useTheme();
 
@@ -140,6 +272,16 @@ export default function MantraForm({
         editable={!submitting}
         style={{ backgroundColor: '#ffffff', minHeight: 100, textAlignVertical: 'top' }}
       />
+
+      {/* Category Selection — grouped by layer */}
+      {categories.length > 0 && onToggleCategory && (
+        <CategorySelector
+          categories={categories}
+          selectedCategoryIds={selectedCategoryIds}
+          onToggleCategory={onToggleCategory}
+          submitting={submitting}
+        />
+      )}
 
       <TouchableOpacity
         accessibilityRole="button"

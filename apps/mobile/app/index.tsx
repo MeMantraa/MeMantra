@@ -29,6 +29,8 @@ import LikedScreen from '../screens/LikedScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import JournalEditorScreen from '../screens/JournalEditorScreen';
 import JournalDetailScreen from '../screens/JournalDetailScreen';
+import RemindersScreen from '../screens/RemindersScreen';
+import CreateReminderScreen from '../screens/CreateReminderScreen';
 
 const Stack = createStackNavigator();
 
@@ -93,8 +95,8 @@ export default function MainNavigator() {
       // Fetch the mantra details
       const response = await mantraService.getMantraById(mantraId, token);
 
-      if (response.status === 'success' && response.data) {
-        const mantra: Mantra = response.data;
+      if (response.status === 'success' && response.data?.mantra) {
+        const mantra: Mantra = response.data.mantra;
 
         // Create simple like/save handlers for deep-linked mantra
         const handleLike = async (id: number) => {
@@ -323,6 +325,8 @@ export default function MainNavigator() {
           <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="JournalEditor" component={JournalEditorScreen} />
           <Stack.Screen name="JournalDetail" component={JournalDetailScreen} />
+          <Stack.Screen name="Reminders" component={RemindersScreen} />
+          <Stack.Screen name="CreateReminder" component={CreateReminderScreen} />
         </Stack.Navigator>
       </SavedProvider>
     </ThemeProvider>

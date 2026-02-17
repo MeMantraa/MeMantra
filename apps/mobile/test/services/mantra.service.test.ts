@@ -70,9 +70,11 @@ jest.mock('../../services/api.config', () => ({
             data: {
               status: 'success',
               data: {
-                ...mantra,
-                isLiked: mockState.likedMantras.has(mantra.mantra_id),
-                isSaved: mockState.savedMantras.has(mantra.mantra_id),
+                mantra: {
+                  ...mantra,
+                  isLiked: mockState.likedMantras.has(mantra.mantra_id),
+                  isSaved: mockState.savedMantras.has(mantra.mantra_id),
+                },
               },
             },
           });
@@ -338,8 +340,8 @@ describe('mantraService (mock implementation)', () => {
       const response = await mantraService.getMantraById(1, 'token');
       expect(response.status).toBe('success');
       expect(response.data).toBeDefined();
-      expect(response.data.mantra_id).toBe(1);
-      expect(response.data.title).toBe('Pressure Is a Privilege');
+      expect(response.data.mantra.mantra_id).toBe(1);
+      expect(response.data.mantra.title).toBe('Pressure Is a Privilege');
     });
 
     it('returns mantra with correct isLiked/isSaved state', async () => {
@@ -349,8 +351,8 @@ describe('mantraService (mock implementation)', () => {
 
       const response = await mantraService.getMantraById(2, 'token');
       expect(response.status).toBe('success');
-      expect(response.data.isLiked).toBe(true);
-      expect(response.data.isSaved).toBe(true);
+      expect(response.data.mantra.isLiked).toBe(true);
+      expect(response.data.mantra.isSaved).toBe(true);
     });
 
     it('returns error for non-existent mantra', async () => {

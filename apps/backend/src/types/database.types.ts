@@ -60,6 +60,7 @@ export interface CategoryTable {
   name: string;
   description: string | null;
   category_type: string | null;
+  parent_id: number | null;
   image_url: string | null;
   is_active: boolean | null;
 }
@@ -100,6 +101,9 @@ export interface ReminderTable {
   frequency: string | null;
   status: string | null;
   last_sent_at: string | null;
+  schedule_times: string[] | null;
+  schedule_days: number[] | null;
+  timezone: string | null;
 }
 
 export interface RecommendationLogTable {

@@ -35,6 +35,9 @@ describe('ReminderModel', () => {
         frequency: 'daily',
         status: 'active',
         last_sent_at: null,
+        schedule_times: null,
+        schedule_days: null,
+        timezone: null,
       };
 
       const mockChain = {
@@ -64,6 +67,9 @@ describe('ReminderModel', () => {
         frequency: 'daily',
         status: 'active',
         last_sent_at: null,
+        schedule_times: null,
+        schedule_days: null,
+        timezone: null,
       };
 
       const mockChain = {
@@ -108,6 +114,9 @@ describe('ReminderModel', () => {
           frequency: 'daily',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
         {
           reminder_id: 2,
@@ -118,6 +127,9 @@ describe('ReminderModel', () => {
           frequency: 'weekly',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -151,6 +163,9 @@ describe('ReminderModel', () => {
           frequency: 'daily',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -183,6 +198,9 @@ describe('ReminderModel', () => {
           frequency: 'daily',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -219,6 +237,9 @@ describe('ReminderModel', () => {
         frequency: 'weekly',
         status: 'active',
         last_sent_at: null,
+        schedule_times: null,
+        schedule_days: null,
+        timezone: null,
       };
 
       const mockChain = {
@@ -250,6 +271,9 @@ describe('ReminderModel', () => {
         frequency: 'daily',
         status: 'paused',
         last_sent_at: null,
+        schedule_times: null,
+        schedule_days: null,
+        timezone: null,
       };
 
       const mockChain = {
@@ -359,6 +383,9 @@ describe('ReminderModel', () => {
           frequency: 'daily',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -393,6 +420,9 @@ describe('ReminderModel', () => {
           frequency: 'daily',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -425,6 +455,9 @@ describe('ReminderModel', () => {
           frequency: 'daily',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -458,6 +491,9 @@ describe('ReminderModel', () => {
           frequency: 'daily',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -508,6 +544,9 @@ describe('ReminderModel', () => {
           frequency: 'once',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -540,6 +579,9 @@ describe('ReminderModel', () => {
         frequency: 'daily',
         status: 'active',
         last_sent_at: '2024-12-01T09:00:00Z',
+        schedule_times: null,
+        schedule_days: null,
+        timezone: null,
       };
 
       const mockChain = {
@@ -571,6 +613,9 @@ describe('ReminderModel', () => {
         frequency: 'once',
         status: 'completed',
         last_sent_at: '2024-12-01T09:00:00Z',
+        schedule_times: null,
+        schedule_days: null,
+        timezone: null,
       };
 
       const mockChain = {
@@ -605,6 +650,9 @@ describe('ReminderModel', () => {
         frequency: 'daily',
         status: 'active',
         last_sent_at: null,
+        schedule_times: null,
+        schedule_days: null,
+        timezone: null,
         user_device_token: 'ExponentPushToken[xxx]',
         mantra_title: 'Test Mantra',
         mantra_key_takeaway: 'Test takeaway',
@@ -728,6 +776,9 @@ describe('ReminderModel', () => {
           frequency: 'daily',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -761,6 +812,9 @@ describe('ReminderModel', () => {
           frequency: 'daily',
           status: 'active',
           last_sent_at: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
         },
       ];
 
@@ -795,6 +849,77 @@ describe('ReminderModel', () => {
       expect(db.deleteFrom).toHaveBeenCalledWith('Reminder');
       expect(mockChain.where).toHaveBeenCalledWith('collection_id', '=', 10);
       expect(result).toBe(2);
+    });
+  });
+
+  describe('findByUserIdWithNames', () => {
+    it('should return reminders with joined mantra title and collection name', async () => {
+      const mockResults = [
+        {
+          reminder_id: 1,
+          user_id: 1,
+          mantra_id: 5,
+          collection_id: null,
+          time: '2024-12-01T09:00:00Z',
+          frequency: 'daily',
+          status: 'active',
+          last_sent_at: null,
+          mantra_title: 'Test Mantra',
+          collection_name: null,
+        },
+        {
+          reminder_id: 2,
+          user_id: 1,
+          mantra_id: null,
+          collection_id: 10,
+          time: '2024-12-01T18:00:00Z',
+          frequency: 'weekly',
+          status: 'active',
+          last_sent_at: null,
+          mantra_title: null,
+          collection_name: 'My Collection',
+        },
+      ];
+
+      const mockChain = {
+        leftJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue(mockResults),
+      };
+
+      (db.selectFrom as jest.Mock).mockReturnValue(mockChain);
+
+      const result = await ReminderModel.findByUserIdWithNames(1);
+
+      expect(db.selectFrom).toHaveBeenCalledWith('Reminder');
+      expect(mockChain.leftJoin).toHaveBeenCalledTimes(2);
+      expect(mockChain.leftJoin).toHaveBeenCalledWith('Mantra', 'Mantra.mantra_id', 'Reminder.mantra_id');
+      expect(mockChain.leftJoin).toHaveBeenCalledWith('Collection', 'Collection.collection_id', 'Reminder.collection_id');
+      expect(mockChain.where).toHaveBeenCalledWith('Reminder.user_id', '=', 1);
+      expect(mockChain.orderBy).toHaveBeenCalledWith('Reminder.time', 'asc');
+      expect(result).toEqual(mockResults);
+      expect(result[0].mantra_title).toBe('Test Mantra');
+      expect(result[0].collection_name).toBeNull();
+      expect(result[1].mantra_title).toBeNull();
+      expect(result[1].collection_name).toBe('My Collection');
+    });
+
+    it('should return empty array when user has no reminders', async () => {
+      const mockChain = {
+        leftJoin: jest.fn().mockReturnThis(),
+        where: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue([]),
+      };
+
+      (db.selectFrom as jest.Mock).mockReturnValue(mockChain);
+
+      const result = await ReminderModel.findByUserIdWithNames(999);
+
+      expect(result).toEqual([]);
     });
   });
 
