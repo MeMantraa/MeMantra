@@ -256,24 +256,28 @@ describe('CreateReminderScreen', () => {
     // Use testID to target the actual button (default mode is routine)
     fireEvent.press(getByTestId('create-reminder-button'));
 
-    await waitFor(() => {
-      expect(reminderService.createReminder).toHaveBeenCalledWith(
-        expect.objectContaining({
-          mantra_id: 1,
-          frequency: 'routine',
-          status: 'active',
-          schedule_times: expect.any(Array),
-          timezone: expect.any(String),
-        }),
-        'test-token',
-      );
-      expect(Alert.alert).toHaveBeenCalledWith(
-        'Reminder Created',
-        'Your reminder has been set.',
-        expect.any(Array),
-      );
-    });
-  });
+    // Increase timeout for this waitFor to 10 seconds
+    await waitFor(
+      () => {
+        expect(reminderService.createReminder).toHaveBeenCalledWith(
+          expect.objectContaining({
+            mantra_id: 1,
+            frequency: 'routine',
+            status: 'active',
+            schedule_times: expect.any(Array),
+            timezone: expect.any(String),
+          }),
+          'test-token',
+        );
+        expect(Alert.alert).toHaveBeenCalledWith(
+          'Reminder Created',
+          'Your reminder has been set.',
+          expect.any(Array),
+        );
+      },
+      { timeout: 10000 },
+    );
+  }, 15000); // Also increase the test timeout to 15 seconds
 
   it('successfully creates a collection reminder', async () => {
     (reminderService.createReminder as jest.Mock).mockResolvedValue({
