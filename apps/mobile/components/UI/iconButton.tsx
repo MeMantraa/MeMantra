@@ -24,7 +24,7 @@ const IconButton: React.FC<IconButtonProps> = ({
 }) => {
   const { colors } = useTheme();
 
-  const sizeMultiplier = size === 'small' ? 0.7 : 1;
+  const sizeMultiplier = size === 'small' ? 0.8 : 1;
 
   const getIconConfig = () => {
     switch (type) {
