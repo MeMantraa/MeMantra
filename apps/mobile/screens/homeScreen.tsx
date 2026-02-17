@@ -15,8 +15,6 @@ import { collectionService, Collection } from '../services/collection.service';
 import { ratingService } from '../services/rating.service';
 import { storage } from '../utils/storage';
 import SearchBar from '../components/UI/searchBar';
-import IconButton from '../components/UI/iconButton';
-import { logoutUser } from '../utils/auth';
 import AppText from '../components/UI/textWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { useSavedMantras } from '../context/SavedContext';
@@ -28,6 +26,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation, route }: any) {
   const [feedData, setFeedData] = useState<Mantra[]>([]);
+  const [originalMantras, setOriginalMantras] = useState<Mantra[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSavedPopup, setShowSavedPopup] = useState(false);
   const [showCollectionsSheet, setShowCollectionsSheet] = useState(false);
@@ -58,12 +57,15 @@ export default function HomeScreen({ navigation, route }: any) {
       const response = await mantraService.getFeedMantras(token);
 
       if (response.status === 'success') {
+        setOriginalMantras(response.data);
         setFeedData(response.data);
       } else {
+        setOriginalMantras([]);
         setFeedData([]);
       }
     } catch (err) {
       console.error('Error fetching mantras:', err);
+      setOriginalMantras([]);
       setFeedData([]);
     } finally {
       setLoading(false);
@@ -105,7 +107,7 @@ export default function HomeScreen({ navigation, route }: any) {
 
     // clear param so it doesn't keep jumping
     navigation.setParams({ returnToMantraId: undefined });
-  }, [loading, feedData, route?.params?.returnToMantraId]);
+  }, [loading, feedData, route?.params?.returnToMantraId, navigation]);
 
   const loadCollections = async () => {
     try {
@@ -265,26 +267,12 @@ export default function HomeScreen({ navigation, route }: any) {
     }
   };
 
-  const handleLogout = () => logoutUser(navigation);
-
   const handleSearch = (query: string) => console.log('Searching for:', query);
 
-  const handleUserPress = () => {
-    Alert.alert(
-      'Account',
-      'Are you sure you want to log out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Log out',
-          style: 'destructive',
-          onPress: () => {
-            void handleLogout();
-          },
-        },
-      ],
-      { cancelable: true },
-    );
+  const handleEndReached = () => {
+    if (originalMantras.length > 0) {
+      setFeedData((prev) => [...prev, ...originalMantras]);
+    }
   };
 
   let content;
@@ -348,12 +336,14 @@ export default function HomeScreen({ navigation, route }: any) {
             }
           />
         )}
-        keyExtractor={(item) => item.mantra_id.toString()}
+        keyExtractor={(item, index) => `${item.mantra_id}-${index}`}
         pagingEnabled
         showsVerticalScrollIndicator={false}
         snapToAlignment="start"
         decelerationRate="fast"
         snapToInterval={SCREEN_HEIGHT}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={2.0}
         getItemLayout={(_, index) => ({
           length: SCREEN_HEIGHT,
           offset: SCREEN_HEIGHT * index,
@@ -370,9 +360,8 @@ export default function HomeScreen({ navigation, route }: any) {
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.primary }}>
-      <View className="absolute top-5 left-0 right-0 z-10 flex-row justify-between items-center px-6 pt-14 pb-4">
+      <View className="absolute top-5 left-0 right-0 z-10 px-6 pt-14 pb-4">
         <SearchBar onSearch={handleSearch} placeholder="Search mantras..." />
-        <IconButton type="profile" onPress={handleUserPress} testID="profile-btn" />
       </View>
 
       {content}

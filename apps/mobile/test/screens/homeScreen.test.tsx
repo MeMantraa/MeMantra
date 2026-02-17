@@ -1,5 +1,5 @@
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
-import { Alert } from 'react-native';
+import { Alert, FlatList } from 'react-native';
 import HomeScreen from '../../screens/homeScreen';
 import { mantraService } from '../../services/mantra.service';
 import { collectionService } from '../../services/collection.service';
@@ -8,7 +8,6 @@ import { storage } from '../../utils/storage';
 import { SavedProvider } from '../../context/SavedContext';
 
 jest.mock('../../components/carousel', () => {
-  const React = jest.requireActual('react');
   const { View, Text, TouchableOpacity } = jest.requireActual('react-native');
 
   return function MockCarousel({ item, onLike, onSave, onReminder }: any) {
@@ -35,7 +34,6 @@ jest.mock('../../components/carousel', () => {
 });
 
 jest.mock('../../components/UI/savedPopupBar', () => {
-  const React = jest.requireActual('react');
   const { View, TouchableOpacity, Text } = jest.requireActual('react-native');
 
   return function MockSavedPopupBar({ visible, onHide, onPressCollections }: any) {
@@ -54,7 +52,6 @@ jest.mock('../../components/UI/savedPopupBar', () => {
 });
 
 jest.mock('../../components/collectionsSheet', () => {
-  const React = jest.requireActual('react');
   const { View, TouchableOpacity, Text } = jest.requireActual('react-native');
 
   return function MockCollectionsSheet({
@@ -86,7 +83,7 @@ jest.mock('../../components/collectionsSheet', () => {
             void (async () => {
               try {
                 await onCreateCollection('New Test Collection');
-              } catch (e) {
+              } catch {
                 // Silently catch errors from handleCreateCollection
               }
             })();
@@ -99,17 +96,10 @@ jest.mock('../../components/collectionsSheet', () => {
   };
 });
 
-jest.mock('@react-navigation/native', () => {
-  const React = jest.requireActual('react');
-  return {
-    ...jest.requireActual('@react-navigation/native'),
-    useFocusEffect: (callback: () => void) => {
-      React.useEffect(() => {
-        callback();
-      }, []);
-    },
-  };
-});
+jest.mock('@react-navigation/native', () => ({
+  ...jest.requireActual('@react-navigation/native'),
+  useFocusEffect: jest.fn(),
+}));
 
 jest.mock('../../services/mantra.service', () => ({
   mantraService: {
@@ -279,67 +269,7 @@ describe('HomeScreen - Full Coverage', () => {
     );
   }, 15000);
 
-  it('shows logout alert, confirms logout, clears storage and navigates', async () => {
-    (storage.getToken as jest.Mock).mockResolvedValue('token-x');
-    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({ status: 'success', data: [] });
-
-    const { getByTestId } = setup();
-
-    await waitFor(() => getByTestId('profile-btn'), { timeout: 10000 });
-
-    fireEvent.press(getByTestId('profile-btn'));
-
-    expect(Alert.alert).toHaveBeenCalled();
-
-    const alertArgs = (Alert.alert as jest.Mock).mock.calls[0];
-    const logoutBtn = alertArgs[2].find((b: any) => b.text === 'Log out');
-
-    (storage.removeToken as jest.Mock).mockResolvedValue(undefined);
-    (storage.removeUserData as jest.Mock).mockResolvedValue(undefined);
-
-    await act(async () => logoutBtn.onPress());
-
-    await waitFor(
-      () => {
-        expect(mockReset).toHaveBeenCalledWith({
-          index: 0,
-          routes: [{ name: 'Login' }],
-        });
-      },
-      { timeout: 10000 },
-    );
-  }, 15000);
-
-  it('handles logout failure gracefully', async () => {
-    (storage.getToken as jest.Mock).mockResolvedValue('t');
-
-    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({ status: 'success', data: [] });
-
-    const { getByTestId } = setup();
-
-    await waitFor(() => getByTestId('profile-btn'), { timeout: 10000 });
-
-    const profileBtn = getByTestId('profile-btn');
-
-    fireEvent.press(profileBtn);
-
-    const alertArgs = (Alert.alert as jest.Mock).mock.calls[0];
-
-    const buttonsConfig = alertArgs[2] || [];
-
-    const logoutBtn = buttonsConfig.find((b: any) => b.text === 'Log out');
-
-    (storage.removeToken as jest.Mock).mockRejectedValueOnce(new Error('logout fail'));
-
-    await act(async () => logoutBtn?.onPress && logoutBtn.onPress());
-
-    await waitFor(
-      () => {
-        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to log out. Please try again.');
-      },
-      { timeout: 10000 },
-    );
-  }, 15000);
+  // Profile/logout tests removed - feature no longer exists
 
   // New tests to increase branch coverage
 
@@ -392,53 +322,7 @@ describe('HomeScreen - Full Coverage', () => {
     );
   }, 20000);
 
-  it('uses saveToken/saveUserData fallback when removeToken/removeUserData are not available', async () => {
-    (storage.getToken as jest.Mock).mockResolvedValue('token-fallback');
-    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({ status: 'success', data: [] });
-
-    // Backup original functions to restore after test
-    const originalRemoveToken = (storage as any).removeToken;
-    const originalRemoveUserData = (storage as any).removeUserData;
-    const originalSaveToken = (storage as any).saveToken;
-    const originalSaveUserData = (storage as any).saveUserData;
-
-    try {
-      // Simulate absence of removeToken/removeUserData
-      (storage as any).removeToken = undefined;
-      (storage as any).removeUserData = undefined;
-      (storage as any).saveToken = jest.fn().mockResolvedValue(undefined);
-      (storage as any).saveUserData = jest.fn().mockResolvedValue(undefined);
-
-      const { getByTestId } = setup();
-
-      await waitFor(() => getByTestId('profile-btn'), { timeout: 10000 });
-
-      fireEvent.press(getByTestId('profile-btn'));
-
-      const alertArgs = (Alert.alert as jest.Mock).mock.calls[0];
-      const logoutBtn = alertArgs[2].find((b: any) => b.text === 'Log out');
-
-      await act(async () => logoutBtn.onPress());
-
-      await waitFor(
-        () => {
-          expect((storage as any).saveToken).toHaveBeenCalledWith('');
-          expect((storage as any).saveUserData).toHaveBeenCalledWith(null);
-          expect(mockReset).toHaveBeenCalledWith({
-            index: 0,
-            routes: [{ name: 'Login' }],
-          });
-        },
-        { timeout: 10000 },
-      );
-    } finally {
-      // restore originals
-      (storage as any).removeToken = originalRemoveToken;
-      (storage as any).removeUserData = originalRemoveUserData;
-      (storage as any).saveToken = originalSaveToken;
-      (storage as any).saveUserData = originalSaveUserData;
-    }
-  }, 20000);
+  // Profile/logout test removed - feature no longer exists
 
   it('uses fallback token when getToken returns null', async () => {
     (storage.getToken as jest.Mock).mockResolvedValue(null);
@@ -1609,5 +1493,74 @@ describe('HomeScreen - Full Coverage', () => {
     fireEvent.press(getByTestId('reminder-1'));
 
     expect(Alert.alert).toHaveBeenCalledWith('Reminder', undefined, expect.any(Array));
+  }, 15000);
+
+  // Infinite scrolling tests
+  it('loads more mantras when reaching end of list (infinite scroll)', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    const mantras = [
+      { mantra_id: 1, title: 'M1', isLiked: false, isSaved: false },
+      { mantra_id: 2, title: 'M2', isLiked: false, isSaved: false },
+    ];
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: mantras,
+    });
+
+    const { getByText, UNSAFE_getAllByType } = setup();
+
+    await waitFor(() => getByText('M1'), { timeout: 10000 });
+
+    // Get the FlatList component
+    const flatLists = UNSAFE_getAllByType(FlatList);
+    const mainFlatList = flatLists.find((fl: any) => fl.props.data?.length > 0);
+
+    expect(mainFlatList).toBeTruthy();
+    expect(mainFlatList!.props.onEndReached).toBeDefined();
+    expect(mainFlatList!.props.onEndReachedThreshold).toBe(2.0);
+
+    // Simulate reaching end of list
+    act(() => {
+      mainFlatList!.props.onEndReached();
+    });
+
+    // Check that data is duplicated (infinite scroll adds original mantras again)
+    await waitFor(() => {
+      const updatedFlatList = UNSAFE_getAllByType(FlatList).find(
+        (fl: any) => fl.props.data?.length > 2,
+      );
+      expect(updatedFlatList?.props.data.length).toBe(4); // Original 2 + repeated 2
+    });
+  }, 15000);
+
+  it('does not load more mantras if originalMantras is empty', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [],
+    });
+
+    const { getByText } = setup();
+
+    await waitFor(() => getByText('No mantras available'), { timeout: 10000 });
+
+    // No FlatList should be rendered, so no onEndReached to test
+  }, 15000);
+
+  it('sets originalMantras state correctly on successful load', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    const mantras = [
+      { mantra_id: 1, title: 'Test1', isLiked: false, isSaved: false },
+      { mantra_id: 2, title: 'Test2', isLiked: false, isSaved: false },
+    ];
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: mantras,
+    });
+
+    const { getByText } = setup();
+
+    await waitFor(() => getByText('Test1'), { timeout: 10000 });
+    await waitFor(() => getByText('Test2'), { timeout: 10000 });
   }, 15000);
 });

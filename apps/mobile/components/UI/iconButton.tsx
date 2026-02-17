@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { TouchableOpacity, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
@@ -10,6 +10,7 @@ type IconButtonProps = {
   testID?: string;
   className?: string;
   style?: ViewStyle;
+  size?: 'small' | 'normal';
 };
 
 const IconButton: React.FC<IconButtonProps> = ({
@@ -19,8 +20,11 @@ const IconButton: React.FC<IconButtonProps> = ({
   testID,
   className = '',
   style,
+  size = 'normal',
 }) => {
   const { colors } = useTheme();
+
+  const sizeMultiplier = size === 'small' ? 0.7 : 1;
 
   const getIconConfig = () => {
     switch (type) {
@@ -103,14 +107,14 @@ const IconButton: React.FC<IconButtonProps> = ({
       <View
         className="rounded-full items-center justify-center"
         style={{
-          width: config.buttonSize,
-          height: config.buttonSize,
+          width: config.buttonSize * sizeMultiplier,
+          height: config.buttonSize * sizeMultiplier,
           backgroundColor: config.backgroundColor,
         }}
       >
         <Ionicons
           name={config.iconName as any}
-          size={config.iconSize}
+          size={config.iconSize * sizeMultiplier}
           color={config.iconColor}
           style={{ marginTop: 2 }}
         />
@@ -119,4 +123,4 @@ const IconButton: React.FC<IconButtonProps> = ({
   );
 };
 
-export default IconButton;
+export default memo(IconButton);

@@ -1,5 +1,6 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
+import { View } from 'react-native';
 import IconButton from '../../../components/UI/iconButton';
 import { useTheme } from '../../../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -160,5 +161,78 @@ describe('IconButton Component', () => {
     const icon = UNSAFE_getByType(Ionicons);
     expect(icon.props.name).toBe('notifications');
     expect(icon.props.color).toBe(mockColors.secondary);
+  });
+
+  // Size prop tests
+  it('renders button with normal size by default', () => {
+    const { UNSAFE_getByType, UNSAFE_getAllByType } = render(
+      <IconButton type="like" onPress={mockOnPress} />,
+    );
+
+    const icon = UNSAFE_getByType(Ionicons);
+    const views = UNSAFE_getAllByType(View);
+
+    // Find the circular button View (the one with borderRadius)
+    const buttonView = views.find(
+      (v: any) =>
+        v.props.style &&
+        typeof v.props.style === 'object' &&
+        v.props.style.width === 55 &&
+        v.props.style.height === 55,
+    );
+
+    expect(buttonView).toBeTruthy();
+    expect(icon.props.size).toBe(35);
+  });
+
+  it('renders button with small size when size="small" is passed', () => {
+    const { UNSAFE_getByType, UNSAFE_getAllByType } = render(
+      <IconButton type="like" onPress={mockOnPress} size="small" />,
+    );
+
+    const icon = UNSAFE_getByType(Ionicons);
+    const views = UNSAFE_getAllByType(View);
+
+    // Find the circular button View with small size (55 * 0.7 = 38.5)
+    const buttonView = views.find(
+      (v: any) =>
+        v.props.style &&
+        typeof v.props.style === 'object' &&
+        v.props.style.width === 38.5 &&
+        v.props.style.height === 38.5,
+    );
+
+    expect(buttonView).toBeTruthy();
+    expect(icon.props.size).toBe(24.5); // 35 * 0.7
+  });
+
+  it('applies size multiplier correctly for small share button', () => {
+    const { UNSAFE_getByType, UNSAFE_getAllByType } = render(
+      <IconButton type="share" onPress={mockOnPress} size="small" />,
+    );
+
+    const icon = UNSAFE_getByType(Ionicons);
+    const views = UNSAFE_getAllByType(View);
+
+    const buttonView = views.find(
+      (v: any) =>
+        v.props.style &&
+        typeof v.props.style === 'object' &&
+        Math.abs(v.props.style.width - 38.5) < 0.1, // Account for floating point
+    );
+
+    expect(buttonView).toBeTruthy();
+    expect(icon.props.size).toBe(24.5);
+  });
+
+  it('renders small reminder button correctly', () => {
+    const { UNSAFE_getByType } = render(
+      <IconButton type="reminder" onPress={mockOnPress} size="small" active />,
+    );
+
+    const icon = UNSAFE_getByType(Ionicons);
+    expect(icon.props.name).toBe('notifications');
+    expect(icon.props.color).toBe(mockColors.secondary);
+    expect(icon.props.size).toBe(24.5);
   });
 });

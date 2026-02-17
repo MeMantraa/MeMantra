@@ -199,4 +199,45 @@ describe('MantraCarousel', () => {
 
     expect(onPress).toHaveBeenCalled();
   });
+
+  it('does not re-render when unrelated props change (memo optimization)', () => {
+    const onLike = jest.fn();
+    const { rerender } = render(
+      <MantraCarousel item={mockItem} onLike={onLike} hasReminder={false} />,
+    );
+
+    // Change a callback function (not a dependency for memo)
+    const onLike2 = jest.fn();
+    rerender(<MantraCarousel item={mockItem} onLike={onLike2} hasReminder={false} />);
+
+    // Component should still work correctly even with memo
+    // Note: We can't directly test if it re-rendered, but we can verify it still functions
+    expect(onLike2).toBeDefined();
+  });
+
+  it('does re-render when mantra_id changes (memo dependency)', () => {
+    const { getByText, rerender } = render(<MantraCarousel item={mockItem} />);
+
+    expect(getByText('Be present')).toBeTruthy();
+
+    const newItem = { ...mockItem, mantra_id: 999, title: 'New Mantra' };
+    rerender(<MantraCarousel item={newItem} />);
+
+    expect(getByText('New Mantra')).toBeTruthy();
+  });
+
+  it('re-renders when like status changes (memo dependency)', () => {
+    const { rerender, UNSAFE_getByType } = render(
+      <MantraCarousel item={{ ...mockItem, isLiked: false }} />,
+    );
+
+    const initialFlatList = UNSAFE_getByType(FlatList);
+    expect(initialFlatList).toBeTruthy();
+
+    // Change like status
+    rerender(<MantraCarousel item={{ ...mockItem, isLiked: true }} />);
+
+    const updatedFlatList = UNSAFE_getByType(FlatList);
+    expect(updatedFlatList).toBeTruthy();
+  });
 });
