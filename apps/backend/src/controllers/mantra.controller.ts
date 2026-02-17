@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { MantraModel } from '../models/mantra.model';
 import { CollectionModel } from '../models/collection.model';
+import { CategoryModel } from '../models/category.model';
 import { CreateMantraInput, UpdateMantraInput, MantraQueryInput } from '../validators/mantra.validator';
 import { db } from '../db';
 
@@ -178,6 +179,34 @@ export const MantraController = {
       return res.status(500).json({
         status: 'error',
         message: 'Error retrieving mantras by category',
+      });
+    }
+  },
+
+  // GET /api/mantras/:id/categories - Get categories for a specific mantra
+  async getCategoriesForMantra(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      const mantra = await MantraModel.findById(Number(id));
+      if (!mantra) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Mantra not found',
+        });
+      }
+
+      const categories = await CategoryModel.getCategoriesForMantra(Number(id));
+
+      return res.status(200).json({
+        status: 'success',
+        data: { categories },
+      });
+    } catch (error) {
+      console.error('Get categories for mantra error:', error);
+      return res.status(500).json({
+        status: 'error',
+        message: 'Error retrieving categories for mantra',
       });
     }
   },

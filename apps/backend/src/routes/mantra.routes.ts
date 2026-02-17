@@ -48,6 +48,13 @@ router.get(
   MantraController.getMantrasByCategory
 );
 
+// Get categories for a specific mantra
+router.get(
+  '/:id/categories',
+  validateRequest(mantraIdSchema),
+  MantraController.getCategoriesForMantra
+);
+
 router.get(
   '/saved', 
   authenticate, 

@@ -59,6 +59,7 @@ export interface CategoryTable {
   name: string;
   description: string | null;
   category_type: string | null;
+  parent_id: number | null;
   image_url: string | null;
   is_active: boolean | null;
 }
