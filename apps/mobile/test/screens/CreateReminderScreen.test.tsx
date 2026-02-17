@@ -115,10 +115,8 @@ describe('CreateReminderScreen', () => {
     expect(getByTestId('screen-title')).toBeTruthy();
     expect(getByText('Remind me about')).toBeTruthy();
 
-    // Wait for async loadItems to complete so state updates are flushed
-    await waitFor(() => {
-      expect(getByText('Be Present')).toBeTruthy();
-    });
+    // Flush pending async state updates from loadItems
+    await act(async () => {});
   });
 
   it('loads mantras and collections on mount', async () => {
@@ -195,10 +193,8 @@ describe('CreateReminderScreen', () => {
   it('shows frequency options and allows selection', async () => {
     const { getByText } = render(<CreateReminderScreen />);
 
-    // Wait for async loadItems to complete
-    await waitFor(() => {
-      expect(getByText('Be Present')).toBeTruthy();
-    });
+    // Flush pending async state updates from loadItems
+    await act(async () => {});
 
     // Switch to Simple mode (screen defaults to Routine)
     fireEvent.press(getByText('Simple'));
@@ -524,12 +520,10 @@ describe('CreateReminderScreen', () => {
   });
 
   it('navigates back when back button area is pressed', async () => {
-    const { getByTestId, getByText } = render(<CreateReminderScreen />);
+    const { getByTestId } = render(<CreateReminderScreen />);
 
-    // Wait for async loadItems to complete
-    await waitFor(() => {
-      expect(getByText('Be Present')).toBeTruthy();
-    });
+    // Flush pending async state updates from loadItems
+    await act(async () => {});
 
     const backButton = getByTestId('back-button');
     fireEvent.press(backButton);
