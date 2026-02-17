@@ -21,7 +21,6 @@ interface CategoryFormProps {
     name: string;
     description: string;
     category_type: string;
-    image_url: string;
   };
   onFormChange: (field: string, value: string) => void;
   onSubmit: () => void;
@@ -95,17 +94,6 @@ export default function CategoryForm({
           );
         })}
       </View>
-
-      <AppTextInput
-        className="rounded-2xl px-4 py-3 mb-4 text-base"
-        placeholder="Image URL (optional)"
-        placeholderTextColor="#d9d9d9"
-        value={formData.image_url}
-        onChangeText={(text: string) => onFormChange('image_url', text)}
-        editable={!submitting}
-        autoCapitalize="none"
-        style={{ backgroundColor: '#ffffff' }}
-      />
 
       <TouchableOpacity
         accessibilityRole="button"

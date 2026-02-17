@@ -66,7 +66,6 @@ const AdminScreen: React.FC = () => {
     name: '',
     description: '',
     category_type: '',
-    image_url: '',
   });
 
   const [userSearchQuery, setUserSearchQuery] = useState('');
@@ -132,7 +131,6 @@ const AdminScreen: React.FC = () => {
       name: '',
       description: '',
       category_type: '',
-      image_url: '',
     });
     setEditingCategory(null);
   };
@@ -402,7 +400,6 @@ const AdminScreen: React.FC = () => {
       const payload: any = { name: categoryForm.name };
       if (categoryForm.description) payload.description = categoryForm.description;
       if (categoryForm.category_type) payload.category_type = categoryForm.category_type;
-      if (categoryForm.image_url) payload.image_url = categoryForm.image_url;
 
       const response = await categoryService.createCategory(payload, token);
 
@@ -429,7 +426,6 @@ const AdminScreen: React.FC = () => {
       if (categoryForm.name) payload.name = categoryForm.name;
       if (categoryForm.description) payload.description = categoryForm.description;
       if (categoryForm.category_type) payload.category_type = categoryForm.category_type;
-      if (categoryForm.image_url) payload.image_url = categoryForm.image_url;
 
       const response = await categoryService.updateCategory(
         editingCategory.category_id,
@@ -476,7 +472,6 @@ const AdminScreen: React.FC = () => {
       name: category.name || '',
       description: category.description || '',
       category_type: category.category_type || '',
-      image_url: category.image_url || '',
     });
     setEditModalVisible(true);
   };
