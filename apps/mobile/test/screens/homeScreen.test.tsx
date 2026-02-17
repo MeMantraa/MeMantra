@@ -1435,22 +1435,7 @@ describe('HomeScreen - Full Coverage', () => {
     await waitFor(() => expect(queryByTestId('saved-popup-bar')).toBeNull(), { timeout: 10000 });
   }, 20000);
 
-  it('navigates to CreateReminder when reminder pressed with no existing reminder', async () => {
-    (storage.getToken as jest.Mock).mockResolvedValue('token');
-    const sample = [{ mantra_id: 1, title: 'M1', isLiked: false, isSaved: false }];
-    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: sample,
-    });
-
-    const { getByTestId } = setup();
-
-    await waitFor(() => getByTestId('reminder-1'), { timeout: 10000 });
-
-    fireEvent.press(getByTestId('reminder-1'));
-
-    expect(mockNavigate).toHaveBeenCalledWith('CreateReminder', { mantraId: 1 });
-  }, 15000);
+  // Test removed - navigation logic now tested in useReminders hook tests
 
   it('calls handleReminderPress when reminder button is pressed', async () => {
     (storage.getToken as jest.Mock).mockResolvedValue('token');
