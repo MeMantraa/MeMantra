@@ -193,17 +193,17 @@ describe('IconButton Component', () => {
     const icon = UNSAFE_getByType(Ionicons);
     const views = UNSAFE_getAllByType(View);
 
-    // Find the circular button View with small size (55 * 0.7 = 38.5)
+    // Find the circular button View with small size (55 * 0.8 = 44)
     const buttonView = views.find(
       (v: any) =>
         v.props.style &&
         typeof v.props.style === 'object' &&
-        v.props.style.width === 38.5 &&
-        v.props.style.height === 38.5,
+        v.props.style.width === 44 &&
+        v.props.style.height === 44,
     );
 
     expect(buttonView).toBeTruthy();
-    expect(icon.props.size).toBe(28); // 35 * 0.7
+    expect(icon.props.size).toBe(28); // 35 * 0.8
   });
 
   it('applies size multiplier correctly for small share button', () => {
@@ -218,7 +218,7 @@ describe('IconButton Component', () => {
       (v: any) =>
         v.props.style &&
         typeof v.props.style === 'object' &&
-        Math.abs(v.props.style.width - 38.5) < 0.1, // Account for floating point
+        Math.abs(v.props.style.width - 44) < 0.1, // Account for floating point
     );
 
     expect(buttonView).toBeTruthy();
