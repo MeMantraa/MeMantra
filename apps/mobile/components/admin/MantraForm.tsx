@@ -57,7 +57,6 @@ function CategorySelector({
   onToggleCategory: (id: number) => void;
   submitting: boolean;
 }>) {
-  const { colors } = useTheme();
   const [expandedLayers, setExpandedLayers] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(TYPE_ORDER.map((t) => [t, true])),
   );
