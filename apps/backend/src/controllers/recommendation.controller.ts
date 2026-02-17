@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { RecommendationModel } from '../models/recommendation.model';
+import { RecommendationEngine } from '../services/recommendation-engine.service';
 import { CreateRecommendationInput } from '../validators/recommendation.validator';
 
 export const RecommendationController = {
@@ -225,6 +226,49 @@ export const RecommendationController = {
       return res.status(500).json({
         status: 'error',
         message: 'Error deleting recommendation',
+      });
+    }
+  },
+
+  // GET /api/recommendations/suggest - Get personalized mantra suggestions
+  async suggestRecommendations(req: Request, res: Response) {
+    try {
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        return res.status(401).json({
+          status: 'error',
+          message: 'Authentication required',
+        });
+      }
+
+      const limit = req.query.limit ? Number(req.query.limit) : 10;
+      const mood = req.query.mood as string | undefined;
+      const excludeIds = req.query.excludeIds as number[] | undefined;
+
+      const recommendations = await RecommendationEngine.generateRecommendations(userId, {
+        limit,
+        mood,
+        excludeIds,
+      });
+
+      return res.status(200).json({
+        status: 'success',
+        data: {
+          recommendations: recommendations.map((r) => ({
+            mantra: r.mantra,
+            score: Math.round(r.score * 100) / 100,
+            categories: r.categories,
+            reason: r.reason,
+          })),
+          count: recommendations.length,
+        },
+      });
+    } catch (error) {
+      console.error('Suggest recommendations error:', error);
+      return res.status(500).json({
+        status: 'error',
+        message: 'Error generating recommendations',
       });
     }
   },

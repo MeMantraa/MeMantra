@@ -89,6 +89,45 @@ export const MantraModel = {
       .execute();
   },
 
+  // Get all active mantras with their category mappings (2 queries, avoids N+1)
+  async findAllWithCategories(limit = 200, offset = 0): Promise<{
+    mantras: Mantra[];
+    categoryMap: Map<number, Array<{ category_id: number; name: string }>>;
+  }> {
+    const mantras = await db
+      .selectFrom('Mantra')
+      .where('is_active', '=', true)
+      .selectAll()
+      .orderBy('created_at', 'desc')
+      .limit(limit)
+      .offset(offset)
+      .execute();
+
+    const mantraIds = mantras.map((m) => m.mantra_id);
+    const categoryMap = new Map<number, Array<{ category_id: number; name: string }>>();
+
+    if (mantraIds.length > 0) {
+      const mappings = await db
+        .selectFrom('MantraCategory')
+        .innerJoin('Category', 'Category.category_id', 'MantraCategory.category_id')
+        .where('MantraCategory.mantra_id', 'in', mantraIds)
+        .select([
+          'MantraCategory.mantra_id',
+          'Category.category_id',
+          'Category.name',
+        ])
+        .execute();
+
+      for (const mapping of mappings) {
+        const existing = categoryMap.get(mapping.mantra_id) || [];
+        existing.push({ category_id: mapping.category_id, name: mapping.name });
+        categoryMap.set(mapping.mantra_id, existing);
+      }
+    }
+
+    return { mantras, categoryMap };
+  },
+
   // Get mantras with like count (advanced join + aggregation)
   async findWithLikeCount(limit: number, offset: number): Promise<Array<Mantra & { like_count: number }>> {
     const results = await db

@@ -108,6 +108,22 @@ export const CategoryModel = {
     return categories;
   },
 
+  // Get categories for multiple mantras in a single query (avoids N+1)
+  async getCategoriesForMantras(mantraIds: number[]): Promise<Array<{ mantra_id: number; category_id: number; name: string }>> {
+    if (mantraIds.length === 0) return [];
+
+    return await db
+      .selectFrom('MantraCategory')
+      .innerJoin('Category', 'Category.category_id', 'MantraCategory.category_id')
+      .where('MantraCategory.mantra_id', 'in', mantraIds)
+      .select([
+        'MantraCategory.mantra_id',
+        'Category.category_id',
+        'Category.name',
+      ])
+      .execute();
+  },
+
   // Update category details
   async update(categoryId: number, updates: Partial<Pick<Category, 'name' | 'description' | 'category_type' | 'parent_id' | 'image_url' | 'is_active'>>): Promise<Category | undefined> {
     return await db
