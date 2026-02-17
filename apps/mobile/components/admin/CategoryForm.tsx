@@ -1,7 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, ActivityIndicator, ScrollView } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
-import { Category } from '../../services/category.service';
 import AppText from '../UI/textWrapper';
 import AppTextInput from '../UI/textInputWrapper';
 
