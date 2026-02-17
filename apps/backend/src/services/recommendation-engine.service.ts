@@ -1,3 +1,4 @@
+import { randomInt } from 'crypto';
 import { ReminderModel } from '../models/reminder.model';
 import { RatingModel } from '../models/rating.model';
 import { LikeModel } from '../models/like.model';
@@ -425,7 +426,7 @@ export const RecommendationEngine = {
       const ageDays = (now - createdAt) / (1000 * 60 * 60 * 24);
       const freshnessScore = Math.max(0, 1 - ageDays / FRESHNESS_DECAY_DAYS);
 
-      const randomScore = Math.random();
+      const randomScore = randomInt(0, 1000000) / 1000000;
 
       const score = 0.60 * popularityScore + 0.20 * freshnessScore + 0.20 * randomScore;
 
