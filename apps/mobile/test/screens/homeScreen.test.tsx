@@ -127,6 +127,19 @@ jest.mock('../../services/reminder.service', () => ({
   },
 }));
 
+const mockHandleReminderPress = jest.fn();
+jest.mock('../../hooks/useReminders', () => ({
+  useReminders: () => ({
+    remindersByMantra: new Map(),
+    remindersByCollection: new Map(),
+    getReminderForMantra: jest.fn(),
+    getReminderForCollection: jest.fn(),
+    showReminderActions: jest.fn(),
+    handleReminderPress: mockHandleReminderPress,
+    refresh: jest.fn(),
+  }),
+}));
+
 jest.mock('../../utils/storage', () => ({
   storage: {
     getToken: jest.fn(),
@@ -479,21 +492,7 @@ describe('HomeScreen - Full Coverage', () => {
     );
   }, 15000);
 
-  it('handles collection selection error when no mantra selected', async () => {
-    (storage.getToken as jest.Mock).mockResolvedValue('token');
-    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: [],
-    });
-
-    const { getByTestId } = setup();
-
-    await waitFor(() => getByTestId('profile-btn'));
-
-    // Manually trigger handleSelectCollection without setting currentMantraId
-    // This simulates the error case
-    expect(Alert.alert).not.toHaveBeenCalledWith('Error', 'No mantra selected');
-  });
+  // Test removed - profile button feature no longer exists
 
   it('handles collection selection success', async () => {
     (storage.getToken as jest.Mock).mockResolvedValue('token');
@@ -1025,26 +1024,7 @@ describe('HomeScreen - Full Coverage', () => {
     );
   }, 30000);
 
-  it('shows error alert when no mantra is selected in handleSelectCollection', async () => {
-    (storage.getToken as jest.Mock).mockResolvedValue('token');
-    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: [],
-    });
-    (collectionService.getUserCollections as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { collections: [{ collection_id: 1, name: 'Test' }] },
-    });
-
-    const { getByTestId } = setup();
-
-    await waitFor(() => getByTestId('profile-btn'), { timeout: 10000 });
-
-    // Manually open collections sheet without saving a mantra first
-    // This would require accessing internal state, so we'll simulate by checking Alert
-    // Since we can't directly trigger this without a mantra, we verify the logic exists
-    expect(Alert.alert).toBeDefined();
-  }, 15000);
+  // Test removed - profile button feature no longer exists, and this is a duplicate test
 
   it('shows error alert when addMantraToCollection returns error status', async () => {
     (storage.getToken as jest.Mock).mockResolvedValue('token');
@@ -1472,14 +1452,8 @@ describe('HomeScreen - Full Coverage', () => {
     expect(mockNavigate).toHaveBeenCalledWith('CreateReminder', { mantraId: 1 });
   }, 15000);
 
-  it('shows reminder alert when reminder pressed with existing reminder', async () => {
+  it('calls handleReminderPress when reminder button is pressed', async () => {
     (storage.getToken as jest.Mock).mockResolvedValue('token');
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: {
-        reminders: [{ reminder_id: 77, mantra_id: 1, collection_id: null, status: 'active' }],
-      },
-    });
     const sample = [{ mantra_id: 1, title: 'M1', isLiked: false, isSaved: false }];
     (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
       status: 'success',
@@ -1492,7 +1466,10 @@ describe('HomeScreen - Full Coverage', () => {
 
     fireEvent.press(getByTestId('reminder-1'));
 
-    expect(Alert.alert).toHaveBeenCalledWith('Reminder', undefined, expect.any(Array));
+    await waitFor(
+      () => expect(mockHandleReminderPress).toHaveBeenCalledWith('mantra', 1, expect.anything()),
+      { timeout: 10000 },
+    );
   }, 15000);
 
   // Infinite scrolling tests
