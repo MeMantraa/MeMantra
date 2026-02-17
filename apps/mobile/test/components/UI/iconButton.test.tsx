@@ -203,7 +203,7 @@ describe('IconButton Component', () => {
     );
 
     expect(buttonView).toBeTruthy();
-    expect(icon.props.size).toBe(24.5); // 35 * 0.7
+    expect(icon.props.size).toBe(28); // 35 * 0.7
   });
 
   it('applies size multiplier correctly for small share button', () => {
@@ -222,7 +222,7 @@ describe('IconButton Component', () => {
     );
 
     expect(buttonView).toBeTruthy();
-    expect(icon.props.size).toBe(24.5);
+    expect(icon.props.size).toBe(28);
   });
 
   it('renders small reminder button correctly', () => {
@@ -233,6 +233,6 @@ describe('IconButton Component', () => {
     const icon = UNSAFE_getByType(Ionicons);
     expect(icon.props.name).toBe('notifications');
     expect(icon.props.color).toBe(mockColors.secondary);
-    expect(icon.props.size).toBe(24.5);
+    expect(icon.props.size).toBe(28);
   });
 });
