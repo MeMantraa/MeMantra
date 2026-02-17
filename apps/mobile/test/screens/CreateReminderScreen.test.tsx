@@ -98,14 +98,10 @@ describe('CreateReminderScreen', () => {
       data: { collections: mockCollections },
     });
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
-
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date('2024-01-01T00:00:00Z'));
   });
 
   afterEach(() => {
     (Alert.alert as jest.Mock).mockRestore?.();
-    jest.useRealTimers();
   });
 
   it('renders the screen with title', async () => {
@@ -709,10 +705,6 @@ describe('CreateReminderScreen', () => {
   });
 
   it('shows invalid time alert when time is in the past', async () => {
-    // Set system time to far future so the initial time (Date.now() + 1h) is in the past
-    // when we reset to a past time
-    jest.setSystemTime(new Date('2030-01-01T00:00:00Z'));
-
     const { getByText, getByTestId } = render(<CreateReminderScreen />);
 
     await waitFor(() => {
@@ -724,10 +716,23 @@ describe('CreateReminderScreen', () => {
     // Switch to Simple mode (screen defaults to Routine)
     fireEvent.press(getByText('Simple'));
 
-    // The component sets time to Date.now() + 1h, which is 2030-01-01T01:00:00Z
-    // Advance system time past that so time <= new Date() is true
-    jest.setSystemTime(new Date('2031-01-01T00:00:00Z'));
+    // Use the date picker to set a past date instead of faking system time
+    fireEvent.press(getByTestId('date-picker-button'));
 
+    await waitFor(() => {
+      expect(getByTestId('datetime-picker-date')).toBeTruthy();
+    });
+
+    // Set date to the past via onChange (iOS path sets tempDate)
+    const datePicker = getByTestId('datetime-picker-date');
+    await act(async () => {
+      datePicker.props.onChange({ type: 'set' }, new Date('2020-01-01T00:00:00Z'));
+    });
+
+    // Confirm the picker (copies tempDate year/month/day into time)
+    fireEvent.press(getByText('Done'));
+
+    // Submit with past date -> should trigger validation
     fireEvent.press(getByTestId('create-reminder-button'));
 
     expect(Alert.alert).toHaveBeenCalledWith(
