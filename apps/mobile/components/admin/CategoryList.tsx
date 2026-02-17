@@ -80,11 +80,6 @@ export default function CategoryList({
                 </AppText>
               </View>
             ) : null}
-            {item.parent_id ? (
-              <View className="rounded-full px-2 py-0.5" style={{ backgroundColor: '#6B728066' }}>
-                <AppText className="text-white text-xs font-medium">Sub</AppText>
-              </View>
-            ) : null}
           </View>
 
           {/* Name */}

@@ -67,7 +67,6 @@ const AdminScreen: React.FC = () => {
     description: '',
     category_type: '',
     image_url: '',
-    parent_id: '',
   });
 
   const [userSearchQuery, setUserSearchQuery] = useState('');
@@ -134,7 +133,6 @@ const AdminScreen: React.FC = () => {
       description: '',
       category_type: '',
       image_url: '',
-      parent_id: '',
     });
     setEditingCategory(null);
   };
@@ -404,7 +402,6 @@ const AdminScreen: React.FC = () => {
       const payload: any = { name: categoryForm.name };
       if (categoryForm.description) payload.description = categoryForm.description;
       if (categoryForm.category_type) payload.category_type = categoryForm.category_type;
-      if (categoryForm.parent_id) payload.parent_id = Number(categoryForm.parent_id);
       if (categoryForm.image_url) payload.image_url = categoryForm.image_url;
 
       const response = await categoryService.createCategory(payload, token);
@@ -432,7 +429,6 @@ const AdminScreen: React.FC = () => {
       if (categoryForm.name) payload.name = categoryForm.name;
       if (categoryForm.description) payload.description = categoryForm.description;
       if (categoryForm.category_type) payload.category_type = categoryForm.category_type;
-      if (categoryForm.parent_id) payload.parent_id = Number(categoryForm.parent_id);
       if (categoryForm.image_url) payload.image_url = categoryForm.image_url;
 
       const response = await categoryService.updateCategory(
@@ -481,7 +477,6 @@ const AdminScreen: React.FC = () => {
       description: category.description || '',
       category_type: category.category_type || '',
       image_url: category.image_url || '',
-      parent_id: category.parent_id ? String(category.parent_id) : '',
     });
     setEditModalVisible(true);
   };
@@ -631,7 +626,6 @@ const AdminScreen: React.FC = () => {
             onFormChange={handleCategoryFormChange}
             onSubmit={handleCreateCategory}
             submitting={submitting}
-            categories={categories}
           />
         )}
 
@@ -759,7 +753,6 @@ const AdminScreen: React.FC = () => {
                 onSubmit={handleUpdateCategory}
                 submitting={submitting}
                 isEdit
-                categories={categories}
               />
             ) : (
               <UserForm

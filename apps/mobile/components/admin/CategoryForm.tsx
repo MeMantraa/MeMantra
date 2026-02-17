@@ -22,13 +22,11 @@ interface CategoryFormProps {
     description: string;
     category_type: string;
     image_url: string;
-    parent_id: string;
   };
   onFormChange: (field: string, value: string) => void;
   onSubmit: () => void;
   submitting: boolean;
   isEdit?: boolean;
-  categories?: Category[]; // all categories for parent picker
 }
 
 export default function CategoryForm({
@@ -37,13 +35,8 @@ export default function CategoryForm({
   onSubmit,
   submitting,
   isEdit = false,
-  categories = [],
 }: Readonly<CategoryFormProps>) {
   const { colors } = useTheme();
-
-  const parentOptions = categories.filter(
-    (c) => c.category_type === formData.category_type && !c.parent_id,
-  );
 
   return (
     <ScrollView className="flex-1 bg-white/10 rounded-3xl p-5" showsVerticalScrollIndicator={false}>
@@ -89,8 +82,6 @@ export default function CategoryForm({
               }}
               onPress={() => {
                 onFormChange('category_type', isSelected ? '' : type);
-                // Reset parent when changing type
-                onFormChange('parent_id', '');
               }}
               disabled={submitting}
             >
@@ -104,39 +95,6 @@ export default function CategoryForm({
           );
         })}
       </View>
-
-      {/* Parent Category Selector (for subcategories only shown for 'essential' type) */}
-      {formData.category_type === 'essential' && parentOptions.length > 0 && (
-        <>
-          <AppText className="text-white text-sm font-semibold mb-2">
-            Parent Category (optional – leave empty for top-level)
-          </AppText>
-          <View className="flex-row flex-wrap gap-2 mb-4">
-            {parentOptions.map((parent) => {
-              const isSelected = formData.parent_id === String(parent.category_id);
-              return (
-                <TouchableOpacity
-                  key={parent.category_id}
-                  className="rounded-full px-3 py-1.5"
-                  style={{
-                    backgroundColor: isSelected ? '#8B5CF6' : `${colors.primaryDark}44`,
-                    borderWidth: isSelected ? 0 : 1,
-                    borderColor: 'rgba(255,255,255,0.15)',
-                  }}
-                  onPress={() =>
-                    onFormChange('parent_id', isSelected ? '' : String(parent.category_id))
-                  }
-                  disabled={submitting}
-                >
-                  <AppText className="text-xs font-medium" style={{ color: '#ffffff' }}>
-                    {parent.name}
-                  </AppText>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </>
-      )}
 
       <AppTextInput
         className="rounded-2xl px-4 py-3 mb-4 text-base"

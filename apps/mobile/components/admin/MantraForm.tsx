@@ -70,13 +70,6 @@ function CategorySelector({
       map[type].push(cat);
     }
 
-    if (map['essential']) {
-      map['essential'].sort((a, b) => {
-        if (!a.parent_id && b.parent_id) return -1;
-        if (a.parent_id && !b.parent_id) return 1;
-        return 0;
-      });
-    }
     return map;
   }, [categories]);
 
@@ -132,7 +125,6 @@ function CategorySelector({
               <View className="flex-row flex-wrap gap-2 mt-2 ml-1">
                 {items.map((cat) => {
                   const isSelected = selectedCategoryIds.includes(cat.category_id);
-                  const isChild = !!cat.parent_id;
                   return (
                     <TouchableOpacity
                       key={cat.category_id}
@@ -141,15 +133,11 @@ function CategorySelector({
                         backgroundColor: isSelected
                           ? TYPE_COLORS[layer]
                           : `${TYPE_COLORS[layer]}20`,
-                        borderWidth: isChild ? 1 : 0,
-                        borderColor: isSelected ? 'transparent' : `${TYPE_COLORS[layer]}55`,
-                        borderStyle: isChild ? 'dashed' : 'solid',
                       }}
                       onPress={() => onToggleCategory(cat.category_id)}
                       disabled={submitting}
                     >
                       <AppText className="text-xs font-semibold" style={{ color: '#ffffff' }}>
-                        {isChild ? '  ' : ''}
                         {cat.name}
                       </AppText>
                     </TouchableOpacity>
