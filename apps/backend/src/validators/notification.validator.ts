@@ -18,6 +18,7 @@ export const registerTokenSchema = z.object({
     token: expoPushTokenSchema,
     platform: platformEnum.optional(),
     deviceName: z.string().optional(),
+    timezone: z.string().min(1).optional(),
   }),
 });
 

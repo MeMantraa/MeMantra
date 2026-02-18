@@ -3,6 +3,7 @@ import { UserModel } from '../../src/models/user.model';
 import { RecommendationEngine } from '../../src/services/recommendation-engine.service';
 import { NotificationService } from '../../src/services/notification.service';
 import * as NotificationContentConfig from '../../src/config/notification-content.config';
+import { User } from '../../src/types/database.types';
 
 jest.mock('../../src/models/user.model');
 jest.mock('../../src/services/recommendation-engine.service');
@@ -42,16 +43,22 @@ const mockMantra = (id: number) => ({
   created_at: new Date().toISOString() as string | null,
 });
 
-const mockUser = (id: number, token: string = DEVICE_TOKEN) => ({
+const mockUser = (
+  id: number,
+  overrides: Partial<User> = {},
+): User => ({
   user_id: id,
   username: `user${id}`,
   email: `user${id}@example.com`,
-  device_token: token,
+  device_token: DEVICE_TOKEN,
   password_hash: 'hash',
-  auth_provider: 'local' as const,
+  auth_provider: 'local',
   first_name: null,
   last_name: null,
   created_at: new Date().toISOString(),
+  timezone: null,
+  recommendation_notif_sent_at: null,
+  ...overrides,
 });
 
 const mockRecommendation = (mantraId: number, categoryName?: string) => ({
@@ -72,6 +79,7 @@ describe('RecommendationNotificationService', () => {
       title: 'Your daily mantra',
       body: '"Takeaway"\n\nTap to read',
     });
+    mockedUserModel.update.mockResolvedValue(mockUser(1));
   });
 
   afterEach(() => {
@@ -127,9 +135,9 @@ describe('RecommendationNotificationService', () => {
 
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
-      RecommendationNotificationService.start({ cronExpression: '0 9 * * *' });
+      RecommendationNotificationService.start({ cronExpression: '0 * * * *' });
 
-      expect(cron.schedule).toHaveBeenCalledWith('0 9 * * *', expect.any(Function));
+      expect(cron.schedule).toHaveBeenCalledWith('0 * * * *', expect.any(Function));
       expect(RecommendationNotificationService.isRunning).toBe(true);
       expect(RecommendationNotificationService.cronTask).not.toBeNull();
       expect(consoleSpy).toHaveBeenCalledWith(
@@ -137,6 +145,17 @@ describe('RecommendationNotificationService', () => {
       );
 
       consoleSpy.mockRestore();
+    });
+
+    it('should default to hourly cron when no expression is supplied', () => {
+      const cron = require('node-cron');
+      cron.validate.mockReturnValue(true);
+
+      jest.spyOn(console, 'log').mockImplementation();
+
+      RecommendationNotificationService.start();
+
+      expect(cron.schedule).toHaveBeenCalledWith('0 * * * *', expect.any(Function));
     });
   });
 
@@ -163,7 +182,7 @@ describe('RecommendationNotificationService', () => {
 
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
-      RecommendationNotificationService.start({ cronExpression: '0 9 * * *' });
+      RecommendationNotificationService.start({ cronExpression: '0 * * * *' });
       const task = RecommendationNotificationService.cronTask;
       expect(task).not.toBeNull();
 
@@ -193,6 +212,119 @@ describe('RecommendationNotificationService', () => {
         isRunning: true,
         hasCronTask: false,
       });
+    });
+  });
+
+  // ── getCurrentTimeInTimezone ───────────────────────────────────────────────
+
+  describe('getCurrentTimeInTimezone', () => {
+    it('should return a valid hour (0-23) and minute (0-59)', () => {
+      const { hour, minute } =
+        RecommendationNotificationService.getCurrentTimeInTimezone('America/New_York');
+
+      expect(hour).toBeGreaterThanOrEqual(0);
+      expect(hour).toBeLessThanOrEqual(23);
+      expect(minute).toBeGreaterThanOrEqual(0);
+      expect(minute).toBeLessThanOrEqual(59);
+    });
+
+    it('should return the current UTC hour and minute when timezone is UTC', () => {
+      const { hour, minute } =
+        RecommendationNotificationService.getCurrentTimeInTimezone('UTC');
+      const now = new Date();
+
+      expect(hour).toBe(now.getUTCHours());
+      expect(minute).toBe(now.getUTCMinutes());
+    });
+
+    it('should return different values for timezones with a known offset', () => {
+      // UTC and UTC+9 (Asia/Tokyo) are always 9 hours apart
+      const utc = RecommendationNotificationService.getCurrentTimeInTimezone('UTC');
+      const tokyo = RecommendationNotificationService.getCurrentTimeInTimezone('Asia/Tokyo');
+
+      const utcTotal = utc.hour * 60 + utc.minute;
+      const tokyoTotal = tokyo.hour * 60 + tokyo.minute;
+      // Difference should be 9 h = 540 min (mod 1440 for midnight wrap)
+      const diff = ((tokyoTotal - utcTotal) + 1440) % 1440;
+      expect(diff).toBe(540);
+    });
+  });
+
+  // ── shouldSendToUser ───────────────────────────────────────────────────────
+
+  describe('shouldSendToUser', () => {
+    let getTimeSpy: jest.SpyInstance;
+
+    afterEach(() => {
+      if (getTimeSpy) getTimeSpy.mockRestore();
+    });
+
+    it('should return true when it is 9:00 AM in the user\'s timezone and never sent', () => {
+      getTimeSpy = jest
+        .spyOn(RecommendationNotificationService, 'getCurrentTimeInTimezone')
+        .mockReturnValue({ hour: 9, minute: 0 });
+
+      const user = mockUser(1, { timezone: 'America/New_York' });
+      expect(RecommendationNotificationService.shouldSendToUser(user)).toBe(true);
+      expect(getTimeSpy).toHaveBeenCalledWith('America/New_York');
+    });
+
+    it('should return false when it is the wrong hour', () => {
+      getTimeSpy = jest
+        .spyOn(RecommendationNotificationService, 'getCurrentTimeInTimezone')
+        .mockReturnValue({ hour: 14, minute: 0 });
+
+      expect(RecommendationNotificationService.shouldSendToUser(mockUser(1))).toBe(false);
+    });
+
+    it('should return true at 9:30 AM local time (half-hour offset timezone)', () => {
+      // The cron fires at :00 UTC; for a UTC+0:30 user their local minute is 30.
+      // We intentionally do NOT gate on minute so these users are still served.
+      getTimeSpy = jest
+        .spyOn(RecommendationNotificationService, 'getCurrentTimeInTimezone')
+        .mockReturnValue({ hour: 9, minute: 30 });
+
+      expect(RecommendationNotificationService.shouldSendToUser(mockUser(1))).toBe(true);
+    });
+
+    it('should return false when a notification was already sent today in the user\'s timezone', () => {
+      getTimeSpy = jest
+        .spyOn(RecommendationNotificationService, 'getCurrentTimeInTimezone')
+        .mockReturnValue({ hour: 9, minute: 0 });
+
+      // Sent earlier today (same local date)
+      const todayISO = new Date().toISOString();
+      const user = mockUser(1, {
+        timezone: 'UTC',
+        recommendation_notif_sent_at: todayISO,
+      });
+
+      expect(RecommendationNotificationService.shouldSendToUser(user)).toBe(false);
+    });
+
+    it('should return true when the last send was yesterday', () => {
+      getTimeSpy = jest
+        .spyOn(RecommendationNotificationService, 'getCurrentTimeInTimezone')
+        .mockReturnValue({ hour: 9, minute: 0 });
+
+      const yesterday = new Date();
+      yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+      const user = mockUser(1, {
+        timezone: 'UTC',
+        recommendation_notif_sent_at: yesterday.toISOString(),
+      });
+
+      expect(RecommendationNotificationService.shouldSendToUser(user)).toBe(true);
+    });
+
+    it('should default to UTC when the user has no timezone set', () => {
+      getTimeSpy = jest
+        .spyOn(RecommendationNotificationService, 'getCurrentTimeInTimezone')
+        .mockReturnValue({ hour: 9, minute: 0 });
+
+      RecommendationNotificationService.shouldSendToUser(mockUser(1, { timezone: null }));
+
+      expect(getTimeSpy).toHaveBeenCalledWith('UTC');
     });
   });
 
@@ -307,11 +439,7 @@ describe('RecommendationNotificationService', () => {
 
       const result = await RecommendationNotificationService.sendToUser(1, DEVICE_TOKEN);
 
-      expect(result).toEqual({
-        userId: 1,
-        success: false,
-        error: 'DB connection failed',
-      });
+      expect(result).toEqual({ userId: 1, success: false, error: 'DB connection failed' });
 
       consoleSpy.mockRestore();
     });
@@ -328,11 +456,7 @@ describe('RecommendationNotificationService', () => {
 
       const result = await RecommendationNotificationService.sendToUser(1, DEVICE_TOKEN);
 
-      expect(result).toEqual({
-        userId: 1,
-        success: false,
-        error: 'Expo API error',
-      });
+      expect(result).toEqual({ userId: 1, success: false, error: 'Expo API error' });
 
       consoleSpy.mockRestore();
     });
@@ -354,6 +478,12 @@ describe('RecommendationNotificationService', () => {
   // ── processAllUsers ────────────────────────────────────────────────────────
 
   describe('processAllUsers', () => {
+    let shouldSendSpy: jest.SpyInstance;
+
+    afterEach(() => {
+      if (shouldSendSpy) shouldSendSpy.mockRestore();
+    });
+
     it('should return an empty array when no users have device tokens', async () => {
       mockedUserModel.findAllWithDeviceTokens.mockResolvedValue([]);
 
@@ -363,11 +493,27 @@ describe('RecommendationNotificationService', () => {
       expect(mockedRecommendationEngine.generateRecommendations).not.toHaveBeenCalled();
     });
 
-    it('should send a notification to every user and return success results', async () => {
-      mockedUserModel.findAllWithDeviceTokens.mockResolvedValue([
-        mockUser(1, 'ExponentPushToken[aaa]'),
-        mockUser(2, 'ExponentPushToken[bbb]'),
-      ]);
+    it('should skip users whose local time is not 9:00 AM', async () => {
+      mockedUserModel.findAllWithDeviceTokens.mockResolvedValue([mockUser(1), mockUser(2)]);
+      shouldSendSpy = jest
+        .spyOn(RecommendationNotificationService, 'shouldSendToUser')
+        .mockReturnValue(false);
+
+      const results = await RecommendationNotificationService.processAllUsers();
+
+      expect(results).toEqual([]);
+      expect(mockedRecommendationEngine.generateRecommendations).not.toHaveBeenCalled();
+    });
+
+    it('should send only to eligible users', async () => {
+      const user1 = mockUser(1, { timezone: 'America/New_York' });
+      const user2 = mockUser(2, { timezone: 'Europe/London' });
+      mockedUserModel.findAllWithDeviceTokens.mockResolvedValue([user1, user2]);
+
+      shouldSendSpy = jest
+        .spyOn(RecommendationNotificationService, 'shouldSendToUser')
+        .mockImplementation((u) => u.user_id === 1); // only user 1 is eligible
+
       mockedRecommendationEngine.generateRecommendations.mockResolvedValue([
         mockRecommendation(10, 'Gratitude'),
       ]);
@@ -379,25 +525,59 @@ describe('RecommendationNotificationService', () => {
 
       const results = await RecommendationNotificationService.processAllUsers();
 
-      expect(results).toHaveLength(2);
-      expect(results.every((r) => r.success)).toBe(true);
-      expect(mockedRecommendationEngine.generateRecommendations).toHaveBeenCalledTimes(2);
-      expect(mockedRecommendationEngine.generateRecommendations).toHaveBeenCalledWith(
-        1, { limit: 1 },
-      );
-      expect(mockedRecommendationEngine.generateRecommendations).toHaveBeenCalledWith(
-        2, { limit: 1 },
-      );
+      expect(results).toHaveLength(1);
+      expect(results[0]).toEqual({ userId: 1, success: true });
+      expect(mockedRecommendationEngine.generateRecommendations).toHaveBeenCalledTimes(1);
+      expect(mockedRecommendationEngine.generateRecommendations).toHaveBeenCalledWith(1, { limit: 1 });
 
       consoleSpy.mockRestore();
     });
 
+    it('should persist recommendation_notif_sent_at after a successful send', async () => {
+      mockedUserModel.findAllWithDeviceTokens.mockResolvedValue([mockUser(1)]);
+      shouldSendSpy = jest
+        .spyOn(RecommendationNotificationService, 'shouldSendToUser')
+        .mockReturnValue(true);
+      mockedRecommendationEngine.generateRecommendations.mockResolvedValue([
+        mockRecommendation(5),
+      ]);
+      mockedNotificationService.sendSimpleNotification.mockResolvedValue({
+        data: [{ status: 'ok' }],
+      });
+
+      jest.spyOn(console, 'log').mockImplementation();
+
+      await RecommendationNotificationService.processAllUsers();
+
+      expect(mockedUserModel.update).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({ recommendation_notif_sent_at: expect.any(String) }),
+      );
+    });
+
+    it('should not persist recommendation_notif_sent_at when send fails', async () => {
+      mockedUserModel.findAllWithDeviceTokens.mockResolvedValue([mockUser(1)]);
+      shouldSendSpy = jest
+        .spyOn(RecommendationNotificationService, 'shouldSendToUser')
+        .mockReturnValue(true);
+      mockedRecommendationEngine.generateRecommendations.mockResolvedValue([]); // → failure
+
+      jest.spyOn(console, 'log').mockImplementation();
+
+      await RecommendationNotificationService.processAllUsers();
+
+      expect(mockedUserModel.update).not.toHaveBeenCalled();
+    });
+
     it('should continue processing remaining users when one fails', async () => {
       mockedUserModel.findAllWithDeviceTokens.mockResolvedValue([
-        mockUser(1, 'ExponentPushToken[aaa]'),
-        mockUser(2, 'ExponentPushToken[bbb]'),
-        mockUser(3, 'ExponentPushToken[ccc]'),
+        mockUser(1),
+        mockUser(2),
+        mockUser(3),
       ]);
+      shouldSendSpy = jest
+        .spyOn(RecommendationNotificationService, 'shouldSendToUser')
+        .mockReturnValue(true);
       mockedRecommendationEngine.generateRecommendations
         .mockResolvedValueOnce([])                               // user 1: no results
         .mockResolvedValueOnce([mockRecommendation(20, 'Calm')]) // user 2: success
@@ -418,14 +598,14 @@ describe('RecommendationNotificationService', () => {
       expect(results[2]).toEqual({ userId: 3, success: false, error: 'Engine error' });
     });
 
-    it('should log summary counts after processing', async () => {
-      mockedUserModel.findAllWithDeviceTokens.mockResolvedValue([
-        mockUser(1),
-        mockUser(2),
-      ]);
+    it('should log the sent/failed summary', async () => {
+      mockedUserModel.findAllWithDeviceTokens.mockResolvedValue([mockUser(1), mockUser(2)]);
+      shouldSendSpy = jest
+        .spyOn(RecommendationNotificationService, 'shouldSendToUser')
+        .mockReturnValue(true);
       mockedRecommendationEngine.generateRecommendations
-        .mockResolvedValueOnce([mockRecommendation(1)]) // user 1: success
-        .mockResolvedValueOnce([]);                      // user 2: no results → failure
+        .mockResolvedValueOnce([mockRecommendation(1)]) // success
+        .mockResolvedValueOnce([]);                      // failure
 
       mockedNotificationService.sendSimpleNotification.mockResolvedValue({
         data: [{ status: 'ok' }],

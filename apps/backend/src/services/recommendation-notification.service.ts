@@ -3,9 +3,13 @@ import { UserModel } from '../models/user.model';
 import { RecommendationEngine } from './recommendation-engine.service';
 import { NotificationService } from './notification.service';
 import { generateNotificationContent } from '../config/notification-content.config';
+import { User } from '../types/database.types';
+
+/** Hour of day (in the user's local timezone) at which to deliver the notification */
+const TARGET_HOUR = 9;
 
 interface SchedulerConfig {
-  /** Cron expression for when to send recommendation notifications (default: 9 AM UTC daily) */
+  /** Cron expression (default: every minute so timezone checks can fire precisely) */
   cronExpression?: string;
   /** Whether to run in test mode (no actual cron job, just exposes methods) */
   testMode?: boolean;
@@ -23,10 +27,16 @@ export const RecommendationNotificationService = {
 
   /**
    * Start the recommendation notification scheduler.
-   * By default fires once per day at 9:00 AM UTC.
+   *
+   * Runs at the top of every hour by default. On each tick it checks which
+   * users' local clock reads TARGET_HOUR and sends only to those users.
+   * Running hourly (24 ticks/day) rather than every minute (1440 ticks/day)
+   * keeps DB load minimal while still delivering to whole-hour UTC offsets.
+   * Users in half/quarter-hour offset timezones (e.g. India UTC+5:30) receive
+   * their notification within the same hour rather than at exactly 9:00 AM.
    */
   start(config: SchedulerConfig = {}): void {
-    const { cronExpression = '0 9 * * *', testMode = false } = config;
+    const { cronExpression = '0 * * * *', testMode = false } = config;
 
     if (this.isRunning) {
       console.log('⚠️  Recommendation notification scheduler is already running');
@@ -54,9 +64,7 @@ export const RecommendationNotificationService = {
     console.log('✅ Recommendation notification scheduler started successfully');
   },
 
-  /**
-   * Stop the recommendation notification scheduler.
-   */
+  /** Stop the recommendation notification scheduler. */
   stop(): void {
     if (this.cronTask) {
       this.cronTask.stop();
@@ -67,24 +75,86 @@ export const RecommendationNotificationService = {
   },
 
   /**
-   * Fetch all users who have a registered device token, generate a personalised
-   * mantra recommendation for each one, and send them a push notification.
+   * Return the current hour and minute in a given IANA timezone.
+   * Uses Intl.DateTimeFormat — no external dependencies.
+   */
+  getCurrentTimeInTimezone(timezone: string): { hour: number; minute: number } {
+    const now = new Date();
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(now);
+    const hour = Number.parseInt(parts.find((p) => p.type === 'hour')?.value ?? '0', 10) % 24;
+    const minute = Number.parseInt(parts.find((p) => p.type === 'minute')?.value ?? '0', 10);
+    return { hour, minute };
+  },
+
+  /**
+   * Decide whether a recommendation notification should be sent to this user
+   * on the current cron tick.
+   *
+   * Sends when BOTH conditions are true:
+   *  1. It is currently TARGET_HOUR in the user's local timezone.
+   *     (Minute is intentionally not checked — the cron fires at :00 so any
+   *      user whose local hour is TARGET_HOUR at that moment is eligible,
+   *      including those in half/quarter-hour offset timezones.)
+   *  2. A recommendation notification has not already been sent today
+   *     (compared in the user's local timezone to handle DST correctly).
+   */
+  shouldSendToUser(user: User): boolean {
+    const tz = user.timezone || 'UTC';
+    const { hour } = this.getCurrentTimeInTimezone(tz);
+
+    if (hour !== TARGET_HOUR) {
+      return false;
+    }
+
+    // Prevent duplicate sends on the same local day
+    if (user.recommendation_notif_sent_at) {
+      const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: tz }); // en-CA → YYYY-MM-DD
+      const todayStr = fmt.format(new Date());
+      const lastSentStr = fmt.format(new Date(user.recommendation_notif_sent_at));
+      if (todayStr === lastSentStr) {
+        return false;
+      }
+    }
+
+    return true;
+  },
+
+  /**
+   * Check every user with a device token; those whose local clock reads
+   * TARGET_HOUR:00 and who haven't received a notification yet today get a
+   * personalised mantra recommendation push notification.
    */
   async processAllUsers(): Promise<RecommendationNotificationResult[]> {
     const results: RecommendationNotificationResult[] = [];
 
     try {
       const users = await UserModel.findAllWithDeviceTokens();
+      const eligible = users.filter((u) => this.shouldSendToUser(u));
 
-      if (users.length === 0) {
+      if (eligible.length === 0) {
         return results;
       }
 
-      console.log(`🔔 Sending recommendation notifications to ${users.length} user(s)`);
+      console.log(`🔔 Sending recommendation notifications to ${eligible.length} user(s)`);
 
-      for (const user of users) {
-        // device_token is guaranteed non-null by findAllWithDeviceTokens
+      for (const user of eligible) {
         const result = await this.sendToUser(user.user_id, user.device_token as string);
+
+        if (result.success) {
+          // Persist the send timestamp so the user isn't notified twice today
+          await UserModel.update(user.user_id, {
+            recommendation_notif_sent_at: new Date().toISOString(),
+          }).catch(() => {
+            // Non-critical: don't fail the whole run if the update fails
+          });
+        }
+
         results.push(result);
       }
 
@@ -103,14 +173,12 @@ export const RecommendationNotificationService = {
    *
    * @param userId - The user's ID (used to run the recommendation engine)
    * @param deviceToken - The user's Expo push token
-   * @returns Result indicating success or failure
    */
   async sendToUser(
     userId: number,
     deviceToken: string,
   ): Promise<RecommendationNotificationResult> {
     try {
-      // Get the single best recommendation for this user
       const recommendations = await RecommendationEngine.generateRecommendations(userId, {
         limit: 1,
       });
@@ -126,21 +194,21 @@ export const RecommendationNotificationService = {
         return { userId, success: false, error: 'Recommended mantra has no displayable text' };
       }
 
-      // Build rich notification content using the mantra's primary category
       const primaryCategory = topRec.categories[0]?.name;
       const { title, body } = generateNotificationContent({
         mantraText,
         categoryName: primaryCategory,
       });
 
-      // Send the push notification
       await NotificationService.sendSimpleNotification(deviceToken, title, body, {
         type: 'recommendation',
         mantraId: topRec.mantra.mantra_id,
         reason: topRec.reason,
       });
 
-      console.log(`✅ Recommendation notification sent to user ${userId} (mantra ${topRec.mantra.mantra_id})`);
+      console.log(
+        `✅ Recommendation notification sent to user ${userId} (mantra ${topRec.mantra.mantra_id})`,
+      );
       return { userId, success: true };
     } catch (error) {
       console.error(`❌ Error sending recommendation notification to user ${userId}:`, error);
@@ -152,18 +220,12 @@ export const RecommendationNotificationService = {
     }
   },
 
-  /**
-   * Manually trigger processing for all users.
-   * Useful for admin-triggered sends or testing.
-   */
+  /** Manually trigger processing for all users. */
   async triggerProcessing(): Promise<RecommendationNotificationResult[]> {
     console.log('🔄 Manually triggered recommendation notification processing');
     return this.processAllUsers();
   },
 
-  /**
-   * Get scheduler status.
-   */
   getStatus(): { isRunning: boolean; hasCronTask: boolean } {
     return {
       isRunning: this.isRunning,

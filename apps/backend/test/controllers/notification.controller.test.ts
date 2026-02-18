@@ -62,6 +62,27 @@ describe('NotificationController', () => {
       });
     });
 
+    it('should also save timezone when it is provided alongside the token', async () => {
+      const validToken = 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]';
+
+      (NotificationService.isExpoPushToken as jest.Mock).mockReturnValue(true);
+      (UserModel.update as jest.Mock).mockResolvedValue({
+        user_id: 1,
+        device_token: validToken,
+        timezone: 'America/New_York',
+      });
+
+      const res = await request(app)
+        .post('/register-token')
+        .send({ token: validToken, timezone: 'America/New_York' });
+
+      expect(res.status).toBe(200);
+      expect(UserModel.update).toHaveBeenCalledWith(1, {
+        device_token: validToken,
+        timezone: 'America/New_York',
+      });
+    });
+
     it('should reject invalid token format', async () => {
       (NotificationService.isExpoPushToken as jest.Mock).mockReturnValue(false);
 

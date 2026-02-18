@@ -32,6 +32,8 @@ export interface UserTable {
   device_token: string | null;
   auth_provider: string | null;
   created_at: string | null;
+  timezone: string | null;
+  recommendation_notif_sent_at: string | null;
 }
 
 export interface AdminTable {

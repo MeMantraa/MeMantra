@@ -20,9 +20,10 @@ app.listen(PORT, () => {
       cronExpression: '* * * * *', // Every minute
     });
 
-    // Start the recommendation notification scheduler (daily at 9 AM UTC)
+    // Start the recommendation notification scheduler.
+    // Fires at the top of every hour; delivers to users whose local time is 9 AM.
     RecommendationNotificationService.start({
-      cronExpression: '0 9 * * *', // 9:00 AM UTC every day
+      cronExpression: '0 * * * *',
     });
   }
 });

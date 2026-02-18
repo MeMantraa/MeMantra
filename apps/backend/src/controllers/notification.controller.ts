@@ -30,7 +30,7 @@ export const NotificationController = {
     if (!userId) return;
 
     try {
-      const { token, platform, deviceName } = req.body;
+      const { token, platform, deviceName, timezone } = req.body;
 
       // Validate token format
       if (!token || !NotificationService.isExpoPushToken(token)) {
@@ -40,10 +40,12 @@ export const NotificationController = {
         });
       }
 
-      // Update user's device token
-      const updatedUser = await UserModel.update(userId, {
-        device_token: token,
-      });
+      // Update device token and, when provided, the user's timezone
+      const updateData: { device_token: string; timezone?: string } = { device_token: token };
+      if (timezone) {
+        updateData.timezone = timezone;
+      }
+      const updatedUser = await UserModel.update(userId, updateData);
 
       if (!updatedUser) {
         return res.status(404).json({
