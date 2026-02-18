@@ -18,6 +18,7 @@ export interface Database {
   MessageReaction: MessageReactionTable;
   Rating: RatingTable;
   JournalEntry: JournalEntryTable;
+  UserCategoryScore: UserCategoryScoreTable;
 }
 
 //table interfaces
@@ -170,6 +171,13 @@ export interface JournalEntryTable {
   updated_at: string | null;
 }
 
+export interface UserCategoryScoreTable {
+  user_id: number;
+  category_id: number;
+  score: number;
+  updated_at: string;
+}
+
 //types for type safe operations (typescript ting)
 export type User = Selectable<UserTable>;
 export type NewUser = Insertable<UserTable>;
@@ -231,3 +239,7 @@ export type RatingUpdate = Updateable<RatingTable>;
 export type JournalEntry = Selectable<JournalEntryTable>;
 export type NewJournalEntry = Insertable<JournalEntryTable>;
 export type JournalEntryUpdate = Updateable<JournalEntryTable>;
+
+export type UserCategoryScore = Selectable<UserCategoryScoreTable>;
+export type NewUserCategoryScore = Insertable<UserCategoryScoreTable>;
+export type UserCategoryScoreUpdate = Updateable<UserCategoryScoreTable>;
