@@ -4,6 +4,7 @@ import { RecommendationEngine } from './recommendation-engine.service';
 import { NotificationService } from './notification.service';
 import { generateNotificationContent } from '../config/notification-content.config';
 import { User } from '../types/database.types';
+import { getCurrentTimeInTimezone as _getCurrentTimeInTimezone } from '../utils/timezone.utils';
 
 /** Hour of day (in the user's local timezone) at which to deliver the notification */
 const TARGET_HOUR = 9;
@@ -76,20 +77,10 @@ export const RecommendationNotificationService = {
 
   /**
    * Return the current hour and minute in a given IANA timezone.
-   * Uses Intl.DateTimeFormat — no external dependencies.
+   * Delegates to the shared timezone utility.
    */
   getCurrentTimeInTimezone(timezone: string): { hour: number; minute: number } {
-    const now = new Date();
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone,
-      hour: 'numeric',
-      minute: 'numeric',
-      hour12: false,
-    });
-    const parts = formatter.formatToParts(now);
-    const hour = Number.parseInt(parts.find((p) => p.type === 'hour')?.value ?? '0', 10) % 24;
-    const minute = Number.parseInt(parts.find((p) => p.type === 'minute')?.value ?? '0', 10);
-    return { hour, minute };
+    return _getCurrentTimeInTimezone(timezone);
   },
 
   /**
@@ -159,7 +150,7 @@ export const RecommendationNotificationService = {
       }
 
       const successCount = results.filter((r) => r.success).length;
-      const failCount = results.filter((r) => !r.success).length;
+      const failCount = results.length - successCount;
       console.log(`📊 Recommendation notifications: ${successCount} sent, ${failCount} failed`);
     } catch (error) {
       console.error('❌ Error processing recommendation notifications:', error);

@@ -191,6 +191,36 @@ describe('UserModel', () => {
     expect(result).toBe(false);
   });
 
+  describe('findAllWithDeviceTokens', () => {
+    it('returns users that have a non-null device token', async () => {
+      const fakeUsers = [
+        { user_id: 1, device_token: 'ExponentPushToken[abc]' },
+        { user_id: 2, device_token: 'ExponentPushToken[xyz]' },
+      ];
+      const executeMock = jest.fn().mockResolvedValue(fakeUsers);
+      const selectAllMock = jest.fn().mockReturnValue({ execute: executeMock });
+      const whereMock = jest.fn().mockReturnValue({ selectAll: selectAllMock });
+      selectFromMock.mockReturnValue({ where: whereMock });
+
+      const result = await UserModel.findAllWithDeviceTokens();
+
+      expect(selectFromMock).toHaveBeenCalledWith('User');
+      expect(whereMock).toHaveBeenCalledWith('device_token', 'is not', null);
+      expect(result).toBe(fakeUsers);
+    });
+
+    it('returns an empty array when no users have device tokens', async () => {
+      const executeMock = jest.fn().mockResolvedValue([]);
+      const selectAllMock = jest.fn().mockReturnValue({ execute: executeMock });
+      const whereMock = jest.fn().mockReturnValue({ selectAll: selectAllMock });
+      selectFromMock.mockReturnValue({ where: whereMock });
+
+      const result = await UserModel.findAllWithDeviceTokens();
+
+      expect(result).toEqual([]);
+    });
+  });
+
   it('updates email', async () => {
     const executeTakeFirstMock = jest.fn().mockResolvedValue({ numUpdatedRows: BigInt(1) });
     const whereMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
