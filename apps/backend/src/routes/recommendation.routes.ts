@@ -7,6 +7,7 @@ import {
   recommendationIdSchema,
   recommendationQuerySchema,
   recentQuerySchema,
+  suggestQuerySchema,
 } from '../validators/recommendation.validator';
 
 const router = Router();
@@ -29,6 +30,12 @@ router.get(
   '/recent',
   validateRequest(recentQuerySchema),
   RecommendationController.getRecentRecommendations
+);
+
+router.get(
+  '/suggest',
+  validateRequest(suggestQuerySchema),
+  RecommendationController.suggestRecommendations
 );
 
 router.get(

@@ -4,11 +4,15 @@ jest.mock('dotenv', () => ({
 
 const insertIntoMock = jest.fn();
 const selectFromMock = jest.fn();
+const updateTableMock = jest.fn();
+const deleteFromMock = jest.fn();
 
 jest.mock('../../src/db', () => ({
   db: {
     insertInto: insertIntoMock,
     selectFrom: selectFromMock,
+    updateTable: updateTableMock,
+    deleteFrom: deleteFromMock,
   },
 }));
 
@@ -27,6 +31,8 @@ describe('UserModel', () => {
     jest.clearAllMocks();
     insertIntoMock.mockReset();
     selectFromMock.mockReset();
+    updateTableMock.mockReset();
+    deleteFromMock.mockReset();
     genSaltMock.mockReset();
     hashMock.mockReset();
   });
@@ -110,5 +116,91 @@ describe('UserModel', () => {
     expect(selectFromMock).toHaveBeenCalledWith('User');
     expect(whereMock).toHaveBeenCalledWith('user_id', '=', 5);
     expect(result).toBe(fakeUser);
+  });
+
+  it('finds users by ids', async () => {
+    const fakeUsers = [{ user_id: 1 }, { user_id: 2 }];
+    const executeMock = jest.fn().mockResolvedValue(fakeUsers);
+    const selectAllMock = jest.fn().mockReturnValue({ execute: executeMock });
+    const whereMock = jest.fn().mockReturnValue({ selectAll: selectAllMock });
+    selectFromMock.mockReturnValue({ where: whereMock });
+
+    const result = await UserModel.findByIds([1, 2]);
+
+    expect(selectFromMock).toHaveBeenCalledWith('User');
+    expect(whereMock).toHaveBeenCalledWith('user_id', 'in', [1, 2]);
+    expect(result).toBe(fakeUsers);
+  });
+
+  it('returns empty array for findByIds with empty input', async () => {
+    const result = await UserModel.findByIds([]);
+
+    expect(result).toEqual([]);
+    expect(selectFromMock).not.toHaveBeenCalled();
+  });
+
+  it('finds all users', async () => {
+    const fakeUsers = [{ user_id: 1 }, { user_id: 2 }];
+    const executeMock = jest.fn().mockResolvedValue(fakeUsers);
+    const orderByMock = jest.fn().mockReturnValue({ execute: executeMock });
+    const selectAllMock = jest.fn().mockReturnValue({ orderBy: orderByMock });
+    selectFromMock.mockReturnValue({ selectAll: selectAllMock });
+
+    const result = await UserModel.findAll();
+
+    expect(selectFromMock).toHaveBeenCalledWith('User');
+    expect(orderByMock).toHaveBeenCalledWith('created_at', 'desc');
+    expect(result).toBe(fakeUsers);
+  });
+
+  it('updates a user', async () => {
+    const updatedUser = { user_id: 1, username: 'updated' };
+    const executeTakeFirstMock = jest.fn().mockResolvedValue(updatedUser);
+    const returningAllMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
+    const whereMock = jest.fn().mockReturnValue({ returningAll: returningAllMock });
+    const setMock = jest.fn().mockReturnValue({ where: whereMock });
+    updateTableMock.mockReturnValue({ set: setMock });
+
+    const result = await UserModel.update(1, { username: 'updated' });
+
+    expect(updateTableMock).toHaveBeenCalledWith('User');
+    expect(setMock).toHaveBeenCalledWith({ username: 'updated' });
+    expect(whereMock).toHaveBeenCalledWith('user_id', '=', 1);
+    expect(result).toBe(updatedUser);
+  });
+
+  it('deletes a user and returns true', async () => {
+    const executeTakeFirstMock = jest.fn().mockResolvedValue({ numDeletedRows: BigInt(1) });
+    const whereMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
+    deleteFromMock.mockReturnValue({ where: whereMock });
+
+    const result = await UserModel.delete(1);
+
+    expect(deleteFromMock).toHaveBeenCalledWith('User');
+    expect(whereMock).toHaveBeenCalledWith('user_id', '=', 1);
+    expect(result).toBe(true);
+  });
+
+  it('returns false when deleting non-existent user', async () => {
+    const executeTakeFirstMock = jest.fn().mockResolvedValue({ numDeletedRows: BigInt(0) });
+    const whereMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
+    deleteFromMock.mockReturnValue({ where: whereMock });
+
+    const result = await UserModel.delete(999);
+
+    expect(result).toBe(false);
+  });
+
+  it('updates email', async () => {
+    const executeTakeFirstMock = jest.fn().mockResolvedValue({ numUpdatedRows: BigInt(1) });
+    const whereMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
+    const setMock = jest.fn().mockReturnValue({ where: whereMock });
+    updateTableMock.mockReturnValue({ set: setMock });
+
+    await UserModel.updateEmail(1, 'new@email.com');
+
+    expect(updateTableMock).toHaveBeenCalledWith('User');
+    expect(setMock).toHaveBeenCalledWith({ email: 'new@email.com' });
+    expect(whereMock).toHaveBeenCalledWith('user_id', '=', 1);
   });
 });

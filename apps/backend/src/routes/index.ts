@@ -11,6 +11,7 @@ import chatRoutes from './chat.routes';
 import notificationRoutes from './notification.routes';
 import ratingRoutes from './rating.routes';
 import journalRoutes from './journal.routes';
+import algorithmRoutes from './algorithm.routes';
 
 const router = Router();
 
@@ -48,5 +49,8 @@ router.use('/ratings', ratingRoutes);
 
 // Journal routes
 router.use('/journal', journalRoutes);
+
+// Algorithm routes (user category scores)
+router.use('/algorithm', algorithmRoutes);
 
 export default router;

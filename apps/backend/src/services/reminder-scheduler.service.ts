@@ -315,7 +315,7 @@ export const ReminderSchedulerService = {
       hour12: false,
     });
     const parts = formatter.formatToParts(now);
-    const hour = Number.parseInt(parts.find(p => p.type === 'hour')?.value ?? '0', 10);
+    const hour = Number.parseInt(parts.find(p => p.type === 'hour')?.value ?? '0', 10) % 24;
     const minute = Number.parseInt(parts.find(p => p.type === 'minute')?.value ?? '0', 10);
     const weekdayStr = parts.find(p => p.type === 'weekday')?.value ?? 'Sun';
     const dayOfWeek = DAY_MAP[weekdayStr] ?? 0;

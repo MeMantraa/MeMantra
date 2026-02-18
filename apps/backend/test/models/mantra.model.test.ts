@@ -405,4 +405,67 @@ describe('MantraModel', () => {
       expect(result[0].like_count).toBe(10);
     });
   });
+
+  describe('findAllWithCategories', () => {
+    it('should return mantras with category map', async () => {
+      const mockMantras = [
+        { mantra_id: 1, title: 'Mantra 1', is_active: true, created_at: '2024-01-01' },
+        { mantra_id: 2, title: 'Mantra 2', is_active: true, created_at: '2024-01-02' },
+      ];
+      const mockMappings = [
+        { mantra_id: 1, category_id: 100, name: 'Anxiety' },
+        { mantra_id: 1, category_id: 101, name: 'Calm' },
+        { mantra_id: 2, category_id: 102, name: 'Motivation' },
+      ];
+
+      let callCount = 0;
+      (db.selectFrom as jest.Mock).mockImplementation(() => {
+        callCount++;
+        if (callCount === 1) {
+          return {
+            where: jest.fn().mockReturnThis(),
+            selectAll: jest.fn().mockReturnThis(),
+            orderBy: jest.fn().mockReturnThis(),
+            limit: jest.fn().mockReturnThis(),
+            offset: jest.fn().mockReturnThis(),
+            execute: jest.fn().mockResolvedValue(mockMantras),
+          };
+        } else {
+          return {
+            innerJoin: jest.fn().mockReturnThis(),
+            where: jest.fn().mockReturnThis(),
+            select: jest.fn().mockReturnThis(),
+            execute: jest.fn().mockResolvedValue(mockMappings),
+          };
+        }
+      });
+
+      const result = await MantraModel.findAllWithCategories(200, 0);
+
+      expect(result.mantras).toEqual(mockMantras);
+      expect(result.categoryMap.get(1)).toEqual([
+        { category_id: 100, name: 'Anxiety' },
+        { category_id: 101, name: 'Calm' },
+      ]);
+      expect(result.categoryMap.get(2)).toEqual([
+        { category_id: 102, name: 'Motivation' },
+      ]);
+    });
+
+    it('should return empty category map when no mantras', async () => {
+      (db.selectFrom as jest.Mock).mockReturnValue({
+        where: jest.fn().mockReturnThis(),
+        selectAll: jest.fn().mockReturnThis(),
+        orderBy: jest.fn().mockReturnThis(),
+        limit: jest.fn().mockReturnThis(),
+        offset: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue([]),
+      });
+
+      const result = await MantraModel.findAllWithCategories();
+
+      expect(result.mantras).toEqual([]);
+      expect(result.categoryMap.size).toBe(0);
+    });
+  });
 });

@@ -2,8 +2,10 @@ import request from 'supertest';
 import express from 'express';
 import { RecommendationController } from '../../src/controllers/recommendation.controller';
 import { RecommendationModel } from '../../src/models/recommendation.model';
+import { RecommendationEngine } from '../../src/services/recommendation-engine.service';
 
 jest.mock('../../src/models/recommendation.model');
+jest.mock('../../src/services/recommendation-engine.service');
 
 function setupAppWithUser(userId?: number, email?: string) {
   const app = express();
@@ -15,6 +17,7 @@ function setupAppWithUser(userId?: number, email?: string) {
   app.get('/recommendations', RecommendationController.getUserRecommendations);
   app.get('/recommendations/detailed', RecommendationController.getDetailedRecommendations);
   app.get('/recommendations/recent', RecommendationController.getRecentRecommendations);
+  app.get('/recommendations/suggest', RecommendationController.suggestRecommendations);
   app.get('/recommendations/stats', RecommendationController.getRecommendationStats);
   app.get('/recommendations/:id', RecommendationController.getRecommendationById);
   app.post('/recommendations', RecommendationController.createRecommendation);
@@ -386,6 +389,113 @@ describe('RecommendationController', () => {
         status: 'error',
         message: 'Error deleting recommendation',
       });
+    });
+  });
+
+  describe('suggestRecommendations', () => {
+    it('should return personalized recommendations', async () => {
+      const mockResults = [
+        {
+          mantra: { mantra_id: 10, title: 'Test Mantra' },
+          score: 0.85,
+          categories: [{ category_id: 1, name: 'Anxiety' }],
+          reason: 'matches your preferred categories',
+        },
+      ];
+      (RecommendationEngine.generateRecommendations as jest.Mock).mockResolvedValue(mockResults);
+
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app).get('/recommendations/suggest');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        data: {
+          recommendations: [
+            {
+              mantra: { mantra_id: 10, title: 'Test Mantra' },
+              score: 0.85,
+              categories: [{ category_id: 1, name: 'Anxiety' }],
+              reason: 'matches your preferred categories',
+            },
+          ],
+          count: 1,
+        },
+      });
+      expect(RecommendationEngine.generateRecommendations).toHaveBeenCalledWith(1, {
+        limit: 10,
+        mood: undefined,
+        excludeIds: undefined,
+      });
+    });
+
+    it('should pass query parameters to the engine', async () => {
+      (RecommendationEngine.generateRecommendations as jest.Mock).mockResolvedValue([]);
+
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app).get('/recommendations/suggest?limit=5&mood=anxious');
+
+      expect(res.status).toBe(200);
+      expect(RecommendationEngine.generateRecommendations).toHaveBeenCalledWith(1, {
+        limit: 5,
+        mood: 'anxious',
+        excludeIds: undefined,
+      });
+    });
+
+    it('should return 401 if not authenticated', async () => {
+      const app = setupAppWithUser();
+      const res = await request(app).get('/recommendations/suggest');
+
+      expect(res.status).toBe(401);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Authentication required',
+      });
+    });
+
+    it('should return empty array when no recommendations available', async () => {
+      (RecommendationEngine.generateRecommendations as jest.Mock).mockResolvedValue([]);
+
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app).get('/recommendations/suggest');
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.recommendations).toEqual([]);
+      expect(res.body.data.count).toBe(0);
+    });
+
+    it('should handle errors from the engine', async () => {
+      (RecommendationEngine.generateRecommendations as jest.Mock).mockRejectedValue(
+        new Error('Engine error'),
+      );
+
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app).get('/recommendations/suggest');
+
+      expect(res.status).toBe(500);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Error generating recommendations',
+      });
+    });
+
+    it('should round scores to 2 decimal places', async () => {
+      const mockResults = [
+        {
+          mantra: { mantra_id: 10, title: 'Test' },
+          score: 0.8567,
+          categories: [],
+          reason: 'test',
+        },
+      ];
+      (RecommendationEngine.generateRecommendations as jest.Mock).mockResolvedValue(mockResults);
+
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app).get('/recommendations/suggest');
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.recommendations[0].score).toBe(0.86);
     });
   });
 

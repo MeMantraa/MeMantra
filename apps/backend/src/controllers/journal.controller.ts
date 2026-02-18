@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { JournalModel } from '../models/journal.model';
 import { CreateJournalInput, UpdateJournalInput, JournalQueryInput } from '../validators/journal.validator';
+import { UserCategoryScoreModel } from '../models/user-category-score.model';
 
 export const JournalController = {
   // GET /api/journal - Get all journal entries for the authenticated user
@@ -145,6 +146,11 @@ export const JournalController = {
         ...journalData,
         user_id: userId,
       });
+
+      // Update algorithm: +2 points for all categories of the mantra
+      if (journalData.mantra_id) {
+        await UserCategoryScoreModel.addScoreForMantra(userId, journalData.mantra_id, 2).catch(() => {});
+      }
 
       return res.status(201).json({
         status: 'success',
