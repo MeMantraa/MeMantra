@@ -269,11 +269,11 @@ export const RecommendationEngine = {
 
         // Weighted final score
         const finalScore =
-          0.40 * categoryScore +
-          0.20 * popularityScore +
+          0.4 * categoryScore +
+          0.2 * popularityScore +
           0.15 * moodScore +
-          0.10 * freshnessScore +
-          0.10 * diversityBonus -
+          0.1 * freshnessScore +
+          0.1 * diversityBonus -
           0.05 * recencyPenalty;
 
         // Build human-readable reason
@@ -308,28 +308,46 @@ export const RecommendationEngine = {
     if (limit === 0) return selected;
 
     const maxPerCategory = Math.ceil(limit * MAX_CATEGORY_SHARE);
-
-    const categoryCounts = new Map<string, number>();
-    for (const item of selected) {
-      const primaryCat = item.categories[0]?.name || 'uncategorized';
-      categoryCounts.set(primaryCat, (categoryCounts.get(primaryCat) || 0) + 1);
-    }
-
-    const overRepresented = new Set<string>();
-    for (const [cat, count] of categoryCounts) {
-      if (count > maxPerCategory) {
-        overRepresented.add(cat);
-      }
-    }
+    const overRepresented = this._findOverRepresentedCategories(selected, maxPerCategory);
     if (overRepresented.size === 0) return selected;
 
+    const { result, toReplace } = this._partitionSelected(selected, overRepresented, maxPerCategory);
+    this._fillFromOverflow(result, toReplace, overflow, overRepresented);
+
+    for (const idx of toReplace) {
+      result.push(selected[idx]);
+    }
+
+    return result;
+  },
+
+  /** Count categories and return those exceeding the cap. */
+  _findOverRepresentedCategories(
+    items: ScoredMantra[],
+    maxPerCategory: number,
+  ): Set<string> {
+    const counts = new Map<string, number>();
+    for (const item of items) {
+      const cat = item.categories[0]?.name || 'uncategorized';
+      counts.set(cat, (counts.get(cat) || 0) + 1);
+    }
+    const overRepresented = new Set<string>();
+    for (const [cat, count] of counts) {
+      if (count > maxPerCategory) overRepresented.add(cat);
+    }
+    return overRepresented;
+  },
+
+  _partitionSelected(
+    selected: ScoredMantra[],
+    overRepresented: Set<string>,
+    maxPerCategory: number,
+  ): { result: ScoredMantra[]; toReplace: number[] } {
     const result: ScoredMantra[] = [];
     const toReplace: number[] = [];
 
     for (let i = 0; i < selected.length; i++) {
-      const item = selected[i];
-      const primaryCat = item.categories[0]?.name || 'uncategorized';
-
+      const primaryCat = selected[i].categories[0]?.name || 'uncategorized';
       if (overRepresented.has(primaryCat)) {
         const currentCount = result.filter(
           (r) => (r.categories[0]?.name || 'uncategorized') === primaryCat,
@@ -339,23 +357,26 @@ export const RecommendationEngine = {
           continue;
         }
       }
-      result.push(item);
+      result.push(selected[i]);
     }
+    return { result, toReplace };
+  },
 
+
+  _fillFromOverflow(
+    result: ScoredMantra[],
+    toReplace: number[],
+    overflow: ScoredMantra[],
+    overRepresented: Set<string>,
+  ): void {
     for (const replacement of overflow) {
       if (toReplace.length === 0) break;
-      const replacementCat = replacement.categories[0]?.name || 'uncategorized';
-      if (!overRepresented.has(replacementCat)) {
+      const cat = replacement.categories[0]?.name || 'uncategorized';
+      if (!overRepresented.has(cat)) {
         result.push(replacement);
         toReplace.shift();
       }
     }
-
-    for (const idx of toReplace) {
-      result.push(selected[idx]);
-    }
-
-    return result;
   },
 
   // Cold-start
@@ -398,7 +419,7 @@ export const RecommendationEngine = {
       const randomScore = randomInt(0, 1000000) / 1000000;
 
       const score =
-        0.60 * popularityScore + 0.20 * freshnessScore + 0.20 * randomScore;
+        0.6 * popularityScore + 0.2 * freshnessScore + 0.2 * randomScore;
 
       return {
         mantra,

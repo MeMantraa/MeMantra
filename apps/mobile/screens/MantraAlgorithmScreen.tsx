@@ -103,6 +103,28 @@ export default function MantraAlgorithmScreen() {
     }
   };
 
+  const performResetScore = async (categoryId: number) => {
+    try {
+      const token = await storage.getToken();
+      if (!token) return;
+      await algorithmService.resetScore(token, categoryId);
+      setScores((prev) => prev.filter((s) => s.category_id !== categoryId));
+    } catch (err) {
+      console.error('Error resetting score', err);
+    }
+  };
+
+  const performResetAll = async () => {
+    try {
+      const token = await storage.getToken();
+      if (!token) return;
+      await algorithmService.resetAllScores(token);
+      setScores([]);
+    } catch (err) {
+      console.error('Error resetting all scores', err);
+    }
+  };
+
   // ─── Reset a single score ─────────────────────────────────
   const handleResetScore = (categoryId: number, name: string) => {
     Alert.alert('Reset category', `Reset "${name}" to 0?`, [
@@ -110,16 +132,7 @@ export default function MantraAlgorithmScreen() {
       {
         text: 'Reset',
         style: 'destructive',
-        onPress: async () => {
-          try {
-            const token = await storage.getToken();
-            if (!token) return;
-            await algorithmService.resetScore(token, categoryId);
-            setScores((prev) => prev.filter((s) => s.category_id !== categoryId));
-          } catch (err) {
-            console.error('Error resetting score', err);
-          }
-        },
+        onPress: () => performResetScore(categoryId),
       },
     ]);
   };
@@ -134,16 +147,7 @@ export default function MantraAlgorithmScreen() {
         {
           text: 'Reset All',
           style: 'destructive',
-          onPress: async () => {
-            try {
-              const token = await storage.getToken();
-              if (!token) return;
-              await algorithmService.resetAllScores(token);
-              setScores([]);
-            } catch (err) {
-              console.error('Error resetting all scores', err);
-            }
-          },
+          onPress: () => performResetAll(),
         },
       ],
     );
