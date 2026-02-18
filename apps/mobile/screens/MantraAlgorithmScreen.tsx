@@ -46,6 +46,61 @@ const TYPE_DESCRIPTIONS: Record<string, string> = {
 // Ordered list of section keys so sections always appear in this order
 const SECTION_ORDER = ['essential', 'goal', 'mood', 'scenario', 'time', 'theme'];
 
+interface ListHeaderProps {
+  showResetAll: boolean;
+  onResetAll: () => void;
+  errorColor: string;
+}
+
+const ListHeader = ({ showResetAll, onResetAll, errorColor }: ListHeaderProps) => (
+  <View style={{ marginBottom: 4 }}>
+    <AppText
+      style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, lineHeight: 19, marginBottom: 14 }}
+    >
+      Your feed is personalised based on these scores. Categories with higher scores appear more
+      often. Categories at zero are hidden automatically. Tap the pencil to edit a score, or the
+      trash icon to reset one.
+    </AppText>
+
+    {showResetAll && (
+      <TouchableOpacity
+        onPress={onResetAll}
+        style={{
+          alignSelf: 'flex-end',
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: 'rgba(228, 68, 56, 0.2)',
+          paddingHorizontal: 14,
+          paddingVertical: 8,
+          borderRadius: 10,
+          gap: 6,
+        }}
+      >
+        <Ionicons name="refresh" size={16} color={errorColor} />
+        <AppText style={{ color: errorColor, fontSize: 13 }}>Reset All</AppText>
+      </TouchableOpacity>
+    )}
+  </View>
+);
+
+const EmptyState = () => (
+  <View style={{ alignItems: 'center', marginTop: 60, paddingHorizontal: 24 }}>
+    <Ionicons name="analytics-outline" size={64} color="rgba(255,255,255,0.3)" />
+    <AppText
+      style={{
+        color: 'rgba(255,255,255,0.6)',
+        fontSize: 15,
+        textAlign: 'center',
+        marginTop: 16,
+        lineHeight: 22,
+      }}
+    >
+      No algorithm data yet. Like, save, rate, or journal about mantras to start building your
+      personalised feed.
+    </AppText>
+  </View>
+);
+
 export default function MantraAlgorithmScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation();
@@ -84,8 +139,8 @@ export default function MantraAlgorithmScreen() {
 
   // ─── Update a score ────────────────────────────────────────
   const handleSaveScore = async (categoryId: number) => {
-    const newScore = parseInt(editValue, 10);
-    if (isNaN(newScore) || newScore < 0) {
+    const newScore = Number.parseInt(editValue, 10);
+    if (Number.isNaN(newScore) || newScore < 0) {
       Alert.alert('Invalid score', 'Please enter a non-negative number.');
       return;
     }
@@ -132,7 +187,9 @@ export default function MantraAlgorithmScreen() {
       {
         text: 'Reset',
         style: 'destructive',
-        onPress: () => performResetScore(categoryId),
+        onPress: () => {
+          void performResetScore(categoryId);
+        },
       },
     ]);
   };
@@ -147,7 +204,9 @@ export default function MantraAlgorithmScreen() {
         {
           text: 'Reset All',
           style: 'destructive',
-          onPress: () => performResetAll(),
+          onPress: () => {
+            void performResetAll();
+          },
         },
       ],
     );
@@ -294,57 +353,6 @@ export default function MantraAlgorithmScreen() {
     </View>
   );
 
-  // ─── Header component ──────────────────────────────────────
-  const ListHeader = () => (
-    <View style={{ marginBottom: 4 }}>
-      <AppText
-        style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, lineHeight: 19, marginBottom: 14 }}
-      >
-        Your feed is personalised based on these scores. Categories with higher scores appear more
-        often. Categories at zero are hidden automatically. Tap the pencil to edit a score, or the
-        trash icon to reset one.
-      </AppText>
-
-      {activeScores.length > 0 && (
-        <TouchableOpacity
-          onPress={handleResetAll}
-          style={{
-            alignSelf: 'flex-end',
-            flexDirection: 'row',
-            alignItems: 'center',
-            backgroundColor: 'rgba(228, 68, 56, 0.2)',
-            paddingHorizontal: 14,
-            paddingVertical: 8,
-            borderRadius: 10,
-            gap: 6,
-          }}
-        >
-          <Ionicons name="refresh" size={16} color={colors.error || '#E44438'} />
-          <AppText style={{ color: colors.error || '#E44438', fontSize: 13 }}>Reset All</AppText>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-
-  // ─── Empty state ───────────────────────────────────────────
-  const EmptyState = () => (
-    <View style={{ alignItems: 'center', marginTop: 60, paddingHorizontal: 24 }}>
-      <Ionicons name="analytics-outline" size={64} color="rgba(255,255,255,0.3)" />
-      <AppText
-        style={{
-          color: 'rgba(255,255,255,0.6)',
-          fontSize: 15,
-          textAlign: 'center',
-          marginTop: 16,
-          lineHeight: 22,
-        }}
-      >
-        No algorithm data yet. Like, save, rate, or journal about mantras to start building your
-        personalised feed.
-      </AppText>
-    </View>
-  );
-
   // ─── Main render ───────────────────────────────────────────
   return (
     <View style={{ flex: 1, backgroundColor: colors.primary }}>
@@ -372,7 +380,13 @@ export default function MantraAlgorithmScreen() {
           keyExtractor={(item) => String(item.category_id)}
           renderItem={renderCategory}
           renderSectionHeader={renderSectionHeader}
-          ListHeaderComponent={<ListHeader />}
+          ListHeaderComponent={
+            <ListHeader
+              showResetAll={activeScores.length > 0}
+              onResetAll={handleResetAll}
+              errorColor={colors.error || '#E44438'}
+            />
+          }
           ListEmptyComponent={<EmptyState />}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
           stickySectionHeadersEnabled={false}
