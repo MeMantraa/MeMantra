@@ -6,6 +6,7 @@ import { ThemeProvider } from '../context/ThemeContext';
 import { SavedProvider } from '../context/SavedContext';
 import { storage } from '../utils/storage';
 import { notificationService } from '../services/notification.service';
+import { engagementService } from '../services/engagement.service';
 import { mantraService, Mantra } from '../services/mantra.service';
 import { navigateFromOutside, isNavigationReady } from '../services/api.config';
 
@@ -194,13 +195,16 @@ export default function MainNavigator() {
       const data = response.notification.request.content.data;
 
       if (data.type === 'collection_reminder' && data.collectionId) {
-        // Navigate to collection detail
+        engagementService.trackEvent('notification_tap_collection_reminder');
         handleCollectionNotificationNavigation(
           data.collectionId as number,
           (data.collectionName as string) || 'Collection',
         );
+      } else if (data.type === 'recommendation' && data.mantraId) {
+        engagementService.trackEvent('notification_tap_recommendation');
+        handleNotificationNavigation(data.mantraId as number);
       } else if (data.type === 'reminder' && data.mantraId) {
-        // Navigate to mantra detail
+        engagementService.trackEvent('notification_tap_reminder');
         handleNotificationNavigation(data.mantraId as number);
       } else if (data.type === 'reminder' && data.reminderId) {
         // Legacy support: if only reminderId is provided, log it

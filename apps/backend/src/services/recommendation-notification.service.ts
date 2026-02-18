@@ -1,13 +1,14 @@
 import * as cron from 'node-cron';
 import { UserModel } from '../models/user.model';
+import { EngagementModel } from '../models/engagement.model';
 import { RecommendationEngine } from './recommendation-engine.service';
 import { NotificationService } from './notification.service';
 import { generateNotificationContent } from '../config/notification-content.config';
 import { User } from '../types/database.types';
 import { getCurrentTimeInTimezone as _getCurrentTimeInTimezone } from '../utils/timezone.utils';
 
-/** Hour of day (in the user's local timezone) at which to deliver the notification */
-const TARGET_HOUR = 9;
+/** Fallback hour (in the user's local timezone) when no optimal hour is computed */
+const DEFAULT_TARGET_HOUR = 9;
 
 interface SchedulerConfig {
   /** Cron expression (default: every minute so timezone checks can fire precisely) */
@@ -88,10 +89,11 @@ export const RecommendationNotificationService = {
    * on the current cron tick.
    *
    * Sends when BOTH conditions are true:
-   *  1. It is currently TARGET_HOUR in the user's local timezone.
-   *     (Minute is intentionally not checked — the cron fires at :00 so any
-   *      user whose local hour is TARGET_HOUR at that moment is eligible,
-   *      including those in half/quarter-hour offset timezones.)
+   *  1. It is currently the user's target hour in their local timezone.
+   *     The target hour is `optimal_send_hour` when set, otherwise falls back
+   *     to DEFAULT_TARGET_HOUR (9 AM). Minute is intentionally not checked —
+   *     the cron fires at :00 so any user whose local hour matches is eligible,
+   *     including those in half/quarter-hour offset timezones.
    *  2. A recommendation notification has not already been sent today
    *     (compared in the user's local timezone to handle DST correctly).
    */
@@ -99,7 +101,8 @@ export const RecommendationNotificationService = {
     const tz = user.timezone || 'UTC';
     const { hour } = this.getCurrentTimeInTimezone(tz);
 
-    if (hour !== TARGET_HOUR) {
+    const targetHour = user.optimal_send_hour ?? DEFAULT_TARGET_HOUR;
+    if (hour !== targetHour) {
       return false;
     }
 
@@ -200,6 +203,8 @@ export const RecommendationNotificationService = {
       console.log(
         `✅ Recommendation notification sent to user ${userId} (mantra ${topRec.mantra.mantra_id})`,
       );
+      // Track the send for tap-through rate analytics (fire-and-forget)
+      EngagementModel.create(userId, 'notification_sent').catch(() => {});
       return { userId, success: true };
     } catch (error) {
       console.error(`❌ Error sending recommendation notification to user ${userId}:`, error);

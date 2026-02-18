@@ -1,11 +1,13 @@
 import { RecommendationNotificationService } from '../../src/services/recommendation-notification.service';
 import { UserModel } from '../../src/models/user.model';
+import { EngagementModel } from '../../src/models/engagement.model';
 import { RecommendationEngine } from '../../src/services/recommendation-engine.service';
 import { NotificationService } from '../../src/services/notification.service';
 import * as NotificationContentConfig from '../../src/config/notification-content.config';
 import { User } from '../../src/types/database.types';
 
 jest.mock('../../src/models/user.model');
+jest.mock('../../src/models/engagement.model');
 jest.mock('../../src/services/recommendation-engine.service');
 jest.mock('../../src/services/notification.service');
 jest.mock('../../src/config/notification-content.config');
@@ -18,6 +20,7 @@ jest.mock('node-cron', () => {
 });
 
 const mockedUserModel = UserModel as jest.Mocked<typeof UserModel>;
+const mockedEngagementModel = EngagementModel as jest.Mocked<typeof EngagementModel>;
 const mockedRecommendationEngine = RecommendationEngine as jest.Mocked<typeof RecommendationEngine>;
 const mockedNotificationService = NotificationService as jest.Mocked<typeof NotificationService>;
 const mockedGenerateNotificationContent =
@@ -58,6 +61,7 @@ const mockUser = (
   created_at: new Date().toISOString(),
   timezone: null,
   recommendation_notif_sent_at: null,
+  optimal_send_hour: null,
   ...overrides,
 });
 
@@ -80,6 +84,7 @@ describe('RecommendationNotificationService', () => {
       body: '"Takeaway"\n\nTap to read',
     });
     mockedUserModel.update.mockResolvedValue(mockUser(1));
+    mockedEngagementModel.create.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -326,6 +331,33 @@ describe('RecommendationNotificationService', () => {
 
       expect(getTimeSpy).toHaveBeenCalledWith('UTC');
     });
+
+    it('should return true at hour 7 when optimal_send_hour = 7', () => {
+      getTimeSpy = jest
+        .spyOn(RecommendationNotificationService, 'getCurrentTimeInTimezone')
+        .mockReturnValue({ hour: 7, minute: 0 });
+
+      const user = mockUser(1, { optimal_send_hour: 7 });
+      expect(RecommendationNotificationService.shouldSendToUser(user)).toBe(true);
+    });
+
+    it('should return true at hour 9 when optimal_send_hour = null (uses default)', () => {
+      getTimeSpy = jest
+        .spyOn(RecommendationNotificationService, 'getCurrentTimeInTimezone')
+        .mockReturnValue({ hour: 9, minute: 0 });
+
+      const user = mockUser(1, { optimal_send_hour: null });
+      expect(RecommendationNotificationService.shouldSendToUser(user)).toBe(true);
+    });
+
+    it('should return false at hour 9 when optimal_send_hour = 7', () => {
+      getTimeSpy = jest
+        .spyOn(RecommendationNotificationService, 'getCurrentTimeInTimezone')
+        .mockReturnValue({ hour: 9, minute: 0 });
+
+      const user = mockUser(1, { optimal_send_hour: 7 });
+      expect(RecommendationNotificationService.shouldSendToUser(user)).toBe(false);
+    });
   });
 
   // ── sendToUser ─────────────────────────────────────────────────────────────
@@ -358,6 +390,7 @@ describe('RecommendationNotificationService', () => {
         },
       );
       expect(result).toEqual({ userId: 1, success: true });
+      expect(mockedEngagementModel.create).toHaveBeenCalledWith(1, 'notification_sent');
 
       consoleSpy.mockRestore();
     });
@@ -411,6 +444,7 @@ describe('RecommendationNotificationService', () => {
         error: 'No recommendations available',
       });
       expect(mockedNotificationService.sendSimpleNotification).not.toHaveBeenCalled();
+      expect(mockedEngagementModel.create).not.toHaveBeenCalled();
     });
 
     it('should return failure when the recommended mantra has no displayable text', async () => {

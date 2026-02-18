@@ -19,6 +19,7 @@ export interface Database {
   Rating: RatingTable;
   JournalEntry: JournalEntryTable;
   UserCategoryScore: UserCategoryScoreTable;
+  EngagementEvent: EngagementEventTable;
 }
 
 //table interfaces
@@ -34,6 +35,7 @@ export interface UserTable {
   created_at: string | null;
   timezone: string | null;
   recommendation_notif_sent_at: string | null;
+  optimal_send_hour: number | null;
 }
 
 export interface AdminTable {
@@ -245,3 +247,14 @@ export type JournalEntryUpdate = Updateable<JournalEntryTable>;
 export type UserCategoryScore = Selectable<UserCategoryScoreTable>;
 export type NewUserCategoryScore = Insertable<UserCategoryScoreTable>;
 export type UserCategoryScoreUpdate = Updateable<UserCategoryScoreTable>;
+
+export interface EngagementEventTable {
+  event_id: Generated<number>;
+  user_id: number;
+  event_type: string;
+  occurred_at: Generated<string>;
+}
+
+export type EngagementEvent = Selectable<EngagementEventTable>;
+export type NewEngagementEvent = Insertable<EngagementEventTable>;
+export type EngagementEventUpdate = Updateable<EngagementEventTable>;

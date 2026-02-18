@@ -8,6 +8,9 @@ jest.mock('../../src/services/reminder-scheduler.service', () => ({
 jest.mock('../../src/services/recommendation-notification.service', () => ({
   RecommendationNotificationService: { start: jest.fn(), stop: jest.fn() },
 }));
+jest.mock('../../src/services/engagement-optimizer.service', () => ({
+  EngagementOptimizerService: { start: jest.fn(), stop: jest.fn() },
+}));
 
 const mockedCreateApp = createApp as jest.Mock;
 
@@ -69,6 +72,9 @@ describe('Server (index.ts)', () => {
       const { RecommendationNotificationService } = jest.requireMock(
         '../../src/services/recommendation-notification.service',
       );
+      const { EngagementOptimizerService } = jest.requireMock(
+        '../../src/services/engagement-optimizer.service',
+      );
 
       jest.isolateModules(() => {
         process.env.NODE_ENV = 'production';
@@ -82,6 +88,9 @@ describe('Server (index.ts)', () => {
       expect(RecommendationNotificationService.start).toHaveBeenCalledWith(
         expect.objectContaining({ cronExpression: '0 * * * *' }),
       );
+      expect(EngagementOptimizerService.start).toHaveBeenCalledWith(
+        expect.objectContaining({ cronExpression: '0 3 * * *' }),
+      );
     });
 
     it('should NOT start schedulers when NODE_ENV is "test"', () => {
@@ -90,6 +99,9 @@ describe('Server (index.ts)', () => {
       );
       const { RecommendationNotificationService } = jest.requireMock(
         '../../src/services/recommendation-notification.service',
+      );
+      const { EngagementOptimizerService } = jest.requireMock(
+        '../../src/services/engagement-optimizer.service',
       );
 
       jest.isolateModules(() => {
@@ -100,6 +112,7 @@ describe('Server (index.ts)', () => {
 
       expect(ReminderSchedulerService.start).not.toHaveBeenCalled();
       expect(RecommendationNotificationService.start).not.toHaveBeenCalled();
+      expect(EngagementOptimizerService.start).not.toHaveBeenCalled();
     });
   });
 
