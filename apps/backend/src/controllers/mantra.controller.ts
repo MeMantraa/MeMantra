@@ -5,6 +5,7 @@ import { CategoryModel } from '../models/category.model';
 import { CreateMantraInput, UpdateMantraInput, MantraQueryInput } from '../validators/mantra.validator';
 import { db } from '../db';
 import { UserCategoryScoreModel } from '../models/user-category-score.model';
+import { LikeModel } from '../models/like.model';
 
 export const MantraController = {
   // GET /api/mantras - List all mantras with optional search and pagination
@@ -272,9 +273,12 @@ export const MantraController = {
           });
 
           if (recommendations.length > 0) {
+            const mantraIds = recommendations.map(rec => rec.mantra.mantra_id);
+            const likeCounts = await LikeModel.getCountsByMantraIds(mantraIds);
+
             const feedMantras = recommendations.map(rec => ({
               ...rec.mantra,
-              like_count: 0, // lightweight — counts not critical for feed ordering
+              like_count: likeCounts.get(rec.mantra.mantra_id) ?? 0,
               isLiked: likedMantraIds.includes(rec.mantra.mantra_id),
               isSaved: savedMantraIds.includes(rec.mantra.mantra_id),
               categories: rec.categories,
