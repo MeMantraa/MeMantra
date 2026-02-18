@@ -6,7 +6,7 @@ import { CollectionModel } from '../../src/models/collection.model';
 import { JournalModel } from '../../src/models/journal.model';
 import { RecommendationModel } from '../../src/models/recommendation.model';
 import { MantraModel } from '../../src/models/mantra.model';
-import { CategoryModel } from '../../src/models/category.model';
+import { UserCategoryScoreModel } from '../../src/models/user-category-score.model';
 
 jest.mock('../../src/models/reminder.model');
 jest.mock('../../src/models/rating.model');
@@ -15,7 +15,7 @@ jest.mock('../../src/models/collection.model');
 jest.mock('../../src/models/journal.model');
 jest.mock('../../src/models/recommendation.model');
 jest.mock('../../src/models/mantra.model');
-jest.mock('../../src/models/category.model');
+jest.mock('../../src/models/user-category-score.model');
 
 const mockMantra = (id: number, daysOld = 30) => ({
   mantra_id: id,
@@ -46,15 +46,17 @@ describe('RecommendationEngine', () => {
     jest.clearAllMocks();
   });
 
-  describe('gatherUserSignals', () => {
-    it('should gather all signals in parallel', async () => {
+  describe('buildUserProfile', () => {
+    it('should build profile from persisted category scores and interactions', async () => {
+      (UserCategoryScoreModel.getScoresForUserWithNames as jest.Mock).mockResolvedValue([
+        { category_id: 100, name: 'Anxiety', category_type: 'essential', score: 10 },
+        { category_id: 101, name: 'Calm', category_type: 'essential', score: 5 },
+      ]);
       (ReminderModel.findActiveByUserId as jest.Mock).mockResolvedValue([
         { reminder_id: 1, mantra_id: 10, status: 'active' },
       ]);
       (RatingModel.findByUserId as jest.Mock).mockResolvedValue([
         { rating_id: 1, mantra_id: 20, rating: 5 },
-        { rating_id: 2, mantra_id: 21, rating: 4 },
-        { rating_id: 3, mantra_id: 22, rating: 3 },
       ]);
       (LikeModel.findByUserId as jest.Mock).mockResolvedValue([
         { like_id: 1, mantra_id: 30 },
@@ -68,58 +70,54 @@ describe('RecommendationEngine', () => {
       (JournalModel.findByUserId as jest.Mock).mockResolvedValue([
         { journal_id: 1, mantra_id: 50, mood: 'anxious' },
       ]);
-      (RecommendationModel.findRecent as jest.Mock).mockResolvedValue([
-        { rec_id: 1, mantra_id: 60 },
-      ]);
 
-      const signals = await RecommendationEngine.gatherUserSignals(1);
+      const profile = await RecommendationEngine.buildUserProfile(1);
 
-      expect(signals.reminderMantraIds).toEqual([10]);
-      expect(signals.fiveStarMantraIds).toEqual([20]);
-      expect(signals.fourStarMantraIds).toEqual([21]);
-      expect(signals.likedMantraIds).toEqual([30]);
-      expect(signals.savedMantraIds).toEqual([40]);
-      expect(signals.journaledMantraIds).toEqual([50]);
-      expect(signals.journalMoods).toEqual(['anxious']);
-      expect(signals.recentlyRecommendedIds).toEqual([60]);
+      expect(profile.categoryWeights.has('Anxiety')).toBe(true);
+      expect(profile.categoryWeights.has('Calm')).toBe(true);
+      expect(profile.categoryWeights.get('Anxiety')).toBe(1); // highest score normalized to 1
+      expect(profile.categoryWeights.get('Calm')).toBe(0.5); // 5/10
+      expect(profile.interactedMantraIds.has(10)).toBe(true);
+      expect(profile.interactedMantraIds.has(20)).toBe(true);
+      expect(profile.interactedMantraIds.has(30)).toBe(true);
+      expect(profile.interactedMantraIds.has(40)).toBe(true);
+      expect(profile.interactedMantraIds.has(50)).toBe(true);
+      expect(profile.moods[0]).toBe('anxious');
+      expect(profile.totalInteractions).toBe(5);
     });
 
-    it('should handle empty results gracefully', async () => {
+    it('should return empty profile when user has no data', async () => {
+      (UserCategoryScoreModel.getScoresForUserWithNames as jest.Mock).mockResolvedValue([]);
       (ReminderModel.findActiveByUserId as jest.Mock).mockResolvedValue([]);
       (RatingModel.findByUserId as jest.Mock).mockResolvedValue([]);
       (LikeModel.findByUserId as jest.Mock).mockResolvedValue([]);
       (CollectionModel.findByUserId as jest.Mock).mockResolvedValue([]);
       (JournalModel.findByUserId as jest.Mock).mockResolvedValue([]);
-      (RecommendationModel.findRecent as jest.Mock).mockResolvedValue([]);
 
-      const signals = await RecommendationEngine.gatherUserSignals(1);
+      const profile = await RecommendationEngine.buildUserProfile(1);
 
-      expect(signals.reminderMantraIds).toEqual([]);
-      expect(signals.fiveStarMantraIds).toEqual([]);
-      expect(signals.fourStarMantraIds).toEqual([]);
-      expect(signals.likedMantraIds).toEqual([]);
-      expect(signals.savedMantraIds).toEqual([]);
-      expect(signals.journaledMantraIds).toEqual([]);
-      expect(signals.journalMoods).toEqual([]);
-      expect(signals.recentlyRecommendedIds).toEqual([]);
+      expect(profile.categoryWeights.size).toBe(0);
+      expect(profile.interactedMantraIds.size).toBe(0);
+      expect(profile.moods).toEqual([]);
+      expect(profile.totalInteractions).toBe(0);
     });
 
-    it('should handle errors from individual models without failing', async () => {
+    it('should handle errors from individual models gracefully', async () => {
+      (UserCategoryScoreModel.getScoresForUserWithNames as jest.Mock).mockResolvedValue([]);
       (ReminderModel.findActiveByUserId as jest.Mock).mockRejectedValue(new Error('DB error'));
       (RatingModel.findByUserId as jest.Mock).mockRejectedValue(new Error('DB error'));
       (LikeModel.findByUserId as jest.Mock).mockRejectedValue(new Error('DB error'));
       (CollectionModel.findByUserId as jest.Mock).mockRejectedValue(new Error('DB error'));
       (JournalModel.findByUserId as jest.Mock).mockRejectedValue(new Error('DB error'));
-      (RecommendationModel.findRecent as jest.Mock).mockRejectedValue(new Error('DB error'));
 
-      const signals = await RecommendationEngine.gatherUserSignals(1);
+      const profile = await RecommendationEngine.buildUserProfile(1);
 
-      expect(signals.reminderMantraIds).toEqual([]);
-      expect(signals.fiveStarMantraIds).toEqual([]);
-      expect(signals.likedMantraIds).toEqual([]);
+      expect(profile.interactedMantraIds.size).toBe(0);
+      expect(profile.moods).toEqual([]);
     });
 
-    it('should filter out null mantra_ids', async () => {
+    it('should filter out null mantra_ids from interactions', async () => {
+      (UserCategoryScoreModel.getScoresForUserWithNames as jest.Mock).mockResolvedValue([]);
       (ReminderModel.findActiveByUserId as jest.Mock).mockResolvedValue([
         { reminder_id: 1, mantra_id: null },
         { reminder_id: 2, mantra_id: 10 },
@@ -132,112 +130,46 @@ describe('RecommendationEngine', () => {
       (JournalModel.findByUserId as jest.Mock).mockResolvedValue([
         { journal_id: 1, mantra_id: null, mood: null },
       ]);
-      (RecommendationModel.findRecent as jest.Mock).mockResolvedValue([]);
 
-      const signals = await RecommendationEngine.gatherUserSignals(1);
+      const profile = await RecommendationEngine.buildUserProfile(1);
 
-      expect(signals.reminderMantraIds).toEqual([10]);
-      expect(signals.likedMantraIds).toEqual([]);
-      expect(signals.journaledMantraIds).toEqual([]);
-      expect(signals.journalMoods).toEqual([]);
-    });
-  });
-
-  describe('buildUserProfile', () => {
-    it('should build profile with correct category weights', async () => {
-      (CategoryModel.getCategoriesForMantras as jest.Mock).mockResolvedValue([
-        { mantra_id: 1, category_id: 100, name: 'Anxiety' },
-        { mantra_id: 2, category_id: 100, name: 'Anxiety' },
-        { mantra_id: 2, category_id: 101, name: 'Calm' },
-      ]);
-
-      const signals = {
-        reminderMantraIds: [1],
-        fiveStarMantraIds: [2],
-        fourStarMantraIds: [],
-        likedMantraIds: [],
-        savedMantraIds: [],
-        journaledMantraIds: [],
-        journalMoods: ['anxious', 'anxious', 'stressed'],
-        recentlyRecommendedIds: [],
-      };
-
-      const profile = await RecommendationEngine.buildUserProfile(signals);
-
-      expect(profile.totalInteractions).toBe(2);
-      expect(profile.interactedMantraIds.has(1)).toBe(true);
-      expect(profile.interactedMantraIds.has(2)).toBe(true);
-      expect(profile.categoryWeights.has('Anxiety')).toBe(true);
-      expect(profile.categoryWeights.has('Calm')).toBe(true);
-      expect(profile.moods[0]).toBe('anxious'); // most common
-    });
-
-    it('should return empty profile when no interactions', async () => {
-      const signals = {
-        reminderMantraIds: [],
-        fiveStarMantraIds: [],
-        fourStarMantraIds: [],
-        likedMantraIds: [],
-        savedMantraIds: [],
-        journaledMantraIds: [],
-        journalMoods: [],
-        recentlyRecommendedIds: [],
-      };
-
-      const profile = await RecommendationEngine.buildUserProfile(signals);
-
-      expect(profile.totalInteractions).toBe(0);
-      expect(profile.categoryWeights.size).toBe(0);
-      expect(profile.moods).toEqual([]);
+      expect(profile.interactedMantraIds.size).toBe(1);
+      expect(profile.interactedMantraIds.has(10)).toBe(true);
     });
 
     it('should normalize category weights to max of 1', async () => {
-      (CategoryModel.getCategoriesForMantras as jest.Mock).mockResolvedValue([
-        { mantra_id: 1, category_id: 100, name: 'Anxiety' },
-        { mantra_id: 2, category_id: 101, name: 'Calm' },
+      (UserCategoryScoreModel.getScoresForUserWithNames as jest.Mock).mockResolvedValue([
+        { category_id: 100, name: 'Anxiety', category_type: 'essential', score: 8 },
+        { category_id: 101, name: 'Calm', category_type: 'essential', score: 4 },
       ]);
+      (ReminderModel.findActiveByUserId as jest.Mock).mockResolvedValue([]);
+      (RatingModel.findByUserId as jest.Mock).mockResolvedValue([]);
+      (LikeModel.findByUserId as jest.Mock).mockResolvedValue([]);
+      (CollectionModel.findByUserId as jest.Mock).mockResolvedValue([]);
+      (JournalModel.findByUserId as jest.Mock).mockResolvedValue([]);
 
-      const signals = {
-        reminderMantraIds: [1], // weight 5.0
-        fiveStarMantraIds: [],
-        fourStarMantraIds: [],
-        likedMantraIds: [2], // weight 3.0
-        savedMantraIds: [],
-        journaledMantraIds: [],
-        journalMoods: [],
-        recentlyRecommendedIds: [],
-      };
+      const profile = await RecommendationEngine.buildUserProfile(1);
 
-      const profile = await RecommendationEngine.buildUserProfile(signals);
-
-      // Anxiety should be normalized to 1.0 (highest), Calm should be 3/5 = 0.6
-      expect(profile.categoryWeights.get('Anxiety')).toBe(1);
-      expect(profile.categoryWeights.get('Calm')).toBeCloseTo(0.6);
+      expect(profile.categoryWeights.get('Anxiety')).toBe(1); // 8/8
+      expect(profile.categoryWeights.get('Calm')).toBe(0.5); // 4/8
     });
 
-    it('should weight signals correctly (reminders highest)', async () => {
-      (CategoryModel.getCategoriesForMantras as jest.Mock).mockResolvedValue([
-        { mantra_id: 1, category_id: 100, name: 'CatA' },
-        { mantra_id: 2, category_id: 101, name: 'CatB' },
+    it('should sort moods by frequency', async () => {
+      (UserCategoryScoreModel.getScoresForUserWithNames as jest.Mock).mockResolvedValue([]);
+      (ReminderModel.findActiveByUserId as jest.Mock).mockResolvedValue([]);
+      (RatingModel.findByUserId as jest.Mock).mockResolvedValue([]);
+      (LikeModel.findByUserId as jest.Mock).mockResolvedValue([]);
+      (CollectionModel.findByUserId as jest.Mock).mockResolvedValue([]);
+      (JournalModel.findByUserId as jest.Mock).mockResolvedValue([
+        { journal_id: 1, mantra_id: 1, mood: 'anxious' },
+        { journal_id: 2, mantra_id: 2, mood: 'anxious' },
+        { journal_id: 3, mantra_id: 3, mood: 'happy' },
       ]);
 
-      const signals = {
-        reminderMantraIds: [1],    // 5.0
-        fiveStarMantraIds: [],
-        fourStarMantraIds: [],
-        likedMantraIds: [],
-        savedMantraIds: [],
-        journaledMantraIds: [2],   // 2.0
-        journalMoods: [],
-        recentlyRecommendedIds: [],
-      };
+      const profile = await RecommendationEngine.buildUserProfile(1);
 
-      const profile = await RecommendationEngine.buildUserProfile(signals);
-
-      // CatA (reminder=5.0) should have higher weight than CatB (journal=2.0)
-      const catA = profile.categoryWeights.get('CatA')!;
-      const catB = profile.categoryWeights.get('CatB')!;
-      expect(catA).toBeGreaterThan(catB);
+      expect(profile.moods[0]).toBe('anxious');
+      expect(profile.moods[1]).toBe('happy');
     });
   });
 
@@ -255,19 +187,8 @@ describe('RecommendationEngine', () => {
         moods: [],
         totalInteractions: 5,
       };
-      const signals = {
-        reminderMantraIds: [],
-        fiveStarMantraIds: [],
-        fourStarMantraIds: [],
-        likedMantraIds: [],
-        savedMantraIds: [],
-        journaledMantraIds: [],
-        journalMoods: [],
-        recentlyRecommendedIds: [],
-      };
-
       const scored = RecommendationEngine.scoreCandidates(
-        candidates, categoryMap, profile, signals,
+        candidates, categoryMap, profile, [],
       );
 
       expect(scored.length).toBe(3);
@@ -288,19 +209,8 @@ describe('RecommendationEngine', () => {
         moods: [],
         totalInteractions: 5,
       };
-      const signals = {
-        reminderMantraIds: [],
-        fiveStarMantraIds: [],
-        fourStarMantraIds: [],
-        likedMantraIds: [],
-        savedMantraIds: [],
-        journaledMantraIds: [],
-        journalMoods: [],
-        recentlyRecommendedIds: [],
-      };
-
       const scored = RecommendationEngine.scoreCandidates(
-        candidates, categoryMap, profile, signals, 'anxious',
+        candidates, categoryMap, profile, [], 'anxious',
       );
 
       const anxietyMantra = scored.find((s) => s.mantra.mantra_id === 1)!;
@@ -321,19 +231,8 @@ describe('RecommendationEngine', () => {
         moods: [],
         totalInteractions: 5,
       };
-      const signals = {
-        reminderMantraIds: [],
-        fiveStarMantraIds: [],
-        fourStarMantraIds: [],
-        likedMantraIds: [],
-        savedMantraIds: [],
-        journaledMantraIds: [],
-        journalMoods: [],
-        recentlyRecommendedIds: [1], // mantra 1 was recently recommended
-      };
-
       const scored = RecommendationEngine.scoreCandidates(
-        candidates, categoryMap, profile, signals,
+        candidates, categoryMap, profile, [1], // mantra 1 was recently recommended
       );
 
       const mantra1 = scored.find((s) => s.mantra.mantra_id === 1)!;
@@ -354,19 +253,8 @@ describe('RecommendationEngine', () => {
         moods: [],
         totalInteractions: 5,
       };
-      const signals = {
-        reminderMantraIds: [],
-        fiveStarMantraIds: [],
-        fourStarMantraIds: [],
-        likedMantraIds: [],
-        savedMantraIds: [],
-        journaledMantraIds: [],
-        journalMoods: [],
-        recentlyRecommendedIds: [],
-      };
-
       const scored = RecommendationEngine.scoreCandidates(
-        candidates, categoryMap, profile, signals,
+        candidates, categoryMap, profile, [],
       );
 
       const fresh = scored.find((s) => s.mantra.mantra_id === 1)!;
@@ -384,19 +272,8 @@ describe('RecommendationEngine', () => {
         moods: [],
         totalInteractions: 5,
       };
-      const signals = {
-        reminderMantraIds: [],
-        fiveStarMantraIds: [],
-        fourStarMantraIds: [],
-        likedMantraIds: [],
-        savedMantraIds: [],
-        journaledMantraIds: [],
-        journalMoods: [],
-        recentlyRecommendedIds: [],
-      };
-
       const scored = RecommendationEngine.scoreCandidates(
-        candidates, categoryMap, profile, signals,
+        candidates, categoryMap, profile, [],
       );
 
       expect(scored.length).toBe(1);
@@ -414,19 +291,8 @@ describe('RecommendationEngine', () => {
         moods: [],
         totalInteractions: 5,
       };
-      const signals = {
-        reminderMantraIds: [],
-        fiveStarMantraIds: [],
-        fourStarMantraIds: [],
-        likedMantraIds: [],
-        savedMantraIds: [],
-        journaledMantraIds: [],
-        journalMoods: [],
-        recentlyRecommendedIds: [],
-      };
-
       const scored = RecommendationEngine.scoreCandidates(
-        candidates, categoryMap, profile, signals, 'anxious',
+        candidates, categoryMap, profile, [], 'anxious',
       );
 
       expect(scored[0].reason).toBeDefined();
@@ -614,13 +480,13 @@ describe('RecommendationEngine', () => {
   describe('generateRecommendations (full flow)', () => {
     it('should use cold start path for users with < 5 interactions', async () => {
       // User has no interactions
+      (UserCategoryScoreModel.getScoresForUserWithNames as jest.Mock).mockResolvedValue([]);
       (ReminderModel.findActiveByUserId as jest.Mock).mockResolvedValue([]);
       (RatingModel.findByUserId as jest.Mock).mockResolvedValue([]);
       (LikeModel.findByUserId as jest.Mock).mockResolvedValue([]);
       (CollectionModel.findByUserId as jest.Mock).mockResolvedValue([]);
       (JournalModel.findByUserId as jest.Mock).mockResolvedValue([]);
       (RecommendationModel.findRecent as jest.Mock).mockResolvedValue([]);
-      (CategoryModel.getCategoriesForMantras as jest.Mock).mockResolvedValue([]);
 
       const mantras = Array.from({ length: 15 }, (_, i) => mockMantra(i + 1));
       const categoryMap = buildCategoryMap(
@@ -639,6 +505,11 @@ describe('RecommendationEngine', () => {
 
     it('should use personalized path for users with >= 5 interactions', async () => {
       // User has 6 interactions
+      (UserCategoryScoreModel.getScoresForUserWithNames as jest.Mock).mockResolvedValue([
+        { category_id: 100, name: 'Anxiety', category_type: 'essential', score: 10 },
+        { category_id: 101, name: 'Calm', category_type: 'essential', score: 5 },
+        { category_id: 102, name: 'Motivation', category_type: 'goal', score: 3 },
+      ]);
       (ReminderModel.findActiveByUserId as jest.Mock).mockResolvedValue([
         { reminder_id: 1, mantra_id: 1, status: 'active' },
       ]);
@@ -659,15 +530,6 @@ describe('RecommendationEngine', () => {
       (JournalModel.findByUserId as jest.Mock).mockResolvedValue([]);
       (RecommendationModel.findRecent as jest.Mock).mockResolvedValue([]);
       (RecommendationModel.create as jest.Mock).mockResolvedValue({});
-
-      (CategoryModel.getCategoriesForMantras as jest.Mock).mockResolvedValue([
-        { mantra_id: 1, category_id: 100, name: 'Anxiety' },
-        { mantra_id: 2, category_id: 100, name: 'Anxiety' },
-        { mantra_id: 3, category_id: 101, name: 'Calm' },
-        { mantra_id: 4, category_id: 100, name: 'Anxiety' },
-        { mantra_id: 5, category_id: 102, name: 'Motivation' },
-        { mantra_id: 6, category_id: 101, name: 'Calm' },
-      ]);
 
       // Create candidate mantras (not interacted with)
       const mantras = Array.from({ length: 20 }, (_, i) => mockMantra(i + 1));
@@ -696,13 +558,13 @@ describe('RecommendationEngine', () => {
     });
 
     it('should exclude specified mantra IDs', async () => {
+      (UserCategoryScoreModel.getScoresForUserWithNames as jest.Mock).mockResolvedValue([]);
       (ReminderModel.findActiveByUserId as jest.Mock).mockResolvedValue([]);
       (RatingModel.findByUserId as jest.Mock).mockResolvedValue([]);
       (LikeModel.findByUserId as jest.Mock).mockResolvedValue([]);
       (CollectionModel.findByUserId as jest.Mock).mockResolvedValue([]);
       (JournalModel.findByUserId as jest.Mock).mockResolvedValue([]);
       (RecommendationModel.findRecent as jest.Mock).mockResolvedValue([]);
-      (CategoryModel.getCategoriesForMantras as jest.Mock).mockResolvedValue([]);
 
       const mantras = Array.from({ length: 15 }, (_, i) => mockMantra(i + 1));
       const categoryMap = buildCategoryMap(
@@ -725,6 +587,9 @@ describe('RecommendationEngine', () => {
     });
 
     it('should log recommendations after generating them', async () => {
+      (UserCategoryScoreModel.getScoresForUserWithNames as jest.Mock).mockResolvedValue([
+        { category_id: 100, name: 'Anxiety', category_type: 'essential', score: 10 },
+      ]);
       (ReminderModel.findActiveByUserId as jest.Mock).mockResolvedValue([
         { reminder_id: 1, mantra_id: 1 },
         { reminder_id: 2, mantra_id: 2 },
@@ -738,14 +603,6 @@ describe('RecommendationEngine', () => {
       (JournalModel.findByUserId as jest.Mock).mockResolvedValue([]);
       (RecommendationModel.findRecent as jest.Mock).mockResolvedValue([]);
       (RecommendationModel.create as jest.Mock).mockResolvedValue({});
-
-      (CategoryModel.getCategoriesForMantras as jest.Mock).mockResolvedValue([
-        { mantra_id: 1, category_id: 100, name: 'Anxiety' },
-        { mantra_id: 2, category_id: 100, name: 'Anxiety' },
-        { mantra_id: 3, category_id: 100, name: 'Anxiety' },
-        { mantra_id: 4, category_id: 100, name: 'Anxiety' },
-        { mantra_id: 5, category_id: 100, name: 'Anxiety' },
-      ]);
 
       const mantras = Array.from({ length: 20 }, (_, i) => mockMantra(i + 1));
       const categoryMap = new Map<number, Array<{ category_id: number; name: string }>>();
@@ -764,6 +621,9 @@ describe('RecommendationEngine', () => {
     });
 
     it('should apply mood from journal if not provided explicitly', async () => {
+      (UserCategoryScoreModel.getScoresForUserWithNames as jest.Mock).mockResolvedValue([
+        { category_id: 100, name: 'Anxiety', category_type: 'essential', score: 10 },
+      ]);
       (ReminderModel.findActiveByUserId as jest.Mock).mockResolvedValue([
         { reminder_id: 1, mantra_id: 1 },
         { reminder_id: 2, mantra_id: 2 },
@@ -781,14 +641,6 @@ describe('RecommendationEngine', () => {
       ]);
       (RecommendationModel.findRecent as jest.Mock).mockResolvedValue([]);
       (RecommendationModel.create as jest.Mock).mockResolvedValue({});
-
-      (CategoryModel.getCategoriesForMantras as jest.Mock).mockResolvedValue([
-        { mantra_id: 1, category_id: 100, name: 'Anxiety' },
-        { mantra_id: 2, category_id: 100, name: 'Anxiety' },
-        { mantra_id: 3, category_id: 100, name: 'Anxiety' },
-        { mantra_id: 4, category_id: 100, name: 'Anxiety' },
-        { mantra_id: 5, category_id: 100, name: 'Anxiety' },
-      ]);
 
       const mantras = Array.from({ length: 20 }, (_, i) => mockMantra(i + 1));
       const categoryMap = new Map<number, Array<{ category_id: number; name: string }>>();

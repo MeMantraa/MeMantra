@@ -596,6 +596,7 @@ describe('MantraController', () => {
         return {
           where: jest.fn().mockReturnThis(),
           select: jest.fn().mockReturnThis(),
+          innerJoin: jest.fn().mockReturnThis(),
           execute: jest.fn().mockRejectedValue(new Error('DB error')),
         };
       });
