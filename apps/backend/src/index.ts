@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import { createApp } from './app';
 import { ReminderSchedulerService } from './services/reminder-scheduler.service';
+import { RecommendationNotificationService } from './services/recommendation-notification.service';
 
 const PORT = process.env.PORT || 3000;
 
@@ -18,6 +19,11 @@ app.listen(PORT, () => {
     ReminderSchedulerService.start({
       cronExpression: '* * * * *', // Every minute
     });
+
+    // Start the recommendation notification scheduler (daily at 9 AM UTC)
+    RecommendationNotificationService.start({
+      cronExpression: '0 9 * * *', // 9:00 AM UTC every day
+    });
   }
 });
 
@@ -25,11 +31,13 @@ app.listen(PORT, () => {
 process.on('SIGTERM', () => {
   console.log('🛑 SIGTERM received, shutting down gracefully');
   ReminderSchedulerService.stop();
+  RecommendationNotificationService.stop();
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
   console.log('🛑 SIGINT received, shutting down gracefully');
   ReminderSchedulerService.stop();
+  RecommendationNotificationService.stop();
   process.exit(0);
 });
