@@ -135,5 +135,13 @@ async getTheme(userId: number): Promise<string | undefined> {
   return user?.theme || 'default';
 }
 
+
+  async findAllWithDeviceTokens(): Promise<User[]> {
+    return db
+      .selectFrom('User')
+      .where('device_token', 'is not', null)
+      .selectAll()
+      .execute();
+  },
 };
 

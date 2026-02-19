@@ -7,6 +7,8 @@ import {
   Platform,
   Modal,
   TextInput,
+  ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { Mantra, mantraService } from '../services/mantra.service';
@@ -20,8 +22,9 @@ import UserList from '../components/admin/UserList';
 import CategoryForm from '../components/admin/CategoryForm';
 import CategoryList from '../components/admin/CategoryList';
 import AppText from '../components/UI/textWrapper';
+import { EngagementAnalytics, engagementService } from '../services/engagement.service';
 
-type AdminMode = 'mantras' | 'users' | 'categories';
+type AdminMode = 'mantras' | 'users' | 'categories' | 'analytics';
 type ActionMode = 'add' | 'manage';
 
 const AdminScreen: React.FC = () => {
@@ -72,9 +75,31 @@ const AdminScreen: React.FC = () => {
   const [viewAllUsers, setViewAllUsers] = useState(false);
   const [categorySearchQuery, setCategorySearchQuery] = useState('');
 
+  const [analytics, setAnalytics] = useState<EngagementAnalytics | null>(null);
+  const [analyticsDays, setAnalyticsDays] = useState<7 | 30 | 90>(30);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
   useEffect(() => {
-    loadData();
+    if (mode !== 'analytics') loadData();
   }, [mode]);
+
+  useEffect(() => {
+    if (mode === 'analytics') loadAnalytics();
+  }, [mode, analyticsDays]);
+
+  const loadAnalytics = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      const response = await engagementService.getAnalytics(token, analyticsDays);
+      if (response.status === 'success') setAnalytics(response.data);
+    } catch (error) {
+      console.error('Failed to load analytics:', error);
+      Alert.alert('Error', 'Failed to load analytics');
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -497,100 +522,76 @@ const AdminScreen: React.FC = () => {
       <View className="flex-1 px-6 pt-16 pb-6" style={{ backgroundColor: colors.primary }}>
         <AppText className="text-white text-3xl font-bold mb-4">Admin Controls</AppText>
 
-        {/* Mode Toggle: Mantras vs Users vs Categories */}
+        {/* Mode Toggle */}
         <View
           className="flex-row p-1 rounded-full mb-4"
           style={{ backgroundColor: `${colors.primaryDark}55` }}
         >
-          <TouchableOpacity
-            className="flex-1 rounded-full px-4 py-3"
-            onPress={() => {
-              setMode('mantras');
-              setAction('add');
-              resetMantraForm();
-              resetUserForm();
-              resetCategoryForm();
-              setCategorySearchQuery('');
-            }}
-            style={{ backgroundColor: mode === 'mantras' ? colors.secondary : 'transparent' }}
-          >
-            <AppText
-              className="text-center font-semibold"
-              style={{ color: mode === 'mantras' ? colors.primaryDark : colors.text }}
+          {(
+            [
+              { key: 'mantras', label: 'Mantras' },
+              { key: 'categories', label: 'Categories' },
+              { key: 'users', label: 'Users' },
+              { key: 'analytics', label: 'Analytics' },
+            ] as const
+          ).map(({ key, label }) => (
+            <TouchableOpacity
+              key={key}
+              className="flex-1 rounded-full py-3"
+              onPress={() => {
+                setMode(key);
+                if (key !== 'analytics') {
+                  setAction('add');
+                  resetMantraForm();
+                  resetUserForm();
+                  resetCategoryForm();
+                  setCategorySearchQuery('');
+                }
+              }}
+              style={{ backgroundColor: mode === key ? colors.secondary : 'transparent' }}
             >
-              Mantras
-            </AppText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="flex-1 rounded-full px-4 py-3"
-            onPress={() => {
-              setMode('categories');
-              setAction('add');
-              resetMantraForm();
-              resetUserForm();
-              resetCategoryForm();
-              setCategorySearchQuery('');
-            }}
-            style={{ backgroundColor: mode === 'categories' ? colors.secondary : 'transparent' }}
-          >
-            <AppText
-              className="text-center font-semibold"
-              style={{ color: mode === 'categories' ? colors.primaryDark : colors.text }}
-            >
-              Categories
-            </AppText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="flex-1 rounded-full px-4 py-3"
-            onPress={() => {
-              setMode('users');
-              setAction('add');
-              resetMantraForm();
-              resetUserForm();
-              resetCategoryForm();
-              setCategorySearchQuery('');
-            }}
-            style={{ backgroundColor: mode === 'users' ? colors.secondary : 'transparent' }}
-          >
-            <AppText
-              className="text-center font-semibold"
-              style={{ color: mode === 'users' ? colors.primaryDark : colors.text }}
-            >
-              Users
-            </AppText>
-          </TouchableOpacity>
+              <AppText
+                className="text-center font-semibold text-xs"
+                style={{ color: mode === key ? colors.primaryDark : colors.text }}
+              >
+                {label}
+              </AppText>
+            </TouchableOpacity>
+          ))}
         </View>
 
-        {/* Action Toggle: Add vs Manage */}
-        <View
-          className="flex-row p-1 rounded-full mb-6"
-          style={{ backgroundColor: `${colors.primaryDark}33` }}
-        >
-          <TouchableOpacity
-            className="flex-1 rounded-full px-4 py-2"
-            onPress={() => setAction('add')}
-            style={{ backgroundColor: action === 'add' ? colors.secondary : 'transparent' }}
+        {/* Action Toggle: Add vs Manage (hidden for analytics) */}
+        {mode !== 'analytics' && (
+          <View
+            className="flex-row p-1 rounded-full mb-6"
+            style={{ backgroundColor: `${colors.primaryDark}33` }}
           >
-            <AppText
-              className="text-center font-semibold text-sm"
-              style={{ color: action === 'add' ? colors.primaryDark : colors.text }}
+            <TouchableOpacity
+              className="flex-1 rounded-full px-4 py-2"
+              onPress={() => setAction('add')}
+              style={{ backgroundColor: action === 'add' ? colors.secondary : 'transparent' }}
             >
-              Add
-            </AppText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="flex-1 rounded-full px-4 py-2"
-            onPress={() => setAction('manage')}
-            style={{ backgroundColor: action === 'manage' ? colors.secondary : 'transparent' }}
-          >
-            <AppText
-              className="text-center font-semibold text-sm"
-              style={{ color: action === 'manage' ? colors.primaryDark : colors.text }}
+              <AppText
+                className="text-center font-semibold text-sm"
+                style={{ color: action === 'add' ? colors.primaryDark : colors.text }}
+              >
+                Add
+              </AppText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="flex-1 rounded-full px-4 py-2"
+              onPress={() => setAction('manage')}
+              style={{ backgroundColor: action === 'manage' ? colors.secondary : 'transparent' }}
             >
-              Manage
-            </AppText>
-          </TouchableOpacity>
-        </View>
+              <AppText
+                className="text-center font-semibold text-sm"
+                style={{ color: action === 'manage' ? colors.primaryDark : colors.text }}
+              >
+                Manage
+              </AppText>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Content */}
         {mode === 'mantras' && action === 'add' && (
@@ -705,6 +706,178 @@ const AdminScreen: React.FC = () => {
               />
             )}
           </View>
+        )}
+
+        {/* Analytics */}
+        {mode === 'analytics' && (
+          <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+            {/* Days picker */}
+            <View
+              className="flex-row p-1 rounded-full mb-6"
+              style={{ backgroundColor: `${colors.primaryDark}33` }}
+            >
+              {([7, 30, 90] as const).map((d) => (
+                <TouchableOpacity
+                  key={d}
+                  className="flex-1 rounded-full py-2"
+                  onPress={() => setAnalyticsDays(d)}
+                  style={{
+                    backgroundColor: analyticsDays === d ? colors.secondary : 'transparent',
+                  }}
+                >
+                  <AppText
+                    className="text-center font-semibold text-sm"
+                    style={{ color: analyticsDays === d ? colors.primaryDark : colors.text }}
+                  >
+                    {d}d
+                  </AppText>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {analyticsLoading ? (
+              <ActivityIndicator size="large" color={colors.secondary} style={{ marginTop: 40 }} />
+            ) : analytics ? (
+              <>
+                {/* Notification Effectiveness */}
+                <AppText className="text-white text-lg font-bold mb-3">
+                  Notification Effectiveness
+                </AppText>
+                <View className="flex-row flex-wrap gap-3 mb-6">
+                  {[
+                    { label: 'Sent', value: String(analytics.notification_effectiveness.sent) },
+                    { label: 'Taps', value: String(analytics.notification_effectiveness.taps) },
+                    {
+                      label: 'Tap-Through',
+                      value:
+                        analytics.notification_effectiveness.tap_through_rate_pct != null
+                          ? `${analytics.notification_effectiveness.tap_through_rate_pct.toFixed(1)}%`
+                          : 'N/A',
+                    },
+                    {
+                      label: 'Post-Tap Conv.',
+                      value:
+                        analytics.notification_effectiveness.post_tap_conversion_rate_pct != null
+                          ? `${analytics.notification_effectiveness.post_tap_conversion_rate_pct.toFixed(1)}%`
+                          : 'N/A',
+                    },
+                  ].map(({ label, value }) => (
+                    <View
+                      key={label}
+                      className="rounded-2xl p-4"
+                      style={{
+                        backgroundColor: `${colors.primaryDark}55`,
+                        minWidth: '45%',
+                        flex: 1,
+                      }}
+                    >
+                      <AppText className="text-white text-2xl font-bold">{value}</AppText>
+                      <AppText className="text-sm" style={{ color: colors.text }}>
+                        {label}
+                      </AppText>
+                    </View>
+                  ))}
+                </View>
+
+                {/* Taps by hour */}
+                {analytics.tap_by_hour.length > 0 && (
+                  <>
+                    <AppText className="text-white text-lg font-bold mb-3">
+                      Taps by Hour (UTC)
+                    </AppText>
+                    <View
+                      className="mb-6 rounded-2xl p-4"
+                      style={{ backgroundColor: `${colors.primaryDark}55` }}
+                    >
+                      {(() => {
+                        const max = Math.max(...analytics.tap_by_hour.map((r) => r.count), 1);
+                        return analytics.tap_by_hour.map(({ hour, count }) => (
+                          <View key={hour} className="flex-row items-center mb-2">
+                            <AppText className="text-white w-8 text-xs">
+                              {String(hour).padStart(2, '0')}h
+                            </AppText>
+                            <View
+                              className="flex-1 mx-2 h-4 rounded-full"
+                              style={{ backgroundColor: `${colors.primaryDark}88` }}
+                            >
+                              <View
+                                className="h-4 rounded-full"
+                                style={{
+                                  width: `${(count / max) * 100}%`,
+                                  backgroundColor: colors.secondary,
+                                }}
+                              />
+                            </View>
+                            <AppText className="text-white text-xs w-6 text-right">{count}</AppText>
+                          </View>
+                        ));
+                      })()}
+                    </View>
+                  </>
+                )}
+
+                {/* Adaptive Timing */}
+                <AppText className="text-white text-lg font-bold mb-3">Adaptive Timing</AppText>
+                <View className="flex-row gap-3 mb-6">
+                  <View
+                    className="flex-1 rounded-2xl p-4"
+                    style={{ backgroundColor: `${colors.primaryDark}55` }}
+                  >
+                    <AppText className="text-white text-2xl font-bold">
+                      {analytics.adaptive_timing.users_with_optimal_hour}
+                    </AppText>
+                    <AppText className="text-sm" style={{ color: colors.text }}>
+                      Personalised
+                    </AppText>
+                  </View>
+                  <View
+                    className="flex-1 rounded-2xl p-4"
+                    style={{ backgroundColor: `${colors.primaryDark}55` }}
+                  >
+                    <AppText className="text-white text-2xl font-bold">
+                      {analytics.adaptive_timing.users_using_default}
+                    </AppText>
+                    <AppText className="text-sm" style={{ color: colors.text }}>
+                      Default (9 AM)
+                    </AppText>
+                  </View>
+                </View>
+
+                {/* Event counts */}
+                <AppText className="text-white text-lg font-bold mb-3">Event Breakdown</AppText>
+                <View
+                  className="rounded-2xl p-4 mb-8"
+                  style={{ backgroundColor: `${colors.primaryDark}55` }}
+                >
+                  {Object.entries(analytics.event_counts).length === 0 ? (
+                    <AppText style={{ color: colors.text }}>
+                      No events recorded in this window.
+                    </AppText>
+                  ) : (
+                    Object.entries(analytics.event_counts)
+                      .sort(([, a], [, b]) => b - a)
+                      .map(([type, count]) => (
+                        <View
+                          key={type}
+                          className="flex-row justify-between py-2 border-b border-white/10"
+                        >
+                          <AppText className="text-white text-sm">
+                            {type.replace(/_/g, ' ')}
+                          </AppText>
+                          <AppText className="font-bold" style={{ color: colors.secondary }}>
+                            {count}
+                          </AppText>
+                        </View>
+                      ))
+                  )}
+                </View>
+              </>
+            ) : (
+              <AppText className="text-center mt-10" style={{ color: colors.text }}>
+                No analytics data available.
+              </AppText>
+            )}
+          </ScrollView>
         )}
 
         {/* Edit Modal */}

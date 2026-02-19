@@ -44,6 +44,9 @@ router.post(
   NotificationController.sendBulkNotification
 );
 
+// GET /api/notifications/recommend - Send a personalised recommendation notification to current user
+router.get('/recommend', NotificationController.sendRecommendationNotification);
+
 // GET /api/notifications/test - Send test notification
 router.get('/test', NotificationController.sendTestNotification);
 
