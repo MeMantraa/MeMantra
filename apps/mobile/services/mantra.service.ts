@@ -197,6 +197,14 @@ const mockMantraService = {
     return { status: 'success', message: 'Removed from saved' };
   },
 
+  async getLikedMantras(_token: string): Promise<{ status: string; data: { mantras: Mantra[] } }> {
+    const likedIds = Array.from(mockUserState.likedMantras);
+    return {
+      status: 'success',
+      data: { mantras: mockMantras.filter((m) => likedIds.includes(m.mantra_id)) },
+    };
+  },
+
   async getSavedMantras(_token: string) {
     const collectionId = 1;
     const response = await apiClient.get(`/collections/${collectionId}`);
@@ -331,6 +339,11 @@ const realMantraService = {
 
   async unsaveMantra(mantraId: number, _token: string) {
     const response = await apiClient.delete(`/mantras/${mantraId}/save/`);
+    return response.data;
+  },
+
+  async getLikedMantras(_token: string): Promise<{ status: string; data: { mantras: Mantra[] } }> {
+    const response = await apiClient.get('/likes/mantras');
     return response.data;
   },
 
