@@ -1,13 +1,12 @@
-import * as cron from 'node-cron';
 import { UserModel } from '../models/user.model';
 import { EngagementModel } from '../models/engagement.model';
-
-interface SchedulerConfig {
-  /** Cron expression (default: nightly at 3 AM UTC) */
-  cronExpression?: string;
-  /** Whether to run in test mode (no actual cron job, just exposes methods) */
-  testMode?: boolean;
-}
+import {
+  SchedulerConfig,
+  startScheduler,
+  stopScheduler,
+  getSchedulerStatus,
+} from '../utils/cron-scheduler';
+import * as cron from 'node-cron';
 
 interface ProcessUserResult {
   userId: number;
@@ -22,42 +21,14 @@ export const EngagementOptimizerService = {
 
   /** Start the engagement optimizer scheduler. */
   start(config: SchedulerConfig = {}): void {
-    const { cronExpression = '0 3 * * *', testMode = false } = config;
-
-    if (this.isRunning) {
-      console.warn('⚠️  Engagement optimizer scheduler is already running');
-      return;
-    }
-
-    if (testMode) {
-      console.log('🧪 Engagement optimizer scheduler started in test mode');
-      this.isRunning = true;
-      return;
-    }
-
-    if (!cron.validate(cronExpression)) {
-      console.error(`❌ Invalid cron expression: ${cronExpression}`);
-      return;
-    }
-
-    console.log(`📊 Starting engagement optimizer scheduler with cron: ${cronExpression}`);
-
-    this.cronTask = cron.schedule(cronExpression, async () => {
-      await this.processAllUsers();
-    });
-
-    this.isRunning = true;
-    console.log('✅ Engagement optimizer scheduler started successfully');
+    startScheduler(this, config, '0 3 * * *', 'Engagement optimizer scheduler', () =>
+      this.processAllUsers(),
+    );
   },
 
   /** Stop the engagement optimizer scheduler. */
   stop(): void {
-    if (this.cronTask) {
-      this.cronTask.stop();
-      this.cronTask = null;
-    }
-    this.isRunning = false;
-    console.log('🛑 Engagement optimizer scheduler stopped');
+    stopScheduler(this, 'Engagement optimizer scheduler');
   },
 
   /**
@@ -114,9 +85,6 @@ export const EngagementOptimizerService = {
   },
 
   getStatus(): { isRunning: boolean; hasCronTask: boolean } {
-    return {
-      isRunning: this.isRunning,
-      hasCronTask: this.cronTask !== null,
-    };
+    return getSchedulerStatus(this);
   },
 };

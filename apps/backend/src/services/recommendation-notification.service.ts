@@ -1,4 +1,3 @@
-import * as cron from 'node-cron';
 import { UserModel } from '../models/user.model';
 import { EngagementModel } from '../models/engagement.model';
 import { RecommendationEngine } from './recommendation-engine.service';
@@ -6,16 +5,16 @@ import { NotificationService } from './notification.service';
 import { generateNotificationContent } from '../config/notification-content.config';
 import { User } from '../types/database.types';
 import { getCurrentTimeInTimezone as _getCurrentTimeInTimezone } from '../utils/timezone.utils';
+import {
+  SchedulerConfig,
+  startScheduler,
+  stopScheduler,
+  getSchedulerStatus,
+} from '../utils/cron-scheduler';
+import * as cron from 'node-cron';
 
 /** Fallback hour (in the user's local timezone) when no optimal hour is computed */
 const DEFAULT_TARGET_HOUR = 9;
-
-interface SchedulerConfig {
-  /** Cron expression (default: every minute so timezone checks can fire precisely) */
-  cronExpression?: string;
-  /** Whether to run in test mode (no actual cron job, just exposes methods) */
-  testMode?: boolean;
-}
 
 interface RecommendationNotificationResult {
   userId: number;
@@ -38,42 +37,14 @@ export const RecommendationNotificationService = {
    * their notification within the same hour rather than at exactly 9:00 AM.
    */
   start(config: SchedulerConfig = {}): void {
-    const { cronExpression = '0 * * * *', testMode = false } = config;
-
-    if (this.isRunning) {
-      console.log('⚠️  Recommendation notification scheduler is already running');
-      return;
-    }
-
-    if (testMode) {
-      console.log('🧪 Recommendation notification scheduler started in test mode');
-      this.isRunning = true;
-      return;
-    }
-
-    if (!cron.validate(cronExpression)) {
-      console.error(`❌ Invalid cron expression: ${cronExpression}`);
-      return;
-    }
-
-    console.log(`🔔 Starting recommendation notification scheduler with cron: ${cronExpression}`);
-
-    this.cronTask = cron.schedule(cronExpression, async () => {
-      await this.processAllUsers();
-    });
-
-    this.isRunning = true;
-    console.log('✅ Recommendation notification scheduler started successfully');
+    startScheduler(this, config, '0 * * * *', 'Recommendation notification scheduler', () =>
+      this.processAllUsers(),
+    );
   },
 
   /** Stop the recommendation notification scheduler. */
   stop(): void {
-    if (this.cronTask) {
-      this.cronTask.stop();
-      this.cronTask = null;
-    }
-    this.isRunning = false;
-    console.log('🛑 Recommendation notification scheduler stopped');
+    stopScheduler(this, 'Recommendation notification scheduler');
   },
 
   /**
@@ -223,9 +194,6 @@ export const RecommendationNotificationService = {
   },
 
   getStatus(): { isRunning: boolean; hasCronTask: boolean } {
-    return {
-      isRunning: this.isRunning,
-      hasCronTask: this.cronTask !== null,
-    };
+    return getSchedulerStatus(this);
   },
 };

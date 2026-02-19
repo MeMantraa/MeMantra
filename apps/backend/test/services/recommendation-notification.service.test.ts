@@ -108,7 +108,7 @@ describe('RecommendationNotificationService', () => {
     });
 
     it('should warn and do nothing if already running', () => {
-      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
 
       RecommendationNotificationService.start({ testMode: true });
       RecommendationNotificationService.start({ testMode: true });
