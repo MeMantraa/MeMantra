@@ -6,6 +6,7 @@ import { collectionService } from '../../services/collection.service';
 import { reminderService } from '../../services/reminder.service';
 import { storage } from '../../utils/storage';
 import { SavedProvider } from '../../context/SavedContext';
+import { engagementService } from '../../services/engagement.service';
 
 jest.mock('../../components/carousel', () => {
   const React = jest.requireActual('react');
@@ -144,6 +145,12 @@ jest.mock('../../utils/storage', () => ({
     removeToken: jest.fn(),
     saveUserData: jest.fn(),
     removeUserData: jest.fn(),
+  },
+}));
+
+jest.mock('../../services/engagement.service', () => ({
+  engagementService: {
+    trackEvent: jest.fn(),
   },
 }));
 
@@ -1610,4 +1617,95 @@ describe('HomeScreen - Full Coverage', () => {
 
     expect(Alert.alert).toHaveBeenCalledWith('Reminder', undefined, expect.any(Array));
   }, 15000);
+});
+
+// ─── Engagement Tracking ──────────────────────────────────────────────────────
+
+describe('HomeScreen - engagement tracking', () => {
+  const mockNavigate = jest.fn();
+  const mockReset = jest.fn();
+
+  const setup = () =>
+    render(
+      <SavedProvider>
+        <HomeScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />
+      </SavedProvider>,
+    );
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (collectionService.getUserCollections as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { collections: [] },
+    });
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { reminders: [] },
+    });
+  });
+
+  it('tracks mantra_like event when a mantra is liked', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [{ mantra_id: 1, title: 'M1', isLiked: false, isSaved: false }],
+    });
+    (mantraService.likeMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+
+    const { getByTestId } = setup();
+    await waitFor(() => getByTestId('like-1'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('like-1'));
+
+    await waitFor(
+      () => {
+        expect(engagementService.trackEvent).toHaveBeenCalledWith('mantra_like');
+      },
+      { timeout: 10000 },
+    );
+  }, 20000);
+
+  it('does NOT track mantra_like when unliking', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [{ mantra_id: 1, title: 'M1', isLiked: true, isSaved: false }],
+    });
+    (mantraService.unlikeMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+
+    const { getByTestId } = setup();
+    await waitFor(() => getByTestId('like-1'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('like-1'));
+
+    await waitFor(
+      () => {
+        expect(mantraService.unlikeMantra).toHaveBeenCalled();
+      },
+      { timeout: 10000 },
+    );
+
+    expect(engagementService.trackEvent).not.toHaveBeenCalledWith('mantra_like');
+  }, 20000);
+
+  it('tracks mantra_save event when a mantra is saved', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [{ mantra_id: 2, title: 'M2', isLiked: false, isSaved: false }],
+    });
+    (mantraService.saveMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+
+    const { getByTestId } = setup();
+    await waitFor(() => getByTestId('save-2'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('save-2'));
+
+    await waitFor(
+      () => {
+        expect(engagementService.trackEvent).toHaveBeenCalledWith('mantra_save');
+      },
+      { timeout: 10000 },
+    );
+  }, 20000);
 });

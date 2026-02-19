@@ -88,6 +88,74 @@ describe('EngagementOptimizerService', () => {
     });
   });
 
+  // ── stop / getStatus / triggerProcessing ─────────────────────────────────
+
+  describe('stop', () => {
+    it('sets isRunning to false and clears cronTask', () => {
+      jest.spyOn(console, 'log').mockImplementation();
+      EngagementOptimizerService.start({ testMode: true });
+      expect(EngagementOptimizerService.isRunning).toBe(true);
+
+      EngagementOptimizerService.stop();
+
+      expect(EngagementOptimizerService.isRunning).toBe(false);
+      expect(EngagementOptimizerService.cronTask).toBeNull();
+    });
+  });
+
+  describe('getStatus', () => {
+    it('reflects isRunning and hasCronTask correctly when stopped', () => {
+      const status = EngagementOptimizerService.getStatus();
+      expect(status).toEqual({ isRunning: false, hasCronTask: false });
+    });
+
+    it('reflects isRunning=true in testMode (no cron task created)', () => {
+      jest.spyOn(console, 'log').mockImplementation();
+      EngagementOptimizerService.start({ testMode: true });
+      const status = EngagementOptimizerService.getStatus();
+      expect(status.isRunning).toBe(true);
+      expect(status.hasCronTask).toBe(false);
+    });
+  });
+
+  describe('triggerProcessing', () => {
+    it('delegates to processAllUsers and returns its result', async () => {
+      mockedUserModel.findAllWithDeviceTokens.mockResolvedValue([makeUser(1)]);
+      mockedEngagementModel.getOptimalHour.mockResolvedValue(10);
+      jest.spyOn(console, 'log').mockImplementation();
+
+      const results = await EngagementOptimizerService.triggerProcessing();
+
+      expect(results).toHaveLength(1);
+      expect(results[0].optimalHour).toBe(10);
+    });
+  });
+
+  // ── processUser (directly) ────────────────────────────────────────────────
+
+  describe('processUser', () => {
+    it('returns computed optimalHour and calls update', async () => {
+      mockedEngagementModel.getOptimalHour.mockResolvedValue(7);
+
+      const result = await EngagementOptimizerService.processUser(42, 'Europe/Paris');
+
+      expect(mockedEngagementModel.getOptimalHour).toHaveBeenCalledWith(42, 'Europe/Paris');
+      expect(mockedUserModel.update).toHaveBeenCalledWith(42, { optimal_send_hour: 7 });
+      expect(result).toEqual({ userId: 42, optimalHour: 7 });
+    });
+
+    it('returns skipped result with error message when model throws', async () => {
+      mockedEngagementModel.getOptimalHour.mockRejectedValue(new Error('timeout'));
+      jest.spyOn(console, 'error').mockImplementation();
+
+      const result = await EngagementOptimizerService.processUser(99, 'UTC');
+
+      expect(result.skipped).toBe(true);
+      expect(result.error).toBe('timeout');
+      expect(result.optimalHour).toBeNull();
+    });
+  });
+
   // ── processAllUsers ───────────────────────────────────────────────────────
 
   describe('processAllUsers', () => {
@@ -118,6 +186,26 @@ describe('EngagementOptimizerService', () => {
 
       expect(mockedUserModel.update).toHaveBeenCalledWith(1, { optimal_send_hour: null });
       expect(results[0].optimalHour).toBeNull();
+    });
+
+    it('returns empty array when no users have device tokens', async () => {
+      mockedUserModel.findAllWithDeviceTokens.mockResolvedValue([]);
+      jest.spyOn(console, 'log').mockImplementation();
+
+      const results = await EngagementOptimizerService.processAllUsers();
+
+      expect(results).toEqual([]);
+      expect(mockedEngagementModel.getOptimalHour).not.toHaveBeenCalled();
+    });
+
+    it('returns empty array and logs error when findAllWithDeviceTokens throws', async () => {
+      mockedUserModel.findAllWithDeviceTokens.mockRejectedValue(new Error('DB down'));
+      jest.spyOn(console, 'log').mockImplementation();
+      jest.spyOn(console, 'error').mockImplementation();
+
+      const results = await EngagementOptimizerService.processAllUsers();
+
+      expect(results).toEqual([]);
     });
 
     it('marks a user as skipped on error and continues', async () => {
