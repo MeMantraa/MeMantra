@@ -4,7 +4,6 @@ import { UserModel } from '../../src/models/user.model';
 
 jest.mock('../../src/models/user.model');
 
-// Extend Request type to match auth middleware
 interface AuthRequest extends Request {
   user?: { userId: number; email: string };
 }
@@ -34,7 +33,7 @@ describe('ThemeController', () => {
 
   describe('getTheme', () => {
     it('returns theme for authenticated user', async () => {
-      (UserModel.getTheme as jest.Mock).mockResolvedValue('dark');
+      (UserModel.getTheme as jest.Mock).mockResolvedValue('ocean');
 
       await ThemeController.getTheme(mockRequest as Request, mockResponse as Response);
 
@@ -42,7 +41,7 @@ describe('ThemeController', () => {
       expect(statusMock).toHaveBeenCalledWith(200);
       expect(jsonMock).toHaveBeenCalledWith({
         status: 'success',
-        data: { theme: 'dark' },
+        data: { theme: 'ocean' },
       });
     });
 
@@ -76,22 +75,22 @@ describe('ThemeController', () => {
 
   describe('updateTheme', () => {
     it('updates theme for authenticated user', async () => {
-      mockRequest.body = { theme: 'light' };
+      mockRequest.body = { theme: 'ocean' };
       (UserModel.updateTheme as jest.Mock).mockResolvedValue({});
 
       await ThemeController.updateTheme(mockRequest as Request, mockResponse as Response);
 
-      expect(UserModel.updateTheme).toHaveBeenCalledWith(1, 'light');
+      expect(UserModel.updateTheme).toHaveBeenCalledWith(1, 'ocean');
       expect(statusMock).toHaveBeenCalledWith(200);
       expect(jsonMock).toHaveBeenCalledWith({
         status: 'success',
-        data: { theme: 'light' },
+        data: { theme: 'ocean' },
       });
     });
 
     it('returns 401 when user not authenticated', async () => {
       mockRequest.user = undefined;
-      mockRequest.body = { theme: 'dark' };
+      mockRequest.body = { theme: 'sunset' };
 
       await ThemeController.updateTheme(mockRequest as Request, mockResponse as Response);
 
@@ -114,8 +113,21 @@ describe('ThemeController', () => {
       });
     });
 
+    it('returns 400 when theme is invalid', async () => {
+      mockRequest.body = { theme: 'invalid-theme' };
+
+      await ThemeController.updateTheme(mockRequest as Request, mockResponse as Response);
+
+      expect(statusMock).toHaveBeenCalledWith(400);
+      expect(jsonMock).toHaveBeenCalledWith({
+        status: 'error',
+        message: expect.stringContaining('Invalid theme'),
+      });
+      expect(UserModel.updateTheme).not.toHaveBeenCalled();
+    });
+
     it('returns 500 on database error', async () => {
-      mockRequest.body = { theme: 'dark' };
+      mockRequest.body = { theme: 'forest' };
       (UserModel.updateTheme as jest.Mock).mockRejectedValue(new Error('DB error'));
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
 
