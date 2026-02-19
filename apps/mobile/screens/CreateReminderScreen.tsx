@@ -18,6 +18,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { storage } from '../utils/storage';
 import { reminderService } from '../services/reminder.service';
 import { mantraService, Mantra } from '../services/mantra.service';
+import { engagementService } from '../services/engagement.service';
 import { collectionService, Collection } from '../services/collection.service';
 import {
   scheduleSuggestionsService,
@@ -378,6 +379,7 @@ export default function CreateReminderScreen() {
         );
       }
 
+      engagementService.trackEvent('reminder_create');
       Alert.alert('Reminder Created', 'Your reminder has been set.', [
         { text: 'OK', onPress: () => navigation.goBack() },
       ]);

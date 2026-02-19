@@ -4,11 +4,15 @@ import { MantraController } from '../../src/controllers/mantra.controller';
 import { MantraModel } from '../../src/models/mantra.model';
 import { CollectionModel } from '../../src/models/collection.model';
 import { CategoryModel } from '../../src/models/category.model';
+import { LikeModel } from '../../src/models/like.model';
+import { RecommendationEngine } from '../../src/services/recommendation-engine.service';
 import { db } from '../../src/db';
 
 jest.mock('../../src/models/mantra.model');
 jest.mock('../../src/models/collection.model');
 jest.mock('../../src/models/category.model');
+jest.mock('../../src/models/like.model');
+jest.mock('../../src/services/recommendation-engine.service');
 jest.mock('../../src/db', () => ({
   db: {
     selectFrom: jest.fn(() => ({
@@ -46,8 +50,10 @@ function setupAppWithUser(userId?: number, email?: string) {
 describe('MantraController', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    // Clear console.error mock if it was set
     jest.spyOn(console, 'error').mockImplementation(() => {});
+    // Default: recommendation engine returns empty array so tests fall through
+    // to the non-personalised path unless explicitly overridden.
+    (RecommendationEngine.generateRecommendations as jest.Mock).mockResolvedValue([]);
   });
 
   afterEach(() => {
@@ -586,6 +592,85 @@ describe('MantraController', () => {
         status: 'error',
         message: 'Error retrieving feed mantras',
       });
+    });
+
+    it('should return personalised feed with real like_counts when RecommendationEngine succeeds', async () => {
+      const mockRecommendations = [
+        {
+          mantra: { mantra_id: 10, title: 'Rec Mantra 1', key_takeaway: 'Takeaway 1', is_active: true, created_at: '2024-01-01' },
+          categories: [{ category_id: 1, name: 'Mindfulness' }],
+          score: 0.9,
+          reason: 'Matches your interests',
+        },
+        {
+          mantra: { mantra_id: 20, title: 'Rec Mantra 2', key_takeaway: 'Takeaway 2', is_active: true, created_at: '2024-01-02' },
+          categories: [],
+          score: 0.75,
+          reason: 'Popular today',
+        },
+      ];
+
+      (RecommendationEngine.generateRecommendations as jest.Mock).mockResolvedValue(mockRecommendations);
+      (LikeModel.getCountsByMantraIds as jest.Mock).mockResolvedValue(new Map([[10, 42], [20, 7]]));
+
+      // db mock for liked/saved queries
+      let callCount = 0;
+      (db.selectFrom as jest.Mock).mockImplementation(() => ({
+        where: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue(callCount++ === 0 ? [{ mantra_id: 10 }] : []),
+      }));
+
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app).get('/mantras/feed');
+
+      expect(res.status).toBe(200);
+      expect(res.body.data).toHaveLength(2);
+      expect(res.body.data[0]).toMatchObject({ mantra_id: 10, like_count: 42, isLiked: true });
+      expect(res.body.data[1]).toMatchObject({ mantra_id: 20, like_count: 7, isLiked: false });
+      expect(LikeModel.getCountsByMantraIds).toHaveBeenCalledWith([10, 20]);
+      // Should NOT fall through to the non-personalised path
+      expect(MantraModel.findWithLikeCount).not.toHaveBeenCalled();
+    });
+
+    it('should fall back to non-personalised feed when RecommendationEngine returns empty', async () => {
+      const mockMantras = [{ mantra_id: 1, title: 'Fallback', like_count: 3 }];
+      (RecommendationEngine.generateRecommendations as jest.Mock).mockResolvedValue([]);
+      (MantraModel.findWithLikeCount as jest.Mock).mockResolvedValue(mockMantras);
+
+      (db.selectFrom as jest.Mock).mockImplementation(() => ({
+        where: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue([]),
+      }));
+
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app).get('/mantras/feed');
+
+      expect(res.status).toBe(200);
+      expect(MantraModel.findWithLikeCount).toHaveBeenCalled();
+      expect(LikeModel.getCountsByMantraIds).not.toHaveBeenCalled();
+    });
+
+    it('should fall back to non-personalised feed when RecommendationEngine throws', async () => {
+      const mockMantras = [{ mantra_id: 2, title: 'Fallback after error', like_count: 1 }];
+      (RecommendationEngine.generateRecommendations as jest.Mock).mockRejectedValue(new Error('Engine down'));
+      (MantraModel.findWithLikeCount as jest.Mock).mockResolvedValue(mockMantras);
+
+      (db.selectFrom as jest.Mock).mockImplementation(() => ({
+        where: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue([]),
+      }));
+
+      const app = setupAppWithUser(1, 'test@test.com');
+      const res = await request(app).get('/mantras/feed');
+
+      expect(res.status).toBe(200);
+      expect(MantraModel.findWithLikeCount).toHaveBeenCalled();
     });
 
     it('should handle error in likes query', async () => {

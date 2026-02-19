@@ -293,6 +293,70 @@ describe('LikeModel', () => {
     });
   });
 
+  describe('getCountsByMantraIds', () => {
+    it('should return an empty Map when given an empty array', async () => {
+      const result = await LikeModel.getCountsByMantraIds([]);
+
+      expect(result).toEqual(new Map());
+      expect(db.selectFrom).not.toHaveBeenCalled();
+    });
+
+    it('should return a Map of mantra_id → like count', async () => {
+      const mockChain = {
+        where: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        groupBy: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue([
+          { mantra_id: 1, count: '5' },
+          { mantra_id: 2, count: '3' },
+        ]),
+      };
+
+      (db.selectFrom as jest.Mock).mockReturnValue(mockChain);
+
+      const result = await LikeModel.getCountsByMantraIds([1, 2]);
+
+      expect(db.selectFrom).toHaveBeenCalledWith('Like');
+      expect(mockChain.where).toHaveBeenCalledWith('mantra_id', 'in', [1, 2]);
+      expect(mockChain.groupBy).toHaveBeenCalledWith('mantra_id');
+      expect(result).toEqual(new Map([[1, 5], [2, 3]]));
+    });
+
+    it('should skip rows where mantra_id is null', async () => {
+      const mockChain = {
+        where: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        groupBy: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue([
+          { mantra_id: null, count: '2' },
+          { mantra_id: 7, count: '4' },
+        ]),
+      };
+
+      (db.selectFrom as jest.Mock).mockReturnValue(mockChain);
+
+      const result = await LikeModel.getCountsByMantraIds([7]);
+
+      expect(result).toEqual(new Map([[7, 4]]));
+      expect(result.has(null as any)).toBe(false);
+    });
+
+    it('should return an empty Map when no likes exist for the given IDs', async () => {
+      const mockChain = {
+        where: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
+        groupBy: jest.fn().mockReturnThis(),
+        execute: jest.fn().mockResolvedValue([]),
+      };
+
+      (db.selectFrom as jest.Mock).mockReturnValue(mockChain);
+
+      const result = await LikeModel.getCountsByMantraIds([99, 100]);
+
+      expect(result).toEqual(new Map());
+    });
+  });
+
   describe('getMostLikedMantras', () => {
     it('should get most liked mantras with like counts', async () => {
       const mockResults = [

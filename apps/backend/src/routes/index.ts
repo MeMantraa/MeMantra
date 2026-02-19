@@ -12,6 +12,7 @@ import notificationRoutes from './notification.routes';
 import ratingRoutes from './rating.routes';
 import journalRoutes from './journal.routes';
 import algorithmRoutes from './algorithm.routes';
+import engagementRoutes from './engagement.routes';
 
 const router = Router();
 
@@ -52,5 +53,8 @@ router.use('/journal', journalRoutes);
 
 // Algorithm routes (user category scores)
 router.use('/algorithm', algorithmRoutes);
+
+// Engagement routes (app-open tracking for adaptive notification timing)
+router.use('/engagement', engagementRoutes);
 
 export default router;

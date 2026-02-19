@@ -114,6 +114,14 @@ export const UserModel = {
       .set({ email })
       .where('user_id', '=', userId)
       .executeTakeFirst();
-  }
+  },
+
+  async findAllWithDeviceTokens(): Promise<User[]> {
+    return db
+      .selectFrom('User')
+      .where('device_token', 'is not', null)
+      .selectAll()
+      .execute();
+  },
 };
 

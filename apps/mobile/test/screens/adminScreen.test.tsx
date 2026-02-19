@@ -7,6 +7,7 @@ import * as ThemeContext from '../../context/ThemeContext';
 import { mantraService } from '../../services/mantra.service';
 import { userService } from '../../services/user.service';
 import { categoryService } from '../../services/category.service';
+import { engagementService } from '../../services/engagement.service';
 
 jest.mock('../../services/mantra.service', () => ({
   mantraService: {
@@ -41,6 +42,12 @@ jest.mock('../../services/category.service', () => ({
 jest.mock('../../utils/storage', () => ({
   storage: {
     getToken: jest.fn().mockResolvedValue('mock-token'),
+  },
+}));
+
+jest.mock('../../services/engagement.service', () => ({
+  engagementService: {
+    getAnalytics: jest.fn(),
   },
 }));
 
@@ -1094,5 +1101,120 @@ describe('AdminScreen (extended coverage)', () => {
     await waitFor(() => {
       expect(getByPlaceholderText('Category Name *').props.value).toBe('');
     });
+  });
+});
+
+// ─── Analytics Tab ────────────────────────────────────────────────────────────
+
+describe('AdminScreen - Analytics', () => {
+  const fakeAnalytics = {
+    window_days: 30,
+    event_counts: { app_open: 10, mantra_like: 5 },
+    notification_effectiveness: {
+      sent: 20,
+      taps: 8,
+      tap_through_rate_pct: 40,
+      post_tap_conversion_rate_pct: null,
+    },
+    tap_by_hour: [{ hour: 9, count: 3 }],
+    adaptive_timing: { users_with_optimal_hour: 2, users_using_default: 5 },
+  };
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    // Stub the other services so they don't throw on mantras-mode load
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [],
+    });
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { categories: [] },
+    });
+  });
+
+  it('calls getAnalytics when switching to Analytics tab', async () => {
+    (engagementService.getAnalytics as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: fakeAnalytics,
+    });
+
+    const { getByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Analytics'));
+
+    await waitFor(
+      () => {
+        expect(engagementService.getAnalytics).toHaveBeenCalledWith('mock-token', 30);
+      },
+      { timeout: 5000 },
+    );
+  });
+
+  it('displays analytics data after successful load', async () => {
+    (engagementService.getAnalytics as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: fakeAnalytics,
+    });
+
+    const { getByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Analytics'));
+
+    await waitFor(
+      () => {
+        expect(getByText('Notification Effectiveness')).toBeTruthy();
+      },
+      { timeout: 5000 },
+    );
+  });
+
+  it('changes days and re-fetches analytics when days picker is pressed', async () => {
+    (engagementService.getAnalytics as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: fakeAnalytics,
+    });
+
+    const { getByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Analytics'));
+
+    await waitFor(() => expect(engagementService.getAnalytics).toHaveBeenCalledTimes(1));
+
+    // Switch to 7-day window
+    fireEvent.press(getByText('7d'));
+
+    await waitFor(
+      () => {
+        expect(engagementService.getAnalytics).toHaveBeenCalledWith('mock-token', 7);
+      },
+      { timeout: 5000 },
+    );
+  });
+
+  it('shows error alert when getAnalytics fails', async () => {
+    (engagementService.getAnalytics as jest.Mock).mockRejectedValue(new Error('server error'));
+    jest.spyOn(console, 'error').mockImplementation();
+
+    const { getByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Analytics'));
+
+    await waitFor(
+      () => {
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to load analytics');
+      },
+      { timeout: 5000 },
+    );
+  });
+
+  it('hides the Add/Manage action toggle when analytics tab is active', async () => {
+    (engagementService.getAnalytics as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: fakeAnalytics,
+    });
+
+    const { getByText, queryByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Analytics'));
+
+    // The Add/Manage row is not rendered in analytics mode
+    expect(queryByText('Add')).toBeNull();
+    expect(queryByText('Manage')).toBeNull();
   });
 });
