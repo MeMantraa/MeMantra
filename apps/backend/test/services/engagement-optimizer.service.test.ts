@@ -30,6 +30,7 @@ const makeUser = (id: number, timezone = 'UTC') => ({
   timezone,
   recommendation_notif_sent_at: null,
   optimal_send_hour: null,
+  theme: null, 
 });
 
 // ─── tests ────────────────────────────────────────────────────────────────────
