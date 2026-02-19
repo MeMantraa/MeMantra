@@ -14,6 +14,7 @@ import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../src/navigation/types';
 import { storage } from '../utils/storage';
 import { reminderService, Reminder } from '../services/reminder.service';
+import { scheduleSuggestionsService } from '../services/schedule-suggestions.service';
 
 type RemindersNavProp = StackNavigationProp<RootStackParamList>;
 
@@ -31,6 +32,11 @@ function formatTime(isoString: string | null): string {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function formatScheduleTimes(times: string[] | null): string {
+  if (!times || times.length === 0) return 'No times set';
+  return times.map((t) => scheduleSuggestionsService.formatTimeForDisplay(t)).join(', ');
 }
 
 export default function RemindersScreen() {
@@ -106,6 +112,7 @@ export default function RemindersScreen() {
     const linkedName = isMantra ? item.mantra_title : item.collection_name;
     const isActive = item.status === 'active';
     const isCompleted = item.status === 'completed';
+    const isRoutine = item.frequency === 'routine';
 
     return (
       <View style={[styles.reminderCard, isCompleted && styles.completedCard]}>
@@ -132,14 +139,39 @@ export default function RemindersScreen() {
         ) : null}
 
         <View style={styles.reminderBody}>
-          <View style={styles.reminderInfo}>
-            <Ionicons name="time-outline" size={16} color="#6B7280" />
-            <Text style={styles.timeText}>{formatTime(item.time)}</Text>
-          </View>
-          <View style={styles.reminderInfo}>
-            <Ionicons name="repeat-outline" size={16} color="#6B7280" />
-            <Text style={styles.frequencyText}>{formatFrequency(item.frequency)}</Text>
-          </View>
+          {isRoutine ? (
+            <>
+              <View style={styles.reminderInfo}>
+                <Ionicons name="time-outline" size={16} color="#6B7280" />
+                <Text style={styles.timeText}>{formatScheduleTimes(item.schedule_times)}</Text>
+              </View>
+              <View style={styles.reminderInfo}>
+                <Ionicons name="calendar-outline" size={16} color="#6B7280" />
+                <Text style={styles.frequencyText}>
+                  {scheduleSuggestionsService.formatDaysForDisplay(item.schedule_days)}
+                </Text>
+              </View>
+              {item.timezone && (
+                <View style={styles.reminderInfo}>
+                  <Ionicons name="globe-outline" size={16} color="#6B7280" />
+                  <Text style={styles.frequencyText}>
+                    {scheduleSuggestionsService.formatTimezoneDisplay(item.timezone)}
+                  </Text>
+                </View>
+              )}
+            </>
+          ) : (
+            <>
+              <View style={styles.reminderInfo}>
+                <Ionicons name="time-outline" size={16} color="#6B7280" />
+                <Text style={styles.timeText}>{formatTime(item.time)}</Text>
+              </View>
+              <View style={styles.reminderInfo}>
+                <Ionicons name="repeat-outline" size={16} color="#6B7280" />
+                <Text style={styles.frequencyText}>{formatFrequency(item.frequency)}</Text>
+              </View>
+            </>
+          )}
         </View>
 
         {!isCompleted && (
@@ -325,6 +357,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontFamily: 'Red_Hat_Text-Regular',
     color: '#333',
+    flex: 1,
   },
   frequencyText: {
     fontSize: 14,

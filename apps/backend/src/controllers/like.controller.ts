@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { LikeModel } from '../models/like.model';
+import { UserCategoryScoreModel } from '../models/user-category-score.model';
 
 export const LikeController = {
   // POST /api/likes/:mantraId - Like a mantra
@@ -26,6 +27,9 @@ export const LikeController = {
       }
 
       await LikeModel.create(userId, Number(mantraId));
+
+      // Update algorithm: +3 points for all categories of this mantra
+      await UserCategoryScoreModel.addScoreForMantra(userId, Number(mantraId), 3).catch(() => {});
 
       return res.status(201).json({
         status: 'success',
@@ -64,6 +68,9 @@ export const LikeController = {
       }
 
       await LikeModel.remove(userId, Number(mantraId));
+
+      // Update algorithm: -3 points (undo like)
+      await UserCategoryScoreModel.removeScoreForMantra(userId, Number(mantraId), 3).catch(() => {});
 
       return res.status(200).json({
         status: 'success',

@@ -11,14 +11,17 @@ import {
 import { useTheme } from '../context/ThemeContext';
 import { Mantra, mantraService } from '../services/mantra.service';
 import { User, userService } from '../services/user.service';
+import { Category, categoryService } from '../services/category.service';
 import { storage } from '../utils/storage';
 import MantraForm from '../components/admin/MantraForm';
 import MantraList from '../components/admin/MantraList';
 import UserForm from '../components/admin/UserForm';
 import UserList from '../components/admin/UserList';
+import CategoryForm from '../components/admin/CategoryForm';
+import CategoryList from '../components/admin/CategoryList';
 import AppText from '../components/UI/textWrapper';
 
-type AdminMode = 'mantras' | 'users';
+type AdminMode = 'mantras' | 'users' | 'categories';
 type ActionMode = 'add' | 'manage';
 
 const AdminScreen: React.FC = () => {
@@ -32,9 +35,14 @@ const AdminScreen: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
+  const [categories, setCategories] = useState<Category[]>([]);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingMantra, setEditingMantra] = useState<Mantra | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
+  // Category IDs selected for the current mantra being created/edited
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
 
   const [mantraForm, setMantraForm] = useState({
     title: '',
@@ -54,8 +62,15 @@ const AdminScreen: React.FC = () => {
     password: '',
     confirmPassword: '',
   });
+  const [categoryForm, setCategoryForm] = useState({
+    name: '',
+    description: '',
+    category_type: '',
+  });
+
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [viewAllUsers, setViewAllUsers] = useState(false);
+  const [categorySearchQuery, setCategorySearchQuery] = useState('');
 
   useEffect(() => {
     loadData();
@@ -70,6 +85,16 @@ const AdminScreen: React.FC = () => {
         const response = await mantraService.getFeedMantras(token);
         if (response.status === 'success') {
           setMantras(response.data);
+        }
+        // Also load categories for the category picker in MantraForm
+        const catResponse = await categoryService.getAllCategories(token);
+        if (catResponse.status === 'success') {
+          setCategories(catResponse.data.categories);
+        }
+      } else if (mode === 'categories') {
+        const response = await categoryService.getAllCategories(token);
+        if (response.status === 'success') {
+          setCategories(response.data.categories);
         }
       } else {
         const response = await userService.getAllUsers(token);
@@ -97,7 +122,17 @@ const AdminScreen: React.FC = () => {
       cbt_principles: '',
       references: '',
     });
+    setSelectedCategoryIds([]);
     setEditingMantra(null);
+  };
+
+  const resetCategoryForm = () => {
+    setCategoryForm({
+      name: '',
+      description: '',
+      category_type: '',
+    });
+    setEditingCategory(null);
   };
 
   const resetUserForm = () => {
@@ -108,11 +143,21 @@ const AdminScreen: React.FC = () => {
   };
 
   const handleMantraFormChange = (field: string, value: string) => {
-    setMantraForm({ ...mantraForm, [field]: value });
+    setMantraForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCategoryFormChange = (field: string, value: string) => {
+    setCategoryForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleToggleCategory = (categoryId: number) => {
+    setSelectedCategoryIds((prev) =>
+      prev.includes(categoryId) ? prev.filter((id) => id !== categoryId) : [...prev, categoryId],
+    );
   };
 
   const handleUserFormChange = (field: string, value: string) => {
-    setUserForm({ ...userForm, [field]: value });
+    setUserForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleCreateMantra = async () => {
@@ -127,7 +172,12 @@ const AdminScreen: React.FC = () => {
       const response = await mantraService.createMantra(mantraForm, token);
 
       if (response.status === 'success') {
-        setMantras([response.data.mantra, ...mantras]);
+        const newMantra = response.data.mantra;
+        // Link selected categories to the new mantra
+        for (const categoryId of selectedCategoryIds) {
+          await categoryService.addMantraToCategory(categoryId, newMantra.mantra_id, token);
+        }
+        setMantras([newMantra, ...mantras]);
         resetMantraForm();
         Alert.alert('Success', 'Mantra created successfully');
       }
@@ -148,6 +198,26 @@ const AdminScreen: React.FC = () => {
       const response = await mantraService.updateMantra(editingMantra.mantra_id, mantraForm, token);
 
       if (response.status === 'success') {
+        // Sync categories: get current, compute diff, add/remove
+        const currentCatsRes = await categoryService.getCategoriesForMantra(
+          editingMantra.mantra_id,
+          token,
+        );
+        const currentCatIds =
+          currentCatsRes.status === 'success'
+            ? currentCatsRes.data.categories.map((c) => c.category_id)
+            : [];
+
+        const toAdd = selectedCategoryIds.filter((id) => !currentCatIds.includes(id));
+        const toRemove = currentCatIds.filter((id) => !selectedCategoryIds.includes(id));
+
+        for (const catId of toAdd) {
+          await categoryService.addMantraToCategory(catId, editingMantra.mantra_id, token);
+        }
+        for (const catId of toRemove) {
+          await categoryService.removeMantraFromCategory(catId, editingMantra.mantra_id, token);
+        }
+
         setMantras(
           mantras.map((m) => (m.mantra_id === editingMantra.mantra_id ? response.data.mantra : m)),
         );
@@ -244,7 +314,7 @@ const AdminScreen: React.FC = () => {
     }
   };
 
-  const openEditMantra = (mantra: Mantra) => {
+  const openEditMantra = async (mantra: Mantra) => {
     setEditingMantra(mantra);
     setMantraForm({
       title: mantra.title,
@@ -257,6 +327,21 @@ const AdminScreen: React.FC = () => {
       cbt_principles: mantra.cbt_principles || '',
       references: mantra.references || '',
     });
+    // Load existing categories for this mantra
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      const catRes = await categoryService.getCategoriesForMantra(mantra.mantra_id, token);
+      if (catRes.status === 'success') {
+        setSelectedCategoryIds(catRes.data.categories.map((c) => c.category_id));
+      }
+      // Also ensure all categories are loaded for the picker
+      const allCatsRes = await categoryService.getAllCategories(token);
+      if (allCatsRes.status === 'success') {
+        setCategories(allCatsRes.data.categories);
+      }
+    } catch {
+      setSelectedCategoryIds([]);
+    }
     setEditModalVisible(true);
   };
 
@@ -297,6 +382,113 @@ const AdminScreen: React.FC = () => {
     ]);
   };
 
+  // ── Category Handlers ──
+
+  const handleCreateCategory = async () => {
+    if (!categoryForm.name.trim()) {
+      Alert.alert('Error', 'Category name is required');
+      return;
+    }
+    if (!categoryForm.category_type) {
+      Alert.alert('Error', 'Please select a category layer');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      const payload: any = { name: categoryForm.name };
+      if (categoryForm.description) payload.description = categoryForm.description;
+      if (categoryForm.category_type) payload.category_type = categoryForm.category_type;
+
+      const response = await categoryService.createCategory(payload, token);
+
+      if (response.status === 'success') {
+        setCategories([response.data.category, ...categories]);
+        resetCategoryForm();
+        Alert.alert('Success', 'Category created successfully');
+      }
+    } catch (error) {
+      console.error('Failed to create category:', error);
+      Alert.alert('Error', 'Failed to create category');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleUpdateCategory = async () => {
+    if (!editingCategory) return;
+
+    setSubmitting(true);
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      const payload: any = {};
+      if (categoryForm.name) payload.name = categoryForm.name;
+      if (categoryForm.description) payload.description = categoryForm.description;
+      if (categoryForm.category_type) payload.category_type = categoryForm.category_type;
+
+      const response = await categoryService.updateCategory(
+        editingCategory.category_id,
+        payload,
+        token,
+      );
+
+      if (response.status === 'success') {
+        setCategories(
+          categories.map((c) =>
+            c.category_id === editingCategory.category_id ? response.data.category : c,
+          ),
+        );
+        resetCategoryForm();
+        setEditModalVisible(false);
+        Alert.alert('Success', 'Category updated successfully');
+      }
+    } catch (error) {
+      console.error('Failed to update category:', error);
+      Alert.alert('Error', 'Failed to update category');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: number) => {
+    setDeletingId(categoryId);
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      await categoryService.deleteCategory(categoryId, token);
+      setCategories(categories.filter((c) => c.category_id !== categoryId));
+      Alert.alert('Success', 'Category deleted');
+    } catch (error) {
+      console.error('Failed to delete category:', error);
+      Alert.alert('Error', 'Failed to delete category');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const openEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    setCategoryForm({
+      name: category.name || '',
+      description: category.description || '',
+      category_type: category.category_type || '',
+    });
+    setEditModalVisible(true);
+  };
+
+  const confirmDeleteCategory = (categoryId: number, name: string) => {
+    Alert.alert('Delete Category', `Delete "${name}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          void handleDeleteCategory(categoryId);
+        },
+      },
+    ]);
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -305,7 +497,7 @@ const AdminScreen: React.FC = () => {
       <View className="flex-1 px-6 pt-16 pb-6" style={{ backgroundColor: colors.primary }}>
         <AppText className="text-white text-3xl font-bold mb-4">Admin Controls</AppText>
 
-        {/* Mode Toggle: Mantras vs Users */}
+        {/* Mode Toggle: Mantras vs Users vs Categories */}
         <View
           className="flex-row p-1 rounded-full mb-4"
           style={{ backgroundColor: `${colors.primaryDark}55` }}
@@ -317,6 +509,8 @@ const AdminScreen: React.FC = () => {
               setAction('add');
               resetMantraForm();
               resetUserForm();
+              resetCategoryForm();
+              setCategorySearchQuery('');
             }}
             style={{ backgroundColor: mode === 'mantras' ? colors.secondary : 'transparent' }}
           >
@@ -330,10 +524,31 @@ const AdminScreen: React.FC = () => {
           <TouchableOpacity
             className="flex-1 rounded-full px-4 py-3"
             onPress={() => {
+              setMode('categories');
+              setAction('add');
+              resetMantraForm();
+              resetUserForm();
+              resetCategoryForm();
+              setCategorySearchQuery('');
+            }}
+            style={{ backgroundColor: mode === 'categories' ? colors.secondary : 'transparent' }}
+          >
+            <AppText
+              className="text-center font-semibold"
+              style={{ color: mode === 'categories' ? colors.primaryDark : colors.text }}
+            >
+              Categories
+            </AppText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            className="flex-1 rounded-full px-4 py-3"
+            onPress={() => {
               setMode('users');
               setAction('add');
               resetMantraForm();
               resetUserForm();
+              resetCategoryForm();
+              setCategorySearchQuery('');
             }}
             style={{ backgroundColor: mode === 'users' ? colors.secondary : 'transparent' }}
           >
@@ -384,6 +599,9 @@ const AdminScreen: React.FC = () => {
             onFormChange={handleMantraFormChange}
             onSubmit={handleCreateMantra}
             submitting={submitting}
+            categories={categories}
+            selectedCategoryIds={selectedCategoryIds}
+            onToggleCategory={handleToggleCategory}
           />
         )}
 
@@ -395,6 +613,49 @@ const AdminScreen: React.FC = () => {
             onEdit={openEditMantra}
             onDelete={confirmDeleteMantra}
           />
+        )}
+
+        {mode === 'categories' && action === 'add' && (
+          <CategoryForm
+            formData={categoryForm}
+            onFormChange={handleCategoryFormChange}
+            onSubmit={handleCreateCategory}
+            submitting={submitting}
+          />
+        )}
+
+        {mode === 'categories' && action === 'manage' && (
+          <View className="flex-1">
+            <TextInput
+              className="bg-black/30 text-white p-4 rounded-xl mb-4"
+              placeholder="Search categories here"
+              placeholderTextColor="rgba(255, 255, 255, 0.5)"
+              value={categorySearchQuery}
+              onChangeText={setCategorySearchQuery}
+            />
+
+            {categorySearchQuery.trim() !== '' ? (
+              <CategoryList
+                categories={categories.filter(
+                  (c) =>
+                    c.name?.toLowerCase().includes(categorySearchQuery.toLowerCase()) ||
+                    c.description?.toLowerCase().includes(categorySearchQuery.toLowerCase()),
+                )}
+                loading={loading}
+                deletingId={deletingId}
+                onEdit={openEditCategory}
+                onDelete={confirmDeleteCategory}
+              />
+            ) : (
+              <CategoryList
+                categories={categories}
+                loading={loading}
+                deletingId={deletingId}
+                onEdit={openEditCategory}
+                onDelete={confirmDeleteCategory}
+              />
+            )}
+          </View>
         )}
 
         {mode === 'users' && action === 'add' && (
@@ -455,13 +716,14 @@ const AdminScreen: React.FC = () => {
           <View className="flex-1 px-6 pt-16 pb-6" style={{ backgroundColor: colors.primary }}>
             <View className="flex-row justify-between items-center mb-6">
               <AppText className="text-white text-2xl font-bold">
-                Edit {mode === 'mantras' ? 'Mantra' : 'User'}
+                Edit {mode === 'mantras' ? 'Mantra' : mode === 'categories' ? 'Category' : 'User'}
               </AppText>
               <TouchableOpacity
                 onPress={() => {
                   setEditModalVisible(false);
                   resetMantraForm();
                   resetUserForm();
+                  resetCategoryForm();
                 }}
               >
                 <AppText className="text-white text-2xl">✕</AppText>
@@ -473,6 +735,17 @@ const AdminScreen: React.FC = () => {
                 formData={mantraForm}
                 onFormChange={handleMantraFormChange}
                 onSubmit={handleUpdateMantra}
+                submitting={submitting}
+                isEdit
+                categories={categories}
+                selectedCategoryIds={selectedCategoryIds}
+                onToggleCategory={handleToggleCategory}
+              />
+            ) : mode === 'categories' ? (
+              <CategoryForm
+                formData={categoryForm}
+                onFormChange={handleCategoryFormChange}
+                onSubmit={handleUpdateCategory}
                 submitting={submitting}
                 isEdit
               />

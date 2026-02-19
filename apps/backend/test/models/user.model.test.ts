@@ -29,6 +29,12 @@ import { UserModel } from '../../src/models/user.model';
 describe('UserModel', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    insertIntoMock.mockReset();
+    selectFromMock.mockReset();
+    updateTableMock.mockReset();
+    deleteFromMock.mockReset();
+    genSaltMock.mockReset();
+    hashMock.mockReset();
   });
 
   it('creates a user with hashed password', async () => {
@@ -108,13 +114,16 @@ describe('UserModel', () => {
 
     const result = await UserModel.findByIds([1, 2]);
 
+    expect(selectFromMock).toHaveBeenCalledWith('User');
     expect(whereMock).toHaveBeenCalledWith('user_id', 'in', [1, 2]);
     expect(result).toBe(fakeUsers);
   });
 
-  it('returns empty array when finding users with empty id array', async () => {
+  it('returns empty array for findByIds with empty input', async () => {
     const result = await UserModel.findByIds([]);
+
     expect(result).toEqual([]);
+    expect(selectFromMock).not.toHaveBeenCalled();
   });
 
   it('finds all users', async () => {
@@ -147,7 +156,7 @@ describe('UserModel', () => {
     expect(result).toBe(updatedUser);
   });
 
-  it('deletes a user', async () => {
+  it('deletes a user and returns true', async () => {
     const executeTakeFirstMock = jest.fn().mockResolvedValue({ numDeletedRows: BigInt(1) });
     const whereMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
     deleteFromMock.mockReturnValue({ where: whereMock });

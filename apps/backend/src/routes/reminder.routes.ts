@@ -8,6 +8,7 @@ import {
   reminderIdSchema,
   upcomingQuerySchema,
   frequencyQuerySchema,
+  schedulePreviewSchema,
 } from '../validators/reminder.validator';
 
 const router = Router();
@@ -30,6 +31,15 @@ router.get(
   validateRequest(frequencyQuerySchema),
   ReminderController.getRemindersByFrequency
 );
+
+// New: Schedule preview and suggestions (must be before /:id)
+router.post(
+  '/preview-schedule',
+  validateRequest(schedulePreviewSchema),
+  ReminderController.getSchedulePreview
+);
+
+router.get('/suggestions', ReminderController.getSuggestions);
 
 router.get(
   '/:id',

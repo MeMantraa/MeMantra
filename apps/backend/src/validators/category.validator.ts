@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
-// Category type enum from database schema
-const categoryTypeEnum = z.enum(['emotion', 'cbt', 'context', 'reference']);
+// Category type enum – matches the six navigation layers
+const categoryTypeEnum = z.enum(['essential', 'goal', 'mood', 'scenario', 'time', 'theme']);
 
 // Create category schema
 export const createCategorySchema = z.object({
@@ -9,6 +9,7 @@ export const createCategorySchema = z.object({
     name: z.string().min(1, 'Name is required').max(100, 'Name must be less than 100 characters'),
     description: z.string().optional(),
     category_type: categoryTypeEnum,
+    parent_id: z.number().int().positive().optional(),
     image_url: z.string().url('Must be a valid URL').optional(),
   }),
 });
@@ -19,6 +20,7 @@ export const updateCategorySchema = z.object({
     name: z.string().min(1).max(100).optional(),
     description: z.string().optional(),
     category_type: categoryTypeEnum.optional(),
+    parent_id: z.number().int().positive().nullable().optional(),
     image_url: z.string().url('Must be a valid URL').optional(),
   }),
 });

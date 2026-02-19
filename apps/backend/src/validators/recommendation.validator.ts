@@ -30,4 +30,16 @@ export const recentQuerySchema = z.object({
   }),
 });
 
+// Query schema for suggest endpoint
+export const suggestQuerySchema = z.object({
+  query: z.object({
+    limit: z.string().transform(Number).pipe(z.number().min(1).max(50)).optional(),
+    mood: z.string().min(1).max(50).optional(),
+    excludeIds: z
+      .string()
+      .transform((val) => val.split(',').map(Number).filter((n) => !isNaN(n) && n > 0))
+      .optional(),
+  }),
+});
+
 export type CreateRecommendationInput = z.infer<typeof createRecommendationSchema>['body'];

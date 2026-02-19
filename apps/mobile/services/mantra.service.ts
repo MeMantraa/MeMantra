@@ -34,6 +34,7 @@ export interface Mantra {
   isLiked?: boolean;
   isSaved?: boolean;
   like_count?: number;
+  categories?: Array<{ category_id: number; name: string; category_type?: string }>;
 }
 
 export interface MantraResponse {

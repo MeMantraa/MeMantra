@@ -31,6 +31,7 @@ import JournalEditorScreen from '../screens/JournalEditorScreen';
 import JournalDetailScreen from '../screens/JournalDetailScreen';
 import RemindersScreen from '../screens/RemindersScreen';
 import CreateReminderScreen from '../screens/CreateReminderScreen';
+import MantraAlgorithmScreen from '../screens/MantraAlgorithmScreen';
 import ThemesScreen from '../screens/ThemesScreen';
 
 const Stack = createStackNavigator();
@@ -365,6 +366,7 @@ export default function MainNavigator() {
           <Stack.Screen name="JournalDetail" component={JournalDetailScreen} />
           <Stack.Screen name="Reminders" component={RemindersScreen} />
           <Stack.Screen name="CreateReminder" component={CreateReminderScreen} />
+          <Stack.Screen name="MantraAlgorithm" component={MantraAlgorithmScreen} />
           <Stack.Screen name="Themes" component={ThemesScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
       </SavedProvider>

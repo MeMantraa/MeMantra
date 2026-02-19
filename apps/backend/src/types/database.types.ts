@@ -18,6 +18,7 @@ export interface Database {
   MessageReaction: MessageReactionTable;
   Rating: RatingTable;
   JournalEntry: JournalEntryTable;
+  UserCategoryScore: UserCategoryScoreTable;
 }
 
 //table interfaces
@@ -60,6 +61,7 @@ export interface CategoryTable {
   name: string;
   description: string | null;
   category_type: string | null;
+  parent_id: number | null;
   image_url: string | null;
   is_active: boolean | null;
 }
@@ -100,6 +102,9 @@ export interface ReminderTable {
   frequency: string | null;
   status: string | null;
   last_sent_at: string | null;
+  schedule_times: string[] | null;
+  schedule_days: number[] | null;
+  timezone: string | null;
 }
 
 export interface RecommendationLogTable {
@@ -167,6 +172,13 @@ export interface JournalEntryTable {
   updated_at: string | null;
 }
 
+export interface UserCategoryScoreTable {
+  user_id: number;
+  category_id: number;
+  score: number;
+  updated_at: string;
+}
+
 //types for type safe operations (typescript ting)
 export type User = Selectable<UserTable>;
 export type NewUser = Insertable<UserTable>;
@@ -227,3 +239,7 @@ export type RatingUpdate = Updateable<RatingTable>;
 export type JournalEntry = Selectable<JournalEntryTable>;
 export type NewJournalEntry = Insertable<JournalEntryTable>;
 export type JournalEntryUpdate = Updateable<JournalEntryTable>;
+
+export type UserCategoryScore = Selectable<UserCategoryScoreTable>;
+export type NewUserCategoryScore = Insertable<UserCategoryScoreTable>;
+export type UserCategoryScoreUpdate = Updateable<UserCategoryScoreTable>;
