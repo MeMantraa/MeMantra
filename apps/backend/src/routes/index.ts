@@ -11,6 +11,9 @@ import chatRoutes from './chat.routes';
 import notificationRoutes from './notification.routes';
 import ratingRoutes from './rating.routes';
 import journalRoutes from './journal.routes';
+import algorithmRoutes from './algorithm.routes';
+import themeRoutes from './theme.routes';
+import engagementRoutes from './engagement.routes';
 
 const router = Router();
 
@@ -43,10 +46,19 @@ router.use('/chat', chatRoutes);
 
 // Notification routes
 router.use('/notifications', notificationRoutes);
+
 // Rating routes
 router.use('/ratings', ratingRoutes); 
 
 // Journal routes
 router.use('/journal', journalRoutes);
+
+// Algorithm routes (user category scores)
+router.use('/algorithm', algorithmRoutes);
+
+// Theme routes
+router.use('/theme', themeRoutes);
+// Engagement routes (app-open tracking for adaptive notification timing)
+router.use('/engagement', engagementRoutes);
 
 export default router;

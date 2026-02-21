@@ -36,6 +36,10 @@ export interface UserMutationResponse {
   status: string;
   message?: string;
 }
+export interface ThemeResponse {
+  status: string;
+  data: { theme: string };
+}
 
 export const userService = {
   async getAllUsers(token: string): Promise<UsersResponse> {
@@ -74,6 +78,25 @@ export const userService = {
     const response = await apiClient.delete<UserMutationResponse>(`/users/${userId}`, {
       headers: { Authorization: `Bearer ${token}` },
     });
+    return response.data;
+  },
+
+  // Theme management
+  async getTheme(token: string): Promise<ThemeResponse> {
+    const response = await apiClient.get<ThemeResponse>('/theme', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  },
+
+  async updateTheme(theme: string, token: string): Promise<ThemeResponse> {
+    const response = await apiClient.put<ThemeResponse>(
+      '/theme',
+      { theme },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
     return response.data;
   },
 };

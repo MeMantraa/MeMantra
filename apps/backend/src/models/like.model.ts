@@ -85,6 +85,26 @@ export const LikeModel = {
     return Number(result?.count || 0);
   },
 
+  // Get like counts for a batch of mantra IDs (single query, returns a Map)
+  async getCountsByMantraIds(mantraIds: number[]): Promise<Map<number, number>> {
+    if (mantraIds.length === 0) return new Map();
+
+    const results = await db
+      .selectFrom('Like')
+      .where('mantra_id', 'in', mantraIds)
+      .select(['mantra_id', (eb) => eb.fn.count('like_id').as('count')])
+      .groupBy('mantra_id')
+      .execute();
+
+    const map = new Map<number, number>();
+    for (const row of results) {
+      if (row.mantra_id !== null) {
+        map.set(row.mantra_id, Number(row.count));
+      }
+    }
+    return map;
+  },
+
   // Get like by ID
   async findById(likeId: number): Promise<Like | undefined> {
     return await db

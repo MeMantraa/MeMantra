@@ -9,40 +9,41 @@ import JournalScreen from '../screens/JournalScreen';
 import { storage } from '../utils/storage';
 import { isAdminEmail } from '../utils/admin';
 import ProfileScreen from '../screens/ProfileScreen';
+import { useTheme } from '../context/ThemeContext';
 
 const Tab = createBottomTabNavigator();
 
-// Tab bar icon components defined outside to avoid recreation on each render
-const LibraryTabIcon = ({ focused }: { focused: boolean }) => (
-  <Ionicons name={focused ? 'bookmark' : 'bookmark-outline'} size={30} color={'white'} />
+// Tab bar icon components - now receive color as prop
+const LibraryTabIcon = ({ focused, color }: { focused: boolean; color: string }) => (
+  <Ionicons name={focused ? 'bookmark' : 'bookmark-outline'} size={30} color={color} />
 );
 
-const HomeTabIcon = ({ focused }: { focused: boolean }) => (
-  <Ionicons name={focused ? 'home' : 'home-outline'} size={30} color={'white'} />
+const HomeTabIcon = ({ focused, color }: { focused: boolean; color: string }) => (
+  <Ionicons name={focused ? 'home' : 'home-outline'} size={30} color={color} />
 );
 
-const ProfileTabIcon = ({ focused }: { focused: boolean }) => (
-  <Ionicons name={focused ? 'person' : 'person-outline'} size={30} color={'white'} />
+const ProfileTabIcon = ({ focused, color }: { focused: boolean; color: string }) => (
+  <Ionicons name={focused ? 'person' : 'person-outline'} size={30} color={color} />
 );
 
-const ChatTabIcon = ({ focused }: { focused: boolean }) => (
-  <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={30} color={'white'} />
+const ChatTabIcon = ({ focused, color }: { focused: boolean; color: string }) => (
+  <Ionicons name={focused ? 'chatbubbles' : 'chatbubbles-outline'} size={30} color={color} />
 );
 
-const JournalTabIcon = ({ focused }: { focused: boolean }) => (
-  <Ionicons name={focused ? 'book' : 'book-outline'} size={30} color={'white'} />
+const JournalTabIcon = ({ focused, color }: { focused: boolean; color: string }) => (
+  <Ionicons name={focused ? 'book' : 'book-outline'} size={30} color={color} />
 );
 
-const AdminTabIcon = ({ focused }: { focused: boolean }) => (
-  <Ionicons name={focused ? 'settings' : 'settings-outline'} size={30} color={'white'} />
+const AdminTabIcon = ({ focused, color }: { focused: boolean; color: string }) => (
+  <Ionicons name={focused ? 'settings' : 'settings-outline'} size={30} color={color} />
 );
 
 export default function BottomTabNavigator() {
+  const { colors } = useTheme();
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
-
     const determineAdminStatus = async () => {
       try {
         const userData = await storage.getUserData();
@@ -56,9 +57,7 @@ export default function BottomTabNavigator() {
         }
       }
     };
-
     determineAdminStatus();
-
     return () => {
       isMounted = false;
     };
@@ -70,13 +69,15 @@ export default function BottomTabNavigator() {
       screenOptions={{
         tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: '#6d7e68',
+          backgroundColor: colors.primaryDark,
           borderTopWidth: 0.5,
-          borderTopColor: 'white',
+          borderTopColor: colors.white,
           height: 105,
           paddingBottom: 12,
           paddingTop: 15,
         },
+        tabBarActiveTintColor: colors.white,
+        tabBarInactiveTintColor: colors.white,
         headerShown: false,
       }}
     >

@@ -34,6 +34,7 @@ export interface Mantra {
   isLiked?: boolean;
   isSaved?: boolean;
   like_count?: number;
+  categories?: Array<{ category_id: number; name: string; category_type?: string }>;
 }
 
 export interface MantraResponse {
@@ -64,7 +65,7 @@ export interface MantraDetailResponse {
 export interface SingleMantraResponse {
   status: string;
   message?: string;
-  data: Mantra;
+  data: { mantra: Mantra };
 }
 
 export interface MantraMutationResponse {
@@ -196,6 +197,14 @@ const mockMantraService = {
     return { status: 'success', message: 'Removed from saved' };
   },
 
+  async getLikedMantras(_token: string): Promise<{ status: string; data: { mantras: Mantra[] } }> {
+    const likedIds = Array.from(mockUserState.likedMantras);
+    return {
+      status: 'success',
+      data: { mantras: mockMantras.filter((m) => likedIds.includes(m.mantra_id)) },
+    };
+  },
+
   async getSavedMantras(_token: string) {
     const collectionId = 1;
     const response = await apiClient.get(`/collections/${collectionId}`);
@@ -290,9 +299,11 @@ const mockMantraService = {
     return {
       status: 'success',
       data: {
-        ...mantra,
-        isLiked: mockUserState.likedMantras.has(mantra.mantra_id),
-        isSaved: mockUserState.savedMantras.has(mantra.mantra_id),
+        mantra: {
+          ...mantra,
+          isLiked: mockUserState.likedMantras.has(mantra.mantra_id),
+          isSaved: mockUserState.savedMantras.has(mantra.mantra_id),
+        },
       },
     };
   },
@@ -328,6 +339,11 @@ const realMantraService = {
 
   async unsaveMantra(mantraId: number, _token: string) {
     const response = await apiClient.delete(`/mantras/${mantraId}/save/`);
+    return response.data;
+  },
+
+  async getLikedMantras(_token: string): Promise<{ status: string; data: { mantras: Mantra[] } }> {
+    const response = await apiClient.get('/likes/mantras');
     return response.data;
   },
 

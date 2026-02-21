@@ -1,8 +1,11 @@
 import { Request, Response } from 'express';
 import { MantraModel } from '../models/mantra.model';
 import { CollectionModel } from '../models/collection.model';
+import { CategoryModel } from '../models/category.model';
 import { CreateMantraInput, UpdateMantraInput, MantraQueryInput } from '../validators/mantra.validator';
 import { db } from '../db';
+import { UserCategoryScoreModel } from '../models/user-category-score.model';
+import { LikeModel } from '../models/like.model';
 
 export const MantraController = {
   // GET /api/mantras - List all mantras with optional search and pagination
@@ -182,6 +185,34 @@ export const MantraController = {
     }
   },
 
+  // GET /api/mantras/:id/categories - Get categories for a specific mantra
+  async getCategoriesForMantra(req: Request, res: Response) {
+    try {
+      const { id } = req.params;
+
+      const mantra = await MantraModel.findById(Number(id));
+      if (!mantra) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Mantra not found',
+        });
+      }
+
+      const categories = await CategoryModel.getCategoriesForMantra(Number(id));
+
+      return res.status(200).json({
+        status: 'success',
+        data: { categories },
+      });
+    } catch (error) {
+      console.error('Get categories for mantra error:', error);
+      return res.status(500).json({
+        status: 'error',
+        message: 'Error retrieving categories for mantra',
+      });
+    }
+  },
+
   // GET /api/mantras/popular - Get most liked mantras
   async getPopularMantras(req: Request, res: Response) {
     try {
@@ -202,36 +233,71 @@ export const MantraController = {
     }
   },
 
-  // GET /api/mantras/feed - Get mantras with user's like/save status
+  // GET /api/mantras/feed - Personalised feed based on user's category scores
   async getFeedMantras(req: Request, res: Response) {
     try {
       const userId = req.user?.userId;
       const limit = Number(req.query.limit) || 50;
       const offset = Number(req.query.offset) || 0;
+      const mood = req.query.mood as string | undefined;
 
-      const mantras = await MantraModel.findWithLikeCount(limit, offset);
-
-      // Get user's liked and saved mantras
+      // Get user's liked and saved mantra IDs for status flags
       let likedMantraIds: number[] = [];
       let savedMantraIds: number[] = [];
 
       if (userId) {
-        const liked = await db
-          .selectFrom('Like')
-          .where('user_id', '=', userId)
-          .select('mantra_id')
-          .execute();
+        const [liked, saved] = await Promise.all([
+          db
+            .selectFrom('Like')
+            .where('user_id', '=', userId)
+            .select('mantra_id')
+            .execute(),
+          db
+            .selectFrom('Collection')
+            .innerJoin('CollectionMantra', 'Collection.collection_id', 'CollectionMantra.collection_id')
+            .where('Collection.user_id', '=', userId)
+            .select('CollectionMantra.mantra_id')
+            .execute(),
+        ]);
         likedMantraIds = liked.map(l => l.mantra_id).filter((id): id is number => id !== null);
-
-        // UPDATED: Check if mantra is in ANY collection, remove duplicates with Set
-        const saved = await db
-          .selectFrom('Collection')
-          .innerJoin('CollectionMantra', 'Collection.collection_id', 'CollectionMantra.collection_id')
-          .where('Collection.user_id', '=', userId)
-          .select('CollectionMantra.mantra_id')
-          .execute();
         savedMantraIds = [...new Set(saved.map(s => s.mantra_id).filter((id): id is number => id !== null))];
       }
+
+      // Try personalised ordering when user is authenticated
+      if (userId) {
+        try {
+          const { RecommendationEngine } = await import('../services/recommendation-engine.service');
+          const recommendations = await RecommendationEngine.generateRecommendations(userId, {
+            limit,
+            mood,
+          });
+
+          if (recommendations.length > 0) {
+            const mantraIds = recommendations.map(rec => rec.mantra.mantra_id);
+            const likeCounts = await LikeModel.getCountsByMantraIds(mantraIds);
+
+            const feedMantras = recommendations.map(rec => ({
+              ...rec.mantra,
+              like_count: likeCounts.get(rec.mantra.mantra_id) ?? 0,
+              isLiked: likedMantraIds.includes(rec.mantra.mantra_id),
+              isSaved: savedMantraIds.includes(rec.mantra.mantra_id),
+              categories: rec.categories,
+              score: Math.round(rec.score * 100) / 100,
+              reason: rec.reason,
+            }));
+
+            return res.status(200).json({
+              status: 'success',
+              data: feedMantras,
+            });
+          }
+        } catch {
+          // Fall back to non-personalised feed if engine fails
+        }
+      }
+
+      // Fallback: non-personalised (popularity-based) feed
+      const mantras = await MantraModel.findWithLikeCount(limit, offset);
 
       const mantrasWithStatus = mantras.map(mantra => ({
         ...mantra,
@@ -306,6 +372,9 @@ export const MantraController = {
         userId
       );
 
+      // Update algorithm: +3 points for all categories of this mantra
+      await UserCategoryScoreModel.addScoreForMantra(userId, mantraId, 3).catch(() => {});
+
       return res.status(200).json({
         status: 'success',
         message: 'Mantra saved successfully',
@@ -354,6 +423,11 @@ export const MantraController = {
         if (removed) {
           removedCount++;
         }
+      }
+
+      // Update algorithm: -3 points (undo save)
+      if (removedCount > 0) {
+        await UserCategoryScoreModel.removeScoreForMantra(userId, mantraId, 3).catch(() => {});
       }
 
       // 5. If not found in any collection, return error

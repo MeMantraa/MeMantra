@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { UserModel } from '../models/user.model';
 import { NotificationService } from '../services/notification.service';
+import { RecommendationNotificationService } from '../services/recommendation-notification.service';
 
 // --- Utility helpers ---
 const handleError = (res: Response, message: string, error?: any, status = 500) => {
@@ -29,7 +30,7 @@ export const NotificationController = {
     if (!userId) return;
 
     try {
-      const { token, platform, deviceName } = req.body;
+      const { token, platform, deviceName, timezone } = req.body;
 
       // Validate token format
       if (!token || !NotificationService.isExpoPushToken(token)) {
@@ -39,10 +40,12 @@ export const NotificationController = {
         });
       }
 
-      // Update user's device token
-      const updatedUser = await UserModel.update(userId, {
-        device_token: token,
-      });
+      // Update device token and, when provided, the user's timezone
+      const updateData: { device_token: string; timezone?: string } = { device_token: token };
+      if (timezone) {
+        updateData.timezone = timezone;
+      }
+      const updatedUser = await UserModel.update(userId, updateData);
 
       if (!updatedUser) {
         return res.status(404).json({
@@ -197,6 +200,46 @@ export const NotificationController = {
       });
     } catch (error) {
       return handleError(res, 'Error sending bulk notifications', error);
+    }
+  },
+
+  /**
+   * GET /api/notifications/recommend
+   * Generate a personalised mantra recommendation and send it as a push notification
+   * to the currently authenticated user.
+   */
+  async sendRecommendationNotification(req: Request, res: Response) {
+    const userId = requireAuth(req, res);
+    if (!userId) return;
+
+    try {
+      const user = await UserModel.findById(userId);
+
+      if (!user?.device_token) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'No device token registered. Please enable notifications in the app.',
+        });
+      }
+
+      const result = await RecommendationNotificationService.sendToUser(
+        userId,
+        user.device_token,
+      );
+
+      if (!result.success) {
+        return res.status(500).json({
+          status: 'error',
+          message: result.error || 'Failed to send recommendation notification',
+        });
+      }
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Recommendation notification sent successfully',
+      });
+    } catch (error) {
+      return handleError(res, 'Error sending recommendation notification', error);
     }
   },
 

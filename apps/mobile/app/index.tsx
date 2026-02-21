@@ -6,6 +6,7 @@ import { ThemeProvider } from '../context/ThemeContext';
 import { SavedProvider } from '../context/SavedContext';
 import { storage } from '../utils/storage';
 import { notificationService } from '../services/notification.service';
+import { engagementService } from '../services/engagement.service';
 import { mantraService, Mantra } from '../services/mantra.service';
 import { navigateFromOutside, isNavigationReady } from '../services/api.config';
 
@@ -29,6 +30,10 @@ import LikedScreen from '../screens/LikedScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import JournalEditorScreen from '../screens/JournalEditorScreen';
 import JournalDetailScreen from '../screens/JournalDetailScreen';
+import RemindersScreen from '../screens/RemindersScreen';
+import CreateReminderScreen from '../screens/CreateReminderScreen';
+import MantraAlgorithmScreen from '../screens/MantraAlgorithmScreen';
+import ThemesScreen from '../screens/ThemesScreen';
 
 const Stack = createStackNavigator();
 
@@ -93,8 +98,8 @@ export default function MainNavigator() {
       // Fetch the mantra details
       const response = await mantraService.getMantraById(mantraId, token);
 
-      if (response.status === 'success' && response.data) {
-        const mantra: Mantra = response.data;
+      if (response.status === 'success' && response.data?.mantra) {
+        const mantra: Mantra = response.data.mantra;
 
         // Create simple like/save handlers for deep-linked mantra
         const handleLike = async (id: number) => {
@@ -191,13 +196,16 @@ export default function MainNavigator() {
       const data = response.notification.request.content.data;
 
       if (data.type === 'collection_reminder' && data.collectionId) {
-        // Navigate to collection detail
+        engagementService.trackEvent('notification_tap_collection_reminder');
         handleCollectionNotificationNavigation(
           data.collectionId as number,
           (data.collectionName as string) || 'Collection',
         );
+      } else if (data.type === 'recommendation' && data.mantraId) {
+        engagementService.trackEvent('notification_tap_recommendation');
+        handleNotificationNavigation(data.mantraId as number);
       } else if (data.type === 'reminder' && data.mantraId) {
-        // Navigate to mantra detail
+        engagementService.trackEvent('notification_tap_reminder');
         handleNotificationNavigation(data.mantraId as number);
       } else if (data.type === 'reminder' && data.reminderId) {
         // Legacy support: if only reminderId is provided, log it
@@ -243,9 +251,53 @@ export default function MainNavigator() {
           }}
         >
           {/* Always register MainApp so Login can navigate to it */}
-          <Stack.Screen name="MainApp" component={BottomTabNavigator} />
-          <Stack.Screen name="Login" component={Login} options={{ headerTitle: 'Login' }} />
-          <Stack.Screen name="Signup" component={Signup} options={{ headerTitle: 'Signup' }} />
+          <Stack.Screen
+            name="MainApp"
+            component={BottomTabNavigator}
+            options={{
+              cardStyleInterpolator: ({ current }) => ({
+                cardStyle: {
+                  opacity: current.progress,
+                },
+              }),
+              transitionSpec: {
+                open: { animation: 'timing', config: { duration: 400 } },
+                close: { animation: 'timing', config: { duration: 400 } },
+              },
+            }}
+          />
+          <Stack.Screen
+            name="Login"
+            component={Login}
+            options={{
+              headerTitle: 'Login',
+              cardStyleInterpolator: ({ current }) => ({
+                cardStyle: {
+                  opacity: current.progress,
+                },
+              }),
+              transitionSpec: {
+                open: { animation: 'timing', config: { duration: 400 } },
+                close: { animation: 'timing', config: { duration: 400 } },
+              },
+            }}
+          />
+          <Stack.Screen
+            name="Signup"
+            component={Signup}
+            options={{
+              headerTitle: 'Signup',
+              cardStyleInterpolator: ({ current }) => ({
+                cardStyle: {
+                  opacity: current.progress,
+                },
+              }),
+              transitionSpec: {
+                open: { animation: 'timing', config: { duration: 400 } },
+                close: { animation: 'timing', config: { duration: 400 } },
+              },
+            }}
+          />
           <Stack.Screen
             name="ForgotPassword"
             component={ForgotPasswordScreen}
@@ -294,14 +346,7 @@ export default function MainNavigator() {
             name="Conversation"
             component={ConversationScreen}
             options={{
-              headerShown: true,
-              headerStyle: {
-                backgroundColor: '#9AA793',
-              },
-              headerTintColor: '#ffffff',
-              headerTitleStyle: {
-                fontFamily: 'LibreBaskerville-Regular',
-              },
+              headerShown: false,
             }}
           />
           <Stack.Screen
@@ -323,6 +368,10 @@ export default function MainNavigator() {
           <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="JournalEditor" component={JournalEditorScreen} />
           <Stack.Screen name="JournalDetail" component={JournalDetailScreen} />
+          <Stack.Screen name="Reminders" component={RemindersScreen} />
+          <Stack.Screen name="CreateReminder" component={CreateReminderScreen} />
+          <Stack.Screen name="MantraAlgorithm" component={MantraAlgorithmScreen} />
+          <Stack.Screen name="Themes" component={ThemesScreen} options={{ headerShown: false }} />
         </Stack.Navigator>
       </SavedProvider>
     </ThemeProvider>

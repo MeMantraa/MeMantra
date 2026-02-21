@@ -12,6 +12,7 @@ import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { collectionService, Collection } from '../services/collection.service';
 import { storage } from '../utils/storage';
+import { useReminders } from '../hooks/useReminders';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ITEM_MARGIN = 12;
@@ -23,6 +24,7 @@ export default function CollectionsScreen({ navigation }: any) {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const { remindersByCollection, handleReminderPress } = useReminders();
 
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
@@ -31,6 +33,10 @@ export default function CollectionsScreen({ navigation }: any) {
 
     return unsubscribe;
   }, [navigation]);
+
+  const handleCollectionReminder = (collection: Collection) => {
+    handleReminderPress('collection', collection.collection_id, navigation);
+  };
 
   const loadCollections = async () => {
     try {
@@ -140,6 +146,24 @@ export default function CollectionsScreen({ navigation }: any) {
             {item.description}
           </AppText>
         )}
+      </TouchableOpacity>
+
+      {/* Reminder button */}
+      <TouchableOpacity
+        testID={`collection-reminder-${item.collection_id}`}
+        className="absolute bottom-2 right-2 p-1"
+        onPress={() => handleCollectionReminder(item)}
+        hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+      >
+        <Ionicons
+          name={
+            remindersByCollection.has(item.collection_id)
+              ? 'notifications'
+              : 'notifications-outline'
+          }
+          size={20}
+          color={remindersByCollection.has(item.collection_id) ? colors.secondary : colors.text}
+        />
       </TouchableOpacity>
 
       {/* Delete button - only show if not "Saved Mantras" */}

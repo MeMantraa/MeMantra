@@ -86,7 +86,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
         <TextInput
           className="flex-1 min-h-[40px] max-h-[100px] rounded-[20px] px-4 py-[10px] text-[16px] bg-white"
           style={{
-            color: colors.primaryDark,
+            color: colors.black,
             fontFamily: 'LibreBaskerville-Regular',
           }}
           placeholder="Type a message..."

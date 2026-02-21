@@ -14,6 +14,7 @@ import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { journalService, MoodType, MOOD_OPTIONS } from '../services/journal.service';
 import { storage } from '../utils/storage';
+import { engagementService } from '../services/engagement.service';
 
 export default function JournalEditorScreen({ navigation, route }: any) {
   const { colors } = useTheme();
@@ -77,6 +78,7 @@ export default function JournalEditorScreen({ navigation, route }: any) {
           : await journalService.createJournalEntry(payload, token);
 
       if (response.status === 'success') {
+        if (!isEditing) engagementService.trackEvent('journal_create');
         const message = isEditing ? 'Journal entry updated' : 'Journal entry saved';
         Alert.alert('Success', message, [{ text: 'OK', onPress: () => navigation.goBack() }]);
       } else {

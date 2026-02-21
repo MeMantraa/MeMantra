@@ -1,6 +1,7 @@
 import * as cron from 'node-cron';
 import { ReminderModel } from '../models/reminder.model';
 import { NotificationService } from './notification.service';
+import { getCurrentTimeInTimezone as _getCurrentTimeInTimezone } from '../utils/timezone.utils';
 
 /**
  * Reminder Scheduler Service
@@ -25,6 +26,9 @@ interface BaseReminderDetails {
   status: string | null;
   last_sent_at: string | null;
   user_device_token: string | null;
+  schedule_times: string[] | null;
+  schedule_days: number[] | null;
+  timezone: string | null;
 }
 
 interface ReminderWithDetails extends BaseReminderDetails {
@@ -172,46 +176,80 @@ export const ReminderSchedulerService = {
   },
 
   /**
-   * Process a single reminder
-   * @param reminder - Reminder with user and mantra details
+   * Shared processing logic for both mantra and collection reminders.
+   * Handles frequency checks, base validation, content validation,
+   * notification sending, and post-send updates.
    */
-  async processReminder(reminder: ReminderWithDetails): Promise<ProcessResult> {
+  async processReminderGeneric<T extends BaseReminderDetails>(
+    reminder: T,
+    reminderType: 'Reminder' | 'Collection Reminder',
+    validateContent: (r: T) => string | null,
+    sendNotification: (r: T) => Promise<void>,
+  ): Promise<ProcessResult> {
     const { reminder_id, frequency, last_sent_at } = reminder;
 
     try {
       // Check if reminder should be sent based on frequency
-      if (!this.shouldSendReminder(frequency, last_sent_at)) {
+      if (frequency === 'routine') {
+        if (!this.shouldSendRoutineReminder(
+          reminder.schedule_times,
+          reminder.schedule_days,
+          reminder.timezone,
+          last_sent_at
+        )) {
+          return { reminderId: reminder_id, success: true };
+        }
+      } else if (!this.shouldSendReminder(frequency, last_sent_at)) {
         return { reminderId: reminder_id, success: true };
       }
 
       // Validate base requirements
-      const baseError = this.validateReminderBase(reminder, 'Reminder');
+      const baseError = this.validateReminderBase(reminder, reminderType);
       if (baseError) {
         return { reminderId: reminder_id, success: false, error: baseError };
       }
 
-      // Validate mantra-specific requirements
-      if (!reminder.mantra_key_takeaway) {
-        console.warn(
-          `⚠️  Reminder ${reminder_id}: Mantra has no key takeaway, skipping`
-        );
-        return { reminderId: reminder_id, success: false, error: 'No mantra content' };
+      // Validate content-specific requirements
+      const contentError = validateContent(reminder);
+      if (contentError) {
+        return { reminderId: reminder_id, success: false, error: contentError };
       }
 
       // Send the notification
-      await this.sendReminderNotification(reminder);
+      await sendNotification(reminder);
       await this.updateReminderAfterSend(reminder_id, frequency);
 
-      console.log(`✅ Reminder ${reminder_id} sent successfully`);
+      console.log(`✅ ${reminderType} ${reminder_id} sent successfully`);
       return { reminderId: reminder_id, success: true };
     } catch (error) {
-      console.error(`❌ Error processing reminder ${reminder_id}:`, error);
+      console.error(`❌ Error processing ${reminderType.toLowerCase()} ${reminder_id}:`, error);
       return {
         reminderId: reminder_id,
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
       };
     }
+  },
+
+  /**
+   * Process a single reminder
+   * @param reminder - Reminder with user and mantra details
+   */
+  async processReminder(reminder: ReminderWithDetails): Promise<ProcessResult> {
+    return this.processReminderGeneric(
+      reminder,
+      'Reminder',
+      (r) => {
+        if (!r.mantra_key_takeaway) {
+          console.warn(
+            `⚠️  Reminder ${r.reminder_id}: Mantra has no key takeaway, skipping`
+          );
+          return 'No mantra content';
+        }
+        return null;
+      },
+      (r) => this.sendReminderNotification(r),
+    );
   },
 
   /**
@@ -261,6 +299,58 @@ export const ReminderSchedulerService = {
   },
 
   /**
+   * Get the current time components in a given IANA timezone.
+   * Delegates to the shared timezone utility.
+   */
+  getCurrentTimeInTimezone(timezone: string): { hour: number; minute: number; dayOfWeek: number } {
+    return _getCurrentTimeInTimezone(timezone);
+  },
+
+  /**
+   * Check if a routine reminder should fire in the current minute
+   * @param scheduleTimes - Array of "HH:MM" strings
+   * @param scheduleDays - Array of day-of-week (0-6), null = every day
+   * @param timezone - IANA timezone string
+   * @param lastSentAt - ISO timestamp of last send
+   */
+  shouldSendRoutineReminder(
+    scheduleTimes: string[] | null,
+    scheduleDays: number[] | null,
+    timezone: string | null,
+    lastSentAt: string | null
+  ): boolean {
+    if (!scheduleTimes || scheduleTimes.length === 0) return false;
+
+    const tz = timezone || 'UTC';
+    const { hour, minute, dayOfWeek } = this.getCurrentTimeInTimezone(tz);
+
+    // Check if today is a scheduled day (null/empty = every day)
+    if (scheduleDays && scheduleDays.length > 0 && !scheduleDays.includes(dayOfWeek)) {
+      return false;
+    }
+
+    // Format current time as HH:MM
+    const currentTimeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+
+    // Check if any schedule time matches the current minute
+    if (!scheduleTimes.includes(currentTimeStr)) {
+      return false;
+    }
+
+    // Guard against double-sends: skip if last sent within 2 minutes
+    if (lastSentAt) {
+      const lastSent = new Date(lastSentAt);
+      const now = new Date();
+      const diffMs = now.getTime() - lastSent.getTime();
+      if (diffMs < 2 * 60 * 1000) {
+        return false;
+      }
+    }
+
+    return true;
+  },
+
+  /**
    * Send the actual notification for a reminder
    */
   async sendReminderNotification(reminder: ReminderWithDetails): Promise<void> {
@@ -285,42 +375,20 @@ export const ReminderSchedulerService = {
    * @param reminder - Collection reminder with user and collection details
    */
   async processCollectionReminder(reminder: CollectionReminderWithDetails): Promise<ProcessResult> {
-    const { reminder_id, frequency, last_sent_at } = reminder;
-
-    try {
-      // Check if reminder should be sent based on frequency
-      if (!this.shouldSendReminder(frequency, last_sent_at)) {
-        return { reminderId: reminder_id, success: true };
-      }
-
-      // Validate base requirements
-      const baseError = this.validateReminderBase(reminder, 'Collection Reminder');
-      if (baseError) {
-        return { reminderId: reminder_id, success: false, error: baseError };
-      }
-
-      // Validate collection-specific requirements
-      if (!reminder.collection_name) {
-        console.warn(
-          `⚠️  Collection Reminder ${reminder_id}: Collection has no name, skipping`
-        );
-        return { reminderId: reminder_id, success: false, error: 'No collection name' };
-      }
-
-      // Send the notification
-      await this.sendCollectionReminderNotification(reminder);
-      await this.updateReminderAfterSend(reminder_id, frequency);
-
-      console.log(`✅ Collection Reminder ${reminder_id} sent successfully`);
-      return { reminderId: reminder_id, success: true };
-    } catch (error) {
-      console.error(`❌ Error processing collection reminder ${reminder_id}:`, error);
-      return {
-        reminderId: reminder_id,
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
-      };
-    }
+    return this.processReminderGeneric(
+      reminder,
+      'Collection Reminder',
+      (r) => {
+        if (!r.collection_name) {
+          console.warn(
+            `⚠️  Collection Reminder ${r.reminder_id}: Collection has no name, skipping`
+          );
+          return 'No collection name';
+        }
+        return null;
+      },
+      (r) => this.sendCollectionReminderNotification(r),
+    );
   },
 
   /**

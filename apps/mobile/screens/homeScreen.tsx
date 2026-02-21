@@ -22,6 +22,8 @@ import { useTheme } from '../context/ThemeContext';
 import { useSavedMantras } from '../context/SavedContext';
 import SavedPopupBar from '../components/UI/savedPopupBar';
 import CollectionsSheet from '../components/collectionsSheet';
+import { useReminders } from '../hooks/useReminders';
+import { engagementService } from '../services/engagement.service';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -39,6 +41,7 @@ export default function HomeScreen({ navigation, route }: any) {
   const [readyToShowFeed, setReadyToShowFeed] = useState(false);
 
   const { colors } = useTheme();
+  const { remindersByMantra, handleReminderPress } = useReminders();
 
   const listRef = useRef<FlatList<Mantra>>(null);
   const { setSavedMantras } = useSavedMantras();
@@ -140,6 +143,7 @@ export default function HomeScreen({ navigation, route }: any) {
         await mantraService.unlikeMantra(mantraId, token);
       } else {
         await mantraService.likeMantra(mantraId, token);
+        engagementService.trackEvent('mantra_like');
       }
     } catch (err) {
       console.error('Error toggling like:', err);
@@ -172,6 +176,7 @@ export default function HomeScreen({ navigation, route }: any) {
         setSavedMantras((prev) => prev.filter((m) => m.mantra_id !== mantraId));
       } else {
         await mantraService.saveMantra(mantraId, token);
+        engagementService.trackEvent('mantra_save');
         const savedMantra = feedData.find((m) => m.mantra_id === mantraId);
         if (savedMantra) setSavedMantras((prev) => [...prev, savedMantra]);
 
@@ -198,6 +203,10 @@ export default function HomeScreen({ navigation, route }: any) {
     navigation.navigate('JournalEditor', { mantraId, mantraTitle });
   };
 
+  const handleReminder = (mantraId: number) => {
+    handleReminderPress('mantra', mantraId, navigation);
+  };
+
   const handleSelectCollection = async (collectionId: number) => {
     if (!currentMantraId) {
       Alert.alert('Error', 'No mantra selected');
@@ -213,6 +222,7 @@ export default function HomeScreen({ navigation, route }: any) {
       );
 
       if (response.status === 'success') {
+        engagementService.trackEvent('collection_add');
         const collection = collections.find((c) => c.collection_id === collectionId);
         setCollectionToast(collection?.name || 'collection');
         setTimeout(() => setCollectionToast(''), 2000);
@@ -231,6 +241,7 @@ export default function HomeScreen({ navigation, route }: any) {
       const response = await collectionService.createCollection(name, undefined, token);
 
       if (response.status === 'success' && response.data) {
+        engagementService.trackEvent('collection_create');
         const newCollection = response.data.collection;
         setCollections((prev) => [newCollection, ...prev]);
         return newCollection.collection_id;
@@ -250,7 +261,9 @@ export default function HomeScreen({ navigation, route }: any) {
       const token = (await storage.getToken()) || 'mock-token';
       const response = await ratingService.rateMantra(mantraId, rating, undefined, token);
 
-      if (response.status !== 'success') {
+      if (response.status === 'success') {
+        engagementService.trackEvent('mantra_rate');
+      } else {
         Alert.alert('Error', response.message || 'Failed to save rating');
       }
     } catch (err) {
@@ -331,6 +344,8 @@ export default function HomeScreen({ navigation, route }: any) {
             onSave={handleSave}
             onShare={handleShare}
             onJournal={handleJournal}
+            onReminder={handleReminder}
+            hasReminder={remindersByMantra.has(item.mantra_id)}
             onPress={() =>
               navigation.navigate('Focus', {
                 mantra: item,
