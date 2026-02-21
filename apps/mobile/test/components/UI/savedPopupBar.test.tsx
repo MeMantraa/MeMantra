@@ -7,10 +7,7 @@ import { themes } from '../../../styles/theme';
 
 jest.mock('../../../context/ThemeContext', () => ({
   useTheme: () => ({
-    colors: {
-      secondary: '#ff9900',
-      primaryDark: '#1a1a1a',
-    },
+    colors: { ...themes.default },
   }),
 }));
 
@@ -221,8 +218,8 @@ describe('SavedPopupBar', () => {
     const messageElement = getByText('Saved successfully');
 
     const styleProp = popupBar.props.style;
-    const theme = themes.default;
     const mergedStyle = Object.assign({}, ...(Array.isArray(styleProp) ? styleProp : [styleProp]));
+    const theme = themes.default;
 
     expect(mergedStyle.backgroundColor).toBe(theme.white);
     expect(mergedStyle.borderColor).toBe(theme.secondary);
