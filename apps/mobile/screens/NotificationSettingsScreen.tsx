@@ -1,14 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Switch,
-  TouchableOpacity,
-  ScrollView,
-  Alert,
-  Platform,
-} from 'react-native';
+import { View, Switch, TouchableOpacity, ScrollView, Alert, Platform } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
@@ -18,10 +9,13 @@ import {
   NotificationSettings,
 } from '../services/notification-settings.service';
 import { notificationService } from '../services/notification.service';
+import { useTheme } from '../context/ThemeContext';
+import AppText from '../components/UI/textWrapper';
 
 type NotificationSettingsNavProp = StackNavigationProp<RootStackParamList>;
 
 export default function NotificationSettingsScreen() {
+  const { colors } = useTheme();
   const navigation = useNavigation<NotificationSettingsNavProp>();
   const [settings, setSettings] = useState<NotificationSettings>({
     enabled: true,
@@ -60,7 +54,6 @@ export default function NotificationSettingsScreen() {
 
   const handleToggleEnabled = async (value: boolean) => {
     if (value && permissionStatus !== 'granted') {
-      // Request permissions if enabling notifications
       const result = await notificationService.requestPermissions();
       if (!result.granted) {
         Alert.alert(
@@ -127,8 +120,8 @@ export default function NotificationSettingsScreen() {
         'Test Notification',
         'This is a test notification from MeMantra',
         { type: 'test' },
-        null, // Send immediately
-        false, // Don't respect settings for test notifications
+        null,
+        false,
       );
       Alert.alert('Success', 'Test notification sent!');
     } catch (error) {
@@ -167,7 +160,6 @@ export default function NotificationSettingsScreen() {
   const showTimePicker = (field: 'quietHoursStart' | 'quietHoursEnd') => {
     const _currentTime = notificationSettingsService.parseTimeString(settings[field]);
 
-    // Use Alert.prompt on iOS, fallback to Alert.alert on Android
     if (Platform.OS === 'ios' && Alert.prompt) {
       Alert.prompt(
         'Set Time',
@@ -192,7 +184,6 @@ export default function NotificationSettingsScreen() {
         settings[field],
       );
     } else {
-      // On Android or if prompt is not available, show info alert
       Alert.alert(
         'Time Picker',
         `Current time: ${settings[field]}\n\nTime picker UI will be implemented with a proper date/time picker component for Android.`,
@@ -203,8 +194,13 @@ export default function NotificationSettingsScreen() {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.loadingText}>Loading settings...</Text>
+      <View
+        className="flex-1 justify-center items-center"
+        style={{ backgroundColor: colors.primary }}
+      >
+        <AppText className="text-lg mt-24" style={{ color: colors.white }}>
+          Loading settings...
+        </AppText>
       </View>
     );
   }
@@ -212,94 +208,104 @@ export default function NotificationSettingsScreen() {
   const isWithinQuietHours = notificationSettingsService.isWithinQuietHours(settings);
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
+    <ScrollView className="flex-1" style={{ backgroundColor: colors.primary }}>
+      <View className="pt-[70px] px-5 pb-10">
         {/* Header with Back Button */}
-        <View style={styles.header}>
+        <View className="flex-row items-center mb-2.5">
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={styles.backButton}
+            className="p-1"
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
+            <Ionicons name="arrow-back" size={28} color={colors.white} />
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.title}>Notification Settings</Text>
+        <AppText className="text-[30px] font-bold mb-7" style={{ color: colors.white }}>
+          Notification Settings
+        </AppText>
 
         {/* Permission Status */}
         {permissionStatus !== 'granted' && (
-          <View style={styles.warningCard}>
-            <Text style={styles.warningText}>
+          <View className="bg-[#FEF3C7] p-4 rounded-xl mb-5">
+            <AppText className="text-sm text-[#92400E] leading-5">
               ⚠️ Notifications are not enabled in your device settings. Please enable them to
               receive mantra reminders.
-            </Text>
+            </AppText>
           </View>
         )}
 
         {/* Enable/Disable Notifications */}
-        <View style={styles.section}>
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Enable Notifications</Text>
-              <Text style={styles.settingDescription}>
+        <View className="bg-white rounded-xl p-5 mb-5">
+          <View className="flex-row justify-between items-center">
+            <View className="flex-1 mr-4">
+              <AppText className="text-lg font-semibold text-[#333] mb-1">
+                Enable Notifications
+              </AppText>
+              <AppText className="text-sm text-[#6B7280] leading-5">
                 Receive reminders for your scheduled mantras
-              </Text>
+              </AppText>
             </View>
             <Switch
               testID="enable-notifications-switch"
               value={settings.enabled}
               onValueChange={handleToggleEnabled}
-              trackColor={{ false: '#D1D5DB', true: '#8E9A86' }}
-              thumbColor={settings.enabled ? '#FFFFFF' : '#F3F4F6'}
+              trackColor={{ false: '#D1D5DB', true: colors.primary }}
+              thumbColor={settings.enabled ? colors.white : '#F3F4F6'}
             />
           </View>
         </View>
 
         {/* Quiet Hours */}
-        <View style={styles.section}>
-          <View style={styles.settingRow}>
-            <View style={styles.settingInfo}>
-              <Text style={styles.settingLabel}>Quiet Hours (Do Not Disturb)</Text>
-              <Text style={styles.settingDescription}>
+        <View className="bg-white rounded-xl p-5 mb-5">
+          <View className="flex-row justify-between items-center">
+            <View className="flex-1 mr-4">
+              <AppText className="text-lg font-semibold text-[#333] mb-1">
+                Quiet Hours (Do Not Disturb)
+              </AppText>
+              <AppText className="text-sm text-[#6B7280] leading-5">
                 Prevent notifications during specified hours
-              </Text>
+              </AppText>
             </View>
             <Switch
               testID="quiet-hours-switch"
               value={settings.quietHoursEnabled}
               onValueChange={handleToggleQuietHours}
               disabled={!settings.enabled}
-              trackColor={{ false: '#D1D5DB', true: '#8E9A86' }}
-              thumbColor={settings.quietHoursEnabled ? '#FFFFFF' : '#F3F4F6'}
+              trackColor={{ false: '#D1D5DB', true: colors.primary }}
+              thumbColor={settings.quietHoursEnabled ? colors.white : '#F3F4F6'}
             />
           </View>
 
           {settings.quietHoursEnabled && (
-            <View style={styles.timePickersContainer}>
+            <View className="flex-row mt-4 gap-3">
               <TouchableOpacity
-                style={styles.timePickerButton}
+                className="flex-1 bg-[#F3F4F6] p-4 rounded-lg items-center"
                 onPress={() => showTimePicker('quietHoursStart')}
               >
-                <Text style={styles.timePickerLabel}>Start Time</Text>
-                <Text style={styles.timePickerValue}>{settings.quietHoursStart}</Text>
+                <AppText className="text-xs text-[#6B7280] mb-1">Start Time</AppText>
+                <AppText className="text-xl font-bold text-[#333]">
+                  {settings.quietHoursStart}
+                </AppText>
               </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.timePickerButton}
+                className="flex-1 bg-[#F3F4F6] p-4 rounded-lg items-center"
                 onPress={() => showTimePicker('quietHoursEnd')}
               >
-                <Text style={styles.timePickerLabel}>End Time</Text>
-                <Text style={styles.timePickerValue}>{settings.quietHoursEnd}</Text>
+                <AppText className="text-xs text-[#6B7280] mb-1">End Time</AppText>
+                <AppText className="text-xl font-bold text-[#333]">
+                  {settings.quietHoursEnd}
+                </AppText>
               </TouchableOpacity>
             </View>
           )}
 
           {settings.quietHoursEnabled && isWithinQuietHours && (
-            <View style={styles.infoCard}>
-              <Text style={styles.infoText}>
+            <View className="bg-[#DBEAFE] p-3 rounded-lg mt-3">
+              <AppText className="text-sm text-[#1E40AF] leading-5">
                 🌙 Currently within quiet hours. Notifications are paused.
-              </Text>
+              </AppText>
             </View>
           )}
         </View>
@@ -307,163 +313,37 @@ export default function NotificationSettingsScreen() {
         {/* Test Notification */}
         <TouchableOpacity
           testID="test-notification-button"
-          style={[styles.button, !settings.enabled && styles.buttonDisabled]}
+          className="py-5 px-6 rounded-xl items-center mb-3"
+          style={{
+            backgroundColor: !settings.enabled ? '#D1D5DB' : colors.primaryDark,
+          }}
           onPress={handleTestNotification}
           disabled={!settings.enabled}
         >
-          <Text style={styles.buttonText}>Send Test Notification</Text>
+          <AppText className="text-[16px] font-semibold" style={{ color: colors.white }}>
+            Send Test Notification
+          </AppText>
         </TouchableOpacity>
 
         {/* Reset Settings */}
-        <TouchableOpacity style={styles.resetButton} onPress={handleResetSettings}>
-          <Text style={styles.resetButtonText}>Reset to Defaults</Text>
+        <TouchableOpacity
+          className="bg-transparent py-5 px-6 rounded-xl items-center border-2 mb-5"
+          style={{ borderColor: colors.white }}
+          onPress={handleResetSettings}
+        >
+          <AppText className="text-[16px] font-semibold" style={{ color: colors.white }}>
+            Reset to Defaults
+          </AppText>
         </TouchableOpacity>
 
         {/* Info Text */}
-        <Text style={styles.footerText}>
+        <AppText
+          className="text-sm opacity-80 text-center leading-[18px]"
+          style={{ color: colors.white }}
+        >
           Note: Notifications will respect your device's system settings and Do Not Disturb mode.
-        </Text>
+        </AppText>
       </View>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#A8B3A2',
-  },
-  content: {
-    paddingTop: 70,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  backButton: {
-    padding: 4,
-  },
-  title: {
-    fontSize: 34,
-    fontWeight: '700',
-    fontFamily: 'Red_Hat_Text-Bold',
-    color: 'white',
-    marginBottom: 30,
-  },
-  loadingText: {
-    fontSize: 18,
-    color: 'white',
-    textAlign: 'center',
-    marginTop: 100,
-  },
-  warningCard: {
-    backgroundColor: '#FEF3C7',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 20,
-  },
-  warningText: {
-    fontSize: 14,
-    color: '#92400E',
-    lineHeight: 20,
-  },
-  infoCard: {
-    backgroundColor: '#DBEAFE',
-    padding: 12,
-    borderRadius: 8,
-    marginTop: 12,
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#1E40AF',
-    lineHeight: 20,
-  },
-  section: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 20,
-  },
-  settingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  settingInfo: {
-    flex: 1,
-    marginRight: 16,
-  },
-  settingLabel: {
-    fontSize: 18,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  settingDescription: {
-    fontSize: 14,
-    color: '#6B7280',
-    lineHeight: 20,
-  },
-  timePickersContainer: {
-    flexDirection: 'row',
-    marginTop: 16,
-    gap: 12,
-  },
-  timePickerButton: {
-    flex: 1,
-    backgroundColor: '#F3F4F6',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  timePickerLabel: {
-    fontSize: 12,
-    color: '#6B7280',
-    marginBottom: 4,
-  },
-  timePickerValue: {
-    fontSize: 20,
-    fontFamily: 'Red_Hat_Text-Bold',
-    color: '#333',
-  },
-  button: {
-    backgroundColor: '#8E9A86',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  buttonDisabled: {
-    backgroundColor: '#D1D5DB',
-  },
-  buttonText: {
-    fontSize: 18,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: 'white',
-  },
-  resetButton: {
-    backgroundColor: 'transparent',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    marginBottom: 20,
-  },
-  resetButtonText: {
-    fontSize: 16,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: 'white',
-  },
-  footerText: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
-    textAlign: 'center',
-    lineHeight: 18,
-  },
-});

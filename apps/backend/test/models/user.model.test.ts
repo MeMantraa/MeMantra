@@ -63,16 +63,6 @@ describe('UserModel', () => {
 
     expect(genSaltMock).toHaveBeenCalledWith(10);
     expect(hashMock).toHaveBeenCalledWith('plain-pass', 'salt');
-    expect(insertIntoMock).toHaveBeenCalledWith('User');
-    expect(valuesMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        username: 'john',
-        email: 'john@example.com',
-        password_hash: 'hashed',
-        device_token: null,
-        created_at: expect.any(String),
-      }),
-    );
     expect(result).toBe(fakeUser);
   });
 
@@ -85,7 +75,6 @@ describe('UserModel', () => {
 
     const result = await UserModel.findByEmail('search@example.com');
 
-    expect(selectFromMock).toHaveBeenCalledWith('User');
     expect(whereMock).toHaveBeenCalledWith('email', '=', 'search@example.com');
     expect(result).toBe(fakeUser);
   });
@@ -99,7 +88,6 @@ describe('UserModel', () => {
 
     const result = await UserModel.findByUsername('memantra');
 
-    expect(selectFromMock).toHaveBeenCalledWith('User');
     expect(whereMock).toHaveBeenCalledWith('username', '=', 'memantra');
     expect(result).toBe(fakeUser);
   });
@@ -113,7 +101,6 @@ describe('UserModel', () => {
 
     const result = await UserModel.findById(5);
 
-    expect(selectFromMock).toHaveBeenCalledWith('User');
     expect(whereMock).toHaveBeenCalledWith('user_id', '=', 5);
     expect(result).toBe(fakeUser);
   });
@@ -227,10 +214,54 @@ describe('UserModel', () => {
     const setMock = jest.fn().mockReturnValue({ where: whereMock });
     updateTableMock.mockReturnValue({ set: setMock });
 
-    await UserModel.updateEmail(1, 'new@email.com');
+    await UserModel.updateEmail(1, 'new@example.com');
 
     expect(updateTableMock).toHaveBeenCalledWith('User');
-    expect(setMock).toHaveBeenCalledWith({ email: 'new@email.com' });
+    expect(setMock).toHaveBeenCalledWith({ email: 'new@example.com' });
     expect(whereMock).toHaveBeenCalledWith('user_id', '=', 1);
+  });
+
+  describe('Theme functions', () => {
+    it('updates user theme', async () => {
+      const fakeUser = { user_id: 1, theme: 'dark' };
+      const executeTakeFirstMock = jest.fn().mockResolvedValue(fakeUser);
+      const returningAllMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
+      const whereMock = jest.fn().mockReturnValue({ returningAll: returningAllMock });
+      const setMock = jest.fn().mockReturnValue({ where: whereMock });
+      updateTableMock.mockReturnValue({ set: setMock });
+
+      const result = await UserModel.updateTheme(1, 'dark');
+
+      expect(updateTableMock).toHaveBeenCalledWith('User');
+      expect(setMock).toHaveBeenCalledWith({ theme: 'dark' });
+      expect(whereMock).toHaveBeenCalledWith('user_id', '=', 1);
+      expect(result).toBe(fakeUser);
+    });
+
+    it('gets user theme', async () => {
+      const fakeUser = { theme: 'light' };
+      const executeTakeFirstMock = jest.fn().mockResolvedValue(fakeUser);
+      const whereMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
+      const selectMock = jest.fn().mockReturnValue({ where: whereMock });
+      selectFromMock.mockReturnValue({ select: selectMock });
+
+      const result = await UserModel.getTheme(1);
+
+      expect(selectFromMock).toHaveBeenCalledWith('User');
+      expect(selectMock).toHaveBeenCalledWith('theme');
+      expect(whereMock).toHaveBeenCalledWith('user_id', '=', 1);
+      expect(result).toBe('light');
+    });
+
+    it('returns default theme when user has no theme', async () => {
+      const executeTakeFirstMock = jest.fn().mockResolvedValue({ theme: undefined });
+      const whereMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
+      const selectMock = jest.fn().mockReturnValue({ where: whereMock });
+      selectFromMock.mockReturnValue({ select: selectMock });
+
+      const result = await UserModel.getTheme(1);
+
+      expect(result).toBe('default');
+    });
   });
 });

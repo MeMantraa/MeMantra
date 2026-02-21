@@ -32,6 +32,7 @@ export interface UserTable {
   password_hash: string | null;
   device_token: string | null;
   auth_provider: string | null;
+  theme: string | null;
   created_at: string | null;
   timezone: string | null;
   recommendation_notif_sent_at: string | null;
@@ -234,7 +235,6 @@ export type MessageUpdate = Updateable<MessageTable>;
 export type MessageReaction = Selectable<MessageReactionTable>;
 export type NewMessageReaction = Insertable<MessageReactionTable>;
 export type MessageReactionUpdate = Updateable<MessageReactionTable>;
-
 
 export type Rating = Selectable<RatingTable>;
 export type NewRating = Insertable<RatingTable>;

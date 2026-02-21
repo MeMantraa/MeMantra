@@ -62,6 +62,7 @@ const mockUser = (
   timezone: null,
   recommendation_notif_sent_at: null,
   optimal_send_hour: null,
+  theme: null,
   ...overrides,
 });
 

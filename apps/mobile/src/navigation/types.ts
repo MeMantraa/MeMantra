@@ -17,4 +17,5 @@ export type RootStackParamList = {
   Reminders: undefined;
   CreateReminder: { mantraId?: number; collectionId?: number } | undefined;
   MantraAlgorithm: undefined;
+  Themes: undefined;
 };
