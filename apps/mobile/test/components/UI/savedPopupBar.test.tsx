@@ -5,8 +5,6 @@ import SavedPopupBar from '../../../components/UI/savedPopupBar';
 import { StyleSheet } from 'react-native';
 import { themes } from '../../../styles/theme';
 
-const theme = themes.default;
-
 jest.mock('../../../context/ThemeContext', () => ({
   useTheme: () => ({
     colors: {
@@ -221,13 +219,11 @@ describe('SavedPopupBar', () => {
 
     const popupBar = getByTestId('saved-popup-bar');
     const messageElement = getByText('Saved successfully');
+    const theme = themes.default;
+    const style = StyleSheet.flatten(popupBar.props.style);
 
-    expect(popupBar.props.style).toMatchObject(
-      expect.objectContaining({
-        backgroundColor: theme.white,
-        borderColor: theme.secondary,
-      }),
-    );
+    expect(style.backgroundColor).toBe(theme.white);
+    expect(style.borderColor).toBe(theme.secondary);
 
     expect(messageElement.props.style).toMatchObject(
       expect.objectContaining({
