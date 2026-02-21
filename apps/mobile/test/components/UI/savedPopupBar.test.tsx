@@ -219,11 +219,13 @@ describe('SavedPopupBar', () => {
 
     const popupBar = getByTestId('saved-popup-bar');
     const messageElement = getByText('Saved successfully');
-    const theme = themes.default;
-    const style = StyleSheet.flatten(popupBar.props.style);
 
-    expect(style.backgroundColor).toBe(theme.white);
-    expect(style.borderColor).toBe(theme.secondary);
+    const styleProp = popupBar.props.style;
+    const theme = themes.default;
+    const mergedStyle = Object.assign({}, ...(Array.isArray(styleProp) ? styleProp : [styleProp]));
+
+    expect(mergedStyle.backgroundColor).toBe(theme.white);
+    expect(mergedStyle.borderColor).toBe(theme.secondary);
 
     expect(messageElement.props.style).toMatchObject(
       expect.objectContaining({
