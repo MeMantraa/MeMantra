@@ -221,7 +221,7 @@ describe('SavedPopupBar', () => {
 
     expect(StyleSheet.flatten(popupBar.props.style)).toMatchObject(
       expect.objectContaining({
-        backgroundColor: '#ff9900',
+        backgroundColor: '#ffffff',
         borderColor: '#ff9900',
       }),
     );
