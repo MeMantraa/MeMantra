@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 
 // Verify transporter configuration
 if (process.env.NODE_ENV !== 'test' && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-  transporter.verify((error) => {
+  transporter.verify((error: Error | null) => {
     if (error) {
       console.error('Email service configuration error:', error);
     } else {
