@@ -5,6 +5,7 @@ import { AuthController } from '../../src/controllers/auth.controller';
 import { UserModel } from '../../src/models/user.model';
 import * as jwtUtils from '../../src/utils/jwt.utils';
 import bcrypt from 'bcryptjs';
+import { EmailVerificationTokenModel } from '../../src/models/email-verification-token.model';
 
 jest.mock('../../src/models/user.model');
 jest.mock('../../src/utils/jwt.utils');
@@ -22,6 +23,15 @@ jest.mock('../../src/services/email.service', () => ({
   emailService: {
     generate6DigitCode: jest.fn(),
     send6DigitCode: jest.fn(),
+  },
+}));
+jest.mock('../../src/models/email-verification-token.model', () => ({
+  EmailVerificationTokenModel: {
+    findValidToken: jest.fn(),
+    deleteByEmail: jest.fn(),
+    create: jest.fn(),
+    getLastTokenTime: jest.fn(),
+    deleteExpired: jest.fn(),
   },
 }));
 
@@ -48,6 +58,8 @@ describe('AuthController', () => {
 
   describe('register', () => {
     it('should register a user successfully', async () => {
+      (EmailVerificationTokenModel.findValidToken as jest.Mock).mockResolvedValue({ id: 1, email: 'test@example.com', code: '123456' });
+      (EmailVerificationTokenModel.deleteByEmail as jest.Mock).mockResolvedValue(undefined);
       (UserModel.findByEmail as jest.Mock).mockResolvedValue(null);
       (UserModel.findByUsername as jest.Mock).mockResolvedValue(null);
       (UserModel.create as jest.Mock).mockResolvedValue({
@@ -59,7 +71,7 @@ describe('AuthController', () => {
 
       const res = await request(app)
         .post('/register')
-        .send({ username: 'testuser', email: 'test@example.com', password: 'pass1234' });
+        .send({ username: 'testuser', email: 'test@example.com', password: 'pass1234', code: '123456' });
 
       expect(res.status).toBe(201);
       expect(res.body).toMatchObject({
@@ -77,11 +89,12 @@ describe('AuthController', () => {
     });
 
     it('should not register if email already exists', async () => {
+      (EmailVerificationTokenModel.findValidToken as jest.Mock).mockResolvedValue({ id: 1, email: 'taken@email.com', code: '123456' });
       (UserModel.findByEmail as jest.Mock).mockResolvedValue({ user_id: 2 });
 
       const res = await request(app)
         .post('/register')
-        .send({ username: 'userx', email: 'taken@email.com', password: 'pass' });
+        .send({ username: 'userx', email: 'taken@email.com', password: 'pass', code: '123456' });
 
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
@@ -91,12 +104,13 @@ describe('AuthController', () => {
     });
 
     it('should not register if username already exists', async () => {
+      (EmailVerificationTokenModel.findValidToken as jest.Mock).mockResolvedValue({ id: 1, email: 'new@email.com', code: '123456' });
       (UserModel.findByEmail as jest.Mock).mockResolvedValue(null);
       (UserModel.findByUsername as jest.Mock).mockResolvedValue({ user_id: 3 });
 
       const res = await request(app)
         .post('/register')
-        .send({ username: 'existinguser', email: 'new@email.com', password: 'pass' });
+        .send({ username: 'existinguser', email: 'new@email.com', password: 'pass', code: '123456' });
 
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
@@ -260,6 +274,8 @@ describe('AuthController', () => {
   });
 
   it('should generate token with empty email if newUser.email is missing', async () => {
+  (EmailVerificationTokenModel.findValidToken as jest.Mock).mockResolvedValue({ id: 1, email: '', code: '123456' });
+  (EmailVerificationTokenModel.deleteByEmail as jest.Mock).mockResolvedValue(undefined);
   (UserModel.findByEmail as jest.Mock).mockResolvedValue(null);
   (UserModel.findByUsername as jest.Mock).mockResolvedValue(null);
   (UserModel.create as jest.Mock).mockResolvedValue({
@@ -271,7 +287,7 @@ describe('AuthController', () => {
 
   const res = await request(app)
     .post('/register')
-    .send({ username: 'userNoEmail', email: '', password: 'pass1234' });
+    .send({ username: 'userNoEmail', email: '', password: 'pass1234', code: '123456' });
 
   expect(res.status).toBe(201);
   expect(res.body.data.token).toBe('jwt-token');
