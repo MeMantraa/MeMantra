@@ -77,7 +77,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
 
       {/* Input Container */}
       <View
-        className="flex-row items-end px-3 py-2 border-t"
+        className="flex-row pb-8 pl-5 pr-5 items-end px-3 py-2 border-t"
         style={{
           backgroundColor: colors.primary,
           borderTopColor: `${colors.primaryDark}33`,
@@ -101,7 +101,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
         <TouchableOpacity
           className="w-[40px] h-[40px] rounded-[20px] items-center justify-center ml-2"
           style={{
-            backgroundColor: message.trim() ? colors.secondary : `${colors.secondary}66`,
+            backgroundColor: message.trim() ? colors.primaryDark : `${colors.primaryDark}66`,
           }}
           onPress={handleSend}
           disabled={disabled || !message.trim()}
@@ -110,7 +110,7 @@ const ChatInput: React.FC<ChatInputProps> = ({
           <Ionicons
             name="send"
             size={20}
-            color={message.trim() ? colors.primaryDark : `${colors.primaryDark}66`}
+            color={message.trim() ? colors.white : `${colors.white}66`}
           />
         </TouchableOpacity>
       </View>

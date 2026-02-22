@@ -75,7 +75,7 @@ const ChatList: React.FC<ChatListProps> = ({ conversations, loading, onConversat
         <TouchableOpacity
           className="flex-row px-3 py-4 rounded-xl mb-2"
           style={{
-            backgroundColor: `${colors.primaryDark}33`,
+            backgroundColor: colors.white,
           }}
           onPress={() => onConversationPress(item)}
         >
@@ -83,13 +83,13 @@ const ChatList: React.FC<ChatListProps> = ({ conversations, loading, onConversat
             <View
               className="w-[50px] h-[50px] rounded-full items-center justify-center"
               style={{
-                backgroundColor: colors.secondary,
+                backgroundColor: colors.primaryDark,
               }}
             >
               <AppText
                 className="text-[20px] font-bold"
                 style={{
-                  color: colors.primaryDark,
+                  color: colors.text,
                 }}
               >
                 {item.participant_username.charAt(0).toUpperCase()}
@@ -102,7 +102,7 @@ const ChatList: React.FC<ChatListProps> = ({ conversations, loading, onConversat
               <AppText
                 className="text-[17px] font-semibold"
                 style={{
-                  color: colors.text,
+                  color: colors.primaryDark,
                 }}
                 numberOfLines={1}
               >
@@ -111,7 +111,7 @@ const ChatList: React.FC<ChatListProps> = ({ conversations, loading, onConversat
               <AppText
                 className="text-[12px]"
                 style={{
-                  color: `${colors.text}99`,
+                  color: `${colors.primaryDark}99`,
                 }}
               >
                 {formatTime(item.last_message_time)}
@@ -122,7 +122,7 @@ const ChatList: React.FC<ChatListProps> = ({ conversations, loading, onConversat
               <AppText
                 className="text-[14px] flex-1"
                 style={{
-                  color: `${colors.text}cc`,
+                  color: `${colors.primaryDark}cc`,
                 }}
                 numberOfLines={1}
               >

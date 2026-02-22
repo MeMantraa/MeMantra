@@ -93,7 +93,7 @@ export default function SavedPopupBar({
         bottom: Platform.OS === 'ios' ? 34 : 16,
         opacity,
         transform: [{ translateY }],
-        backgroundColor: colors.secondary,
+        backgroundColor: colors.white,
         borderColor: colors.secondary,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
@@ -164,7 +164,7 @@ export default function SavedPopupBar({
                   <Ionicons
                     name={hoveredStar >= star ? 'star' : 'star-outline'}
                     size={28}
-                    color={colors.primaryDark ?? '#fff'}
+                    color={colors.secondary ?? '#fff'}
                     style={{
                       opacity: hoveredStar >= star ? 1 : 0.6,
                     }}

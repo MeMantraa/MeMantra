@@ -181,7 +181,7 @@ export default function CollectionsScreen({ navigation }: any) {
   if (loading) {
     return (
       <View className="flex-1" style={{ backgroundColor: colors.primary }}>
-        <View className="pt-[20px] pb-4 px-[30px]" style={{ backgroundColor: colors.primary }}>
+        <View className="pt-[60px] pb-4 px-[30px]" style={{ backgroundColor: colors.primary }}>
           <AppText className="text-[30px] font-bold" style={{ color: colors.text }}>
             Collections
           </AppText>
