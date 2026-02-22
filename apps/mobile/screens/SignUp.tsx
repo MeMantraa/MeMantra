@@ -39,6 +39,7 @@ export default function SignUpScreen({ navigation }: any) {
         username: username.trim(),
         email: email.trim().toLowerCase(),
         password: password.trim(),
+        code: '',
       });
 
       if (response.status === 'success') {
