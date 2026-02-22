@@ -2,8 +2,9 @@ import { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import { UserModel } from '../models/user.model';
 import { PasswordResetTokenModel } from '../models/password-reset-token.model';
+import { EmailVerificationTokenModel } from '../models/email-verification-token.model';
 import { generateToken } from '../utils/jwt.utils';
-import { RegisterInput, LoginInput } from '../validators/auth.validator';
+import { LoginInput } from '../validators/auth.validator';
 import { emailService } from '../services/email.service';
 
 // Helper function to verify reset code and return user
@@ -26,35 +27,50 @@ async function verifyResetCodeAndGetUser(email: string, code: string) {
 export const AuthController = {
   async register(req: Request, res: Response) {
     try {
-      const userData = req.body as RegisterInput;
-      
+      const { username, email, password, code, device_token } = req.body;
+
+      const trimmedEmail = email.toLowerCase().trim();
+      const trimmedCode = code.trim();
+
+      // Verify the email verification code before creating the account
+      const validToken = await EmailVerificationTokenModel.findValidToken(trimmedEmail, trimmedCode);
+      if (!validToken) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Invalid or expired verification code. Please verify your email again.',
+        });
+      }
+
       //check if user exists by email
-      const existingUserByEmail = await UserModel.findByEmail(userData.email);
+      const existingUserByEmail = await UserModel.findByEmail(trimmedEmail);
       if (existingUserByEmail) {
         return res.status(400).json({
           status: 'error',
           message: 'Email already in use',
         });
       }
-      
+
       //check if username exists
-      const existingUserByUsername = await UserModel.findByUsername(userData.username);
+      const existingUserByUsername = await UserModel.findByUsername(username);
       if (existingUserByUsername) {
         return res.status(400).json({
           status: 'error',
           message: 'Username already taken',
         });
       }
-      
+
       //create new user
-      const newUser = await UserModel.create(userData);
-      
+      const newUser = await UserModel.create({ username, email: trimmedEmail, password, device_token });
+
+      // Clean up the verification token
+      await EmailVerificationTokenModel.deleteByEmail(trimmedEmail);
+
       //generate JWT
       const token = generateToken({
         userId: newUser.user_id,
         email: newUser.email || '',
       });
-      
+
       return res.status(201).json({
         status: 'success',
         message: 'User registered successfully',
@@ -423,6 +439,114 @@ async updateEmail(req: Request, res: Response) {
       return res.status(500).json({
         status: 'error',
         message: 'Error resetting password',
+      });
+    }
+  },
+
+  // Step 1 of signup: check email availability, generate & send verification code
+  async sendSignupCode(req: Request, res: Response) {
+    try {
+      const { email } = req.body;
+
+      if (!email || typeof email !== 'string') {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Email is required',
+        });
+      }
+
+      const trimmedEmail = email.toLowerCase().trim();
+
+      // Check if email is already registered
+      const existingUser = await UserModel.findByEmail(trimmedEmail);
+      if (existingUser) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'This email is already in use by another account',
+        });
+      }
+
+      // Rate-limit: only allow a new code every 60 seconds
+      const lastTokenTime = await EmailVerificationTokenModel.getLastTokenTime(trimmedEmail);
+      if (lastTokenTime) {
+        const secondsSinceLastToken = (Date.now() - lastTokenTime.getTime()) / 1000;
+        if (secondsSinceLastToken < 60) {
+          const waitTime = Math.ceil(60 - secondsSinceLastToken);
+          return res.status(429).json({
+            status: 'error',
+            message: `Please wait ${waitTime} seconds before requesting another code`,
+            waitTime,
+          });
+        }
+      }
+
+      // Generate and store verification code
+      const code = emailService.generate6DigitCode();
+      await EmailVerificationTokenModel.create(trimmedEmail, code, 10);
+
+      // Send verification email
+      const emailSent = await emailService.sendSignupVerificationCode(trimmedEmail, code);
+      if (!emailSent) {
+        return res.status(500).json({
+          status: 'error',
+          message: 'Failed to send verification email. Please try again later.',
+        });
+      }
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Verification code sent to your email',
+      });
+    } catch (error) {
+      console.error('Send signup code error:', error);
+      return res.status(500).json({
+        status: 'error',
+        message: 'Error sending verification code',
+      });
+    }
+  },
+
+  // Step 2 of signup: verify the 6-digit code (account not created yet)
+  async verifySignupCode(req: Request, res: Response) {
+    try {
+      const { email, code } = req.body;
+
+      if (!email || typeof email !== 'string' || !code || typeof code !== 'string') {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Email and verification code are required',
+        });
+      }
+
+      const trimmedCode = code.trim();
+
+      if (trimmedCode.length !== 6 || !/^\d{6}$/.test(trimmedCode)) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Invalid verification code format',
+        });
+      }
+
+      const trimmedEmail = email.toLowerCase().trim();
+
+      const validToken = await EmailVerificationTokenModel.findValidToken(trimmedEmail, trimmedCode);
+      if (!validToken) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Invalid or expired verification code',
+        });
+      }
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Email verified successfully',
+        data: { email: trimmedEmail },
+      });
+    } catch (error) {
+      console.error('Verify signup code error:', error);
+      return res.status(500).json({
+        status: 'error',
+        message: 'Error verifying code',
       });
     }
   },
