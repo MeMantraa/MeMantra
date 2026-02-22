@@ -213,7 +213,8 @@ export const sendSignupVerificationCode = async (email: string, code: string): P
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`Signup verification code sent successfully to ${email}`);
+    const safeEmail = email.replace(/[\r\n]/g, '');
+    console.log(`Signup verification code sent successfully to ${safeEmail}`);
     return true;
   } catch (error) {
     console.error('Error sending signup verification email:', error);
