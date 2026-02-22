@@ -645,7 +645,7 @@ describe('Password Reset Flow', () => {
       expect(res.status).toBe(500);
       expect(res.body).toMatchObject({
         status: 'error',
-        message: 'Failed to send verification email. Please try again later',
+        message: 'Failed to send verification email. Please try again later.',
       });
     });
 
