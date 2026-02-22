@@ -20,6 +20,7 @@ export interface Database {
   JournalEntry: JournalEntryTable;
   UserCategoryScore: UserCategoryScoreTable;
   EngagementEvent: EngagementEventTable;
+  EmailVerificationToken: EmailVerificationTokenTable;
 }
 
 //table interfaces
@@ -248,6 +249,14 @@ export type UserCategoryScore = Selectable<UserCategoryScoreTable>;
 export type NewUserCategoryScore = Insertable<UserCategoryScoreTable>;
 export type UserCategoryScoreUpdate = Updateable<UserCategoryScoreTable>;
 
+export interface EmailVerificationTokenTable {
+  token_id: Generated<number>;
+  email: string;
+  code: string;
+  expires_at: string;
+  created_at: string | null;
+}
+
 export interface EngagementEventTable {
   event_id: Generated<number>;
   user_id: number;
@@ -258,3 +267,6 @@ export interface EngagementEventTable {
 export type EngagementEvent = Selectable<EngagementEventTable>;
 export type NewEngagementEvent = Insertable<EngagementEventTable>;
 export type EngagementEventUpdate = Updateable<EngagementEventTable>;
+
+export type EmailVerificationToken = Selectable<EmailVerificationTokenTable>;
+export type NewEmailVerificationToken = Insertable<EmailVerificationTokenTable>;
