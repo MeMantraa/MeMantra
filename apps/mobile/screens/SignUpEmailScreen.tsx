@@ -4,6 +4,7 @@ import { View, TouchableOpacity, Image, Alert } from 'react-native';
 import logo from '../assets/logo.png';
 import { authService } from '../services/auth.service';
 import { useTheme } from '../context/ThemeContext';
+import { isValidEmail } from '../utils/validation';
 import AppTextInput from '../components/UI/textInputWrapper';
 import AppText from '../components/UI/textWrapper';
 
@@ -20,16 +21,7 @@ export default function SignUpEmailScreen({ navigation }: any) {
 
     const trimmedEmail = email.trim().toLowerCase();
 
-    // Basic email validation
-    const atIndex = trimmedEmail.indexOf('@');
-    const lastDotIndex = trimmedEmail.lastIndexOf('.');
-
-    if (
-      atIndex <= 0 ||
-      lastDotIndex <= atIndex + 1 ||
-      lastDotIndex >= trimmedEmail.length - 1 ||
-      trimmedEmail.includes(' ')
-    ) {
+    if (!isValidEmail(trimmedEmail)) {
       Alert.alert('Error', 'Please enter a valid email address');
       return;
     }

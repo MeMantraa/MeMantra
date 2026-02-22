@@ -7,19 +7,61 @@ import { generateToken } from '../utils/jwt.utils';
 import { LoginInput } from '../validators/auth.validator';
 import { emailService } from '../services/email.service';
 
-// Helper function to verify reset code and return user
-async function verifyResetCodeAndGetUser(email: string, code: string) {
-  // Find user
-  const user = await UserModel.findByEmail(email.toLowerCase().trim());
-  if (!user) {
-    return null;
-  }
+// Standard JSON error response
+function errorResponse(res: Response, status: number, message: string, extra?: Record<string, unknown>) {
+  return res.status(status).json({ status: 'error', message, ...extra });
+}
 
-  // Verify code
-  const validToken = await PasswordResetTokenModel.findValidToken(user.user_id, code.trim());
-  if (!validToken) {
-    return null;
+// Standard JSON success response
+function successResponse(res: Response, message: string, data?: Record<string, unknown>, status = 200) {
+  return res.status(status).json({ status: 'success', message, ...(data ? { data } : {}) });
+}
+
+// Validate that a trimmed 6-digit code string is well-formed
+function isValid6DigitCode(code: string): boolean {
+  return code.length === 6 && /^\d{6}$/.test(code);
+}
+
+// Check rate-limit: returns waitTime (seconds) if too soon, else null
+async function checkRateLimit(
+  getLastTokenTime: (key: string | number) => Promise<Date | null>,
+  key: string | number,
+  cooldownSeconds = 60,
+): Promise<number | null> {
+  const lastTokenTime = await getLastTokenTime(key);
+  if (lastTokenTime) {
+    const elapsed = (Date.now() - lastTokenTime.getTime()) / 1000;
+    if (elapsed < cooldownSeconds) {
+      return Math.ceil(cooldownSeconds - elapsed);
+    }
   }
+  return null;
+}
+
+// Generate a verification code, persist it, and email it
+async function generateAndSendCode(
+  res: Response,
+  email: string,
+  createToken: (email: string, code: string, minutes: number) => Promise<unknown>,
+  sendEmail: (email: string, code: string) => Promise<boolean>,
+) {
+  const code = emailService.generate6DigitCode();
+  await createToken(email, code, 10);
+
+  const emailSent = await sendEmail(email, code);
+  if (!emailSent) {
+    return { sent: false, res: errorResponse(res, 500, 'Failed to send verification email. Please try again later.') };
+  }
+  return { sent: true };
+}
+
+// Verify reset code and return user
+async function verifyResetCodeAndGetUser(email: string, code: string) {
+  const user = await UserModel.findByEmail(email.toLowerCase().trim());
+  if (!user) return null;
+
+  const validToken = await PasswordResetTokenModel.findValidToken(user.user_id, code.trim());
+  if (!validToken) return null;
 
   return user;
 }
@@ -273,123 +315,70 @@ async updateEmail(req: Request, res: Response) {
       const { email } = req.body;
 
       if (!email || typeof email !== 'string') {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Email is required',
-        });
+        return errorResponse(res, 400, 'Email is required');
       }
 
       // Find user by email
       const user = await UserModel.findByEmail(email.toLowerCase().trim());
 
-      // For security, will always return success even if user doesn't exist
-      // This prevents email enumeration attacks
       if (!user) {
-        return res.status(200).json({
-          status: 'success',
-          message: 'If an account exists with this email, a verification code has been sent',
-        });
+        return successResponse(res, 'If an account exists with this email, a verification code has been sent');
       }
 
-      // only allow resend after 60 seconds
-      const lastTokenTime = await PasswordResetTokenModel.getLastTokenTime(user.user_id);
-      if (lastTokenTime) {
-        const secondsSinceLastToken = (Date.now() - lastTokenTime.getTime()) / 1000;
-        if (secondsSinceLastToken < 60) {
-          const waitTime = Math.ceil(60 - secondsSinceLastToken);
-          return res.status(429).json({
-            status: 'error',
-            message: `Please wait ${waitTime} seconds before requesting another code`,
-            waitTime,
-          });
-        }
+      // Rate-limit
+      const waitTime = await checkRateLimit(
+        (id) => PasswordResetTokenModel.getLastTokenTime(id as number),
+        user.user_id,
+      );
+      if (waitTime) {
+        return errorResponse(res, 429, `Please wait ${waitTime} seconds before requesting another code`, { waitTime });
       }
 
-      // Generate 6-digit code
-      const code = emailService.generate6DigitCode();
+      // Generate, persist, and send code
+      const result = await generateAndSendCode(
+        res,
+        user.email!,
+        (_, code, mins) => PasswordResetTokenModel.create(user.user_id, code, mins),
+        (addr, code) => emailService.send6DigitCode(addr, code),
+      );
+      if (!result.sent) return result.res;
 
-      // Save token to database (expires in 10 minutes)
-      await PasswordResetTokenModel.create(user.user_id, code, 10);
-
-      // Send email with code
-      const emailSent = await emailService.send6DigitCode(user.email!, code);
-
-      if (!emailSent) {
-        return res.status(500).json({
-          status: 'error',
-          message: 'Failed to send verification email. Please try again later',
-        });
-      }
-
-      return res.status(200).json({
-        status: 'success',
-        message: 'Verification code sent to your email',
-      });
+      return successResponse(res, 'Verification code sent to your email');
     } catch (error) {
       console.error('Forgot password error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error processing password reset request',
-      });
+      return errorResponse(res, 500, 'Error processing password reset request');
     }
   },
 
   // Verify the 6-digit code
-   
   async verifyResetCode(req: Request, res: Response) {
     try {
       const { email, code } = req.body;
 
       if (!email || typeof email !== 'string' || !code || typeof code !== 'string') {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Email and verification code are required',
-        });
+        return errorResponse(res, 400, 'Email and verification code are required');
       }
 
       const trimmedCode = code.trim();
-      
-      // Validate code format BEFORE any database queries
-      if (trimmedCode.length !== 6 || !/^\d{6}$/.test(trimmedCode)) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Invalid verification code format',
-        });
+
+      if (!isValid6DigitCode(trimmedCode)) {
+        return errorResponse(res, 400, 'Invalid verification code format');
       }
 
-      // Find user (only after validating code format)
       const user = await UserModel.findByEmail(email.toLowerCase().trim());
-      
       if (!user) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Invalid or expired verification code',
-        });
-      }
-      
-      // Verify code
-      const validToken = await PasswordResetTokenModel.findValidToken(user.user_id, trimmedCode);
-      
-      if (!validToken) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Invalid or expired verification code',
-        });
+        return errorResponse(res, 400, 'Invalid or expired verification code');
       }
 
-      return res.status(200).json({
-        status: 'success',
-        message: 'Code verified successfully',
-        data: {
-          email: user.email,
-        },
-      });
+      const validToken = await PasswordResetTokenModel.findValidToken(user.user_id, trimmedCode);
+      if (!validToken) {
+        return errorResponse(res, 400, 'Invalid or expired verification code');
+      }
+
+      return successResponse(res, 'Code verified successfully', { email: user.email });
     } catch (error) {
       console.error('Verify code error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error verifying code',
-      });
+      return errorResponse(res, 500, 'Error verifying code');
     }
   },
 
@@ -449,10 +438,7 @@ async updateEmail(req: Request, res: Response) {
       const { email } = req.body;
 
       if (!email || typeof email !== 'string') {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Email is required',
-        });
+        return errorResponse(res, 400, 'Email is required');
       }
 
       const trimmedEmail = email.toLowerCase().trim();
@@ -460,49 +446,31 @@ async updateEmail(req: Request, res: Response) {
       // Check if email is already registered
       const existingUser = await UserModel.findByEmail(trimmedEmail);
       if (existingUser) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'This email is already in use by another account',
-        });
+        return errorResponse(res, 400, 'This email is already in use by another account');
       }
 
-      // Rate-limit: only allow a new code every 60 seconds
-      const lastTokenTime = await EmailVerificationTokenModel.getLastTokenTime(trimmedEmail);
-      if (lastTokenTime) {
-        const secondsSinceLastToken = (Date.now() - lastTokenTime.getTime()) / 1000;
-        if (secondsSinceLastToken < 60) {
-          const waitTime = Math.ceil(60 - secondsSinceLastToken);
-          return res.status(429).json({
-            status: 'error',
-            message: `Please wait ${waitTime} seconds before requesting another code`,
-            waitTime,
-          });
-        }
+      // Rate-limit
+      const waitTime = await checkRateLimit(
+        (addr) => EmailVerificationTokenModel.getLastTokenTime(addr as string),
+        trimmedEmail,
+      );
+      if (waitTime) {
+        return errorResponse(res, 429, `Please wait ${waitTime} seconds before requesting another code`, { waitTime });
       }
 
-      // Generate and store verification code
-      const code = emailService.generate6DigitCode();
-      await EmailVerificationTokenModel.create(trimmedEmail, code, 10);
+      // Generate, persist, and send code
+      const result = await generateAndSendCode(
+        res,
+        trimmedEmail,
+        (addr, code, mins) => EmailVerificationTokenModel.create(addr, code, mins),
+        (addr, code) => emailService.sendSignupVerificationCode(addr, code),
+      );
+      if (!result.sent) return result.res;
 
-      // Send verification email
-      const emailSent = await emailService.sendSignupVerificationCode(trimmedEmail, code);
-      if (!emailSent) {
-        return res.status(500).json({
-          status: 'error',
-          message: 'Failed to send verification email. Please try again later.',
-        });
-      }
-
-      return res.status(200).json({
-        status: 'success',
-        message: 'Verification code sent to your email',
-      });
+      return successResponse(res, 'Verification code sent to your email');
     } catch (error) {
       console.error('Send signup code error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error sending verification code',
-      });
+      return errorResponse(res, 500, 'Error sending verification code');
     }
   },
 
@@ -512,42 +480,26 @@ async updateEmail(req: Request, res: Response) {
       const { email, code } = req.body;
 
       if (!email || typeof email !== 'string' || !code || typeof code !== 'string') {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Email and verification code are required',
-        });
+        return errorResponse(res, 400, 'Email and verification code are required');
       }
 
       const trimmedCode = code.trim();
 
-      if (trimmedCode.length !== 6 || !/^\d{6}$/.test(trimmedCode)) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Invalid verification code format',
-        });
+      if (!isValid6DigitCode(trimmedCode)) {
+        return errorResponse(res, 400, 'Invalid verification code format');
       }
 
       const trimmedEmail = email.toLowerCase().trim();
 
       const validToken = await EmailVerificationTokenModel.findValidToken(trimmedEmail, trimmedCode);
       if (!validToken) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Invalid or expired verification code',
-        });
+        return errorResponse(res, 400, 'Invalid or expired verification code');
       }
 
-      return res.status(200).json({
-        status: 'success',
-        message: 'Email verified successfully',
-        data: { email: trimmedEmail },
-      });
+      return successResponse(res, 'Email verified successfully', { email: trimmedEmail });
     } catch (error) {
       console.error('Verify signup code error:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Error verifying code',
-      });
+      return errorResponse(res, 500, 'Error verifying code');
     }
   },
 
