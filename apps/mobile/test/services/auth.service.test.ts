@@ -31,7 +31,12 @@ describe('authService', () => {
   });
 
   it('calls the register endpoint and returns the response data', async () => {
-    const payload = { username: 'newuser', email: 'new@example.com', password: 'pass123' };
+    const payload = {
+      username: 'newuser',
+      email: 'new@example.com',
+      password: 'pass123',
+      code: '123456',
+    };
     const data = { status: 'success' };
     mockPost.mockResolvedValueOnce({ data });
 
