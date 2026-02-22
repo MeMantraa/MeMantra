@@ -16,7 +16,7 @@
     "android:build": "pnpm --filter mobile android:build",
     "lint": "turbo run lint",
     "build": "turbo run build",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "keywords": [],
   "author": "",
