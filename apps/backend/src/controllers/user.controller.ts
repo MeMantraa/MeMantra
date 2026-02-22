@@ -247,7 +247,11 @@ export const UserController = {
 
       const updated = await UserModel.addFlag(userId, flag);
       if (!updated) {
-        return sendError(res, 404, 'User not found');
+        const existing = await UserModel.findById(userId);
+        if (!existing) {
+          return sendError(res, 404, 'User not found');
+        }
+        return sendFeatureFlagResponse(res, existing, `Feature flag already enabled: ${flag}`);
       }
 
       return sendFeatureFlagResponse(res, updated, `Feature flag enabled: ${flag}`);
