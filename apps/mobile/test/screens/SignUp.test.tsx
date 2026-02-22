@@ -125,6 +125,7 @@ describe('SignUpScreen', () => {
         username: 'John',
         email: 'john@memantra.com',
         password: 'memantra',
+        code: '',
       });
 
       expect(storage.saveToken).toHaveBeenCalledWith('fake-token');
