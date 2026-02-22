@@ -23,6 +23,7 @@ jest.mock('../../src/services/email.service', () => ({
   emailService: {
     generate6DigitCode: jest.fn(),
     send6DigitCode: jest.fn(),
+    sendSignupVerificationCode: jest.fn(),
   },
 }));
 jest.mock('../../src/models/email-verification-token.model', () => ({
@@ -85,6 +86,20 @@ describe('AuthController', () => {
           },
           token: 'jwt-token',
         },
+      });
+    });
+
+    it('should return error if verification code is invalid or expired', async () => {
+      (EmailVerificationTokenModel.findValidToken as jest.Mock).mockResolvedValue(null);
+
+      const res = await request(app)
+        .post('/register')
+        .send({ username: 'testuser', email: 'test@example.com', password: 'pass1234', code: '999999' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Invalid or expired verification code. Please verify your email again.',
       });
     });
 
@@ -518,6 +533,8 @@ describe('Password Reset Flow', () => {
   app.post('/forgot-password', AuthController.forgotPassword);
   app.post('/verify-reset-code', AuthController.verifyResetCode);
   app.post('/reset-password', AuthController.resetPassword);
+  app.post('/send-signup-code', AuthController.sendSignupCode);
+  app.post('/verify-signup-code', AuthController.verifySignupCode);
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -689,6 +706,18 @@ describe('Password Reset Flow', () => {
       });
     });
 
+    it('should return error if code format is invalid', async () => {
+      const res = await request(app)
+        .post('/verify-reset-code')
+        .send({ email: 'user@example.com', code: 'abc' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Invalid verification code format',
+      });
+    });
+
     it('should return error if user does not exist', async () => {
       (UserModel.findByEmail as jest.Mock).mockResolvedValue(null);
 
@@ -771,6 +800,190 @@ describe('Password Reset Flow', () => {
 
       const res = await request(app)
         .post('/verify-reset-code')
+        .send({ email: 'user@example.com', code: '123456' });
+
+      expect(res.status).toBe(500);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Error verifying code',
+      });
+    });
+  });
+
+  describe('sendSignupCode', () => {
+    it('should return error if email is missing', async () => {
+      const res = await request(app)
+        .post('/send-signup-code')
+        .send({});
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Email is required',
+      });
+    });
+
+    it('should return error if email is not a string', async () => {
+      const res = await request(app)
+        .post('/send-signup-code')
+        .send({ email: 123 });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Email is required',
+      });
+    });
+
+    it('should return error if email is already registered', async () => {
+      (UserModel.findByEmail as jest.Mock).mockResolvedValue({ user_id: 1 });
+
+      const res = await request(app)
+        .post('/send-signup-code')
+        .send({ email: 'existing@example.com' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'This email is already in use by another account',
+      });
+    });
+
+    it('should return 429 if rate limited', async () => {
+      (UserModel.findByEmail as jest.Mock).mockResolvedValue(null);
+      (EmailVerificationTokenModel.getLastTokenTime as jest.Mock).mockResolvedValue(new Date());
+
+      const res = await request(app)
+        .post('/send-signup-code')
+        .send({ email: 'new@example.com' });
+
+      expect(res.status).toBe(429);
+      expect(res.body.status).toBe('error');
+      expect(res.body.message).toMatch(/Please wait \d+ seconds/);
+    });
+
+    it('should return error if email sending fails', async () => {
+      (UserModel.findByEmail as jest.Mock).mockResolvedValue(null);
+      (EmailVerificationTokenModel.getLastTokenTime as jest.Mock).mockResolvedValue(null);
+      (emailService.generate6DigitCode as jest.Mock).mockReturnValue('123456');
+      (EmailVerificationTokenModel.create as jest.Mock).mockResolvedValue(undefined);
+      (emailService.sendSignupVerificationCode as jest.Mock).mockResolvedValue(false);
+
+      const res = await request(app)
+        .post('/send-signup-code')
+        .send({ email: 'new@example.com' });
+
+      expect(res.status).toBe(500);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Failed to send verification email. Please try again later.',
+      });
+    });
+
+    it('should send verification code successfully', async () => {
+      (UserModel.findByEmail as jest.Mock).mockResolvedValue(null);
+      (EmailVerificationTokenModel.getLastTokenTime as jest.Mock).mockResolvedValue(null);
+      (emailService.generate6DigitCode as jest.Mock).mockReturnValue('123456');
+      (EmailVerificationTokenModel.create as jest.Mock).mockResolvedValue(undefined);
+      (emailService.sendSignupVerificationCode as jest.Mock).mockResolvedValue(true);
+
+      const res = await request(app)
+        .post('/send-signup-code')
+        .send({ email: 'new@example.com' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Verification code sent to your email',
+      });
+    });
+
+    it('should handle server errors gracefully', async () => {
+      (UserModel.findByEmail as jest.Mock).mockRejectedValue(new Error('DB error'));
+
+      const res = await request(app)
+        .post('/send-signup-code')
+        .send({ email: 'new@example.com' });
+
+      expect(res.status).toBe(500);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Error sending verification code',
+      });
+    });
+  });
+
+  describe('verifySignupCode', () => {
+    it('should return error if email is missing', async () => {
+      const res = await request(app)
+        .post('/verify-signup-code')
+        .send({ code: '123456' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Email and verification code are required',
+      });
+    });
+
+    it('should return error if code is missing', async () => {
+      const res = await request(app)
+        .post('/verify-signup-code')
+        .send({ email: 'user@example.com' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Email and verification code are required',
+      });
+    });
+
+    it('should return error if code format is invalid', async () => {
+      const res = await request(app)
+        .post('/verify-signup-code')
+        .send({ email: 'user@example.com', code: 'abc' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Invalid verification code format',
+      });
+    });
+
+    it('should return error if token is invalid or expired', async () => {
+      (EmailVerificationTokenModel.findValidToken as jest.Mock).mockResolvedValue(null);
+
+      const res = await request(app)
+        .post('/verify-signup-code')
+        .send({ email: 'user@example.com', code: '123456' });
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Invalid or expired verification code',
+      });
+    });
+
+    it('should verify signup code successfully', async () => {
+      (EmailVerificationTokenModel.findValidToken as jest.Mock).mockResolvedValue({ id: 1, email: 'user@example.com', code: '123456' });
+
+      const res = await request(app)
+        .post('/verify-signup-code')
+        .send({ email: '  User@Example.com  ', code: ' 123456 ' });
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Email verified successfully',
+        data: { email: 'user@example.com' },
+      });
+    });
+
+    it('should handle server errors gracefully', async () => {
+      (EmailVerificationTokenModel.findValidToken as jest.Mock).mockRejectedValue(new Error('DB error'));
+
+      const res = await request(app)
+        .post('/verify-signup-code')
         .send({ email: 'user@example.com', code: '123456' });
 
       expect(res.status).toBe(500);
