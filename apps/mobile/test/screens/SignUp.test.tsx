@@ -19,6 +19,13 @@ jest.mock('../../utils/storage', () => ({
   },
 }));
 
+const mockSetupNotifications = jest.fn();
+jest.mock('../../services/notification.service', () => ({
+  notificationService: {
+    setupNotifications: (...args: unknown[]) => mockSetupNotifications(...args),
+  },
+}));
+
 jest.mock('../../context/ThemeContext', () => ({
   useTheme: jest.fn(() => ({
     colors: {
@@ -37,6 +44,7 @@ const mockReset = jest.fn();
 describe('SignUpScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSetupNotifications.mockResolvedValue(null);
   });
 
   const setup = () => {
@@ -153,6 +161,75 @@ describe('SignUpScreen', () => {
 
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith('Sign Up Failed', 'Email already in use');
+    });
+  });
+
+  it('calls setupNotifications after successful signup', async () => {
+    mockSetupNotifications.mockResolvedValue('ExponentPushToken[xxx]');
+    (authService.register as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: {
+        token: 'fake-token',
+        user: { id: 1, username: 'John' },
+      },
+    });
+
+    const { getByPlaceholderText, getByText } = setup();
+
+    fireEvent.changeText(getByPlaceholderText('Username'), 'John');
+    fireEvent.changeText(getByPlaceholderText('Email'), 'john@memantra.com');
+    fireEvent.changeText(getByPlaceholderText('Password'), 'memantra');
+    fireEvent.changeText(getByPlaceholderText('Confirm Password'), 'memantra');
+    fireEvent.press(getByText('Sign Up'));
+
+    await waitFor(() => {
+      expect(mockSetupNotifications).toHaveBeenCalled();
+    });
+  });
+
+  it('does not call setupNotifications when signup fails', async () => {
+    (authService.register as jest.Mock).mockRejectedValue({
+      response: { data: { message: 'Email already in use' } },
+    });
+
+    const { getByPlaceholderText, getByText } = setup();
+
+    fireEvent.changeText(getByPlaceholderText('Username'), 'John');
+    fireEvent.changeText(getByPlaceholderText('Email'), 'john@memantra.com');
+    fireEvent.changeText(getByPlaceholderText('Password'), 'memantra');
+    fireEvent.changeText(getByPlaceholderText('Confirm Password'), 'memantra');
+    fireEvent.press(getByText('Sign Up'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Sign Up Failed', 'Email already in use');
+    });
+    expect(mockSetupNotifications).not.toHaveBeenCalled();
+  });
+
+  it('still shows success alert if setupNotifications fails', async () => {
+    mockSetupNotifications.mockRejectedValue(new Error('Notification setup failed'));
+    (authService.register as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: {
+        token: 'fake-token',
+        user: { id: 1, username: 'John' },
+      },
+    });
+
+    const { getByPlaceholderText, getByText } = setup();
+
+    fireEvent.changeText(getByPlaceholderText('Username'), 'John');
+    fireEvent.changeText(getByPlaceholderText('Email'), 'john@memantra.com');
+    fireEvent.changeText(getByPlaceholderText('Password'), 'memantra');
+    fireEvent.changeText(getByPlaceholderText('Confirm Password'), 'memantra');
+    fireEvent.press(getByText('Sign Up'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Success',
+        'Account created successfully!',
+        expect.any(Array),
+      );
     });
   });
 

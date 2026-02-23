@@ -17,6 +17,13 @@ jest.mock('../../utils/storage', () => ({
   },
 }));
 
+const mockSetupNotifications = jest.fn();
+jest.mock('../../services/notification.service', () => ({
+  notificationService: {
+    setupNotifications: (...args: unknown[]) => mockSetupNotifications(...args),
+  },
+}));
+
 jest.mock('../../context/ThemeContext', () => ({
   useTheme: jest.fn(() => ({
     colors: {
@@ -39,6 +46,7 @@ const setup = () => render(<LoginScreen navigation={mockNavigation} />);
 describe('LoginScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockSetupNotifications.mockResolvedValue(null);
   });
 
   const setup = () => {
@@ -109,6 +117,63 @@ describe('LoginScreen', () => {
 
     await waitFor(() => {
       expect(mockNavigate).not.toHaveBeenCalled();
+    });
+  });
+
+  it('calls setupNotifications after successful login', async () => {
+    mockSetupNotifications.mockResolvedValue('ExponentPushToken[xxx]');
+    (authService.login as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { token: 'abc123', user: { id: 1, name: 'John' } },
+    });
+
+    const { getByPlaceholderText, getByText } = setup();
+
+    fireEvent.changeText(getByPlaceholderText('Email'), 'john@memantra.com');
+    fireEvent.changeText(getByPlaceholderText('Password'), 'memantra');
+    fireEvent.press(getByText('Login'));
+
+    await waitFor(() => {
+      expect(mockSetupNotifications).toHaveBeenCalled();
+    });
+  });
+
+  it('does not call setupNotifications when login fails', async () => {
+    (authService.login as jest.Mock).mockResolvedValue({
+      status: 'error',
+      message: 'Invalid credentials',
+    });
+
+    const { getByPlaceholderText, getByText } = setup();
+
+    fireEvent.changeText(getByPlaceholderText('Email'), 'john@memantra.com');
+    fireEvent.changeText(getByPlaceholderText('Password'), 'wrong');
+    fireEvent.press(getByText('Login'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Login Failed', 'Invalid credentials');
+    });
+    expect(mockSetupNotifications).not.toHaveBeenCalled();
+  });
+
+  it('still navigates to MainApp if setupNotifications fails', async () => {
+    mockSetupNotifications.mockRejectedValue(new Error('Notification setup failed'));
+    (authService.login as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { token: 'abc123', user: { id: 1, name: 'John' } },
+    });
+
+    const { getByPlaceholderText, getByText } = setup();
+
+    fireEvent.changeText(getByPlaceholderText('Email'), 'john@memantra.com');
+    fireEvent.changeText(getByPlaceholderText('Password'), 'memantra');
+    fireEvent.press(getByText('Login'));
+
+    await waitFor(() => {
+      expect(mockReset).toHaveBeenCalledWith({
+        index: 0,
+        routes: [{ name: 'MainApp' }],
+      });
     });
   });
 
