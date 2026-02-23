@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   View,
-  Text,
-  StyleSheet,
   TouchableOpacity,
   ScrollView,
   Alert,
@@ -26,6 +24,8 @@ import {
   dateToTimeSlot,
   hasTimeConflict,
 } from '../services/schedule-suggestions.service';
+import { useTheme } from '../context/ThemeContext';
+import AppText from '../components/UI/textWrapper';
 
 type CreateReminderNavProp = StackNavigationProp<RootStackParamList>;
 
@@ -58,11 +58,11 @@ const DAY_PRESETS = scheduleSuggestionsService.getDayPresets();
 export default function CreateReminderScreen() {
   const navigation = useNavigation<CreateReminderNavProp>();
   const route = useRoute<RouteProp<RootStackParamList, 'CreateReminder'>>();
+  const { colors } = useTheme();
 
   const preselectedMantraId = (route.params as any)?.mantraId as number | undefined;
   const preselectedCollectionId = (route.params as any)?.collectionId as number | undefined;
 
-  // Common state
   const [reminderType, setReminderType] = useState<ReminderType>(
     preselectedCollectionId ? 'collection' : 'mantra',
   );
@@ -75,17 +75,14 @@ export default function CreateReminderScreen() {
   const [collections, setCollections] = useState<Collection[]>([]);
   const [loadingItems, setLoadingItems] = useState(true);
 
-  // Schedule mode
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('routine');
 
-  // Simple mode state
   const [time, setTime] = useState(new Date(Date.now() + 60 * 60 * 1000));
   const [frequency, setFrequency] = useState<SimpleFrequency>('daily');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [tempDate, setTempDate] = useState(time);
 
-  // Routine mode state
   const [scheduleTimes, setScheduleTimes] = useState<string[]>(['07:00']);
   const [scheduleDays, setScheduleDays] = useState<number[]>([0, 1, 2, 3, 4, 5, 6]);
   const [dayPreset, setDayPreset] = useState<DayPresetKey>('everyday');
@@ -93,7 +90,6 @@ export default function CreateReminderScreen() {
   const [activeTimePickerIndex, setActiveTimePickerIndex] = useState<number | null>(null);
   const [tempTime, setTempTime] = useState(new Date());
 
-  // Preview state
   const [showPreview, setShowPreview] = useState(false);
   const [previewData, setPreviewData] = useState<{
     preview: Array<{ day: string; date: string; times: string[] }>;
@@ -124,7 +120,7 @@ export default function CreateReminderScreen() {
             mantraList = [res.data.mantra, ...mantraList];
           }
         } catch {
-          // Mantra may have been deleted; ignore
+          // ignore
         }
       }
 
@@ -139,13 +135,10 @@ export default function CreateReminderScreen() {
     }
   };
 
-  // --- Simple mode date/time pickers ---
-
   const openDatePicker = () => {
     setTempDate(time);
     setShowDatePicker(true);
   };
-
   const openSimpleTimePicker = () => {
     setTempDate(time);
     setShowTimePicker(true);
@@ -195,8 +188,6 @@ export default function CreateReminderScreen() {
     if (mode === 'date') setShowDatePicker(false);
     else setShowTimePicker(false);
   };
-
-  // --- Routine mode helpers ---
 
   const clearPreview = () => {
     setShowPreview(false);
@@ -283,9 +274,7 @@ export default function CreateReminderScreen() {
   const selectDayPreset = (preset: DayPresetKey) => {
     setDayPreset(preset);
     const found = DAY_PRESETS.find((p) => p.key === preset);
-    if (found && preset !== 'custom') {
-      setScheduleDays(found.days);
-    }
+    if (found && preset !== 'custom') setScheduleDays(found.days);
     clearPreview();
   };
 
@@ -307,12 +296,10 @@ export default function CreateReminderScreen() {
       setLoadingPreview(true);
       const token = await storage.getToken();
       if (!token) return;
-
       const response = await reminderService.getSchedulePreview(
         { schedule_times: scheduleTimes, schedule_days: scheduleDays, timezone: userTimezone },
         token,
       );
-
       if (response.status === 'success') {
         setPreviewData(response.data);
         setShowPreview(true);
@@ -325,8 +312,6 @@ export default function CreateReminderScreen() {
     }
   };
 
-  // --- Submit ---
-
   const handleSubmit = async () => {
     if (reminderType === 'mantra' && !selectedMantraId) {
       Alert.alert('Select a Mantra', 'Please select a mantra for this reminder.');
@@ -336,12 +321,10 @@ export default function CreateReminderScreen() {
       Alert.alert('Select a Collection', 'Please select a collection for this reminder.');
       return;
     }
-
     if (scheduleMode === 'simple' && time <= new Date()) {
       Alert.alert('Invalid Time', 'Reminder time must be in the future.');
       return;
     }
-
     try {
       setSubmitting(true);
       const token = await storage.getToken();
@@ -369,12 +352,7 @@ export default function CreateReminderScreen() {
         );
       } else {
         await reminderService.createReminder(
-          {
-            ...target,
-            time: time.toISOString(),
-            frequency,
-            status: 'active',
-          },
+          { ...target, time: time.toISOString(), frequency, status: 'active' },
           token,
         );
       }
@@ -394,7 +372,7 @@ export default function CreateReminderScreen() {
   const selectedMantra = mantras.find((m) => m.mantra_id === selectedMantraId);
   const selectedCollection = collections.find((c) => c.collection_id === selectedCollectionId);
 
-  // --- Render helpers ---
+  // ── iOS modal helpers ──────────────────────────────────────────────────────
 
   const renderIOSPickerModal = (
     visible: boolean,
@@ -402,15 +380,17 @@ export default function CreateReminderScreen() {
     onChange: (e: DateTimePickerEvent, d?: Date) => void,
   ) => (
     <Modal visible={visible} transparent animationType="slide">
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
+      <View className="flex-1 justify-end bg-black/40">
+        <View className="bg-white rounded-t-[20px] pb-7">
+          <View className="flex-row justify-between items-center px-5 py-3.5 border-b border-[#F3F4F6]">
             <TouchableOpacity onPress={() => cancelIOSPicker(mode)}>
-              <Text style={styles.modalCancel}>Cancel</Text>
+              <AppText className="text-base text-[#EF4444]">Cancel</AppText>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>{mode === 'date' ? 'Select Date' : 'Select Time'}</Text>
+            <AppText className="text-[17px] text-[#333]">
+              {mode === 'date' ? 'Select Date' : 'Select Time'}
+            </AppText>
             <TouchableOpacity onPress={() => confirmIOSPicker(mode)}>
-              <Text style={styles.modalDone}>Done</Text>
+              <AppText className="text-base text-[#059669]">Done</AppText>
             </TouchableOpacity>
           </View>
           <DateTimePicker
@@ -419,7 +399,7 @@ export default function CreateReminderScreen() {
             display="spinner"
             minimumDate={mode === 'date' ? new Date() : undefined}
             onChange={onChange}
-            style={styles.iosPicker}
+            style={{ backgroundColor: 'white' }}
           />
         </View>
       </View>
@@ -428,15 +408,15 @@ export default function CreateReminderScreen() {
 
   const renderRoutineTimePickerModal = () => (
     <Modal visible={activeTimePickerIndex !== null} transparent animationType="slide">
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
+      <View className="flex-1 justify-end bg-black/40">
+        <View className="bg-white rounded-t-[20px] pb-7">
+          <View className="flex-row justify-between items-center px-5 py-3.5 border-b border-[#F3F4F6]">
             <TouchableOpacity onPress={() => setActiveTimePickerIndex(null)}>
-              <Text style={styles.modalCancel}>Cancel</Text>
+              <AppText className="text-base text-[#EF4444]">Cancel</AppText>
             </TouchableOpacity>
-            <Text style={styles.modalTitle}>Select Time</Text>
+            <AppText className="text-[17px] text-[#333]">Select Time</AppText>
             <TouchableOpacity onPress={confirmRoutineTimePicker}>
-              <Text style={styles.modalDone}>Done</Text>
+              <AppText className="text-base text-[#059669]">Done</AppText>
             </TouchableOpacity>
           </View>
           <DateTimePicker
@@ -444,404 +424,422 @@ export default function CreateReminderScreen() {
             mode="time"
             display="spinner"
             onChange={onRoutineTimeChange}
-            style={styles.iosPicker}
+            style={{ backgroundColor: 'white' }}
           />
         </View>
       </View>
     </Modal>
   );
 
+  const Section = ({ children }: { children: React.ReactNode }) => (
+    <View className="bg-white rounded-xl p-4 mb-4">{children}</View>
+  );
+
+  const SectionTitle = ({ children }: { children: React.ReactNode }) => (
+    <AppText className="text-[17px] text-[#333] mb-3">{children}</AppText>
+  );
+
+  const TypeToggleButton = ({
+    active,
+    onPress,
+    iconName,
+    label,
+  }: {
+    active: boolean;
+    onPress: () => void;
+    iconName: string;
+    label: string;
+  }) => (
+    <TouchableOpacity
+      className="flex-1 flex-row items-center justify-center gap-2 py-3 rounded-xl border-2"
+      style={{
+        borderColor: colors.primaryDark,
+        backgroundColor: active ? colors.primaryDark : 'transparent',
+      }}
+      onPress={onPress}
+    >
+      <Ionicons
+        name={iconName as any}
+        size={20}
+        color={active ? colors.text : colors.primaryDark}
+      />
+      <AppText style={{ color: active ? colors.text : colors.primaryDark }}>{label}</AppText>
+    </TouchableOpacity>
+  );
+
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.header}>
+    <ScrollView className="flex-1" style={{ backgroundColor: colors.primary }}>
+      <View className="pt-[70px] px-5 pb-10">
+        {/* Back button */}
+        <View className="flex-row items-center mb-2.5">
           <TouchableOpacity
             onPress={() => navigation.goBack()}
-            style={styles.backButton}
+            className="p-1"
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             testID="back-button"
           >
-            <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
+            <Ionicons name="arrow-back" size={28} color={colors.text} />
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.title} testID="screen-title">
+        <AppText
+          className="text-[34px] font-bold mb-6"
+          style={{ color: colors.text }}
+          testID="screen-title"
+        >
           Create Reminder
-        </Text>
+        </AppText>
 
-        {/* Remind me about */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Remind me about</Text>
-          <View style={styles.typeSelector}>
-            <TouchableOpacity
-              style={[styles.typeOption, reminderType === 'mantra' && styles.typeOptionActive]}
+        {/* ── Remind me about ── */}
+        <Section>
+          <SectionTitle>Remind me about</SectionTitle>
+          <View className="flex-row gap-3">
+            <TypeToggleButton
+              active={reminderType === 'mantra'}
+              iconName="leaf-outline"
+              label="Mantra"
               onPress={() => {
                 setReminderType('mantra');
                 setSelectedCollectionId(undefined);
               }}
-            >
-              <Ionicons
-                name="leaf-outline"
-                size={20}
-                color={reminderType === 'mantra' ? '#FFFFFF' : '#8E9A86'}
-              />
-              <Text
-                style={[
-                  styles.typeOptionText,
-                  reminderType === 'mantra' && styles.typeOptionTextActive,
-                ]}
-              >
-                Mantra
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.typeOption, reminderType === 'collection' && styles.typeOptionActive]}
+            />
+            <TypeToggleButton
+              active={reminderType === 'collection'}
+              iconName="folder-outline"
+              label="Collection"
               onPress={() => {
                 setReminderType('collection');
                 setSelectedMantraId(undefined);
               }}
-            >
-              <Ionicons
-                name="folder-outline"
-                size={20}
-                color={reminderType === 'collection' ? '#FFFFFF' : '#8E9A86'}
-              />
-              <Text
-                style={[
-                  styles.typeOptionText,
-                  reminderType === 'collection' && styles.typeOptionTextActive,
-                ]}
-              >
-                Collection
-              </Text>
-            </TouchableOpacity>
+            />
           </View>
-        </View>
+        </Section>
 
-        {/* Select item */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
+        {/* ── Select item ── */}
+        <Section>
+          <SectionTitle>
             {reminderType === 'mantra' ? 'Select Mantra' : 'Select Collection'}
-          </Text>
+          </SectionTitle>
+
           {loadingItems ? (
-            <ActivityIndicator size="small" color="#8E9A86" style={{ marginVertical: 16 }} />
+            <ActivityIndicator size="small" color={colors.primaryDark} className="my-4" />
           ) : reminderType === 'mantra' ? (
             mantras.length === 0 ? (
-              <Text style={styles.emptyText}>
+              <AppText className="text-sm text-[#6B7280] italic text-center py-3">
                 No saved mantras yet. Save a mantra to set a reminder.
-              </Text>
+              </AppText>
             ) : (
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                style={styles.itemScroller}
+                className="max-h-[50px]"
               >
                 {mantras.map((mantra) => (
                   <TouchableOpacity
                     key={mantra.mantra_id}
-                    style={[
-                      styles.itemChip,
-                      selectedMantraId === mantra.mantra_id && styles.itemChipActive,
-                    ]}
+                    className="px-4 py-2 rounded-full mr-2"
+                    style={{
+                      backgroundColor:
+                        selectedMantraId === mantra.mantra_id ? colors.primaryDark : '#F3F4F6',
+                    }}
                     onPress={() => setSelectedMantraId(mantra.mantra_id)}
                   >
-                    <Text
-                      style={[
-                        styles.itemChipText,
-                        selectedMantraId === mantra.mantra_id && styles.itemChipTextActive,
-                      ]}
+                    <AppText
+                      className="text-sm max-w-[150px]"
+                      style={{
+                        color: selectedMantraId === mantra.mantra_id ? colors.text : '#333',
+                      }}
                       numberOfLines={1}
                     >
                       {mantra.title}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
                 ))}
               </ScrollView>
             )
           ) : collections.length === 0 ? (
-            <Text style={styles.emptyText}>No collections yet. Create a collection first.</Text>
+            <AppText className="text-sm text-[#6B7280] italic text-center py-3">
+              No collections yet. Create a collection first.
+            </AppText>
           ) : (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              style={styles.itemScroller}
-            >
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} className="max-h-[50px]">
               {collections.map((collection) => (
                 <TouchableOpacity
                   key={collection.collection_id}
-                  style={[
-                    styles.itemChip,
-                    selectedCollectionId === collection.collection_id && styles.itemChipActive,
-                  ]}
+                  className="px-4 py-2 rounded-full mr-2"
+                  style={{
+                    backgroundColor:
+                      selectedCollectionId === collection.collection_id
+                        ? colors.primaryDark
+                        : '#F3F4F6',
+                  }}
                   onPress={() => setSelectedCollectionId(collection.collection_id)}
                 >
-                  <Text
-                    style={[
-                      styles.itemChipText,
-                      selectedCollectionId === collection.collection_id &&
-                        styles.itemChipTextActive,
-                    ]}
+                  <AppText
+                    className="text-sm max-w-[150px]"
+                    style={{
+                      color:
+                        selectedCollectionId === collection.collection_id ? colors.text : '#333',
+                    }}
                     numberOfLines={1}
                   >
                     {collection.name}
-                  </Text>
+                  </AppText>
                 </TouchableOpacity>
               ))}
             </ScrollView>
           )}
 
           {selectedMantra && (
-            <View style={styles.selectedPreview} testID="selected-item-preview">
-              <Ionicons name="checkmark-circle" size={16} color="#8E9A86" />
-              <Text style={styles.selectedPreviewText} numberOfLines={2}>
+            <View
+              className="flex-row items-center gap-2 mt-3 pt-3 border-t border-[#F3F4F6]"
+              testID="selected-item-preview"
+            >
+              <Ionicons name="checkmark-circle" size={16} color={colors.primaryDark} />
+              <AppText className="text-sm text-[#333] flex-1" numberOfLines={2}>
                 {selectedMantra.title}
-              </Text>
+              </AppText>
             </View>
           )}
           {selectedCollection && (
-            <View style={styles.selectedPreview} testID="selected-item-preview">
-              <Ionicons name="checkmark-circle" size={16} color="#8E9A86" />
-              <Text style={styles.selectedPreviewText} numberOfLines={1}>
+            <View
+              className="flex-row items-center gap-2 mt-3 pt-3 border-t border-[#F3F4F6]"
+              testID="selected-item-preview"
+            >
+              <Ionicons name="checkmark-circle" size={16} color={colors.primaryDark} />
+              <AppText className="text-sm text-[#333] flex-1" numberOfLines={1}>
                 {selectedCollection.name}
-              </Text>
+              </AppText>
             </View>
           )}
-        </View>
+        </Section>
 
-        {/* Schedule Mode Toggle */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Schedule type</Text>
-          <View style={styles.typeSelector}>
-            <TouchableOpacity
-              style={[styles.typeOption, scheduleMode === 'routine' && styles.typeOptionActive]}
+        {/* ── Schedule type ── */}
+        <Section>
+          <SectionTitle>Schedule type</SectionTitle>
+          <View className="flex-row gap-3">
+            <TypeToggleButton
+              active={scheduleMode === 'routine'}
+              iconName="calendar-outline"
+              label="Routine"
               onPress={() => setScheduleMode('routine')}
-            >
-              <Ionicons
-                name="calendar-outline"
-                size={20}
-                color={scheduleMode === 'routine' ? '#FFFFFF' : '#8E9A86'}
-              />
-              <Text
-                style={[
-                  styles.typeOptionText,
-                  scheduleMode === 'routine' && styles.typeOptionTextActive,
-                ]}
-              >
-                Routine
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.typeOption, scheduleMode === 'simple' && styles.typeOptionActive]}
+            />
+            <TypeToggleButton
+              active={scheduleMode === 'simple'}
+              iconName="time-outline"
+              label="Simple"
               onPress={() => setScheduleMode('simple')}
-            >
-              <Ionicons
-                name="time-outline"
-                size={20}
-                color={scheduleMode === 'simple' ? '#FFFFFF' : '#8E9A86'}
-              />
-              <Text
-                style={[
-                  styles.typeOptionText,
-                  scheduleMode === 'simple' && styles.typeOptionTextActive,
-                ]}
-              >
-                Simple
-              </Text>
-            </TouchableOpacity>
+            />
           </View>
-        </View>
+        </Section>
 
         {scheduleMode === 'routine' ? (
           <>
-            {/* Quick Templates */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Quick templates</Text>
-              <View style={styles.templateRow}>
+            {/* ── Quick templates ── */}
+            <Section>
+              <SectionTitle>Quick templates</SectionTitle>
+              <View className="flex-row gap-2">
                 {TEMPLATES.map((tmpl) => {
                   const isAdded = scheduleTimes.includes(tmpl.times[0]);
                   return (
                     <TouchableOpacity
                       key={tmpl.name}
-                      style={[styles.templateChip, isAdded && styles.templateChipAdded]}
+                      className="flex-1 items-center py-2.5 px-2 rounded-xl border-2 gap-1"
+                      style={{
+                        borderColor: isAdded ? colors.primaryDark : '#E5E7EB',
+                        backgroundColor: isAdded ? colors.primaryDark : 'transparent',
+                      }}
                       onPress={() => addTemplateTime(tmpl.times[0])}
                       disabled={isAdded}
                     >
                       <Ionicons
                         name={tmpl.icon as any}
                         size={18}
-                        color={isAdded ? '#FFFFFF' : '#8E9A86'}
+                        color={isAdded ? colors.text : colors.primaryDark}
                       />
-                      <Text
-                        style={[styles.templateChipText, isAdded && styles.templateChipTextAdded]}
+                      <AppText
+                        className="text-xs"
+                        style={{ color: isAdded ? colors.text : '#333' }}
                       >
                         {tmpl.name}
-                      </Text>
-                      <Text
-                        style={[styles.templateChipTime, isAdded && styles.templateChipTimeAdded]}
+                      </AppText>
+                      <AppText
+                        className="text-[11px]"
+                        style={{ color: isAdded ? 'rgba(255,255,255,0.8)' : '#6B7280' }}
                       >
                         {scheduleSuggestionsService.formatTimeForDisplay(tmpl.times[0])}
-                      </Text>
+                      </AppText>
                     </TouchableOpacity>
                   );
                 })}
               </View>
-            </View>
+            </Section>
 
-            {/* Reminder Times */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Reminder times ({scheduleTimes.length}/5)</Text>
+            {/* ── Reminder times ── */}
+            <Section>
+              <SectionTitle>Reminder times ({scheduleTimes.length}/5)</SectionTitle>
               {scheduleTimes.map((t, index) => (
-                <View key={`${t}-${index}`} style={styles.timeSlotRow}>
+                <View key={`${t}-${index}`} className="flex-row items-center mb-2">
                   <TouchableOpacity
-                    style={styles.timeSlotButton}
+                    className="flex-1 flex-row items-center gap-2 bg-[#F3F4F6] py-3 px-4 rounded-xl"
                     onPress={() => openRoutineTimePicker(index)}
                   >
-                    <Ionicons name="time-outline" size={20} color="#8E9A86" />
-                    <Text style={styles.timeSlotText}>
+                    <Ionicons name="time-outline" size={20} color={colors.primaryDark} />
+                    <AppText className="text-base text-[#333]">
                       {scheduleSuggestionsService.formatTimeForDisplay(t)}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.removeTimeButton}
-                    onPress={() => removeTime(index)}
-                  >
+                  <TouchableOpacity className="p-2" onPress={() => removeTime(index)}>
                     <Ionicons name="close-circle" size={24} color="#EF4444" />
                   </TouchableOpacity>
                 </View>
               ))}
               {scheduleTimes.length < 5 && (
-                <TouchableOpacity style={styles.addTimeButton} onPress={addNewTimeSlot}>
-                  <Ionicons name="add-circle-outline" size={20} color="#8E9A86" />
-                  <Text style={styles.addTimeText}>Add time</Text>
+                <TouchableOpacity
+                  className="flex-row items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-dashed border-[#E5E7EB]"
+                  onPress={addNewTimeSlot}
+                >
+                  <Ionicons name="add-circle-outline" size={20} color={colors.primaryDark} />
+                  <AppText className="text-sm" style={{ color: colors.primaryDark }}>
+                    Add time
+                  </AppText>
                 </TouchableOpacity>
               )}
-            </View>
+            </Section>
 
-            {/* Repeat Days */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Repeat days</Text>
-              <View style={styles.presetRow}>
+            {/* ── Repeat days ── */}
+            <Section>
+              <SectionTitle>Repeat days</SectionTitle>
+              <View className="flex-row flex-wrap gap-2 mb-1">
                 {DAY_PRESETS.map((preset) => (
                   <TouchableOpacity
                     key={preset.key}
-                    style={[styles.presetChip, dayPreset === preset.key && styles.presetChipActive]}
+                    className="px-4 py-2 rounded-full border-2"
+                    style={{
+                      borderColor: dayPreset === preset.key ? colors.primaryDark : '#E5E7EB',
+                      backgroundColor:
+                        dayPreset === preset.key ? colors.primaryDark : 'transparent',
+                    }}
                     onPress={() => selectDayPreset(preset.key)}
                   >
-                    <Text
-                      style={[
-                        styles.presetChipText,
-                        dayPreset === preset.key && styles.presetChipTextActive,
-                      ]}
+                    <AppText
+                      className="text-[13px]"
+                      style={{ color: dayPreset === preset.key ? colors.text : '#6B7280' }}
                     >
                       {preset.name}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
                 ))}
               </View>
               {dayPreset === 'custom' && (
-                <View style={styles.dayGrid}>
+                <View className="flex-row justify-between mt-3">
                   {DAYS_OF_WEEK.map(({ key, label, day }) => (
                     <TouchableOpacity
                       key={key}
-                      style={[
-                        styles.dayCircle,
-                        scheduleDays.includes(day) && styles.dayCircleActive,
-                      ]}
+                      className="w-10 h-10 rounded-full items-center justify-center border-2"
+                      style={{
+                        borderColor: scheduleDays.includes(day) ? colors.primaryDark : '#E5E7EB',
+                        backgroundColor: scheduleDays.includes(day)
+                          ? colors.primaryDark
+                          : 'transparent',
+                      }}
                       onPress={() => toggleDay(day)}
                     >
-                      <Text
-                        style={[
-                          styles.dayCircleText,
-                          scheduleDays.includes(day) && styles.dayCircleTextActive,
-                        ]}
+                      <AppText
+                        className="text-sm"
+                        style={{ color: scheduleDays.includes(day) ? colors.text : '#6B7280' }}
                       >
                         {label}
-                      </Text>
+                      </AppText>
                     </TouchableOpacity>
                   ))}
                 </View>
               )}
-            </View>
+            </Section>
 
-            {/* Timezone */}
-            <View style={styles.section}>
-              <View style={styles.timezoneRow}>
+            {/* ── Timezone ── */}
+            <Section>
+              <View className="flex-row items-center gap-2">
                 <Ionicons name="globe-outline" size={20} color="#6B7280" />
-                <Text style={styles.timezoneText}>
+                <AppText className="text-sm text-[#6B7280]">
                   {scheduleSuggestionsService.formatTimezoneDisplay(userTimezone)}
-                </Text>
+                </AppText>
               </View>
-            </View>
+            </Section>
 
-            {/* Preview */}
+            {/* ── Preview button ── */}
             <TouchableOpacity
-              style={styles.previewButton}
+              className="flex-row items-center justify-center gap-2 bg-white rounded-xl py-3.5 mb-4 border-2"
+              style={{ borderColor: colors.primaryDark }}
               onPress={fetchPreview}
               disabled={loadingPreview}
             >
               {loadingPreview ? (
-                <ActivityIndicator size="small" color="#8E9A86" />
+                <ActivityIndicator size="small" color={colors.primaryDark} />
               ) : (
                 <>
-                  <Ionicons name="eye-outline" size={20} color="#8E9A86" />
-                  <Text style={styles.previewButtonText}>Preview schedule</Text>
+                  <Ionicons name="eye-outline" size={20} color={colors.primaryDark} />
+                  <AppText className="text-[15px]" style={{ color: colors.primaryDark }}>
+                    Preview schedule
+                  </AppText>
                 </>
               )}
             </TouchableOpacity>
 
+            {/* ── Preview results ── */}
             {showPreview && previewData && (
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>
+              <Section>
+                <SectionTitle>
                   {previewData.total_notifications_per_week} notifications per week
-                </Text>
+                </SectionTitle>
                 {previewData.preview.map((day) => (
-                  <View key={day.date} style={styles.previewDay}>
-                    <Text style={styles.previewDayLabel}>{day.day}</Text>
-                    <Text style={styles.previewDayTimes}>
+                  <View
+                    key={day.date}
+                    className="flex-row justify-between items-center py-2 border-b border-[#F3F4F6]"
+                  >
+                    <AppText className="text-sm text-[#333]">{day.day}</AppText>
+                    <AppText className="text-[13px] text-[#6B7280]">
                       {day.times
                         .map((t) => scheduleSuggestionsService.formatTimeForDisplay(t))
                         .join(', ')}
-                    </Text>
+                    </AppText>
                   </View>
                 ))}
-              </View>
+              </Section>
             )}
           </>
         ) : (
           <>
-            {/* Simple mode: When */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>When</Text>
-              <View style={styles.dateTimeRow}>
+            {/* ── Simple: When ── */}
+            <Section>
+              <SectionTitle>When</SectionTitle>
+              <View className="flex-row gap-3">
                 <TouchableOpacity
                   testID="date-picker-button"
-                  style={styles.dateTimeButton}
+                  className="flex-1 flex-row items-center justify-center gap-2 bg-[#F3F4F6] py-3.5 rounded-xl"
                   onPress={openDatePicker}
                 >
-                  <Ionicons name="calendar-outline" size={20} color="#8E9A86" />
-                  <Text style={styles.dateTimeText}>
+                  <Ionicons name="calendar-outline" size={20} color={colors.primaryDark} />
+                  <AppText className="text-[15px] text-[#333]">
                     {time.toLocaleDateString(undefined, {
                       month: 'short',
                       day: 'numeric',
                       year: 'numeric',
                     })}
-                  </Text>
+                  </AppText>
                 </TouchableOpacity>
                 <TouchableOpacity
                   testID="time-picker-button"
-                  style={styles.dateTimeButton}
+                  className="flex-1 flex-row items-center justify-center gap-2 bg-[#F3F4F6] py-3.5 rounded-xl"
                   onPress={openSimpleTimePicker}
                 >
-                  <Ionicons name="time-outline" size={20} color="#8E9A86" />
-                  <Text style={styles.dateTimeText}>
-                    {time.toLocaleTimeString(undefined, {
-                      hour: '2-digit',
-                      minute: '2-digit',
-                    })}
-                  </Text>
+                  <Ionicons name="time-outline" size={20} color={colors.primaryDark} />
+                  <AppText className="text-[15px] text-[#333]">
+                    {time.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+                  </AppText>
                 </TouchableOpacity>
               </View>
-            </View>
+            </Section>
 
             {Platform.OS === 'android' && showDatePicker && (
               <DateTimePicker
@@ -855,39 +853,38 @@ export default function CreateReminderScreen() {
             {Platform.OS === 'android' && showTimePicker && (
               <DateTimePicker value={time} mode="time" display="default" onChange={onTimeChange} />
             )}
-
             {Platform.OS === 'ios' && renderIOSPickerModal(showDatePicker, 'date', onDateChange)}
             {Platform.OS === 'ios' && renderIOSPickerModal(showTimePicker, 'time', onTimeChange)}
 
-            {/* Simple mode: How often */}
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>How often</Text>
-              <View style={styles.frequencyGrid}>
+            {/* ── Simple: How often ── */}
+            <Section>
+              <SectionTitle>How often</SectionTitle>
+              <View className="flex-row flex-wrap gap-2.5">
                 {SIMPLE_FREQUENCIES.map((freq) => (
                   <TouchableOpacity
                     key={freq.value}
-                    style={[
-                      styles.frequencyOption,
-                      frequency === freq.value && styles.frequencyOptionActive,
-                    ]}
+                    className="px-5 py-2.5 rounded-full border-2"
+                    style={{
+                      borderColor: frequency === freq.value ? colors.primaryDark : '#E5E7EB',
+                      backgroundColor:
+                        frequency === freq.value ? colors.primaryDark : 'transparent',
+                    }}
                     onPress={() => setFrequency(freq.value)}
                   >
-                    <Text
-                      style={[
-                        styles.frequencyOptionText,
-                        frequency === freq.value && styles.frequencyOptionTextActive,
-                      ]}
+                    <AppText
+                      className="text-sm"
+                      style={{ color: frequency === freq.value ? colors.text : '#6B7280' }}
                     >
                       {freq.label}
-                    </Text>
+                    </AppText>
                   </TouchableOpacity>
                 ))}
               </View>
-            </View>
+            </Section>
           </>
         )}
 
-        {/* Routine mode time picker (Android) */}
+        {/* Android routine time picker */}
         {Platform.OS === 'android' && activeTimePickerIndex !== null && (
           <DateTimePicker
             value={tempTime}
@@ -896,415 +893,28 @@ export default function CreateReminderScreen() {
             onChange={onRoutineTimeChange}
           />
         )}
-
-        {/* Routine mode time picker (iOS) */}
+        {/* iOS routine time picker */}
         {Platform.OS === 'ios' && renderRoutineTimePickerModal()}
 
-        {/* Submit */}
+        {/* ── Submit ── */}
         <TouchableOpacity
-          style={[styles.submitButton, submitting && styles.submitButtonDisabled]}
+          className="py-4 rounded-xl items-center mt-2"
+          style={{
+            backgroundColor: submitting ? '#D1D5DB' : colors.primaryDark,
+          }}
           onPress={handleSubmit}
           disabled={submitting}
           testID="create-reminder-button"
         >
           {submitting ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
+            <ActivityIndicator size="small" color={colors.text} />
           ) : (
-            <Text style={styles.submitButtonText}>Create Reminder</Text>
+            <AppText className="text-lg" style={{ color: colors.text }}>
+              Create Reminder
+            </AppText>
           )}
         </TouchableOpacity>
       </View>
     </ScrollView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#A8B3A2',
-  },
-  content: {
-    paddingTop: 70,
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  backButton: {
-    padding: 4,
-  },
-  title: {
-    fontSize: 34,
-    fontWeight: '700',
-    fontFamily: 'Red_Hat_Text-Bold',
-    color: 'white',
-    marginBottom: 24,
-  },
-  section: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-  },
-  sectionTitle: {
-    fontSize: 16,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: '#333',
-    marginBottom: 12,
-  },
-  typeSelector: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  typeOption: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#8E9A86',
-  },
-  typeOptionActive: {
-    backgroundColor: '#8E9A86',
-    borderColor: '#8E9A86',
-  },
-  typeOptionText: {
-    fontSize: 15,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: '#8E9A86',
-  },
-  typeOptionTextActive: {
-    color: '#FFFFFF',
-  },
-  itemScroller: {
-    maxHeight: 50,
-  },
-  itemChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#F3F4F6',
-    marginRight: 8,
-  },
-  itemChipActive: {
-    backgroundColor: '#8E9A86',
-  },
-  itemChipText: {
-    fontSize: 14,
-    fontFamily: 'Red_Hat_Text-Regular',
-    color: '#333',
-    maxWidth: 150,
-  },
-  itemChipTextActive: {
-    color: '#FFFFFF',
-  },
-  emptyText: {
-    fontSize: 14,
-    color: '#6B7280',
-    fontStyle: 'italic',
-    textAlign: 'center',
-    paddingVertical: 12,
-  },
-  selectedPreview: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-  },
-  selectedPreviewText: {
-    fontSize: 14,
-    fontFamily: 'Red_Hat_Text-Regular',
-    color: '#333',
-    flex: 1,
-  },
-
-  // Template styles
-  templateRow: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  templateChip: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: 10,
-    paddingHorizontal: 8,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    gap: 4,
-  },
-  templateChipAdded: {
-    backgroundColor: '#8E9A86',
-    borderColor: '#8E9A86',
-  },
-  templateChipText: {
-    fontSize: 12,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: '#333',
-  },
-  templateChipTextAdded: {
-    color: '#FFFFFF',
-  },
-  templateChipTime: {
-    fontSize: 11,
-    fontFamily: 'Red_Hat_Text-Regular',
-    color: '#6B7280',
-  },
-  templateChipTimeAdded: {
-    color: 'rgba(255,255,255,0.8)',
-  },
-
-  // Time slot styles
-  timeSlotRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  timeSlotButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#F3F4F6',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-  },
-  timeSlotText: {
-    fontSize: 16,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: '#333',
-  },
-  removeTimeButton: {
-    padding: 8,
-  },
-  addTimeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-    borderStyle: 'dashed',
-  },
-  addTimeText: {
-    fontSize: 14,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: '#8E9A86',
-  },
-
-  // Day preset styles
-  presetRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 4,
-  },
-  presetChip: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-  },
-  presetChipActive: {
-    backgroundColor: '#8E9A86',
-    borderColor: '#8E9A86',
-  },
-  presetChipText: {
-    fontSize: 13,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: '#6B7280',
-  },
-  presetChipTextActive: {
-    color: '#FFFFFF',
-  },
-  dayGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 12,
-  },
-  dayCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-  },
-  dayCircleActive: {
-    backgroundColor: '#8E9A86',
-    borderColor: '#8E9A86',
-  },
-  dayCircleText: {
-    fontSize: 14,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: '#6B7280',
-  },
-  dayCircleTextActive: {
-    color: '#FFFFFF',
-  },
-
-  // Timezone
-  timezoneRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  timezoneText: {
-    fontSize: 14,
-    fontFamily: 'Red_Hat_Text-Regular',
-    color: '#6B7280',
-  },
-
-  // Preview
-  previewButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    paddingVertical: 14,
-    marginBottom: 16,
-    borderWidth: 2,
-    borderColor: '#8E9A86',
-  },
-  previewButtonText: {
-    fontSize: 15,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: '#8E9A86',
-  },
-  previewDay: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  previewDayLabel: {
-    fontSize: 14,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: '#333',
-  },
-  previewDayTimes: {
-    fontSize: 13,
-    fontFamily: 'Red_Hat_Text-Regular',
-    color: '#6B7280',
-  },
-
-  // Simple mode styles
-  dateTimeRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  dateTimeButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: '#F3F4F6',
-    paddingVertical: 14,
-    borderRadius: 10,
-  },
-  dateTimeText: {
-    fontSize: 15,
-    fontFamily: 'Red_Hat_Text-Regular',
-    color: '#333',
-  },
-  frequencyGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  frequencyOption: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    borderWidth: 2,
-    borderColor: '#E5E7EB',
-  },
-  frequencyOptionActive: {
-    backgroundColor: '#8E9A86',
-    borderColor: '#8E9A86',
-  },
-  frequencyOptionText: {
-    fontSize: 14,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: '#6B7280',
-  },
-  frequencyOptionTextActive: {
-    color: '#FFFFFF',
-  },
-
-  // Submit
-  submitButton: {
-    backgroundColor: '#6D7E68',
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginTop: 8,
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#D1D5DB',
-  },
-  submitButtonText: {
-    fontSize: 18,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: '#FFFFFF',
-  },
-
-  // Modals
-  modalOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-  },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingBottom: 30,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  modalTitle: {
-    fontSize: 17,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: '#333',
-  },
-  modalCancel: {
-    color: '#EF4444',
-    fontSize: 16,
-    fontFamily: 'Red_Hat_Text-Regular',
-  },
-  modalDone: {
-    color: '#059669',
-    fontSize: 16,
-    fontFamily: 'Red_Hat_Text-Bold',
-  },
-  iosPicker: {
-    backgroundColor: 'white',
-  },
-});
