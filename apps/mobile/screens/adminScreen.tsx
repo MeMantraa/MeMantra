@@ -107,7 +107,7 @@ const AdminScreen: React.FC = () => {
       const token = (await storage.getToken()) || 'mock-token';
 
       if (mode === 'mantras') {
-        const response = await mantraService.getFeedMantras(token);
+        const response = await mantraService.getAllMantras(token);
         if (response.status === 'success') {
           setMantras(response.data);
         }

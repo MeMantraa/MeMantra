@@ -81,13 +81,19 @@ export const RecommendationEngine = {
     // 3. Fetch all mantras with their categories
     const { mantras, categoryMap } = await MantraModel.findAllWithCategories(500, 0);
 
-    // 4. Build exclusion set (already-interacted + explicit excludes)
-    const excludeSet = new Set([
-      ...excludeIds,
-      ...profile.interactedMantraIds,
-    ]);
+    // 4. Separate into new and already-interacted candidates
+    const explicitExcludeSet = new Set(excludeIds);
+    const newCandidates = mantras.filter(
+      (m) => !explicitExcludeSet.has(m.mantra_id) && !profile.interactedMantraIds.has(m.mantra_id),
+    );
+    const interactedCandidates = mantras.filter(
+      (m) => !explicitExcludeSet.has(m.mantra_id) && profile.interactedMantraIds.has(m.mantra_id),
+    );
 
-    const candidates = mantras.filter((m) => !excludeSet.has(m.mantra_id));
+    // Use new candidates first; if not enough, backfill with interacted mantras
+    const candidates = newCandidates.length >= limit
+      ? newCandidates
+      : [...newCandidates, ...interactedCandidates];
 
     // 5. Determine active mood
     const activeMood = mood || (profile.moods.length > 0 ? profile.moods[0] : undefined);
