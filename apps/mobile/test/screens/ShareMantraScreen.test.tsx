@@ -98,14 +98,12 @@ describe('ShareMantraScreen', () => {
   it('loads and displays conversations', async () => {
     (chatService.getConversations as jest.Mock).mockResolvedValue(mockConversations);
 
-    const { getByText, queryByText } = render(
+    const { getByText, findByText } = render(
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
     );
 
-    // Wait for loading to complete
-    await waitFor(() => {
-      expect(queryByText('Loading conversations...')).toBeNull();
-    });
+    // Wait for conversations to load
+    await findByText('john_doe');
 
     expect(getByText('john_doe')).toBeTruthy();
     expect(getByText('jane_smith')).toBeTruthy();
@@ -114,14 +112,12 @@ describe('ShareMantraScreen', () => {
   it('displays instruction text', async () => {
     (chatService.getConversations as jest.Mock).mockResolvedValue(mockConversations);
 
-    const { getByText, queryByText } = render(
+    const { getByText, findByText } = render(
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
     );
 
-    // Wait for loading to complete
-    await waitFor(() => {
-      expect(queryByText('Loading conversations...')).toBeNull();
-    });
+    // Wait for conversations to load
+    await findByText('john_doe');
 
     expect(getByText('Select a conversation to share:')).toBeTruthy();
   });
@@ -141,14 +137,12 @@ describe('ShareMantraScreen', () => {
       read: false,
     });
 
-    const { getByText, queryByText } = render(
+    const { getByText, findByText } = render(
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
     );
 
-    // Wait for loading to complete
-    await waitFor(() => {
-      expect(queryByText('Loading conversations...')).toBeNull();
-    });
+    // Wait for conversations to load
+    await findByText('john_doe');
 
     expect(getByText('john_doe')).toBeTruthy();
 
@@ -180,14 +174,12 @@ describe('ShareMantraScreen', () => {
 
     const alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
-    const { getByText, queryByText } = render(
+    const { getByText, findByText } = render(
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
     );
 
-    // Wait for loading to complete
-    await waitFor(() => {
-      expect(queryByText('Loading conversations...')).toBeNull();
-    });
+    // Wait for conversations to load
+    await findByText('john_doe');
 
     expect(getByText('john_doe')).toBeTruthy();
 
@@ -240,14 +232,12 @@ describe('ShareMantraScreen', () => {
     (chatService.getConversations as jest.Mock).mockResolvedValue(mockConversations);
     (chatService.sendMessage as jest.Mock).mockResolvedValue({});
 
-    const { getByText, queryByText } = render(
+    const { getByText, findByText } = render(
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
     );
 
-    // Wait for loading to complete
-    await waitFor(() => {
-      expect(queryByText('Loading conversations...')).toBeNull();
-    });
+    // Wait for conversations to load
+    await findByText('jane_smith');
 
     expect(getByText('jane_smith')).toBeTruthy();
 

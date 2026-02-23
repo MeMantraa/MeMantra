@@ -141,3 +141,15 @@ jest.mock(
   }),
   { virtual: true },
 );
+
+// Mock @react-native-community/datetimepicker
+jest.mock(
+  '@react-native-community/datetimepicker',
+  () => {
+    return {
+      __esModule: true,
+      default: jest.fn(() => null),
+    };
+  },
+  { virtual: true },
+);

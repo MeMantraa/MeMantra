@@ -7,6 +7,11 @@ import bcrypt from 'bcryptjs';
 
 jest.mock('../../src/models/user.model');
 jest.mock('bcryptjs');
+jest.mock('../../src/utils/featureFlags', () => ({
+  isValidFeatureFlag: jest.fn((flag: string) =>
+    ['EXPERIMENTAL_FEATURE', 'DARK_MODE', 'ADVANCED_ANALYTICS'].includes(flag),
+  ),
+}));
 
 // Setup express app with all routes
 const app = express();
@@ -20,6 +25,11 @@ app.delete('/api/users/:id', (req, _res, next) => {
   req.user = req.headers['x-user'] ? JSON.parse(req.headers['x-user'] as string) : {};
   next();
 }, UserController.deleteUser);
+// Feature flag routes
+app.get('/api/users/:id/feature-flags', UserController.getUserFeatureFlags);
+app.put('/api/users/:id/feature-flags', UserController.setUserFeatureFlags);
+app.post('/api/users/:id/feature-flags/:flag', UserController.enableUserFeatureFlag);
+app.delete('/api/users/:id/feature-flags/:flag', UserController.disableUserFeatureFlag);
 
 describe('UserController', () => {
   beforeEach(() => {
@@ -329,6 +339,257 @@ describe('UserController', () => {
 
       expect(res.status).toBe(500);
       expect(res.body.message).toBe('Error deleting user');
+    });
+  });
+
+  describe('getUserFeatureFlags', () => {
+    it('should return user feature flags', async () => {
+      (UserModel.findById as jest.Mock).mockResolvedValue({
+        user_id: 1,
+        username: 'user1',
+        feature_flags: ['DARK_MODE', 'EXPERIMENTAL_FEATURE'],
+      });
+
+      const res = await request(app).get('/api/users/1/feature-flags');
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('success');
+      expect(res.body.data.user_id).toBe(1);
+      expect(res.body.data.feature_flags).toEqual(['DARK_MODE', 'EXPERIMENTAL_FEATURE']);
+    });
+
+    it('should return empty array when user has no feature flags', async () => {
+      (UserModel.findById as jest.Mock).mockResolvedValue({
+        user_id: 2,
+        username: 'user2',
+        feature_flags: null,
+      });
+
+      const res = await request(app).get('/api/users/2/feature-flags');
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.feature_flags).toEqual([]);
+    });
+
+    it('should return 400 for invalid user id', async () => {
+      const res = await request(app).get('/api/users/invalid/feature-flags');
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Invalid user id');
+    });
+
+    it('should return 404 if user not found', async () => {
+      (UserModel.findById as jest.Mock).mockResolvedValue(null);
+
+      const res = await request(app).get('/api/users/999/feature-flags');
+
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe('User not found');
+    });
+
+    it('should handle errors', async () => {
+      (UserModel.findById as jest.Mock).mockRejectedValue(new Error('DB error'));
+
+      const res = await request(app).get('/api/users/1/feature-flags');
+
+      expect(res.status).toBe(500);
+      expect(res.body.message).toBe('Error retrieving feature flags');
+    });
+  });
+
+  describe('setUserFeatureFlags', () => {
+    it('should replace all feature flags', async () => {
+      (UserModel.setFlags as jest.Mock).mockResolvedValue({
+        user_id: 1,
+        username: 'user1',
+        feature_flags: ['DARK_MODE'],
+      });
+
+      const res = await request(app)
+        .put('/api/users/1/feature-flags')
+        .send({ flags: ['DARK_MODE'] });
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('success');
+      expect(res.body.message).toBe('Feature flags updated successfully');
+      expect(res.body.data.feature_flags).toEqual(['DARK_MODE']);
+    });
+
+    it('should remove duplicates from flags array', async () => {
+      (UserModel.setFlags as jest.Mock).mockResolvedValue({
+        user_id: 1,
+        username: 'user1',
+        feature_flags: ['DARK_MODE', 'EXPERIMENTAL_FEATURE'],
+      });
+
+      const res = await request(app)
+        .put('/api/users/1/feature-flags')
+        .send({ flags: ['DARK_MODE', 'DARK_MODE', 'EXPERIMENTAL_FEATURE'] });
+
+      expect(res.status).toBe(200);
+      expect(UserModel.setFlags).toHaveBeenCalledWith(1, ['DARK_MODE', 'EXPERIMENTAL_FEATURE']);
+    });
+
+    it('should return 400 for invalid user id', async () => {
+      const res = await request(app)
+        .put('/api/users/abc/feature-flags')
+        .send({ flags: ['DARK_MODE'] });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Invalid user id');
+    });
+
+    it('should return 400 if flags is not an array', async () => {
+      const res = await request(app)
+        .put('/api/users/1/feature-flags')
+        .send({ flags: 'not-an-array' });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('flags must be an array');
+    });
+
+    it('should return 400 for invalid feature flag', async () => {
+      const res = await request(app)
+        .put('/api/users/1/feature-flags')
+        .send({ flags: ['DARK_MODE', 'INVALID_FLAG'] });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Invalid feature flag: INVALID_FLAG');
+    });
+
+    it('should return 404 if user not found', async () => {
+      (UserModel.setFlags as jest.Mock).mockResolvedValue(undefined);
+
+      const res = await request(app)
+        .put('/api/users/999/feature-flags')
+        .send({ flags: ['DARK_MODE'] });
+
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe('User not found');
+    });
+
+    it('should handle errors', async () => {
+      (UserModel.setFlags as jest.Mock).mockRejectedValue(new Error('DB error'));
+
+      const res = await request(app)
+        .put('/api/users/1/feature-flags')
+        .send({ flags: ['DARK_MODE'] });
+
+      expect(res.status).toBe(500);
+      expect(res.body.message).toBe('Error updating feature flags');
+    });
+  });
+
+  describe('enableUserFeatureFlag', () => {
+    it('should enable a feature flag', async () => {
+      (UserModel.addFlag as jest.Mock).mockResolvedValue({
+        user_id: 1,
+        username: 'user1',
+        feature_flags: ['DARK_MODE', 'EXPERIMENTAL_FEATURE'],
+      });
+
+      const res = await request(app).post('/api/users/1/feature-flags/EXPERIMENTAL_FEATURE');
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('success');
+      expect(res.body.message).toBe('Feature flag enabled: EXPERIMENTAL_FEATURE');
+      expect(res.body.data.feature_flags).toContain('EXPERIMENTAL_FEATURE');
+    });
+
+    it('should return message if flag already enabled', async () => {
+      (UserModel.addFlag as jest.Mock).mockResolvedValue(undefined);
+      (UserModel.findById as jest.Mock).mockResolvedValue({
+        user_id: 1,
+        username: 'user1',
+        feature_flags: ['DARK_MODE'],
+      });
+
+      const res = await request(app).post('/api/users/1/feature-flags/DARK_MODE');
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Feature flag already enabled: DARK_MODE');
+    });
+
+    it('should return 400 for invalid user id', async () => {
+      const res = await request(app).post('/api/users/invalid/feature-flags/DARK_MODE');
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Invalid user id');
+    });
+
+    it('should return 400 for invalid feature flag', async () => {
+      const res = await request(app).post('/api/users/1/feature-flags/INVALID_FLAG');
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Invalid feature flag: INVALID_FLAG');
+    });
+
+    it('should return 404 if user not found when checking already enabled', async () => {
+      (UserModel.addFlag as jest.Mock).mockResolvedValue(undefined);
+      (UserModel.findById as jest.Mock).mockResolvedValue(null);
+
+      const res = await request(app).post('/api/users/999/feature-flags/DARK_MODE');
+
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe('User not found');
+    });
+
+    it('should handle errors', async () => {
+      (UserModel.addFlag as jest.Mock).mockRejectedValue(new Error('DB error'));
+
+      const res = await request(app).post('/api/users/1/feature-flags/DARK_MODE');
+
+      expect(res.status).toBe(500);
+      expect(res.body.message).toBe('Error enabling feature flag');
+    });
+  });
+
+  describe('disableUserFeatureFlag', () => {
+    it('should disable a feature flag', async () => {
+      (UserModel.removeFlag as jest.Mock).mockResolvedValue({
+        user_id: 1,
+        username: 'user1',
+        feature_flags: ['DARK_MODE'],
+      });
+
+      const res = await request(app).delete('/api/users/1/feature-flags/EXPERIMENTAL_FEATURE');
+
+      expect(res.status).toBe(200);
+      expect(res.body.status).toBe('success');
+      expect(res.body.message).toBe('Feature flag disabled: EXPERIMENTAL_FEATURE');
+      expect(res.body.data.feature_flags).not.toContain('EXPERIMENTAL_FEATURE');
+    });
+
+    it('should return 400 for invalid user id', async () => {
+      const res = await request(app).delete('/api/users/invalid/feature-flags/DARK_MODE');
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Invalid user id');
+    });
+
+    it('should return 400 for invalid feature flag', async () => {
+      const res = await request(app).delete('/api/users/1/feature-flags/INVALID_FLAG');
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Invalid feature flag: INVALID_FLAG');
+    });
+
+    it('should return 404 if user not found', async () => {
+      (UserModel.removeFlag as jest.Mock).mockResolvedValue(undefined);
+
+      const res = await request(app).delete('/api/users/999/feature-flags/DARK_MODE');
+
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe('User not found');
+    });
+
+    it('should handle errors', async () => {
+      (UserModel.removeFlag as jest.Mock).mockRejectedValue(new Error('DB error'));
+
+      const res = await request(app).delete('/api/users/1/feature-flags/DARK_MODE');
+
+      expect(res.status).toBe(500);
+      expect(res.body.message).toBe('Error disabling feature flag');
     });
   });
 });
