@@ -11,7 +11,8 @@ CREATE TABLE "User" (
   "password_hash" varchar,
   "device_token" varchar,
   "auth_provider" varchar DEFAULT 'local',
-  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP
+  "created_at" timestamp DEFAULT CURRENT_TIMESTAMP,
+  "feature_flags" text[] NOT NULL DEFAULT ARRAY[]::text[]
 ); 
 
 CREATE TABLE "Admin" (

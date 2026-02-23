@@ -38,4 +38,28 @@ router.delete(
   UserController.deleteUser
 );
 
+router.get(
+  '/:id/feature-flags',
+  validateRequest(userIdSchema),
+  UserController.getUserFeatureFlags
+);
+
+router.put(
+  '/:id/feature-flags',
+  validateRequest(userIdSchema),
+  UserController.setUserFeatureFlags
+);
+
+router.post(
+  '/:id/feature-flags/:flag',
+  validateRequest(userIdSchema),
+  UserController.enableUserFeatureFlag
+);
+
+router.delete(
+  '/:id/feature-flags/:flag',
+  validateRequest(userIdSchema),
+  UserController.disableUserFeatureFlag
+);
+
 export default router;
