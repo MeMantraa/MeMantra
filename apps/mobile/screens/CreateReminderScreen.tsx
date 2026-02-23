@@ -689,7 +689,11 @@ export default function CreateReminderScreen() {
                       {scheduleSuggestionsService.formatTimeForDisplay(t)}
                     </AppText>
                   </TouchableOpacity>
-                  <TouchableOpacity className="p-2" onPress={() => removeTime(index)}>
+                  <TouchableOpacity
+                    className="p-2"
+                    style={{ padding: 8 }}
+                    onPress={() => removeTime(index)}
+                  >
                     <Ionicons name="close-circle" size={24} color="#EF4444" />
                   </TouchableOpacity>
                 </View>
@@ -736,6 +740,7 @@ export default function CreateReminderScreen() {
                   {DAYS_OF_WEEK.map(({ key, label, day }) => (
                     <TouchableOpacity
                       key={key}
+                      testID={`day-circle-${key}`}
                       className="w-10 h-10 rounded-full items-center justify-center border-2"
                       style={{
                         borderColor: scheduleDays.includes(day) ? colors.primaryDark : '#E5E7EB',
