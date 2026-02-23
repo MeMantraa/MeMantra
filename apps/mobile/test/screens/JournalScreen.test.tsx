@@ -124,13 +124,12 @@ describe('JournalScreen', () => {
       },
     });
 
-    const { getByText, queryByTestId } = render(
+    const { getByText, findByText } = render(
       <JournalScreen navigation={mockNavigation} route={mockRoute} />,
     );
 
-    await waitFor(() => {
-      expect(queryByTestId('journal-loading')).toBeNull();
-    });
+    // Wait for journal entries to load
+    await findByText('Morning Reflection');
 
     expect(getByText('Morning Reflection')).toBeTruthy();
     expect(getByText('Evening Thoughts')).toBeTruthy();

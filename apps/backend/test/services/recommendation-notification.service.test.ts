@@ -63,6 +63,8 @@ const mockUser = (
   recommendation_notif_sent_at: null,
   optimal_send_hour: null,
   theme: null,
+  feature_flags: [],
+  profile_photo: null,
   ...overrides,
 });
 

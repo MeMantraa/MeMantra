@@ -14,6 +14,7 @@ import journalRoutes from './journal.routes';
 import algorithmRoutes from './algorithm.routes';
 import themeRoutes from './theme.routes';
 import engagementRoutes from './engagement.routes';
+import profileRoutes from './profile.routes';
 
 const router = Router();
 
@@ -60,5 +61,7 @@ router.use('/algorithm', algorithmRoutes);
 router.use('/theme', themeRoutes);
 // Engagement routes (app-open tracking for adaptive notification timing)
 router.use('/engagement', engagementRoutes);
+// Profile routes
+router.use('/profile', profileRoutes);
 
 export default router;

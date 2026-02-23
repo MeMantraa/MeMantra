@@ -264,4 +264,126 @@ describe('UserModel', () => {
       expect(result).toBe('default');
     });
   });
+
+  describe('Feature flag functions', () => {
+    it('checks if user has a specific flag', async () => {
+      const executeTakeFirstMock = jest.fn().mockResolvedValue({ user_id: 1 });
+      const selectMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
+      const whereMock2 = jest.fn().mockReturnValue({ select: selectMock });
+      const whereMock1 = jest.fn().mockReturnValue({ where: whereMock2 });
+      selectFromMock.mockReturnValue({ where: whereMock1 });
+
+      const result = await UserModel.hasFlag(1, 'DARK_MODE');
+
+      expect(selectFromMock).toHaveBeenCalledWith('User');
+      expect(result).toBe(true);
+    });
+
+    it('returns false when user does not have the flag', async () => {
+      const executeTakeFirstMock = jest.fn().mockResolvedValue(undefined);
+      const selectMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
+      const whereMock2 = jest.fn().mockReturnValue({ select: selectMock });
+      const whereMock1 = jest.fn().mockReturnValue({ where: whereMock2 });
+      selectFromMock.mockReturnValue({ where: whereMock1 });
+
+      const result = await UserModel.hasFlag(1, 'DARK_MODE');
+
+      expect(result).toBe(false);
+    });
+
+    it('adds a flag to user', async () => {
+      const fakeUser = { user_id: 1, feature_flags: ['DARK_MODE', 'EXPERIMENTAL_FEATURE'] };
+      const executeTakeFirstMock = jest.fn().mockResolvedValue(fakeUser);
+      const returningAllMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
+      const whereMock2 = jest.fn().mockReturnValue({ returningAll: returningAllMock });
+      const whereMock1 = jest.fn().mockReturnValue({ where: whereMock2 });
+      const setMock = jest.fn().mockReturnValue({ where: whereMock1 });
+      updateTableMock.mockReturnValue({ set: setMock });
+
+      const result = await UserModel.addFlag(1, 'EXPERIMENTAL_FEATURE');
+
+      expect(updateTableMock).toHaveBeenCalledWith('User');
+      expect(result).toBe(fakeUser);
+    });
+
+    it('removes a flag from user', async () => {
+      const fakeUser = { user_id: 1, feature_flags: ['DARK_MODE'] };
+      const executeTakeFirstMock = jest.fn().mockResolvedValue(fakeUser);
+      const returningAllMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
+      const whereMock = jest.fn().mockReturnValue({ returningAll: returningAllMock });
+      const setMock = jest.fn().mockReturnValue({ where: whereMock });
+      updateTableMock.mockReturnValue({ set: setMock });
+
+      const result = await UserModel.removeFlag(1, 'EXPERIMENTAL_FEATURE');
+
+      expect(updateTableMock).toHaveBeenCalledWith('User');
+      expect(result).toBe(fakeUser);
+    });
+
+    it('sets multiple flags at once', async () => {
+      const fakeUser = { user_id: 1, feature_flags: ['DARK_MODE', 'ADVANCED_ANALYTICS'] };
+      const executeTakeFirstMock = jest.fn().mockResolvedValue(fakeUser);
+      const returningAllMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
+      const whereMock = jest.fn().mockReturnValue({ returningAll: returningAllMock });
+      const setMock = jest.fn().mockReturnValue({ where: whereMock });
+      updateTableMock.mockReturnValue({ set: setMock });
+
+      const result = await UserModel.setFlags(1, ['DARK_MODE', 'ADVANCED_ANALYTICS']);
+
+      expect(updateTableMock).toHaveBeenCalledWith('User');
+      expect(setMock).toHaveBeenCalledWith({ feature_flags: ['DARK_MODE', 'ADVANCED_ANALYTICS'] });
+      expect(result).toBe(fakeUser);
+    });
+
+    it('finds users with a specific flag', async () => {
+      const fakeUsers = [
+        { user_id: 1, feature_flags: ['DARK_MODE'] },
+        { user_id: 2, feature_flags: ['DARK_MODE', 'EXPERIMENTAL_FEATURE'] },
+      ];
+      const executeMock = jest.fn().mockResolvedValue(fakeUsers);
+      const selectAllMock = jest.fn().mockReturnValue({ execute: executeMock });
+      const whereMock = jest.fn().mockReturnValue({ selectAll: selectAllMock });
+      selectFromMock.mockReturnValue({ where: whereMock });
+
+      const result = await UserModel.findUsersWithFlag('DARK_MODE');
+
+      expect(selectFromMock).toHaveBeenCalledWith('User');
+      expect(result).toEqual(fakeUsers);
+    });
+
+    it('finds users without a specific flag', async () => {
+      const fakeUsers = [
+        { user_id: 3, feature_flags: ['EXPERIMENTAL_FEATURE'] },
+        { user_id: 4, feature_flags: [] },
+      ];
+      const executeMock = jest.fn().mockResolvedValue(fakeUsers);
+      const selectAllMock = jest.fn().mockReturnValue({ execute: executeMock });
+      const whereMock = jest.fn().mockReturnValue({ selectAll: selectAllMock });
+      selectFromMock.mockReturnValue({ where: whereMock });
+
+      const result = await UserModel.findUsersWithoutFlag('DARK_MODE');
+
+      expect(selectFromMock).toHaveBeenCalledWith('User');
+      expect(result).toEqual(fakeUsers);
+    });
+  });
+
+  describe('updateProfilePhoto', () => {
+    it('should update user profile photo', async () => {
+      const photoBase64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRg...';
+      const fakeUser = { user_id: 1, username: 'testuser', profile_photo: photoBase64 };
+      const executeTakeFirstMock = jest.fn().mockResolvedValue(fakeUser);
+      const returningAllMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
+      const whereMock = jest.fn().mockReturnValue({ returningAll: returningAllMock });
+      const setMock = jest.fn().mockReturnValue({ where: whereMock });
+      updateTableMock.mockReturnValue({ set: setMock });
+
+      const result = await UserModel.updateProfilePhoto(1, photoBase64);
+
+      expect(updateTableMock).toHaveBeenCalledWith('User');
+      expect(setMock).toHaveBeenCalledWith({ profile_photo: photoBase64 });
+      expect(whereMock).toHaveBeenCalledWith('user_id', '=', 1);
+      expect(result).toBe(fakeUser);
+    });
+  });
 });
