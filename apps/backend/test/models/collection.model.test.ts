@@ -35,6 +35,7 @@ describe('CollectionModel', () => {
         name: 'My Favorites',
         description: 'My favorite mantras',
         created_at: new Date().toISOString(),
+        icon: null,
       };
 
       const mockChain = {
@@ -65,6 +66,7 @@ describe('CollectionModel', () => {
         name: 'My Favorites',
         description: null,
         created_at: new Date().toISOString(),
+        icon:null,
       };
 
       const mockChain = {
@@ -97,6 +99,8 @@ describe('CollectionModel', () => {
           name: 'Favorites',
           description: 'My favorites',
           created_at: '2024-01-01T00:00:00Z',
+          icon:null,
+
         },
         {
           collection_id: 2,
@@ -104,6 +108,7 @@ describe('CollectionModel', () => {
           name: 'Work Mantras',
           description: null,
           created_at: '2024-01-02T00:00:00Z',
+          icon:null,
         },
       ];
 
@@ -133,6 +138,7 @@ describe('CollectionModel', () => {
         name: 'My Favorites',
         description: null,
         created_at: '2024-01-01T00:00:00Z',
+        icon:null,
       };
 
       const mockChain = {
@@ -178,6 +184,7 @@ describe('CollectionModel', () => {
         name: 'Updated Name',
         description: 'Updated description',
         created_at: '2024-01-01T00:00:00Z',
+        icon:null,
       };
 
       const mockChain = {
@@ -307,6 +314,7 @@ describe('CollectionModel', () => {
         name: 'My Collection',
         description: null,
         created_at: '2024-01-01T00:00:00Z',
+        icon:null,
       };
 
       const mockMantras: Mantra[] = [
@@ -414,6 +422,7 @@ describe('CollectionModel', () => {
           name: 'Collection 1',
           description: null,
           created_at: '2024-01-01T00:00:00Z',
+          icon:null,
         },
       ];
 
