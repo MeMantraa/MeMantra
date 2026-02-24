@@ -14,7 +14,6 @@ import { mantraService, Mantra } from '../services/mantra.service';
 import { collectionService, Collection } from '../services/collection.service';
 import { ratingService } from '../services/rating.service';
 import { storage } from '../utils/storage';
-import SearchBar from '../components/UI/searchBar';
 import AppText from '../components/UI/textWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { useSavedMantras } from '../context/SavedContext';
@@ -267,8 +266,6 @@ export default function HomeScreen({ navigation, route }: any) {
     }
   };
 
-  const handleSearch = (query: string) => console.log('Searching for:', query);
-
   const handleEndReached = () => {
     if (originalMantras.length > 0) {
       setFeedData((prev) => [...prev, ...originalMantras]);
@@ -360,9 +357,20 @@ export default function HomeScreen({ navigation, route }: any) {
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.primary }}>
-      <View className="absolute top-5 left-0 right-0 z-10 px-6 pt-14 pb-4">
-        <SearchBar onSearch={handleSearch} placeholder="Search mantras..." />
-      </View>
+      <TouchableOpacity
+        className="absolute z-20 rounded-full items-center justify-center"
+        style={{
+          top: 68,
+          left: 24,
+          width: 42,
+          height: 42,
+          backgroundColor: colors.secondary,
+        }}
+        testID="home-search-button"
+        accessibilityRole="button"
+      >
+        <Ionicons name="search-outline" size={24} color={colors.white} />
+      </TouchableOpacity>
 
       {content}
 
