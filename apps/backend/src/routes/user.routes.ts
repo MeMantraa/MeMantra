@@ -66,12 +66,4 @@ router.get(
   UserController.getUserFeatureFlags
 );
 
-router.put(
-  '/:id/feature-flags',
-  validateRequest(userIdSchema),
-  UserController.setUserFeatureFlags
-);
-
-
-
 export default router;

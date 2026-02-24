@@ -6,6 +6,7 @@ export interface User {
   email: string | null;
   auth_provider?: string;
   created_at: string;
+  feature_flags?: string[];
 }
 
 export interface CreateUserPayload {
@@ -39,6 +40,37 @@ export interface UserMutationResponse {
 export interface ThemeResponse {
   status: string;
   data: { theme: string };
+}
+
+export interface FeatureFlag {
+  key: string;
+  label: string;
+  description?: string;
+}
+
+export interface FeatureFlagsResponse {
+  status: string;
+  message?: string;
+  data: { flags: FeatureFlag[] };
+}
+
+export interface UserFeatureFlagsResponse {
+  status: string;
+  message?: string;
+  data: { user_id: number; feature_flags: string[] };
+}
+
+export interface FeatureFlagBulkResponse {
+  status: string;
+  message?: string;
+  data: {
+    flag: string;
+    enabled?: boolean;
+    affected_users?: number;
+    percentage?: number;
+    total_users?: number;
+    selected_users?: number;
+  };
 }
 
 export const userService = {
@@ -96,6 +128,60 @@ export const userService = {
       {
         headers: { Authorization: `Bearer ${token}` },
       },
+    );
+    return response.data;
+  },
+
+  async listFeatureFlags(token: string): Promise<FeatureFlagsResponse> {
+    const response = await apiClient.get<FeatureFlagsResponse>('/users/feature-flags', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  },
+
+  async getUsersWithFlags(token: string): Promise<UsersResponse> {
+    const response = await apiClient.get<UsersResponse>('/users/feature-flags/users', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return response.data;
+  },
+
+  async setUserFeatureFlag(
+    userId: number,
+    flag: string,
+    enabled: boolean,
+    token: string,
+  ): Promise<UserFeatureFlagsResponse> {
+    const response = await apiClient.post<UserFeatureFlagsResponse>(
+      `/users/feature-flags/${flag}/users/${userId}`,
+      { enabled },
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    return response.data;
+  },
+
+  async setFeatureFlagForAllUsers(
+    flag: string,
+    enabled: boolean,
+    token: string,
+  ): Promise<FeatureFlagBulkResponse> {
+    const response = await apiClient.post<FeatureFlagBulkResponse>(
+      `/users/feature-flags/${flag}/all`,
+      { enabled },
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    return response.data;
+  },
+
+  async rolloutFeatureFlagToPercentage(
+    flag: string,
+    percentage: number,
+    token: string,
+  ): Promise<FeatureFlagBulkResponse> {
+    const response = await apiClient.post<FeatureFlagBulkResponse>(
+      `/users/feature-flags/${flag}/rollout`,
+      { percentage },
+      { headers: { Authorization: `Bearer ${token}` } },
     );
     return response.data;
   },

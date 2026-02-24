@@ -2,6 +2,7 @@ import { db } from '../db';
 import bcrypt from 'bcryptjs';
 import { User, NewUser } from '../types/database.types';
 import { sql } from 'kysely';
+import { createHash } from 'crypto';
 
 interface CreateUserData {
   username: string;
@@ -246,30 +247,28 @@ async getTheme(userId: number): Promise<string | undefined> {
 
 
   //Set a flag to true for a defined percentage of users (not dynamic)
-  async rolloutFlagToPercentage(
+    async rolloutFlagToPercentage(
     flagName: string,
     percentage: number,
   ): Promise<{ totalUsers: number; selectedUsers: number }> {
-    const users = await db
-      .selectFrom('User')
-      .select('user_id')
-      .orderBy('user_id', 'asc')
-      .execute();
+    const users = await db.selectFrom('User').select('user_id').execute();
 
     const totalUsers = users.length;
     if (totalUsers === 0) {
       return { totalUsers: 0, selectedUsers: 0 };
     }
 
-    // Snapshot rollout: deterministic by user_id ordering.
-    const selectedCount = Math.min(
-      totalUsers,
-      Math.max(0, Math.ceil((totalUsers * percentage) / 100)),
-    );
-    const selectedUserIds = users.slice(0, selectedCount).map((u) => u.user_id);
+    const scoreFor = (userId: number, flag: string): number => {
+      const digest = createHash('sha256').update(`${userId}:${flag}`).digest('hex');
+      const value = Number.parseInt(digest.slice(0, 8), 16);
+      return value % 100;
+    };
+
+    const selectedUserIds = users
+      .filter((u) => scoreFor(u.user_id, flagName) < percentage)
+      .map((u) => u.user_id);
 
     await db.transaction().execute(async (trx) => {
-      // Remove flag from everyone first so result matches requested percentage exactly.
       await trx
         .updateTable('User')
         .set({
@@ -292,8 +291,9 @@ async getTheme(userId: number): Promise<string | undefined> {
       }
     });
 
-    return { totalUsers, selectedUsers: selectedCount };
+    return { totalUsers, selectedUsers: selectedUserIds.length };
   },
+
 
 };
 

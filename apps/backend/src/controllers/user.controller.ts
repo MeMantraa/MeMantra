@@ -36,6 +36,29 @@ function toUserFlagSummary(user: User) {
   };
 }
 
+async function validateUniqueUserFields(
+  userId: number,
+  existingUser: User,
+  username?: string,
+  email?: string,
+) {
+  if (email && email !== existingUser.email) {
+    const emailTaken = await UserModel.findByEmail(email);
+    if (emailTaken && emailTaken.user_id !== userId) {
+      return 'Email already in use';
+    }
+  }
+
+  if (username && username !== existingUser.username) {
+    const usernameTaken = await UserModel.findByUsername(username);
+    if (usernameTaken && usernameTaken.user_id !== userId) {
+      return 'Username already taken';
+    }
+  }
+
+  return null;
+}
+
 export const UserController = {
   // GET /api/users - Get all users (admin only)
   async getAllUsers(_req: Request, res: Response) {
@@ -115,25 +138,17 @@ export const UserController = {
   async updateUser(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      const userId = Number(id);
       const { username, email, password } = req.body;
 
-      const existingUser = await UserModel.findById(Number(id));
+      const existingUser = await UserModel.findById(userId);
       if (!existingUser) {
         return sendError(res, 404, 'User not found');
       }
 
-      if (email && email !== existingUser.email) {
-        const emailTaken = await UserModel.findByEmail(email);
-        if (emailTaken && emailTaken.user_id !== Number(id)) {
-          return sendError(res, 400, 'Email already in use');
-        }
-      }
-
-      if (username && username !== existingUser.username) {
-        const usernameTaken = await UserModel.findByUsername(username);
-        if (usernameTaken && usernameTaken.user_id !== Number(id)) {
-          return sendError(res, 400, 'Username already taken');
-        }
+      const uniquenessError = await validateUniqueUserFields(userId, existingUser, username, email);
+      if (uniquenessError) {
+        return sendError(res, 400, uniquenessError);
       }
 
       const updateData: any = {};
@@ -144,7 +159,7 @@ export const UserController = {
         updateData.password_hash = await bcrypt.hash(password, salt);
       }
 
-      const updatedUser = await UserModel.update(Number(id), updateData);
+      const updatedUser = await UserModel.update(userId, updateData);
 
       return res.status(200).json({
         status: 'success',
@@ -190,7 +205,7 @@ export const UserController = {
     try {
       const flags = FEATURE_FLAGS.map((key) => ({
         key,
-        label: key.replaceAll(/_/, ' '),
+        label: key.replaceAll('_', ' '),
       }));
 
       return res.status(200).json({
@@ -234,13 +249,7 @@ export const UserController = {
       return res.status(200).json({
         status: 'success',
         data: {
-          users: users.map((u) => ({
-            user_id: u.user_id,
-            username: u.username,
-            email: u.email,
-            created_at: u.created_at,
-            feature_flags: u.feature_flags ?? [],
-          })),
+          users: users.map(toUserFlagSummary),
         },
       });
     } catch (error) {
@@ -313,6 +322,7 @@ export const UserController = {
     }
   },
 
+  // POST /api/users/feature-flags/:flag/rollout
   async rolloutFeatureFlagToPercentage(req: Request, res: Response) {
     try {
       const flag = req.params.flag;
@@ -326,7 +336,6 @@ export const UserController = {
       }
 
       const result = await UserModel.rolloutFlagToPercentage(flag, percentage);
-      // expected shape: { totalUsers: number; selectedUsers: number }
 
       return res.status(200).json({
         status: 'success',
