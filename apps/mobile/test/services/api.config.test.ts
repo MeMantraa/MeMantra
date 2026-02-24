@@ -94,18 +94,18 @@ describe('api.config', () => {
     };
   };
 
-  it('configures production URL when no hostUri (Android)', () => {
+  it('configures base URL for Android', () => {
     const { mockCreate, consoleSpy } = loadModule('android');
     expect(mockCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ baseURL: 'https://memantra.onrender.com/api' }),
+      expect.objectContaining({ baseURL: 'http://10.0.2.2:4000/api' }),
     );
     consoleSpy.mockRestore();
   });
 
-  it('configures production URL when no hostUri (iOS)', () => {
+  it('configures base URL for iOS', () => {
     const { mockCreate, consoleSpy } = loadModule('ios');
     expect(mockCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ baseURL: 'https://memantra.onrender.com/api' }),
+      expect.objectContaining({ baseURL: 'http://localhost:4000/api' }),
     );
     consoleSpy.mockRestore();
   });
@@ -185,26 +185,26 @@ describe('api.config', () => {
       consoleWarnSpy.mockRestore();
     });
 
-    it('uses production URL for Android when no hostUri', () => {
+    it('falls back to Android emulator IP when no hostUri', () => {
       const { mockCreate, consoleSpy } = loadModule('android', null);
       expect(mockCreate).toHaveBeenCalledWith(
-        expect.objectContaining({ baseURL: 'https://memantra.onrender.com/api' }),
+        expect.objectContaining({ baseURL: 'http://10.0.2.2:4000/api' }),
       );
       consoleSpy.mockRestore();
     });
 
-    it('uses production URL for iOS when no hostUri', () => {
+    it('falls back to localhost for iOS when no hostUri', () => {
       const { mockCreate, consoleSpy } = loadModule('ios', null);
       expect(mockCreate).toHaveBeenCalledWith(
-        expect.objectContaining({ baseURL: 'https://memantra.onrender.com/api' }),
+        expect.objectContaining({ baseURL: 'http://localhost:4000/api' }),
       );
       consoleSpy.mockRestore();
     });
 
-    it('uses production URL for web when no hostUri', () => {
+    it('configures base URL for web platform', () => {
       const { mockCreate, consoleSpy } = loadModule('web', null);
       expect(mockCreate).toHaveBeenCalledWith(
-        expect.objectContaining({ baseURL: 'https://memantra.onrender.com/api' }),
+        expect.objectContaining({ baseURL: 'http://localhost:4000/api' }),
       );
       consoleSpy.mockRestore();
     });
