@@ -1,7 +1,12 @@
 import * as cron from 'node-cron';
 import { ReminderModel } from '../models/reminder.model';
 import { NotificationService } from './notification.service';
-import { getCurrentTimeInTimezone as _getCurrentTimeInTimezone } from '../utils/timezone.utils';
+import {
+  getCurrentTimeInTimezone as _getCurrentTimeInTimezone,
+  formatDateInTimezone as _formatDateInTimezone,
+  formatMonthInTimezone as _formatMonthInTimezone,
+  isSameWeekInTimezone as _isSameWeekInTimezone,
+} from '../utils/timezone.utils';
 
 /**
  * Reminder Scheduler Service
@@ -199,7 +204,7 @@ export const ReminderSchedulerService = {
         )) {
           return { reminderId: reminder_id, success: true };
         }
-      } else if (!this.shouldSendReminder(frequency, last_sent_at)) {
+      } else if (!this.shouldSendReminder(frequency, last_sent_at, reminder.timezone)) {
         return { reminderId: reminder_id, success: true };
       }
 
@@ -256,10 +261,12 @@ export const ReminderSchedulerService = {
    * Determine if a reminder should be sent based on its frequency and last send time
    * @param frequency - Reminder frequency (once, daily, weekly, monthly, custom)
    * @param lastSentAt - ISO timestamp of when reminder was last sent
+   * @param timezone - IANA timezone string for the user
    */
   shouldSendReminder(
     frequency: string | null,
-    lastSentAt: string | null
+    lastSentAt: string | null,
+    timezone: string | null
   ): boolean {
     // One-time reminders: send if never sent
     if (frequency === 'once') {
@@ -271,30 +278,30 @@ export const ReminderSchedulerService = {
       return true;
     }
 
+    const tz = timezone || 'UTC';
     const lastSent = new Date(lastSentAt);
     const now = new Date();
 
     switch (frequency) {
       case 'daily':
-        // Send if last sent was on a different day
-        return !this.isSameDay(lastSent, now);
+        // Send if last sent was on a different local day
+        return this.formatDateInTimezone(lastSent, tz) !== this.formatDateInTimezone(now, tz);
 
       case 'weekly':
-        // Send if last sent was in a different week
-        return !this.isSameWeek(lastSent, now);
+        // Send if last sent was in a different local week
+        return !this.isSameWeekInTimezone(lastSent, now, tz);
 
       case 'monthly':
-        // Send if last sent was in a different month
-        return !this.isSameMonth(lastSent, now);
+        // Send if last sent was in a different local month
+        return this.formatMonthInTimezone(lastSent, tz) !== this.formatMonthInTimezone(now, tz);
 
       case 'custom':
-        // For custom frequency, check if enough time has passed
-        // Default to daily behavior for now
-        return !this.isSameDay(lastSent, now);
+        // For custom frequency, default to daily behavior
+        return this.formatDateInTimezone(lastSent, tz) !== this.formatDateInTimezone(now, tz);
 
       default:
         // Unknown frequency, default to daily behavior
-        return !this.isSameDay(lastSent, now);
+        return this.formatDateInTimezone(lastSent, tz) !== this.formatDateInTimezone(now, tz);
     }
   },
 
@@ -412,43 +419,27 @@ export const ReminderSchedulerService = {
   },
 
   /**
-   * Check if two dates are on the same day
+   * Format a date as YYYY-MM-DD in the given timezone.
+   * Delegates to the shared timezone utility.
    */
-  isSameDay(date1: Date, date2: Date): boolean {
-    return (
-      date1.getFullYear() === date2.getFullYear() &&
-      date1.getMonth() === date2.getMonth() &&
-      date1.getDate() === date2.getDate()
-    );
+  formatDateInTimezone(date: Date, timezone: string): string {
+    return _formatDateInTimezone(date, timezone);
   },
 
   /**
-   * Check if two dates are in the same week (week starts on Sunday)
+   * Format a date as YYYY-MM in the given timezone.
+   * Delegates to the shared timezone utility.
    */
-  isSameWeek(date1: Date, date2: Date): boolean {
-    const startOfWeek1 = this.getStartOfWeek(date1);
-    const startOfWeek2 = this.getStartOfWeek(date2);
-    return startOfWeek1.getTime() === startOfWeek2.getTime();
+  formatMonthInTimezone(date: Date, timezone: string): string {
+    return _formatMonthInTimezone(date, timezone);
   },
 
   /**
-   * Get the start of the week for a given date (Sunday at midnight)
+   * Check if two dates are in the same week (week starts on Sunday) in the given timezone.
+   * Delegates to the shared timezone utility.
    */
-  getStartOfWeek(date: Date): Date {
-    const result = new Date(date);
-    result.setHours(0, 0, 0, 0);
-    result.setDate(result.getDate() - result.getDay());
-    return result;
-  },
-
-  /**
-   * Check if two dates are in the same month
-   */
-  isSameMonth(date1: Date, date2: Date): boolean {
-    return (
-      date1.getFullYear() === date2.getFullYear() &&
-      date1.getMonth() === date2.getMonth()
-    );
+  isSameWeekInTimezone(date1: Date, date2: Date, timezone: string): boolean {
+    return _isSameWeekInTimezone(date1, date2, timezone);
   },
 
   /**
