@@ -82,7 +82,50 @@ const FeatureFlagsPanel: React.FC<FeatureFlagsPanelProps> = ({
     return <ActivityIndicator size="large" color={colors.secondary} style={{ marginTop: 40 }} />;
   }
 
-  const renderHeader = () => (
+  const renderUserRow = ({ item: u }: { item: FeatureFlagUser }) => {
+    const flagsForUser = u.feature_flags ?? [];
+    const hasSelected = !!selectedFlagKey && flagsForUser.includes(selectedFlagKey);
+    const isChecked = selectedUserIds.includes(u.user_id);
+
+    return (
+      <View className="rounded-xl p-3 mb-2" style={{ backgroundColor: `${colors.primaryDark}55` }}>
+        <View className="flex-row items-center justify-between">
+          <AppText className="text-white font-semibold">{u.username || 'Unknown user'}</AppText>
+          <TouchableOpacity
+            className="rounded-md px-2 py-1"
+            style={{ backgroundColor: isChecked ? colors.secondary : `${colors.primaryDark}88` }}
+            disabled={submitting}
+            onPress={() => onToggleUserSelection(u.user_id)}
+          >
+            <AppText style={{ color: isChecked ? colors.primaryDark : colors.text }}>
+              {isChecked ? 'Selected' : 'Select'}
+            </AppText>
+          </TouchableOpacity>
+        </View>
+        <AppText style={{ color: colors.text }}>{u.email || 'No email'}</AppText>
+        <AppText className="text-xs mt-1" style={{ color: colors.text }}>
+          Flags: {flagsForUser.length ? flagsForUser.join(', ') : 'None'}
+        </AppText>
+
+        {!!selectedFlagKey && (
+          <TouchableOpacity
+            className="mt-2 rounded-lg px-3 py-2 self-start"
+            style={{
+              backgroundColor: hasSelected ? `${colors.primaryDark}88` : colors.secondary,
+            }}
+            disabled={submitting}
+            onPress={() => onToggleUserFlag(u.user_id, selectedFlagKey, !hasSelected)}
+          >
+            <AppText style={{ color: hasSelected ? colors.text : colors.primaryDark }}>
+              {hasSelected ? 'Unassign Selected Flag' : 'Assign Selected Flag'}
+            </AppText>
+          </TouchableOpacity>
+        )}
+      </View>
+    );
+  };
+
+  const listHeader = (
     <>
       <AppText className="text-white text-lg font-bold mb-3">Flag List</AppText>
 
@@ -139,7 +182,6 @@ const FeatureFlagsPanel: React.FC<FeatureFlagsPanelProps> = ({
               keyboardType="numeric"
               value={localRolloutPercentage}
               onChangeText={setLocalRolloutPercentage}
-              onBlur={() => onChangeRolloutPercentage(localRolloutPercentage)}
             />
             <TouchableOpacity
               className="rounded-xl px-4 py-3"
@@ -212,56 +254,13 @@ const FeatureFlagsPanel: React.FC<FeatureFlagsPanelProps> = ({
     </>
   );
 
-  const renderUserRow = ({ item: u }: { item: FeatureFlagUser }) => {
-    const flagsForUser = u.feature_flags ?? [];
-    const hasSelected = !!selectedFlagKey && flagsForUser.includes(selectedFlagKey);
-    const isChecked = selectedUserIds.includes(u.user_id);
-
-    return (
-      <View className="rounded-xl p-3 mb-2" style={{ backgroundColor: `${colors.primaryDark}55` }}>
-        <View className="flex-row items-center justify-between">
-          <AppText className="text-white font-semibold">{u.username || 'Unknown user'}</AppText>
-          <TouchableOpacity
-            className="rounded-md px-2 py-1"
-            style={{ backgroundColor: isChecked ? colors.secondary : `${colors.primaryDark}88` }}
-            disabled={submitting}
-            onPress={() => onToggleUserSelection(u.user_id)}
-          >
-            <AppText style={{ color: isChecked ? colors.primaryDark : colors.text }}>
-              {isChecked ? 'Selected' : 'Select'}
-            </AppText>
-          </TouchableOpacity>
-        </View>
-        <AppText style={{ color: colors.text }}>{u.email || 'No email'}</AppText>
-        <AppText className="text-xs mt-1" style={{ color: colors.text }}>
-          Flags: {flagsForUser.length ? flagsForUser.join(', ') : 'None'}
-        </AppText>
-
-        {!!selectedFlagKey && (
-          <TouchableOpacity
-            className="mt-2 rounded-lg px-3 py-2 self-start"
-            style={{
-              backgroundColor: hasSelected ? `${colors.primaryDark}88` : colors.secondary,
-            }}
-            disabled={submitting}
-            onPress={() => onToggleUserFlag(u.user_id, selectedFlagKey, !hasSelected)}
-          >
-            <AppText style={{ color: hasSelected ? colors.text : colors.primaryDark }}>
-              {hasSelected ? 'Unassign Selected Flag' : 'Assign Selected Flag'}
-            </AppText>
-          </TouchableOpacity>
-        )}
-      </View>
-    );
-  };
-
   return (
     <FlatList
       className="flex-1"
       data={filteredUsers}
       keyExtractor={(item) => String(item.user_id)}
       renderItem={renderUserRow}
-      ListHeaderComponent={renderHeader}
+      ListHeaderComponent={listHeader}
       showsVerticalScrollIndicator={false}
       decelerationRate="fast"
       disableIntervalMomentum
