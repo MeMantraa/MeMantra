@@ -138,6 +138,22 @@ async getTheme(userId: number): Promise<string | undefined> {
   return user?.theme || 'default';
 }
 ,
+  async clearDeviceToken(userId: number): Promise<void> {
+    await db
+      .updateTable('User')
+      .set({ device_token: null })
+      .where('user_id', '=', userId)
+      .execute();
+  },
+
+  async findByDeviceToken(token: string): Promise<User | undefined> {
+    return db
+      .selectFrom('User')
+      .where('device_token', '=', token)
+      .selectAll()
+      .executeTakeFirst();
+  },
+
   async findAllWithDeviceTokens(): Promise<User[]> {
     return db
       .selectFrom('User')
