@@ -4,8 +4,21 @@ import {
   NotificationContentOptions,
   CTAStyle,
 } from '../config/notification-content.config';
+import { UserModel } from '../models/user.model';
 
 const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
+
+function getExpoPushHeaders(): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+  };
+  const token = process.env.EXPO_ACCESS_TOKEN;
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
 
 export interface ExpoPushMessage {
   to: string | string[];
@@ -23,7 +36,7 @@ export interface ExpoPushTicket {
   status: 'ok' | 'error';
   id?: string;
   message?: string;
-  details?: object;
+  details?: { error?: string };
 }
 
 export interface ExpoPushResponse {
@@ -56,12 +69,12 @@ export const NotificationService = {
         EXPO_PUSH_URL,
         messagesArray,
         {
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
+          headers: getExpoPushHeaders(),
         }
       );
+
+      // Fire-and-forget: clean up invalid tokens
+      this.handleTicketErrors(response.data.data, messagesArray).catch(() => {});
 
       return response.data;
     } catch (error) {
@@ -90,6 +103,7 @@ export const NotificationService = {
       data: data ?? {},
       sound: 'default',
       priority: 'high',
+      channelId: 'default',
     };
 
     return await this.sendPushNotification(message);
@@ -115,6 +129,7 @@ export const NotificationService = {
       data: data ?? {},
       sound: 'default',
       priority: 'high',
+      channelId: 'default',
     }));
 
     return await this.sendPushNotification(messages);
@@ -259,10 +274,44 @@ export const NotificationService = {
             },
         sound: 'default',
         priority: 'high',
+        channelId: 'default',
       };
     });
 
     return await this.sendPushNotification(messages);
+  },
+
+  /**
+   * Check ticket responses for DeviceNotRegistered errors and clear stale tokens.
+   * Should be called fire-and-forget after sendPushNotification succeeds.
+   * @param tickets - Ticket responses from Expo Push API
+   * @param messages - The original messages that were sent (parallel array)
+   */
+  async handleTicketErrors(
+    tickets: ExpoPushTicket[],
+    messages: ExpoPushMessage[]
+  ): Promise<void> {
+    for (let i = 0; i < tickets.length; i++) {
+      const ticket = tickets[i];
+      if (
+        ticket.status === 'error' &&
+        ticket.details?.error === 'DeviceNotRegistered'
+      ) {
+        const message = messages[i];
+        const token = Array.isArray(message.to) ? message.to[0] : message.to;
+        try {
+          const user = await UserModel.findByDeviceToken(token);
+          if (user) {
+            await UserModel.clearDeviceToken(user.user_id);
+            console.log(
+              `Cleared stale device token for user ${user.user_id}`
+            );
+          }
+        } catch (err) {
+          console.error('Error clearing stale device token:', err);
+        }
+      }
+    }
   },
 
   /**
@@ -288,10 +337,7 @@ export const NotificationService = {
         'https://exp.host/--/api/v2/push/getReceipts',
         { ids: receiptIds },
         {
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-          },
+          headers: getExpoPushHeaders(),
         }
       );
 

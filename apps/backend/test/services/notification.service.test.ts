@@ -1,8 +1,11 @@
 import axios from 'axios';
 import { NotificationService } from '../../src/services/notification.service';
+import { UserModel } from '../../src/models/user.model';
 
 jest.mock('axios');
+jest.mock('../../src/models/user.model');
 const mockedAxios = axios as jest.Mocked<typeof axios>;
+const mockedUserModel = UserModel as jest.Mocked<typeof UserModel>;
 
 describe('NotificationService', () => {
   beforeEach(() => {
@@ -31,10 +34,10 @@ describe('NotificationService', () => {
         'https://exp.host/--/api/v2/push/send',
         [mockMessage],
         {
-          headers: {
+          headers: expect.objectContaining({
             Accept: 'application/json',
             'Content-Type': 'application/json',
-          },
+          }),
         }
       );
       expect(result).toEqual(mockResponse.data);
@@ -121,6 +124,7 @@ describe('NotificationService', () => {
             data: { key: 'value' },
             sound: 'default',
             priority: 'high',
+            channelId: 'default',
           },
         ],
         expect.any(Object)
@@ -153,6 +157,7 @@ describe('NotificationService', () => {
             data: {},
             sound: 'default',
             priority: 'high',
+            channelId: 'default',
           },
         ],
         expect.any(Object)
@@ -191,6 +196,7 @@ describe('NotificationService', () => {
             data: { type: 'bulk' },
             sound: 'default',
             priority: 'high',
+            channelId: 'default',
           },
           {
             to: 'ExponentPushToken[yyy]',
@@ -199,6 +205,7 @@ describe('NotificationService', () => {
             data: { type: 'bulk' },
             sound: 'default',
             priority: 'high',
+            channelId: 'default',
           },
         ],
         expect.any(Object)
@@ -239,6 +246,7 @@ describe('NotificationService', () => {
             },
             sound: 'default',
             priority: 'high',
+            channelId: 'default',
           },
         ],
         expect.any(Object)
@@ -277,6 +285,7 @@ describe('NotificationService', () => {
             },
             sound: 'default',
             priority: 'high',
+            channelId: 'default',
           },
         ],
         expect.any(Object)
@@ -344,10 +353,10 @@ describe('NotificationService', () => {
         'https://exp.host/--/api/v2/push/getReceipts',
         { ids: ['receipt-id-1', 'receipt-id-2'] },
         {
-          headers: {
+          headers: expect.objectContaining({
             Accept: 'application/json',
             'Content-Type': 'application/json',
-          },
+          }),
         }
       );
       expect(result).toEqual(mockReceipts.data);
@@ -823,6 +832,186 @@ describe('NotificationService', () => {
       );
 
       expect(mockedAxios.post).toHaveBeenCalled();
+    });
+  });
+
+  describe('Expo access token header', () => {
+    const originalEnv = process.env;
+
+    beforeEach(() => {
+      process.env = { ...originalEnv };
+    });
+
+    afterAll(() => {
+      process.env = originalEnv;
+    });
+
+    it('should include Authorization header when EXPO_ACCESS_TOKEN is set', async () => {
+      process.env.EXPO_ACCESS_TOKEN = 'test-token-123';
+
+      const mockResponse = {
+        data: {
+          data: [{ status: 'ok', id: 'receipt-id' }],
+        },
+      };
+      mockedAxios.post.mockResolvedValue(mockResponse);
+
+      await NotificationService.sendPushNotification({
+        to: 'ExponentPushToken[xxx]',
+        title: 'Test',
+        body: 'Message',
+      });
+
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        'https://exp.host/--/api/v2/push/send',
+        expect.any(Array),
+        {
+          headers: expect.objectContaining({
+            Authorization: 'Bearer test-token-123',
+          }),
+        }
+      );
+    });
+
+    it('should not include Authorization header when EXPO_ACCESS_TOKEN is not set', async () => {
+      delete process.env.EXPO_ACCESS_TOKEN;
+
+      const mockResponse = {
+        data: {
+          data: [{ status: 'ok', id: 'receipt-id' }],
+        },
+      };
+      mockedAxios.post.mockResolvedValue(mockResponse);
+
+      await NotificationService.sendPushNotification({
+        to: 'ExponentPushToken[xxx]',
+        title: 'Test',
+        body: 'Message',
+      });
+
+      const calledHeaders = mockedAxios.post.mock.calls[0][2]?.headers as Record<string, string>;
+      expect(calledHeaders).not.toHaveProperty('Authorization');
+    });
+
+    it('should include Authorization header in getReceipts when EXPO_ACCESS_TOKEN is set', async () => {
+      process.env.EXPO_ACCESS_TOKEN = 'test-token-456';
+
+      mockedAxios.post.mockResolvedValue({ data: {} });
+
+      await NotificationService.getReceipts(['receipt-1']);
+
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        'https://exp.host/--/api/v2/push/getReceipts',
+        expect.any(Object),
+        {
+          headers: expect.objectContaining({
+            Authorization: 'Bearer test-token-456',
+          }),
+        }
+      );
+    });
+  });
+
+  describe('handleTicketErrors', () => {
+    it('should clear device token when DeviceNotRegistered error is received', async () => {
+      const mockUser = { user_id: 42 } as any;
+      mockedUserModel.findByDeviceToken.mockResolvedValue(mockUser);
+      mockedUserModel.clearDeviceToken.mockResolvedValue(undefined);
+
+      const tickets = [
+        {
+          status: 'error' as const,
+          details: { error: 'DeviceNotRegistered' },
+        },
+      ];
+      const messages = [
+        { to: 'ExponentPushToken[expired]', title: 'Test', body: 'Body' },
+      ];
+
+      await NotificationService.handleTicketErrors(tickets, messages);
+
+      expect(mockedUserModel.findByDeviceToken).toHaveBeenCalledWith('ExponentPushToken[expired]');
+      expect(mockedUserModel.clearDeviceToken).toHaveBeenCalledWith(42);
+    });
+
+    it('should not clear token for successful tickets', async () => {
+      const tickets = [
+        { status: 'ok' as const, id: 'receipt-1' },
+      ];
+      const messages = [
+        { to: 'ExponentPushToken[valid]', title: 'Test', body: 'Body' },
+      ];
+
+      await NotificationService.handleTicketErrors(tickets, messages);
+
+      expect(mockedUserModel.findByDeviceToken).not.toHaveBeenCalled();
+      expect(mockedUserModel.clearDeviceToken).not.toHaveBeenCalled();
+    });
+
+    it('should handle when no user is found for the stale token', async () => {
+      mockedUserModel.findByDeviceToken.mockResolvedValue(undefined);
+
+      const tickets = [
+        {
+          status: 'error' as const,
+          details: { error: 'DeviceNotRegistered' },
+        },
+      ];
+      const messages = [
+        { to: 'ExponentPushToken[orphan]', title: 'Test', body: 'Body' },
+      ];
+
+      await NotificationService.handleTicketErrors(tickets, messages);
+
+      expect(mockedUserModel.findByDeviceToken).toHaveBeenCalledWith('ExponentPushToken[orphan]');
+      expect(mockedUserModel.clearDeviceToken).not.toHaveBeenCalled();
+    });
+
+    it('should handle errors during cleanup gracefully', async () => {
+      mockedUserModel.findByDeviceToken.mockRejectedValue(new Error('DB error'));
+
+      const tickets = [
+        {
+          status: 'error' as const,
+          details: { error: 'DeviceNotRegistered' },
+        },
+      ];
+      const messages = [
+        { to: 'ExponentPushToken[broken]', title: 'Test', body: 'Body' },
+      ];
+
+      // Should not throw
+      await NotificationService.handleTicketErrors(tickets, messages);
+    });
+
+    it('should handle mixed tickets and only clear DeviceNotRegistered tokens', async () => {
+      const mockUser = { user_id: 7 } as any;
+      mockedUserModel.findByDeviceToken.mockResolvedValue(mockUser);
+      mockedUserModel.clearDeviceToken.mockResolvedValue(undefined);
+
+      const tickets = [
+        { status: 'ok' as const, id: 'receipt-1' },
+        {
+          status: 'error' as const,
+          details: { error: 'DeviceNotRegistered' },
+        },
+        {
+          status: 'error' as const,
+          message: 'Some other error',
+          details: { error: 'InvalidCredentials' },
+        },
+      ];
+      const messages = [
+        { to: 'ExponentPushToken[good]', title: 'Test', body: 'Body' },
+        { to: 'ExponentPushToken[expired]', title: 'Test', body: 'Body' },
+        { to: 'ExponentPushToken[other]', title: 'Test', body: 'Body' },
+      ];
+
+      await NotificationService.handleTicketErrors(tickets, messages);
+
+      expect(mockedUserModel.findByDeviceToken).toHaveBeenCalledTimes(1);
+      expect(mockedUserModel.findByDeviceToken).toHaveBeenCalledWith('ExponentPushToken[expired]');
+      expect(mockedUserModel.clearDeviceToken).toHaveBeenCalledWith(7);
     });
   });
 });
