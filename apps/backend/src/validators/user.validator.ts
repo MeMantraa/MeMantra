@@ -61,9 +61,8 @@ export const featureFlagRolloutSchema = z.object({
   body: z.object({
     percentage: z
       .number()
-      .int('percentage must be an integer')
-      .min(1, 'percentage must be between 1 and 100')
-      .max(100, 'percentage must be between 1 and 100'),
+      .min(0, 'percentage must be between 0 and 100')
+      .max(100, 'percentage must be between 0 and 100'),
   }),
 });
 

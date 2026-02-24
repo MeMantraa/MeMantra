@@ -650,8 +650,8 @@ const AdminScreen: React.FC = () => {
 
   const handleRollout = async (flag: string) => {
     const pct = Number(rolloutPercentage);
-    if (!Number.isInteger(pct) || pct < 1 || pct > 100) {
-      Alert.alert('Error', 'Rollout percentage must be an integer between 1 and 100');
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+      Alert.alert('Error', 'Rollout percentage must be a number between 0 and 100');
       return;
     }
     setFeatureSubmitting(true);

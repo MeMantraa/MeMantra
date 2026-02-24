@@ -331,8 +331,8 @@ export const UserController = {
       if (!isValidFeatureFlag(flag)) {
         return sendError(res, 400, `Invalid feature flag: ${flag}`);
       }
-      if (!Number.isInteger(percentage) || percentage < 1 || percentage > 100) {
-        return sendError(res, 400, 'percentage must be an integer between 1 and 100');
+      if (!Number.isFinite(percentage) || percentage < 0 || percentage > 100) {
+        return sendError(res, 400, 'percentage must be a number between 0 and 100');
       }
 
       const result = await UserModel.rolloutFlagToPercentage(flag, percentage);
