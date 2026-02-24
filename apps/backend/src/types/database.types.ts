@@ -90,6 +90,7 @@ export interface CollectionTable {
   name: string | null;
   description: string | null;
   created_at: string | null;
+  icon: string | null;
 }
 
 export interface CollectionMantraTable {

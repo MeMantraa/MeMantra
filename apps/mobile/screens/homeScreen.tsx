@@ -235,10 +235,10 @@ export default function HomeScreen({ navigation, route }: any) {
     }
   };
 
-  const handleCreateCollection = async (name: string): Promise<number> => {
+  const handleCreateCollection = async (name: string, icon?: string): Promise<number> => {
     try {
       const token = (await storage.getToken()) || 'mock-token';
-      const response = await collectionService.createCollection(name, undefined, token);
+      const response = await collectionService.createCollection(name, undefined, token, icon);
 
       if (response.status === 'success' && response.data) {
         engagementService.trackEvent('collection_create');
