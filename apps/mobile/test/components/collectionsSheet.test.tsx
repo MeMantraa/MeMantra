@@ -143,7 +143,7 @@ describe('CollectionsSheet', () => {
     fireEvent.press(getByText('Create'));
 
     await waitFor(() => {
-      expect(mockOnCreateCollection).toHaveBeenCalledWith('New Collection Name');
+      expect(mockOnCreateCollection).toHaveBeenCalledWith('New Collection Name', 'folder');
     });
 
     await waitFor(() => {
@@ -177,7 +177,7 @@ describe('CollectionsSheet', () => {
     fireEvent.press(getByText('Create'));
 
     await waitFor(() => {
-      expect(mockOnCreateCollection).toHaveBeenCalledWith('Trimmed Name');
+      expect(mockOnCreateCollection).toHaveBeenCalledWith('Trimmed Name', 'folder');
     });
   });
 
@@ -281,7 +281,7 @@ describe('CollectionsSheet', () => {
     fireEvent(input, 'submitEditing');
 
     await waitFor(() => {
-      expect(mockOnCreateCollection).toHaveBeenCalledWith('New Collection');
+      expect(mockOnCreateCollection).toHaveBeenCalledWith('New Collection', 'folder');
     });
   });
 

@@ -1321,6 +1321,7 @@ describe('HomeScreen - Full Coverage', () => {
           'New Test Collection',
           undefined,
           'token',
+          undefined
         );
       },
       { timeout: 10000 },
