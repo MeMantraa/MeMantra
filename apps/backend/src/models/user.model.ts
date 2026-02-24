@@ -216,5 +216,84 @@ async getTheme(userId: number): Promise<string | undefined> {
       .execute();
   },
 
+  //Set a flag to true for all users at once
+  async enableFlagForAllUsers(flagName: string): Promise<number> {
+    const result = await db
+      .updateTable('User')
+      .set({
+        feature_flags: sql`array_append(${sql.ref('feature_flags')}, ${sql.val(flagName)})`,
+      })
+      .where(
+        sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`,
+      )
+      .executeTakeFirst();
+
+    return Number(result.numUpdatedRows ?? 0);
+  },
+
+  //Set a flag to false for all users at once
+  async disableFlagForAllUsers(flagName: string): Promise<number> {
+    const result = await db
+      .updateTable('User')
+      .set({
+        feature_flags: sql`array_remove(${sql.ref('feature_flags')}, ${sql.val(flagName)})`,
+      })
+      .where(sql<boolean>`${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}]`)
+      .executeTakeFirst();
+
+    return Number(result.numUpdatedRows ?? 0);
+  },
+
+
+  //Set a flag to true for a defined percentage of users (not dynamic)
+  async rolloutFlagToPercentage(
+    flagName: string,
+    percentage: number,
+  ): Promise<{ totalUsers: number; selectedUsers: number }> {
+    const users = await db
+      .selectFrom('User')
+      .select('user_id')
+      .orderBy('user_id', 'asc')
+      .execute();
+
+    const totalUsers = users.length;
+    if (totalUsers === 0) {
+      return { totalUsers: 0, selectedUsers: 0 };
+    }
+
+    // Snapshot rollout: deterministic by user_id ordering.
+    const selectedCount = Math.min(
+      totalUsers,
+      Math.max(0, Math.ceil((totalUsers * percentage) / 100)),
+    );
+    const selectedUserIds = users.slice(0, selectedCount).map((u) => u.user_id);
+
+    await db.transaction().execute(async (trx) => {
+      // Remove flag from everyone first so result matches requested percentage exactly.
+      await trx
+        .updateTable('User')
+        .set({
+          feature_flags: sql`array_remove(${sql.ref('feature_flags')}, ${sql.val(flagName)})`,
+        })
+        .where(sql<boolean>`${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}]`)
+        .executeTakeFirst();
+
+      if (selectedUserIds.length > 0) {
+        await trx
+          .updateTable('User')
+          .set({
+            feature_flags: sql`array_append(${sql.ref('feature_flags')}, ${sql.val(flagName)})`,
+          })
+          .where('user_id', 'in', selectedUserIds)
+          .where(
+            sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`,
+          )
+          .executeTakeFirst();
+      }
+    });
+
+    return { totalUsers, selectedUsers: selectedCount };
+  },
+
 };
 
