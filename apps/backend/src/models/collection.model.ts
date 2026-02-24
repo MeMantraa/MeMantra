@@ -4,13 +4,14 @@ import { CollectionMantraModel } from './collectionMantra.model';
 
 export const CollectionModel = {
   // Create a new collection
-  async create(userId: number, name: string, description?: string): Promise<Collection> {
+  async create(userId: number, name: string, description?: string, icon?: string): Promise<Collection> {
     const result = await db
       .insertInto('Collection')
       .values({
         user_id: userId,
         name: name,
         description: description || null,
+        icon: icon || null, // Add this line
         created_at: new Date().toISOString(),
       })
       .returningAll()
