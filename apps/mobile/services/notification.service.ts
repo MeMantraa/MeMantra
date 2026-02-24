@@ -95,6 +95,7 @@ export const notificationService = {
         token: expoPushToken,
         platform: Platform.OS,
         deviceName: Device.deviceName || `${Platform.OS} Device`,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       };
 
       const response = await apiClient.post<RegisterTokenResponse>(

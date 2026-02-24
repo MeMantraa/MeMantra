@@ -32,7 +32,17 @@ const getLocalIpAddress = (): string | null => {
   return debuggerHost || null;
 };
 
+const PRODUCTION_API_URL = 'https://memantra.onrender.com/api';
+
 const getBaseUrl = () => {
+  // In production builds, hostUri is undefined (no Expo dev server)
+  const isDevelopment = !!Constants.expoConfig?.hostUri;
+
+  if (!isDevelopment) {
+    console.log('📱 Production build detected, using:', PRODUCTION_API_URL);
+    return PRODUCTION_API_URL;
+  }
+
   const autoDetectedIP = getLocalIpAddress();
   const PORT = '4000';
 
