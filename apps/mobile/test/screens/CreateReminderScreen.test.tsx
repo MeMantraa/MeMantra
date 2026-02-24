@@ -1015,27 +1015,30 @@ describe('CreateReminderScreen', () => {
   });
 
   it('shows alert when trying to deselect the last day', async () => {
-    // Start with Weekends (days 0,6), switch to Custom, then deselect until empty
-    const { getByText, getAllByText } = render(<CreateReminderScreen />);
+    const { getByText, getAllByText, getByTestId } = render(<CreateReminderScreen />);
 
     await waitFor(() => {
       expect(getByText('Be Present')).toBeTruthy();
     });
 
-    // Select Weekends preset first (sets days to [0, 6])
-    fireEvent.press(getByText('Weekends'));
-    // Switch to Custom to show day circles
+    // Start from "Every Day" (all 7 days selected) and switch to Custom
+    // to reveal the day circle toggles.
     fireEvent.press(getByText('Custom'));
 
-    // All 7 day circles are shown. Currently only Sun(0) and Sat(6) are selected.
-    // Toggle Wednesday (W) on, so we have [0, 3, 6]
-    fireEvent.press(getByText('W'));
+    await waitFor(() => {
+      expect(getByTestId('day-circle-mon')).toBeTruthy();
+    });
 
-    // Now toggle off Sun (first S), Sat (second S), and then W
-    const sButtons = getAllByText('S');
-    fireEvent.press(sButtons[0]); // toggle off Sun(0) -> [3, 6]
-    fireEvent.press(sButtons[1]); // toggle off Sat(6) -> [3]
-    fireEvent.press(getByText('W')); // toggle off Wed(3) -> [] -> should alert
+    // Deselect 6 of the 7 days, leaving only Wednesday selected.
+    fireEvent.press(getByTestId('day-circle-sun')); // remove Sun  -> 6 days
+    fireEvent.press(getByTestId('day-circle-mon')); // remove Mon  -> 5 days
+    fireEvent.press(getByTestId('day-circle-tue')); // remove Tue  -> 4 days
+    fireEvent.press(getByTestId('day-circle-thu')); // remove Thu  -> 3 days
+    fireEvent.press(getByTestId('day-circle-fri')); // remove Fri  -> 2 days
+    fireEvent.press(getByTestId('day-circle-sat')); // remove Sat  -> 1 day (Wed only)
+
+    // Now attempt to deselect the last remaining day (Wednesday) — should alert.
+    fireEvent.press(getByTestId('day-circle-wed'));
 
     expect(Alert.alert).toHaveBeenCalledWith('At Least One', 'Select at least one day.');
   });
