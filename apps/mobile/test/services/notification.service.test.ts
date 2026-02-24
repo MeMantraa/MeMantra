@@ -184,6 +184,7 @@ describe('notificationService', () => {
         token: mockToken,
         platform: 'ios',
         deviceName: 'Test Device',
+        timezone: expect.any(String),
       });
       expect(result).toEqual(mockResponse.data);
     });
