@@ -99,7 +99,7 @@ export const CollectionController = {
         userId,
         data.name,
         data.description,
-        data.icon // Add this line
+        data.icon 
       );
 
       return res.status(201).json({
