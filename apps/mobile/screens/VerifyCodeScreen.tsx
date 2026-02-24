@@ -7,7 +7,9 @@ import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 
 export default function VerifyCodeScreen({ route, navigation }: any) {
-  const { email } = route.params;
+  const { email, flow = 'forgotPassword' } = route.params;
+  const isSignupFlow = flow === 'signup';
+
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(60); // Start with 60 seconds cooldown
@@ -60,20 +62,25 @@ export default function VerifyCodeScreen({ route, navigation }: any) {
 
     setLoading(true);
     try {
-      const response = await authService.verifyResetCode(email, finalCode);
+      const response = isSignupFlow
+        ? await authService.verifySignupCode(email, finalCode)
+        : await authService.verifyResetCode(email, finalCode);
 
       if (response.status === 'success') {
-        Alert.alert('Success', 'Code verified successfully!', [
-          {
-            text: 'OK',
-            onPress: () => {
-              navigation.navigate('ResetPassword', { email, code: finalCode });
+        if (isSignupFlow) {
+          navigation.navigate('CompleteSignUp', { email, code: finalCode });
+        } else {
+          Alert.alert('Success', 'Code verified successfully!', [
+            {
+              text: 'OK',
+              onPress: () => {
+                navigation.navigate('ResetPassword', { email, code: finalCode });
+              },
             },
-          },
-        ]);
+          ]);
+        }
       } else {
         Alert.alert('Error', response.message || 'Invalid verification code');
-        // Clear code inputs on error
         setCode(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
       }
@@ -82,7 +89,6 @@ export default function VerifyCodeScreen({ route, navigation }: any) {
       const errorMessage =
         error.response?.data?.message || 'Invalid or expired code. Please try again.';
       Alert.alert('Error', errorMessage);
-      // Clear code inputs on error
       setCode(['', '', '', '', '', '']);
       inputRefs.current[0]?.focus();
     } finally {
@@ -97,7 +103,9 @@ export default function VerifyCodeScreen({ route, navigation }: any) {
 
     setLoading(true);
     try {
-      const response = await authService.forgotPassword(email);
+      const response = isSignupFlow
+        ? await authService.sendSignupCode(email)
+        : await authService.forgotPassword(email);
 
       if (response.status === 'success') {
         Alert.alert('Success', 'A new verification code has been sent to your email');
@@ -105,7 +113,6 @@ export default function VerifyCodeScreen({ route, navigation }: any) {
         setCode(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
       } else {
-        // Handle rate limiting
         if (response.waitTime) {
           setResendCooldown(response.waitTime);
         }
@@ -137,10 +144,12 @@ export default function VerifyCodeScreen({ route, navigation }: any) {
 
           <View className="w-full max-w-[400px]">
             <AppText className="text-[#ffffff] text-[24px] font-bold text-center mb-[10px]">
-              Enter Verification Code
+              {isSignupFlow ? 'Verify your email' : 'Enter Verification Code'}
             </AppText>
             <AppText className="text-[#ffffff] text-[14px] text-center mb-[30px] opacity-80">
-              We've sent a 6-digit code to {email}
+              {isSignupFlow
+                ? `We've sent a 6-digit code to ${email}. Enter it below to continue.`
+                : `We've sent a 6-digit code to ${email}`}
             </AppText>
             <AppText className="text-[#ffffff] text-[12px] text-center mb-[20px] opacity-70">
               Code expires in 10 minutes

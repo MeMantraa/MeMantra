@@ -1,12 +1,16 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller';
 import { validateRequest } from '../middleware/validate.middleware';
-import { registerSchema, loginSchema } from '../validators/auth.validator';
+import { registerSchema, loginSchema, sendSignupCodeSchema, verifySignupCodeSchema } from '../validators/auth.validator';
 import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
 
-//api route to register
+// Signup email verification routes
+router.post('/signup/send-code', validateRequest(sendSignupCodeSchema), AuthController.sendSignupCode);
+router.post('/signup/verify-code', validateRequest(verifySignupCodeSchema), AuthController.verifySignupCode);
+
+//api route to register (requires verified email code)
 router.post('/register', validateRequest(registerSchema), AuthController.register);
 
 //api route to login
