@@ -53,7 +53,7 @@ export default function CategoryFilterSheet({
   const slide = useRef(new Animated.Value(0)).current;
   const dragY = useRef(new Animated.Value(0)).current;
   const [localSelected, setLocalSelected] = useState<number[]>(selectedCategoryIds);
-  const [isDragging, setIsDragging] = useState(false);
+  const [, setIsDragging] = useState(false);
 
   const closeSheet = () => {
     setIsDragging(false);
