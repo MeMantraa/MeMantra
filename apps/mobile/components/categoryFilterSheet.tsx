@@ -53,10 +53,10 @@ export default function CategoryFilterSheet({
   const slide = useRef(new Animated.Value(0)).current;
   const dragY = useRef(new Animated.Value(0)).current;
   const [localSelected, setLocalSelected] = useState<number[]>(selectedCategoryIds);
-  const [, setIsDragging] = useState(false);
+  const isDraggingRef = useRef(false);
 
   const closeSheet = () => {
-    setIsDragging(false);
+    isDraggingRef.current = false;
     Animated.parallel([
       Animated.timing(dragY, { toValue: OFFSCREEN, duration: 220, useNativeDriver: true }),
       Animated.timing(slide, { toValue: 0, duration: 220, useNativeDriver: true }),
@@ -64,7 +64,7 @@ export default function CategoryFilterSheet({
   };
 
   const snapBack = () => {
-    setIsDragging(false);
+    isDraggingRef.current = false;
     Animated.spring(dragY, { toValue: 0, useNativeDriver: true, bounciness: 0, speed: 18 }).start();
   };
 
@@ -76,7 +76,7 @@ export default function CategoryFilterSheet({
     } else {
       dragY.setValue(0);
       slide.setValue(0);
-      setIsDragging(false);
+      isDraggingRef.current = false;
     }
   }, [visible]);
 
@@ -84,7 +84,9 @@ export default function CategoryFilterSheet({
     PanResponder.create({
       onStartShouldSetPanResponder: () => true,
       onMoveShouldSetPanResponder: (_e, g) => Math.abs(g.dy) > 4 && Math.abs(g.dy) > Math.abs(g.dx),
-      onPanResponderGrant: () => setIsDragging(true),
+      onPanResponderGrant: () => {
+        isDraggingRef.current = true;
+      },
       onPanResponderMove: (_e, g) => dragY.setValue(Math.max(-18, g.dy)),
       onPanResponderRelease: (_e, g) =>
         g.dy > THRESHOLD || g.vy > 1.2 ? closeSheet() : snapBack(),
@@ -126,6 +128,87 @@ export default function CategoryFilterSheet({
   const translateY = Animated.add(
     slide.interpolate({ inputRange: [0, 1], outputRange: [OFFSCREEN, 0] }),
     dragY,
+  );
+
+  const contentElement = loading ? (
+    <View className="flex-1 justify-center items-center py-8">
+      <ActivityIndicator size="large" color={colors.secondary} />
+    </View>
+  ) : sections.length === 0 ? (
+    <View className="flex-1 justify-center items-center py-8">
+      <AppText className="text-base" style={{ color: colors.text }}>
+        No categories available
+      </AppText>
+    </View>
+  ) : (
+    <SectionList
+      sections={sections}
+      keyExtractor={(item) => item.category_id.toString()}
+      contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 30 }}
+      showsVerticalScrollIndicator={false}
+      stickySectionHeadersEnabled={false}
+      renderSectionHeader={({ section: { title } }) => (
+        <View
+          className="pt-4 pb-2"
+          style={{ borderBottomWidth: 1, borderBottomColor: `${colors.secondary}30` }}
+        >
+          <AppText
+            className="text-xs font-bold tracking-wide"
+            style={{
+              color: colors.secondary,
+              textTransform: 'uppercase',
+              letterSpacing: 1,
+            }}
+          >
+            {title}
+          </AppText>
+        </View>
+      )}
+      renderItem={({ item }) => {
+        const isSelected = localSelected.includes(item.category_id);
+        return (
+          <TouchableOpacity
+            testID={`category-filter-item-${item.category_id}`}
+            onPress={() => toggleCategory(item.category_id)}
+            className="flex-row items-center py-3"
+            style={{
+              borderBottomWidth: 0.5,
+              borderBottomColor: `${colors.text}20`,
+            }}
+          >
+            <View
+              className="rounded-full items-center justify-center mr-3"
+              style={{
+                width: 28,
+                height: 28,
+                borderWidth: 2,
+                borderColor: isSelected ? colors.secondary : `${colors.text}40`,
+                backgroundColor: isSelected ? colors.secondary : 'transparent',
+              }}
+            >
+              {isSelected && <Ionicons name="checkmark" size={18} color={colors.primary} />}
+            </View>
+            <View className="flex-1">
+              <AppText
+                className="text-base font-medium"
+                style={{ color: isSelected ? colors.secondary : colors.text }}
+              >
+                {item.name}
+              </AppText>
+              {item.description ? (
+                <AppText
+                  className="text-xs mt-0.5"
+                  style={{ color: `${colors.text}80` }}
+                  numberOfLines={1}
+                >
+                  {item.description}
+                </AppText>
+              ) : null}
+            </View>
+          </TouchableOpacity>
+        );
+      }}
+    />
   );
 
   return (
@@ -189,86 +272,7 @@ export default function CategoryFilterSheet({
             </View>
           </View>
 
-          {loading ? (
-            <View className="flex-1 justify-center items-center py-8">
-              <ActivityIndicator size="large" color={colors.secondary} />
-            </View>
-          ) : sections.length === 0 ? (
-            <View className="flex-1 justify-center items-center py-8">
-              <AppText className="text-base" style={{ color: colors.text }}>
-                No categories available
-              </AppText>
-            </View>
-          ) : (
-            <SectionList
-              sections={sections}
-              keyExtractor={(item) => item.category_id.toString()}
-              contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 30 }}
-              showsVerticalScrollIndicator={false}
-              stickySectionHeadersEnabled={false}
-              renderSectionHeader={({ section: { title } }) => (
-                <View
-                  className="pt-4 pb-2"
-                  style={{ borderBottomWidth: 1, borderBottomColor: `${colors.secondary}30` }}
-                >
-                  <AppText
-                    className="text-xs font-bold tracking-wide"
-                    style={{
-                      color: colors.secondary,
-                      textTransform: 'uppercase',
-                      letterSpacing: 1,
-                    }}
-                  >
-                    {title}
-                  </AppText>
-                </View>
-              )}
-              renderItem={({ item }) => {
-                const isSelected = localSelected.includes(item.category_id);
-                return (
-                  <TouchableOpacity
-                    testID={`category-filter-item-${item.category_id}`}
-                    onPress={() => toggleCategory(item.category_id)}
-                    className="flex-row items-center py-3"
-                    style={{
-                      borderBottomWidth: 0.5,
-                      borderBottomColor: `${colors.text}20`,
-                    }}
-                  >
-                    <View
-                      className="rounded-full items-center justify-center mr-3"
-                      style={{
-                        width: 28,
-                        height: 28,
-                        borderWidth: 2,
-                        borderColor: isSelected ? colors.secondary : `${colors.text}40`,
-                        backgroundColor: isSelected ? colors.secondary : 'transparent',
-                      }}
-                    >
-                      {isSelected && <Ionicons name="checkmark" size={18} color={colors.primary} />}
-                    </View>
-                    <View className="flex-1">
-                      <AppText
-                        className="text-base font-medium"
-                        style={{ color: isSelected ? colors.secondary : colors.text }}
-                      >
-                        {item.name}
-                      </AppText>
-                      {item.description ? (
-                        <AppText
-                          className="text-xs mt-0.5"
-                          style={{ color: `${colors.text}80` }}
-                          numberOfLines={1}
-                        >
-                          {item.description}
-                        </AppText>
-                      ) : null}
-                    </View>
-                  </TouchableOpacity>
-                );
-              }}
-            />
-          )}
+          {contentElement}
         </Animated.View>
       </View>
     </Modal>
