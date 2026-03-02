@@ -449,8 +449,7 @@ export default function HomeScreen({ navigation, route }: any) {
               style={{
                 width: 48,
                 height: 48,
-                backgroundColor:
-                  selectedCategoryIds.length > 0 ? colors.secondary : colors.secondary,
+                backgroundColor: colors.secondary,
               }}
             >
               <Ionicons
