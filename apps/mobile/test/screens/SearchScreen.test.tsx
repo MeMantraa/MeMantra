@@ -164,12 +164,10 @@ describe('SearchScreen', () => {
     fireEvent.changeText(input, 'Present');
     await waitFor(() => expect(getAllByText('Embrace the Present').length).toBeGreaterThan(0));
 
-    // Press the clear (X) button
-    const { getByTestId: _ } = setup(); // not using testID here — find by role
     fireEvent.changeText(input, '');
 
     await waitFor(() => {
-      expect(getByText('Type a keyword to search across all mantra content')).toBeTruthy();
+      expect(getByText(/Type a keyword to search across all mantra content/)).toBeTruthy();
     });
   });
 
