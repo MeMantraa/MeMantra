@@ -17,11 +17,15 @@ const INITIAL_USERS = [
 ];
 
 let mockUserState: { users: typeof INITIAL_USERS };
+let mockTheme = 'light';
 
 function resetUserState() {
   mockUserState = {
     users: INITIAL_USERS.map((u) => ({ ...u })),
   };
+}
+function resetThemeState() {
+  mockTheme = 'light';
 }
 
 jest.mock('../../services/api.config', () => ({
@@ -33,6 +37,14 @@ jest.mock('../../services/api.config', () => ({
           data: {
             status: 'success',
             data: { users },
+          },
+        });
+      }
+      if (url === '/theme') {
+        return Promise.resolve({
+          data: {
+            status: 'success',
+            data: { theme: mockTheme },
           },
         });
       }
@@ -81,6 +93,17 @@ jest.mock('../../services/api.config', () => ({
     }),
     put: jest.fn((url: string, body: any) => {
       const { users } = mockUserState;
+
+      if (url === '/theme') {
+        mockTheme = body.theme;
+        return Promise.resolve({
+          data: {
+            status: 'success',
+            data: { theme: mockTheme },
+          },
+        });
+      }
+
       if (url.startsWith('/users/')) {
         const id = Number(url.split('/').pop());
         let updatedUser = null;
@@ -132,6 +155,7 @@ import { userService } from '../../services/user.service';
 describe('userService (mock implementation)', () => {
   beforeEach(() => {
     resetUserState();
+    resetThemeState();
     jest.resetModules();
   });
 
@@ -192,5 +216,21 @@ describe('userService (mock implementation)', () => {
     const response = await userService.deleteUser(99, 'token');
     expect(response.status).toBe('error');
     expect(response.message).toBe('User not found');
+  });
+  it('gets theme', async () => {
+    const response = await userService.getTheme('token');
+
+    expect(response.status).toBe('success');
+    expect(response.data.theme).toBe('light');
+  });
+
+  it('updates theme', async () => {
+    const response = await userService.updateTheme('dark', 'token');
+
+    expect(response.status).toBe('success');
+    expect(response.data.theme).toBe('dark');
+
+    const check = await userService.getTheme('token');
+    expect(check.data.theme).toBe('dark');
   });
 });

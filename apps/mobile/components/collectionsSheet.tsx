@@ -110,7 +110,7 @@ export default function CollectionsSheet({
       setIsDragging(false);
       setIsProcessing(false);
     }
-  }, [visible]);
+  }, [visible, dragY, onRefresh, slide]);
 
   const panResponder = useRef(
     PanResponder.create({
@@ -219,6 +219,7 @@ export default function CollectionsSheet({
               <View className="flex-row items-center gap-2 mb-2">
                 {/* Icon Selector */}
                 <Pressable
+                  testID="icon-selector-button"
                   onPress={() => setShowIconPicker(!showIconPicker)}
                   className="rounded-xl px-3 py-3 border items-center justify-center"
                   style={{
@@ -340,11 +341,7 @@ export default function CollectionsSheet({
                   }}
                   disabled={isProcessing}
                 >
-                  <Ionicons
-                    name={(item.icon || 'folder') as any}
-                    size={20}
-                    color="#6B7280"
-                  />
+                  <Ionicons name={(item.icon || 'folder') as any} size={20} color="#6B7280" />
                   <View className="flex-1">
                     <Text className="text-[15px] font-semibold" style={{ color: '#111827' }}>
                       {item.name}
