@@ -63,13 +63,23 @@ export default function SearchScreen({ navigation, route }: any) {
       const match = val.slice(idx, idx + q.length);
       const beforeText = val.slice(0, idx);
       const afterText = val.slice(idx + q.length);
-      const beforeWords = beforeText.trimEnd().split(/\s+/).filter(Boolean).slice(-3).join(' ');
-      const afterWords = afterText.trimStart().split(/\s+/).filter(Boolean).slice(0, 3).join(' ');
-      return {
-        before: beforeWords ? `...${beforeWords} ` : '',
-        match,
-        after: afterWords ? ` ${afterWords}...` : '',
-      };
+
+      // Slice raw text to preserve partial words; truncate at word boundaries
+      const beforeSpaces = [...beforeText.matchAll(/\s+/g)];
+      const before =
+        beforeSpaces.length >= 3
+          ? '...' +
+            beforeText.slice(
+              beforeSpaces[beforeSpaces.length - 3].index! +
+                beforeSpaces[beforeSpaces.length - 3][0].length,
+            )
+          : beforeText;
+
+      const afterSpaces = [...afterText.matchAll(/\s+/g)];
+      const after =
+        afterSpaces.length >= 3 ? afterText.slice(0, afterSpaces[2].index!) + '...' : afterText;
+
+      return { before, match, after };
     }
     return null;
   };
