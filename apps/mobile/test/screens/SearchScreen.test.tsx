@@ -56,12 +56,12 @@ describe('SearchScreen', () => {
   });
 
   it('shows results when a keyword matches a mantra title', async () => {
-    const { getByPlaceholderText, getByText } = setup();
+    const { getByPlaceholderText, getAllByText } = setup();
 
     fireEvent.changeText(getByPlaceholderText('Search mantras...'), 'Present');
 
     await waitFor(() => {
-      expect(getByText('Embrace the Present')).toBeTruthy();
+      expect(getAllByText('Embrace the Present').length).toBeGreaterThan(0);
     });
   });
 
@@ -158,11 +158,11 @@ describe('SearchScreen', () => {
   });
 
   it('returns to placeholder state when query is cleared via X button', async () => {
-    const { getByPlaceholderText, getByText } = setup();
+    const { getByPlaceholderText, getByText, getAllByText } = setup();
     const input = getByPlaceholderText('Search mantras...');
 
     fireEvent.changeText(input, 'Present');
-    await waitFor(() => expect(getByText('Embrace the Present')).toBeTruthy());
+    await waitFor(() => expect(getAllByText('Embrace the Present').length).toBeGreaterThan(0));
 
     // Press the clear (X) button
     const { getByTestId: _ } = setup(); // not using testID here — find by role
@@ -174,13 +174,13 @@ describe('SearchScreen', () => {
   });
 
   it('navigates to Focus screen when a result is pressed', async () => {
-    const { getByPlaceholderText, getByText } = setup();
+    const { getByPlaceholderText, getAllByText } = setup();
 
     fireEvent.changeText(getByPlaceholderText('Search mantras...'), 'Present');
 
-    await waitFor(() => expect(getByText('Embrace the Present')).toBeTruthy());
+    await waitFor(() => expect(getAllByText('Embrace the Present').length).toBeGreaterThan(0));
 
-    fireEvent.press(getByText('Embrace the Present'));
+    fireEvent.press(getAllByText('Embrace the Present')[0]);
 
     expect(mockNavigate).toHaveBeenCalledWith('Focus', {
       mantra: sampleMantras[0],
@@ -210,12 +210,12 @@ describe('SearchScreen', () => {
   });
 
   it('is case-insensitive when matching keywords', async () => {
-    const { getByPlaceholderText, getByText } = setup();
+    const { getByPlaceholderText, getAllByText } = setup();
 
     fireEvent.changeText(getByPlaceholderText('Search mantras...'), 'PRESENT');
 
     await waitFor(() => {
-      expect(getByText('Embrace the Present')).toBeTruthy();
+      expect(getAllByText('Embrace the Present').length).toBeGreaterThan(0);
     });
   });
 
