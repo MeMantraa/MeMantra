@@ -9,9 +9,14 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 type SearchBarProps = {
   onSearch: (query: string) => void;
   placeholder?: string;
+  onIconPress?: () => void;
 };
 
-const SearchBar: React.FC<SearchBarProps> = ({ onSearch, placeholder = 'Search...' }) => {
+const SearchBar: React.FC<SearchBarProps> = ({
+  onSearch,
+  placeholder = 'Search...',
+  onIconPress,
+}) => {
   const { colors } = useTheme();
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,6 +47,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, placeholder = 'Search..
   const handleToggle = () => {
     if (isExpanded) {
       setSearchQuery('');
+      onSearch('');
       inputRef.current?.blur();
     }
     setIsExpanded(!isExpanded);
@@ -68,7 +74,7 @@ const SearchBar: React.FC<SearchBarProps> = ({ onSearch, placeholder = 'Search..
     >
       <TouchableOpacity
         testID="search-toggle-button"
-        onPress={isExpanded ? handleSubmit : handleToggle}
+        onPress={onIconPress ?? (isExpanded ? handleSubmit : handleToggle)}
         className="items-center justify-center"
         style={{ width: 24, height: 24 }}
       >
