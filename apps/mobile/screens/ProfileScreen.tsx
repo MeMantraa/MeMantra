@@ -10,6 +10,8 @@ import { profileSettingsStyles as styles } from '../styles/profileSettings.style
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import DefaultProfile from '../assets/Profile-default.png';
+import { userService } from '../services/user.service';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 type ProfileNavProp = StackNavigationProp<RootStackParamList>;
 
@@ -27,6 +29,40 @@ export default function ProfileScreen() {
     load();
   }, []);
 
+  const uploadPickedPhoto = async (uri: string) => {
+    try {
+      const resized = await ImageManipulator.manipulateAsync(uri, [{ resize: { width: 800 } }], {
+        compress: 0.8,
+        format: ImageManipulator.SaveFormat.JPEG,
+        base64: true,
+      });
+
+      const base64WithPrefix = `data:image/jpeg;base64,${resized.base64}`;
+      console.log('Uploading photo (first 50 chars):', base64WithPrefix.slice(0, 50), '...');
+
+      console.log('Base64 length (MB):', base64WithPrefix.length / 1e6);
+      await uploadPhoto(base64WithPrefix);
+    } catch (err) {
+      console.error('Error converting/uploading photo:', err);
+    }
+  };
+
+  const uploadPhoto = async (base64WithPrefix: string) => {
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      const res = await userService.updateProfilePhoto(base64WithPrefix, token);
+
+      if (res.status === 'success') {
+        console.log('Photo uploaded:', res.data.user.profile_photo);
+        // update local state if you have user profile in context or state
+      } else {
+        console.error('Failed to update photo:', res.message);
+      }
+    } catch (err) {
+      console.error('Error uploading photo:', err);
+    }
+  };
+
   const pickImageFromLibrary = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') return alert('Permission denied!');
@@ -35,10 +71,14 @@ export default function ProfileScreen() {
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.8,
+      quality: 0.4,
     });
 
-    if (!result.canceled) setProfilePhoto(result.assets[0].uri);
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      setProfilePhoto(uri);
+      await uploadPickedPhoto(uri);
+    }
   };
 
   const takePhotoWithCamera = async () => {
@@ -51,7 +91,11 @@ export default function ProfileScreen() {
       quality: 0.8,
     });
 
-    if (!result.canceled) setProfilePhoto(result.assets[0].uri);
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      setProfilePhoto(uri);
+      await uploadPickedPhoto(uri);
+    }
   };
 
   const onEditPress = () => {

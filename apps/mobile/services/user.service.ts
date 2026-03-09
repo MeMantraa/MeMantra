@@ -6,6 +6,7 @@ export interface User {
   email: string | null;
   auth_provider?: string;
   created_at: string;
+  profile_photo?: string;
 }
 
 export interface CreateUserPayload {
@@ -96,6 +97,15 @@ export const userService = {
       {
         headers: { Authorization: `Bearer ${token}` },
       },
+    );
+    return response.data;
+  },
+
+  async updateProfilePhoto(photoBase64: string, token: string): Promise<UserDetailResponse> {
+    const response = await apiClient.put<UserDetailResponse>(
+      '/api/profile/photo',
+      { photo: photoBase64 },
+      { headers: { Authorization: `Bearer ${token}` } },
     );
     return response.data;
   },
