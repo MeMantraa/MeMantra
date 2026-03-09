@@ -1,7 +1,16 @@
 import { Router } from 'express';
 import { AuthController } from '../controllers/auth.controller';
 import { validateRequest } from '../middleware/validate.middleware';
-import { registerSchema, loginSchema, sendSignupCodeSchema, verifySignupCodeSchema } from '../validators/auth.validator';
+import {
+  registerSchema,
+  loginSchema,
+  sendSignupCodeSchema,
+  verifySignupCodeSchema,
+  forgotPasswordSchema,
+  verifyResetCodeSchema,
+  resetPasswordSchema,
+  updatePasswordSchema,
+} from '../validators/auth.validator';
 import { authenticate } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -23,14 +32,14 @@ router.get('/me', authenticate, AuthController.getMe);
 router.patch('/email', authenticate, AuthController.updateEmail);
 
 //api route for user updating password
-router.patch('/password', authenticate, AuthController.updatePassword);
+router.patch('/password', authenticate, validateRequest(updatePasswordSchema), AuthController.updatePassword);
 
 //api route for deleting account
 router.delete('/account', authenticate, AuthController.deleteAccount);
 
 // Password reset routes
-router.post('/forgot-password', AuthController.forgotPassword);
-router.post('/verify-code', AuthController.verifyResetCode);
-router.post('/reset-password', AuthController.resetPassword);
+router.post('/forgot-password', validateRequest(forgotPasswordSchema), AuthController.forgotPassword);
+router.post('/verify-code', validateRequest(verifyResetCodeSchema), AuthController.verifyResetCode);
+router.post('/reset-password', validateRequest(resetPasswordSchema), AuthController.resetPassword);
 
 export default router;
