@@ -23,7 +23,7 @@
     "cors": "^2.8.5",
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
-    "express-rate-limit": "^8.1.0",
+    "express-rate-limit": "^8.1.1",
     "google-auth-library": "^10.4.2",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
