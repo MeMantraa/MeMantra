@@ -34,7 +34,7 @@ afterAll(() => {
   console.error = originalConsoleError;
 });
 
-import { emailService, generate6DigitCode, send6DigitCode } from '../../src/services/email.service';
+import { emailService, generate6DigitCode, send6DigitCode, sendSignupVerificationCode } from '../../src/services/email.service';
 
 describe('Email Service', () => {
   beforeEach(() => {
@@ -95,6 +95,19 @@ describe('Email Service', () => {
       expect(code1).not.toBe(code2);
       expect(parseInt(code1)).toBe(100100);
       expect(parseInt(code2)).toBe(998788);
+    });
+
+    it('should retry when random value exceeds maxAcceptable', () => {
+      // maxAcceptable = Math.floor(0xFFFFFFFF / 900000) * 900000 = 4294800000
+      // 0xFFFFFFFF = 4294967295, so values >= 4294800000 should be rejected
+      const tooHighBuffer = Buffer.from([0xFF, 0xFD, 0x8E, 0x40]); // 4294803008 >= maxAcceptable
+      const validBuffer = Buffer.from([0x00, 0x01, 0x86, 0xA0]); // 100000
+      mockRandomBytes.mockReturnValueOnce(tooHighBuffer).mockReturnValueOnce(validBuffer);
+
+      const code = generate6DigitCode();
+
+      expect(mockRandomBytes).toHaveBeenCalledTimes(2);
+      expect(code).toMatch(/^\d{6}$/);
     });
 
     it('should handle edge case with value exactly at 100000', () => {
@@ -271,6 +284,151 @@ describe('Email Service', () => {
     });
   });
 
+  describe('sendSignupVerificationCode', () => {
+    const testEmail = 'newuser@example.com';
+    const testCode = '654321';
+
+    beforeEach(() => {
+      process.env.EMAIL_USER = 'noreply@memantra.com';
+    });
+
+    it('should send signup verification email successfully and return true', async () => {
+      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+
+      const result = await sendSignupVerificationCode(testEmail, testCode);
+
+      expect(result).toBe(true);
+      expect(mockSendMail).toHaveBeenCalledTimes(1);
+      expect(console.log).toHaveBeenCalledWith(
+        `Signup verification code sent successfully to ${testEmail}`
+      );
+    });
+
+    it('should return false if email sending fails', async () => {
+      mockSendMail.mockRejectedValue(new Error('SMTP error'));
+
+      const result = await sendSignupVerificationCode(testEmail, testCode);
+
+      expect(result).toBe(false);
+      expect(console.error).toHaveBeenCalledWith(
+        'Error sending signup verification email:',
+        expect.any(Error)
+      );
+    });
+
+    it('should include correct email metadata', async () => {
+      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+
+      await sendSignupVerificationCode(testEmail, testCode);
+
+      const callArgs = mockSendMail.mock.calls[0][0];
+      expect(callArgs.from).toEqual({
+        name: 'MeMantra',
+        address: 'noreply@memantra.com',
+      });
+      expect(callArgs.to).toBe(testEmail);
+      expect(callArgs.subject).toBe('Verify your MeMantra email');
+    });
+
+    it('should include code in HTML content', async () => {
+      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+
+      await sendSignupVerificationCode(testEmail, testCode);
+
+      const callArgs = mockSendMail.mock.calls[0][0];
+      expect(callArgs.html).toContain(testCode);
+      expect(callArgs.html).toContain('Verify your email address');
+      expect(callArgs.html).toContain('Welcome to MeMantra');
+      expect(callArgs.html).toContain('This code will expire in 10 minutes');
+    });
+
+    it('should include code in plain text content', async () => {
+      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+
+      await sendSignupVerificationCode(testEmail, testCode);
+
+      const callArgs = mockSendMail.mock.calls[0][0];
+      expect(callArgs.text).toContain(testCode);
+      expect(callArgs.text).toContain('Your MeMantra email verification code is:');
+      expect(callArgs.text).toContain('This code will expire in 10 minutes');
+    });
+
+    it('should include current year in HTML footer', async () => {
+      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+
+      await sendSignupVerificationCode(testEmail, testCode);
+
+      const callArgs = mockSendMail.mock.calls[0][0];
+      const currentYear = new Date().getFullYear();
+      expect(callArgs.html).toContain(`© ${currentYear} MeMantra`);
+    });
+
+    it('should handle empty EMAIL_USER environment variable', async () => {
+      delete process.env.EMAIL_USER;
+      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+
+      await sendSignupVerificationCode(testEmail, testCode);
+
+      const callArgs = mockSendMail.mock.calls[0][0];
+      expect(callArgs.from.address).toBe('');
+    });
+
+    it('should include signup-specific messaging', async () => {
+      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+
+      await sendSignupVerificationCode(testEmail, testCode);
+
+      const callArgs = mockSendMail.mock.calls[0][0];
+      expect(callArgs.html).toContain('complete your registration');
+      expect(callArgs.html).toContain('If you did not create a MeMantra account');
+      expect(callArgs.text).toContain('If you did not create a MeMantra account');
+    });
+
+    it('should handle network errors gracefully', async () => {
+      mockSendMail.mockRejectedValue(new Error('Network timeout'));
+
+      const result = await sendSignupVerificationCode(testEmail, testCode);
+
+      expect(result).toBe(false);
+      expect(console.error).toHaveBeenCalledWith(
+        'Error sending signup verification email:',
+        expect.objectContaining({ message: 'Network timeout' })
+      );
+    });
+
+    it('should sanitize email in log output', async () => {
+      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+
+      await sendSignupVerificationCode('user@example.com', testCode);
+
+      expect(console.log).toHaveBeenCalledWith(
+        'Signup verification code sent successfully to user@example.com'
+      );
+    });
+
+    it('should include responsive email design elements', async () => {
+      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+
+      await sendSignupVerificationCode(testEmail, testCode);
+
+      const callArgs = mockSendMail.mock.calls[0][0];
+      expect(callArgs.html).toContain('meta name="viewport"');
+      expect(callArgs.html).toContain('width: 600px');
+      expect(callArgs.html).toContain('border-radius');
+    });
+
+    it('should style verification code prominently', async () => {
+      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+
+      await sendSignupVerificationCode(testEmail, testCode);
+
+      const callArgs = mockSendMail.mock.calls[0][0];
+      expect(callArgs.html).toContain('font-size: 36px');
+      expect(callArgs.html).toContain('font-weight: bold');
+      expect(callArgs.html).toContain('letter-spacing: 8px');
+    });
+  });
+
   describe('emailService object', () => {
     it('should export send6DigitCode method', () => {
       expect(emailService.send6DigitCode).toBeDefined();
@@ -282,9 +440,15 @@ describe('Email Service', () => {
       expect(typeof emailService.generate6DigitCode).toBe('function');
     });
 
-    it('should have both methods accessible via emailService', () => {
+    it('should export sendSignupVerificationCode method', () => {
+      expect(emailService.sendSignupVerificationCode).toBeDefined();
+      expect(typeof emailService.sendSignupVerificationCode).toBe('function');
+    });
+
+    it('should have all methods accessible via emailService', () => {
       expect(Object.keys(emailService)).toContain('send6DigitCode');
       expect(Object.keys(emailService)).toContain('generate6DigitCode');
+      expect(Object.keys(emailService)).toContain('sendSignupVerificationCode');
     });
   });
 });

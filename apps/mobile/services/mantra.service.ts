@@ -34,6 +34,7 @@ export interface Mantra {
   isLiked?: boolean;
   isSaved?: boolean;
   like_count?: number;
+  categories?: Array<{ category_id: number; name: string; category_type?: string }>;
 }
 
 export interface MantraResponse {
@@ -164,6 +165,14 @@ const mockUserState = {
 
 /* istanbul ignore next */
 const mockMantraService = {
+  async getAllMantras(_token: string): Promise<MantraResponse> {
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    return {
+      status: 'success',
+      data: mockMantras,
+    };
+  },
+
   async getFeedMantras(_token: string): Promise<MantraResponse> {
     await new Promise((resolve) => setTimeout(resolve, 600));
     return {
@@ -194,6 +203,14 @@ const mockMantraService = {
   async unsaveMantra(mantraId: number, _token: string) {
     mockUserState.savedMantras.delete(mantraId);
     return { status: 'success', message: 'Removed from saved' };
+  },
+
+  async getLikedMantras(_token: string): Promise<{ status: string; data: { mantras: Mantra[] } }> {
+    const likedIds = Array.from(mockUserState.likedMantras);
+    return {
+      status: 'success',
+      data: { mantras: mockMantras.filter((m) => likedIds.includes(m.mantra_id)) },
+    };
   },
 
   async getSavedMantras(_token: string) {
@@ -308,6 +325,14 @@ const mockMantraService = {
  * The token parameter is kept for API compatibility but is no longer used directly.
  */
 const realMantraService = {
+  async getAllMantras(_token: string): Promise<MantraResponse> {
+    const response = await apiClient.get('/mantras?limit=100');
+    return {
+      status: response.data.status,
+      data: response.data.data.mantras,
+    };
+  },
+
   async getFeedMantras(_token: string): Promise<MantraResponse> {
     const response = await apiClient.get<MantraResponse>('/mantras/feed');
     return response.data;
@@ -330,6 +355,11 @@ const realMantraService = {
 
   async unsaveMantra(mantraId: number, _token: string) {
     const response = await apiClient.delete(`/mantras/${mantraId}/save/`);
+    return response.data;
+  },
+
+  async getLikedMantras(_token: string): Promise<{ status: string; data: { mantras: Mantra[] } }> {
+    const response = await apiClient.get('/likes/mantras');
     return response.data;
   },
 

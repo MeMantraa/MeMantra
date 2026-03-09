@@ -33,6 +33,7 @@ jest.mock('../../context/ThemeContext', () => ({
       primaryDark: '#1a1a1a',
       secondary: '#F0E68C',
       text: '#000000',
+      white: '#FFFFFF',
     },
   }),
 }));
@@ -68,6 +69,7 @@ describe('ConversationScreen', () => {
   ];
 
   const mockNavigation = {
+    goBack: jest.fn(),
     setOptions: jest.fn(),
   };
 
@@ -85,16 +87,14 @@ describe('ConversationScreen', () => {
     (chatService.markAsRead as jest.Mock).mockResolvedValue(undefined);
   });
 
-  it('sets conversation title on mount', async () => {
+  it('renders conversation header with participant username', async () => {
     (chatService.getMessages as jest.Mock).mockResolvedValue([]);
 
-    render(<ConversationScreen route={mockRoute} navigation={mockNavigation} />);
+    const { getByText } = render(
+      <ConversationScreen route={mockRoute} navigation={mockNavigation} />,
+    );
 
-    await waitFor(() => {
-      expect(mockNavigation.setOptions).toHaveBeenCalledWith({
-        title: 'john_doe',
-      });
-    });
+    expect(getByText('john_doe')).toBeTruthy();
   });
 
   it('loads and displays messages', async () => {

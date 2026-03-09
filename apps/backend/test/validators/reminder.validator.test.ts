@@ -4,6 +4,7 @@ import {
   reminderIdSchema,
   upcomingQuerySchema,
   frequencyQuerySchema,
+  schedulePreviewSchema,
 } from '../../src/validators/reminder.validator';
 
 describe('Reminder Validators', () => {
@@ -253,6 +254,226 @@ describe('Reminder Validators', () => {
     it('should reject invalid frequency', () => {
       const data = { query: { frequency: 'biweekly' } };
       const result = frequencyQuerySchema.safeParse(data);
+      expect(result.success).toBe(false);
+    });
+  });
+
+  describe('routine reminder validation', () => {
+    it('should accept valid routine reminder with schedule_times and timezone', () => {
+      const data = {
+        body: {
+          mantra_id: 1,
+          frequency: 'routine' as const,
+          schedule_times: ['07:00', '12:00'],
+          schedule_days: [1, 2, 3, 4, 5],
+          timezone: 'America/New_York',
+        },
+      };
+      const result = createReminderSchema.safeParse(data);
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject routine reminder without schedule_times', () => {
+      const data = {
+        body: {
+          mantra_id: 1,
+          frequency: 'routine' as const,
+          timezone: 'America/New_York',
+        },
+      };
+      const result = createReminderSchema.safeParse(data);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const messages = result.error.issues.map((i) => i.message);
+        expect(messages).toContain(
+          'Routine reminders require schedule_times and timezone; other frequencies require time',
+        );
+      }
+    });
+
+    it('should reject routine reminder without timezone', () => {
+      const data = {
+        body: {
+          mantra_id: 1,
+          frequency: 'routine' as const,
+          schedule_times: ['07:00'],
+        },
+      };
+      const result = createReminderSchema.safeParse(data);
+      expect(result.success).toBe(false);
+    });
+
+    it('should reject duplicate schedule_times', () => {
+      const data = {
+        body: {
+          mantra_id: 1,
+          frequency: 'routine' as const,
+          schedule_times: ['07:00', '07:00'],
+          timezone: 'America/New_York',
+        },
+      };
+      const result = createReminderSchema.safeParse(data);
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        const messages = result.error.issues.map((i) => i.message);
+        expect(messages).toContain('Duplicate times are not allowed');
+      }
+    });
+
+    it('should accept unique schedule_times', () => {
+      const data = {
+        body: {
+          mantra_id: 1,
+          frequency: 'routine' as const,
+          schedule_times: ['07:00', '12:00', '18:00'],
+          timezone: 'UTC',
+        },
+      };
+      const result = createReminderSchema.safeParse(data);
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject more than 5 schedule_times', () => {
+      const data = {
+        body: {
+          mantra_id: 1,
+          frequency: 'routine' as const,
+          schedule_times: ['07:00', '08:00', '09:00', '10:00', '11:00', '12:00'],
+          timezone: 'UTC',
+        },
+      };
+      const result = createReminderSchema.safeParse(data);
+      expect(result.success).toBe(false);
+    });
+
+    it('should reject invalid HH:MM format in schedule_times', () => {
+      const data = {
+        body: {
+          mantra_id: 1,
+          frequency: 'routine' as const,
+          schedule_times: ['25:00'],
+          timezone: 'UTC',
+        },
+      };
+      const result = createReminderSchema.safeParse(data);
+      expect(result.success).toBe(false);
+    });
+
+    it('should reject invalid day of week in schedule_days', () => {
+      const data = {
+        body: {
+          mantra_id: 1,
+          frequency: 'routine' as const,
+          schedule_times: ['07:00'],
+          schedule_days: [7],
+          timezone: 'UTC',
+        },
+      };
+      const result = createReminderSchema.safeParse(data);
+      expect(result.success).toBe(false);
+    });
+
+    it('should accept routine without time field', () => {
+      const data = {
+        body: {
+          collection_id: 5,
+          frequency: 'routine' as const,
+          schedule_times: ['09:00'],
+          timezone: 'Europe/London',
+        },
+      };
+      const result = createReminderSchema.safeParse(data);
+      expect(result.success).toBe(true);
+      if (result.success) {
+        expect(result.data.body.time).toBeUndefined();
+      }
+    });
+  });
+
+  describe('updateReminderSchema - routine fields', () => {
+    it('should accept schedule_times in update', () => {
+      const data = {
+        body: {
+          schedule_times: ['07:00', '18:00'],
+        },
+      };
+      const result = updateReminderSchema.safeParse(data);
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject duplicate schedule_times in update', () => {
+      const data = {
+        body: {
+          schedule_times: ['12:00', '12:00'],
+        },
+      };
+      const result = updateReminderSchema.safeParse(data);
+      expect(result.success).toBe(false);
+    });
+
+    it('should accept timezone in update', () => {
+      const data = {
+        body: {
+          timezone: 'Asia/Tokyo',
+        },
+      };
+      const result = updateReminderSchema.safeParse(data);
+      expect(result.success).toBe(true);
+    });
+  });
+
+  describe('schedulePreviewSchema', () => {
+    it('should accept valid preview request', () => {
+      const data = {
+        body: {
+          schedule_times: ['07:00', '12:00'],
+          schedule_days: [1, 2, 3, 4, 5],
+          timezone: 'America/Chicago',
+        },
+      };
+      const result = schedulePreviewSchema.safeParse(data);
+      expect(result.success).toBe(true);
+    });
+
+    it('should accept preview without schedule_days', () => {
+      const data = {
+        body: {
+          schedule_times: ['09:00'],
+          timezone: 'UTC',
+        },
+      };
+      const result = schedulePreviewSchema.safeParse(data);
+      expect(result.success).toBe(true);
+    });
+
+    it('should reject preview with duplicate times', () => {
+      const data = {
+        body: {
+          schedule_times: ['09:00', '09:00'],
+          timezone: 'UTC',
+        },
+      };
+      const result = schedulePreviewSchema.safeParse(data);
+      expect(result.success).toBe(false);
+    });
+
+    it('should reject preview without timezone', () => {
+      const data = {
+        body: {
+          schedule_times: ['09:00'],
+        },
+      };
+      const result = schedulePreviewSchema.safeParse(data);
+      expect(result.success).toBe(false);
+    });
+
+    it('should reject preview without schedule_times', () => {
+      const data = {
+        body: {
+          timezone: 'UTC',
+        },
+      };
+      const result = schedulePreviewSchema.safeParse(data);
       expect(result.success).toBe(false);
     });
   });

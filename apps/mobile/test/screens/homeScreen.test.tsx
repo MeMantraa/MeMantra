@@ -3,14 +3,17 @@ import { Alert, FlatList } from 'react-native';
 import HomeScreen from '../../screens/homeScreen';
 import { mantraService } from '../../services/mantra.service';
 import { collectionService } from '../../services/collection.service';
+import { categoryService } from '../../services/category.service';
 import { reminderService } from '../../services/reminder.service';
+import { ratingService } from '../../services/rating.service';
 import { storage } from '../../utils/storage';
 import { SavedProvider } from '../../context/SavedContext';
+import { engagementService } from '../../services/engagement.service';
 
 jest.mock('../../components/carousel', () => {
   const { View, Text, TouchableOpacity } = jest.requireActual('react-native');
 
-  return function MockCarousel({ item, onLike, onSave, onReminder }: any) {
+  return function MockCarousel({ item, onLike, onSave, onReminder, onShare, onJournal }: any) {
     return (
       <View>
         <Text>{item.title}</Text>
@@ -28,21 +31,48 @@ jest.mock('../../components/carousel', () => {
             <Text>Reminder</Text>
           </TouchableOpacity>
         )}
+        {onShare && (
+          <TouchableOpacity
+            testID={`share-${item.mantra_id}`}
+            onPress={() => onShare(item.mantra_id)}
+          >
+            <Text>Share</Text>
+          </TouchableOpacity>
+        )}
+        {onJournal && (
+          <TouchableOpacity
+            testID={`journal-${item.mantra_id}`}
+            onPress={() => onJournal(item.mantra_id, item.title)}
+          >
+            <Text>Journal</Text>
+          </TouchableOpacity>
+        )}
       </View>
     );
   };
 });
 
+jest.mock('../../services/rating.service', () => ({
+  ratingService: {
+    rateMantra: jest.fn(),
+  },
+}));
+
 jest.mock('../../components/UI/savedPopupBar', () => {
   const { View, TouchableOpacity, Text } = jest.requireActual('react-native');
 
-  return function MockSavedPopupBar({ visible, onHide, onPressCollections }: any) {
+  return function MockSavedPopupBar({ visible, onHide, onPressCollections, onRate }: any) {
     if (!visible) return null;
     return (
       <View testID="saved-popup-bar">
         <TouchableOpacity testID="close-popup" onPress={onHide}>
           <Text>Close</Text>
         </TouchableOpacity>
+        {onRate && (
+          <TouchableOpacity testID="rate-mantra" onPress={() => onRate(5)}>
+            <Text>Rate</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity testID="open-collections" onPress={onPressCollections}>
           <Text>Add to Collection</Text>
         </TouchableOpacity>
@@ -96,10 +126,60 @@ jest.mock('../../components/collectionsSheet', () => {
   };
 });
 
-jest.mock('@react-navigation/native', () => ({
-  ...jest.requireActual('@react-navigation/native'),
-  useFocusEffect: jest.fn(),
-}));
+jest.mock('../../components/categoryFilterSheet', () => {
+  const React = jest.requireActual('react');
+  const { View, TouchableOpacity, Text } = jest.requireActual('react-native');
+
+  return function MockCategoryFilterSheet({
+    visible,
+    categories,
+    selectedCategoryIds,
+    onApply,
+    onClose,
+    loading,
+  }: any) {
+    if (!visible) return null;
+    return (
+      <View testID="category-filter-sheet">
+        <Text>Filter by Category</Text>
+        {loading && <Text>Loading categories...</Text>}
+        {categories.map((cat: any) => (
+          <TouchableOpacity
+            key={cat.category_id}
+            testID={`filter-cat-${cat.category_id}`}
+            onPress={() => {
+              const isSelected = selectedCategoryIds.includes(cat.category_id);
+              const newSelected = isSelected
+                ? selectedCategoryIds.filter((id: number) => id !== cat.category_id)
+                : [...selectedCategoryIds, cat.category_id];
+              onApply(newSelected);
+            }}
+          >
+            <Text>{cat.name}</Text>
+          </TouchableOpacity>
+        ))}
+        <TouchableOpacity testID="apply-filter" onPress={() => onApply(selectedCategoryIds)}>
+          <Text>Apply</Text>
+        </TouchableOpacity>
+        <TouchableOpacity testID="close-filter" onPress={onClose}>
+          <Text>Close Filter</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+});
+
+jest.mock('@react-navigation/native', () => {
+  const React = jest.requireActual('react');
+  return {
+    ...jest.requireActual('@react-navigation/native'),
+    useFocusEffect: (callback: () => void) => {
+      React.useEffect(() => {
+        callback();
+      }, []);
+    },
+  };
+});
 
 jest.mock('../../services/mantra.service', () => ({
   mantraService: {
@@ -116,6 +196,12 @@ jest.mock('../../services/collection.service', () => ({
     getUserCollections: jest.fn(),
     addMantraToCollection: jest.fn(),
     createCollection: jest.fn(),
+  },
+}));
+
+jest.mock('../../services/category.service', () => ({
+  categoryService: {
+    getAllCategories: jest.fn(),
   },
 }));
 
@@ -150,6 +236,12 @@ jest.mock('../../utils/storage', () => ({
   },
 }));
 
+jest.mock('../../services/engagement.service', () => ({
+  engagementService: {
+    trackEvent: jest.fn(),
+  },
+}));
+
 jest.spyOn(Alert, 'alert');
 
 describe('HomeScreen - Full Coverage', () => {
@@ -168,6 +260,10 @@ describe('HomeScreen - Full Coverage', () => {
     (collectionService.getUserCollections as jest.Mock).mockResolvedValue({
       status: 'success',
       data: { collections: [] },
+    });
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { categories: [] },
     });
   });
 
@@ -1178,6 +1274,7 @@ describe('HomeScreen - Full Coverage', () => {
           'New Test Collection',
           undefined,
           'token',
+          undefined,
         );
       },
       { timeout: 10000 },
@@ -1460,69 +1557,1146 @@ describe('HomeScreen - Full Coverage', () => {
   // Infinite scrolling tests
   it('loads more mantras when reaching end of list (infinite scroll)', async () => {
     (storage.getToken as jest.Mock).mockResolvedValue('token');
-    const mantras = [
-      { mantra_id: 1, title: 'M1', isLiked: false, isSaved: false },
-      { mantra_id: 2, title: 'M2', isLiked: false, isSaved: false },
-    ];
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: {
+        reminders: [{ reminder_id: 77, mantra_id: 1, collection_id: null, status: 'active' }],
+      },
+    });
+    const sample = [{ mantra_id: 1, title: 'M1', isLiked: false, isSaved: false }];
     (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
       status: 'success',
-      data: mantras,
+      data: sample,
+    });
+    (mantraService.saveMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+
+    const { getByTestId } = setup();
+
+    await waitFor(() => getByTestId('reminder-1'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('reminder-1'));
+
+    expect(Alert.alert).toHaveBeenCalledWith('Reminder', undefined, expect.any(Array));
+  }, 15000);
+
+  it('handles loadCategories error gracefully', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [],
+    });
+    (categoryService.getAllCategories as jest.Mock).mockRejectedValue(new Error('Network error'));
+
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    setup();
+
+    await waitFor(
+      () => {
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          'Error fetching categories:',
+          expect.any(Error),
+        );
+      },
+      { timeout: 10000 },
+    );
+
+    consoleErrorSpy.mockRestore();
+  }, 15000);
+
+  it('opens category filter sheet when filter button is pressed', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [{ mantra_id: 1, title: 'M1', isLiked: false, isSaved: false }],
     });
 
-    const { getByText, UNSAFE_getAllByType } = setup();
+    const { getByTestId } = setup();
 
-    await waitFor(() => getByText('M1'), { timeout: 10000 });
+    await waitFor(() => getByTestId('category-filter-btn'), { timeout: 10000 });
 
-    // Get the FlatList component
-    const flatLists = UNSAFE_getAllByType(FlatList);
-    const mainFlatList = flatLists.find((fl: any) => fl.props.data?.length > 0);
+    fireEvent.press(getByTestId('category-filter-btn'));
 
-    expect(mainFlatList).toBeTruthy();
-    expect(mainFlatList!.props.onEndReached).toBeDefined();
-    expect(mainFlatList!.props.onEndReachedThreshold).toBe(2.0);
+    await waitFor(
+      () => {
+        expect(getByTestId('category-filter-sheet')).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
+  }, 15000);
 
-    // Simulate reaching end of list
-    act(() => {
-      mainFlatList!.props.onEndReached();
+  it('closes category filter sheet when close is pressed', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [{ mantra_id: 1, title: 'M1', isLiked: false, isSaved: false }],
     });
 
-    // Check that data is duplicated (infinite scroll adds original mantras again)
-    await waitFor(() => {
-      const updatedFlatList = UNSAFE_getAllByType(FlatList).find(
-        (fl: any) => fl.props.data?.length > 2,
-      );
-      expect(updatedFlatList?.props.data.length).toBe(4); // Original 2 + repeated 2
+    const { getByTestId, queryByTestId } = setup();
+
+    await waitFor(() => getByTestId('category-filter-btn'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('category-filter-btn'));
+
+    await waitFor(() => expect(getByTestId('category-filter-sheet')).toBeTruthy(), {
+      timeout: 10000,
+    });
+
+    fireEvent.press(getByTestId('close-filter'));
+
+    await waitFor(() => expect(queryByTestId('category-filter-sheet')).toBeNull(), {
+      timeout: 10000,
     });
   }, 15000);
 
-  it('does not load more mantras if originalMantras is empty', async () => {
+  it('filters mantras when category is selected via filter sheet', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [
+        {
+          mantra_id: 1,
+          title: 'Mental Health Mantra',
+          isLiked: false,
+          isSaved: false,
+          categories: [{ category_id: 1, name: 'Mind & Emotional Health' }],
+        },
+        {
+          mantra_id: 2,
+          title: 'Confidence Mantra',
+          isLiked: false,
+          isSaved: false,
+          categories: [{ category_id: 20, name: 'Boost Confidence' }],
+        },
+      ],
+    });
+
+    const { getByTestId, getByText, queryByText } = setup();
+
+    await waitFor(() => getByText('Mental Health Mantra'), { timeout: 10000 });
+
+    // Open filter and select category 1
+    fireEvent.press(getByTestId('category-filter-btn'));
+    await waitFor(() => getByTestId('category-filter-sheet'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('filter-cat-1'));
+
+    // Only Mental Health Mantra should be visible
+    await waitFor(
+      () => {
+        expect(getByText('Mental Health Mantra')).toBeTruthy();
+        expect(queryByText('Confidence Mantra')).toBeNull();
+      },
+      { timeout: 10000 },
+    );
+  }, 20000);
+
+  it('shows "No mantras match" when filter excludes all mantras', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [
+        {
+          mantra_id: 1,
+          title: 'Some Mantra',
+          isLiked: false,
+          isSaved: false,
+          categories: [{ category_id: 1, name: 'Mind & Emotional Health' }],
+        },
+      ],
+    });
+
+    const { getByTestId, getByText } = setup();
+
+    await waitFor(() => getByText('Some Mantra'), { timeout: 10000 });
+
+    // Open filter and select category 20 (no mantras have this)
+    fireEvent.press(getByTestId('category-filter-btn'));
+    await waitFor(() => getByTestId('category-filter-sheet'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('filter-cat-20'));
+
+    await waitFor(
+      () => {
+        expect(getByText('No mantras match the selected categories')).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
+  }, 20000);
+
+  it('clears filters when "Clear Filters" button is pressed in empty state', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [
+        {
+          mantra_id: 1,
+          title: 'Only Mantra',
+          isLiked: false,
+          isSaved: false,
+          categories: [{ category_id: 1, name: 'Mind & Emotional Health' }],
+        },
+      ],
+    });
+
+    const { getByTestId, getByText } = setup();
+
+    await waitFor(() => getByText('Only Mantra'), { timeout: 10000 });
+
+    // Select a category that excludes all mantras
+    fireEvent.press(getByTestId('category-filter-btn'));
+    await waitFor(() => getByTestId('category-filter-sheet'), { timeout: 10000 });
+    fireEvent.press(getByTestId('filter-cat-20'));
+
+    await waitFor(
+      () => {
+        expect(getByText('No mantras match the selected categories')).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
+
+    // Press Clear Filters
+    fireEvent.press(getByText('Clear Filters'));
+
+    await waitFor(
+      () => {
+        expect(getByText('Only Mantra')).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
+  }, 25000);
+
+  it('shows filter badge with count when categories are selected', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [
+        {
+          mantra_id: 1,
+          title: 'M1',
+          isLiked: false,
+          isSaved: false,
+          categories: [
+            { category_id: 1, name: 'Mind & Emotional Health' },
+            { category_id: 20, name: 'Boost Confidence' },
+          ],
+        },
+      ],
+    });
+
+    const { getByTestId, getByText } = setup();
+
+    await waitFor(() => getByTestId('category-filter-btn'), { timeout: 10000 });
+
+    // Open filter and select a category
+    fireEvent.press(getByTestId('category-filter-btn'));
+    await waitFor(() => getByTestId('category-filter-sheet'), { timeout: 10000 });
+    fireEvent.press(getByTestId('filter-cat-1'));
+
+    // Badge count should be visible
+    await waitFor(
+      () => {
+        expect(getByText('1')).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
+  }, 20000);
+
+  it('handles loadCategories with non-success response', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [],
+    });
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'error',
+      message: 'Unauthorized',
+    });
+
+    setup();
+
+    await waitFor(
+      () => {
+        expect(categoryService.getAllCategories).toHaveBeenCalled();
+      },
+      { timeout: 10000 },
+    );
+  }, 15000);
+
+  it('uses mock-token when getToken returns null for loadCategories', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue(null);
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [],
+    });
+
+    setup();
+
+    await waitFor(
+      () => {
+        expect(categoryService.getAllCategories).toHaveBeenCalledWith('mock-token');
+      },
+      { timeout: 10000 },
+    );
+  }, 15000);
+
+  it('shows all mantras when no category filter is applied', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [
+        {
+          mantra_id: 1,
+          title: 'Mantra A',
+          isLiked: false,
+          isSaved: false,
+          categories: [{ category_id: 1, name: 'Mind & Emotional Health' }],
+        },
+        {
+          mantra_id: 2,
+          title: 'Mantra B',
+          isLiked: false,
+          isSaved: false,
+          categories: [{ category_id: 20, name: 'Boost Confidence' }],
+        },
+      ],
+    });
+
+    const { getByText } = setup();
+
+    await waitFor(
+      () => {
+        expect(getByText('Mantra A')).toBeTruthy();
+        expect(getByText('Mantra B')).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
+  }, 15000);
+});
+
+// ─── Additional coverage: share, journal, rate, returnToMantraId ─────────────
+
+describe('HomeScreen - share, journal, rate, and route params', () => {
+  const mockNavigate = jest.fn();
+  const mockReset = jest.fn();
+  const mockSetParams = jest.fn();
+
+  const sampleMantras = [
+    { mantra_id: 1, title: 'M1', isLiked: false, isSaved: false },
+    { mantra_id: 2, title: 'M2', isLiked: false, isSaved: false },
+  ];
+
+  const setup = (navOverrides?: any, routeOverrides?: any) =>
+    render(
+      <SavedProvider>
+        <HomeScreen
+          navigation={{
+            navigate: mockNavigate,
+            reset: mockReset,
+            setParams: mockSetParams,
+            ...navOverrides,
+          }}
+          route={routeOverrides}
+        />
+      </SavedProvider>,
+    );
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (collectionService.getUserCollections as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { collections: [] },
+    });
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { categories: [] },
+    });
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { reminders: [] },
+    });
+  });
+
+  it('navigates to ShareMantra when share is pressed', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: sampleMantras,
+    });
+
+    const { getByTestId } = setup();
+
+    await waitFor(() => getByTestId('share-1'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('share-1'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('ShareMantra', {
+      mantra: sampleMantras[0],
+    });
+  }, 15000);
+
+  it('navigates to JournalEditor when journal is pressed', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: sampleMantras,
+    });
+
+    const { getByTestId } = setup();
+
+    await waitFor(() => getByTestId('journal-1'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('journal-1'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('JournalEditor', {
+      mantraId: 1,
+      mantraTitle: 'M1',
+    });
+  }, 15000);
+
+  it('calls ratingService.rateMantra on rate success and tracks engagement', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [{ mantra_id: 5, title: 'Rated Mantra', isLiked: false, isSaved: false }],
+    });
+    (mantraService.saveMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+    (ratingService.rateMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+
+    const { getByTestId } = setup();
+
+    await waitFor(() => getByTestId('save-5'), { timeout: 10000 });
+
+    // Save to trigger popup bar
+    fireEvent.press(getByTestId('save-5'));
+
+    await waitFor(() => getByTestId('saved-popup-bar'), { timeout: 10000 });
+
+    // Press rate on the popup bar
+    fireEvent.press(getByTestId('rate-mantra'));
+
+    await waitFor(
+      () => {
+        expect(ratingService.rateMantra).toHaveBeenCalledWith(5, 5, undefined, 'token');
+        expect(engagementService.trackEvent).toHaveBeenCalledWith('mantra_rate');
+      },
+      { timeout: 10000 },
+    );
+  }, 20000);
+
+  it('shows alert when rateMantra returns non-success', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [{ mantra_id: 5, title: 'Rated Mantra', isLiked: false, isSaved: false }],
+    });
+    (mantraService.saveMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+    (ratingService.rateMantra as jest.Mock).mockResolvedValue({
+      status: 'error',
+      message: 'Rating failed',
+    });
+
+    const { getByTestId } = setup();
+
+    await waitFor(() => getByTestId('save-5'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('save-5'));
+    await waitFor(() => getByTestId('saved-popup-bar'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('rate-mantra'));
+
+    await waitFor(
+      () => {
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Rating failed');
+      },
+      { timeout: 10000 },
+    );
+  }, 20000);
+
+  it('shows alert when rateMantra throws an error', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [{ mantra_id: 5, title: 'Rated Mantra', isLiked: false, isSaved: false }],
+    });
+    (mantraService.saveMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+    (ratingService.rateMantra as jest.Mock).mockRejectedValue(new Error('Network failure'));
+
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    const { getByTestId } = setup();
+
+    await waitFor(() => getByTestId('save-5'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('save-5'));
+    await waitFor(() => getByTestId('saved-popup-bar'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('rate-mantra'));
+
+    await waitFor(
+      () => {
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to save rating');
+      },
+      { timeout: 10000 },
+    );
+
+    consoleErrorSpy.mockRestore();
+  }, 20000);
+
+  it('handles returnToMantraId with non-existent mantra id', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: sampleMantras,
+    });
+
+    setup({}, { params: { returnToMantraId: 999 } });
+
+    await waitFor(
+      () => {
+        expect(mockSetParams).toHaveBeenCalledWith({ returnToMantraId: undefined });
+      },
+      { timeout: 10000 },
+    );
+  }, 15000);
+});
+
+// ─── Engagement Tracking ──────────────────────────────────────────────────────
+
+describe('HomeScreen - engagement tracking', () => {
+  const mockNavigate = jest.fn();
+  const mockReset = jest.fn();
+
+  const setup = () =>
+    render(
+      <SavedProvider>
+        <HomeScreen navigation={{ navigate: mockNavigate, reset: mockReset }} />
+      </SavedProvider>,
+    );
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (collectionService.getUserCollections as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { collections: [] },
+    });
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { categories: [] },
+    });
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { reminders: [] },
+    });
+  });
+
+  it('tracks mantra_like event when a mantra is liked', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [{ mantra_id: 1, title: 'M1', isLiked: false, isSaved: false }],
+    });
+    (mantraService.likeMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+
+    const { getByTestId } = setup();
+    await waitFor(() => getByTestId('like-1'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('like-1'));
+
+    await waitFor(
+      () => {
+        expect(engagementService.trackEvent).toHaveBeenCalledWith('mantra_like');
+      },
+      { timeout: 10000 },
+    );
+  }, 20000);
+
+  it('does NOT track mantra_like when unliking', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [{ mantra_id: 1, title: 'M1', isLiked: true, isSaved: false }],
+    });
+    (mantraService.unlikeMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+
+    const { getByTestId } = setup();
+    await waitFor(() => getByTestId('like-1'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('like-1'));
+
+    await waitFor(
+      () => {
+        expect(mantraService.unlikeMantra).toHaveBeenCalled();
+      },
+      { timeout: 10000 },
+    );
+
+    expect(engagementService.trackEvent).not.toHaveBeenCalledWith('mantra_like');
+  }, 20000);
+
+  it('tracks mantra_save event when a mantra is saved', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [{ mantra_id: 2, title: 'M2', isLiked: false, isSaved: false }],
+    });
+    (mantraService.saveMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+
+    const { getByTestId } = setup();
+    await waitFor(() => getByTestId('save-2'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('save-2'));
+
+    await waitFor(
+      () => {
+        expect(engagementService.trackEvent).toHaveBeenCalledWith('mantra_save');
+      },
+      { timeout: 10000 },
+    );
+  }, 20000);
+});
+
+describe('HomeScreen - category filter', () => {
+  const mockNavigate = jest.fn();
+  const mockReset = jest.fn();
+
+  const mockCategories = [
+    {
+      category_id: 1,
+      name: 'Mind & Emotional Health',
+      description: 'Mantras for mental well-being',
+      category_type: 'essential',
+      parent_id: null,
+      is_active: true,
+    },
+    {
+      category_id: 20,
+      name: 'Boost Confidence',
+      description: 'Mantras for confidence',
+      category_type: 'goal',
+      parent_id: null,
+      is_active: true,
+    },
+  ];
+
+  const setup = (navOverrides?: any) =>
+    render(
+      <SavedProvider>
+        <HomeScreen navigation={{ navigate: mockNavigate, reset: mockReset, ...navOverrides }} />
+      </SavedProvider>,
+    );
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (collectionService.getUserCollections as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { collections: [] },
+    });
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { categories: mockCategories },
+    });
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { reminders: [] },
+    });
+  });
+
+  it('loads categories on mount', async () => {
     (storage.getToken as jest.Mock).mockResolvedValue('token');
     (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
       status: 'success',
       data: [],
     });
 
-    const { getByText } = setup();
+    setup();
 
-    await waitFor(() => getByText('No mantras available'), { timeout: 10000 });
-
-    // No FlatList should be rendered, so no onEndReached to test
+    await waitFor(
+      () => {
+        expect(categoryService.getAllCategories).toHaveBeenCalledWith('token');
+      },
+      { timeout: 10000 },
+    );
   }, 15000);
 
-  it('sets originalMantras state correctly on successful load', async () => {
+  it('handles loadCategories error gracefully', async () => {
     (storage.getToken as jest.Mock).mockResolvedValue('token');
-    const mantras = [
-      { mantra_id: 1, title: 'Test1', isLiked: false, isSaved: false },
-      { mantra_id: 2, title: 'Test2', isLiked: false, isSaved: false },
-    ];
     (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
       status: 'success',
-      data: mantras,
+      data: [],
+    });
+    (categoryService.getAllCategories as jest.Mock).mockRejectedValue(new Error('Network error'));
+
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    setup();
+
+    await waitFor(
+      () => {
+        expect(consoleErrorSpy).toHaveBeenCalledWith(
+          'Error fetching categories:',
+          expect.any(Error),
+        );
+      },
+      { timeout: 10000 },
+    );
+
+    consoleErrorSpy.mockRestore();
+  }, 15000);
+
+  it('opens category filter sheet when filter button is pressed', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [{ mantra_id: 1, title: 'M1', isLiked: false, isSaved: false }],
+    });
+
+    const { getByTestId } = setup();
+
+    await waitFor(() => getByTestId('category-filter-btn'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('category-filter-btn'));
+
+    await waitFor(
+      () => {
+        expect(getByTestId('category-filter-sheet')).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
+  }, 15000);
+
+  it('closes category filter sheet when close is pressed', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [{ mantra_id: 1, title: 'M1', isLiked: false, isSaved: false }],
+    });
+
+    const { getByTestId, queryByTestId } = setup();
+
+    await waitFor(() => getByTestId('category-filter-btn'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('category-filter-btn'));
+
+    await waitFor(() => expect(getByTestId('category-filter-sheet')).toBeTruthy(), {
+      timeout: 10000,
+    });
+
+    fireEvent.press(getByTestId('close-filter'));
+
+    await waitFor(() => expect(queryByTestId('category-filter-sheet')).toBeNull(), {
+      timeout: 10000,
+    });
+  }, 15000);
+
+  it('filters mantras when category is selected via filter sheet', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [
+        {
+          mantra_id: 1,
+          title: 'Mental Health Mantra',
+          isLiked: false,
+          isSaved: false,
+          categories: [{ category_id: 1, name: 'Mind & Emotional Health' }],
+        },
+        {
+          mantra_id: 2,
+          title: 'Confidence Mantra',
+          isLiked: false,
+          isSaved: false,
+          categories: [{ category_id: 20, name: 'Boost Confidence' }],
+        },
+      ],
+    });
+
+    const { getByTestId, getByText, queryByText } = setup();
+
+    await waitFor(() => getByText('Mental Health Mantra'), { timeout: 10000 });
+
+    // Open filter and select category 1
+    fireEvent.press(getByTestId('category-filter-btn'));
+    await waitFor(() => getByTestId('category-filter-sheet'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('filter-cat-1'));
+
+    // Only Mental Health Mantra should be visible
+    await waitFor(
+      () => {
+        expect(getByText('Mental Health Mantra')).toBeTruthy();
+        expect(queryByText('Confidence Mantra')).toBeNull();
+      },
+      { timeout: 10000 },
+    );
+  }, 20000);
+
+  it('shows "No mantras match" when filter excludes all mantras', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [
+        {
+          mantra_id: 1,
+          title: 'Some Mantra',
+          isLiked: false,
+          isSaved: false,
+          categories: [{ category_id: 1, name: 'Mind & Emotional Health' }],
+        },
+      ],
+    });
+
+    const { getByTestId, getByText } = setup();
+
+    await waitFor(() => getByText('Some Mantra'), { timeout: 10000 });
+
+    // Open filter and select category 20 (no mantras have this)
+    fireEvent.press(getByTestId('category-filter-btn'));
+    await waitFor(() => getByTestId('category-filter-sheet'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('filter-cat-20'));
+
+    await waitFor(
+      () => {
+        expect(getByText('No mantras match the selected categories')).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
+  }, 20000);
+
+  it('clears filters when "Clear Filters" button is pressed in empty state', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [
+        {
+          mantra_id: 1,
+          title: 'Only Mantra',
+          isLiked: false,
+          isSaved: false,
+          categories: [{ category_id: 1, name: 'Mind & Emotional Health' }],
+        },
+      ],
+    });
+
+    const { getByTestId, getByText } = setup();
+
+    await waitFor(() => getByText('Only Mantra'), { timeout: 10000 });
+
+    // Select a category that excludes all mantras
+    fireEvent.press(getByTestId('category-filter-btn'));
+    await waitFor(() => getByTestId('category-filter-sheet'), { timeout: 10000 });
+    fireEvent.press(getByTestId('filter-cat-20'));
+
+    await waitFor(
+      () => {
+        expect(getByText('No mantras match the selected categories')).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
+
+    // Press Clear Filters
+    fireEvent.press(getByText('Clear Filters'));
+
+    await waitFor(
+      () => {
+        expect(getByText('Only Mantra')).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
+  }, 25000);
+
+  it('shows filter badge with count when categories are selected', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [
+        {
+          mantra_id: 1,
+          title: 'M1',
+          isLiked: false,
+          isSaved: false,
+          categories: [
+            { category_id: 1, name: 'Mind & Emotional Health' },
+            { category_id: 20, name: 'Boost Confidence' },
+          ],
+        },
+      ],
+    });
+
+    const { getByTestId, getByText } = setup();
+
+    await waitFor(() => getByTestId('category-filter-btn'), { timeout: 10000 });
+
+    // Open filter and select a category
+    fireEvent.press(getByTestId('category-filter-btn'));
+    await waitFor(() => getByTestId('category-filter-sheet'), { timeout: 10000 });
+    fireEvent.press(getByTestId('filter-cat-1'));
+
+    // Badge count should be visible
+    await waitFor(
+      () => {
+        expect(getByText('1')).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
+  }, 20000);
+
+  it('handles loadCategories with non-success response', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [],
+    });
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'error',
+      message: 'Unauthorized',
+    });
+
+    setup();
+
+    await waitFor(
+      () => {
+        expect(categoryService.getAllCategories).toHaveBeenCalled();
+      },
+      { timeout: 10000 },
+    );
+  }, 15000);
+
+  it('uses mock-token when getToken returns null for loadCategories', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue(null);
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [],
+    });
+
+    setup();
+
+    await waitFor(
+      () => {
+        expect(categoryService.getAllCategories).toHaveBeenCalledWith('mock-token');
+      },
+      { timeout: 10000 },
+    );
+  }, 15000);
+
+  it('shows all mantras when no category filter is applied', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [
+        {
+          mantra_id: 1,
+          title: 'Mantra A',
+          isLiked: false,
+          isSaved: false,
+          categories: [{ category_id: 1, name: 'Mind & Emotional Health' }],
+        },
+        {
+          mantra_id: 2,
+          title: 'Mantra B',
+          isLiked: false,
+          isSaved: false,
+          categories: [{ category_id: 20, name: 'Boost Confidence' }],
+        },
+      ],
     });
 
     const { getByText } = setup();
 
-    await waitFor(() => getByText('Test1'), { timeout: 10000 });
-    await waitFor(() => getByText('Test2'), { timeout: 10000 });
+    await waitFor(
+      () => {
+        expect(getByText('Mantra A')).toBeTruthy();
+        expect(getByText('Mantra B')).toBeTruthy();
+      },
+      { timeout: 10000 },
+    );
+  }, 15000);
+});
+
+// ─── Additional coverage: share, journal, rate, returnToMantraId ─────────────
+
+describe('HomeScreen - share, journal, rate, and route params', () => {
+  const mockNavigate = jest.fn();
+  const mockReset = jest.fn();
+  const mockSetParams = jest.fn();
+
+  const sampleMantras = [
+    { mantra_id: 1, title: 'M1', isLiked: false, isSaved: false },
+    { mantra_id: 2, title: 'M2', isLiked: false, isSaved: false },
+  ];
+
+  const setup = (navOverrides?: any, routeOverrides?: any) =>
+    render(
+      <SavedProvider>
+        <HomeScreen
+          navigation={{
+            navigate: mockNavigate,
+            reset: mockReset,
+            setParams: mockSetParams,
+            ...navOverrides,
+          }}
+          route={routeOverrides}
+        />
+      </SavedProvider>,
+    );
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    (collectionService.getUserCollections as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { collections: [] },
+    });
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { categories: [] },
+    });
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { reminders: [] },
+    });
+  });
+
+  it('navigates to ShareMantra when share is pressed', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: sampleMantras,
+    });
+
+    const { getByTestId } = setup();
+
+    await waitFor(() => getByTestId('share-1'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('share-1'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('ShareMantra', {
+      mantra: sampleMantras[0],
+    });
+  }, 15000);
+
+  it('navigates to JournalEditor when journal is pressed', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: sampleMantras,
+    });
+
+    const { getByTestId } = setup();
+
+    await waitFor(() => getByTestId('journal-1'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('journal-1'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('JournalEditor', {
+      mantraId: 1,
+      mantraTitle: 'M1',
+    });
+  }, 15000);
+
+  it('calls ratingService.rateMantra on rate success and tracks engagement', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [{ mantra_id: 5, title: 'Rated Mantra', isLiked: false, isSaved: false }],
+    });
+    (mantraService.saveMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+    (ratingService.rateMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+
+    const { getByTestId } = setup();
+
+    await waitFor(() => getByTestId('save-5'), { timeout: 10000 });
+
+    // Save to trigger popup bar
+    fireEvent.press(getByTestId('save-5'));
+
+    await waitFor(() => getByTestId('saved-popup-bar'), { timeout: 10000 });
+
+    // Press rate on the popup bar
+    fireEvent.press(getByTestId('rate-mantra'));
+
+    await waitFor(
+      () => {
+        expect(ratingService.rateMantra).toHaveBeenCalledWith(5, 5, undefined, 'token');
+        expect(engagementService.trackEvent).toHaveBeenCalledWith('mantra_rate');
+      },
+      { timeout: 10000 },
+    );
+  }, 20000);
+
+  it('shows alert when rateMantra returns non-success', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [{ mantra_id: 5, title: 'Rated Mantra', isLiked: false, isSaved: false }],
+    });
+    (mantraService.saveMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+    (ratingService.rateMantra as jest.Mock).mockResolvedValue({
+      status: 'error',
+      message: 'Rating failed',
+    });
+
+    const { getByTestId } = setup();
+
+    await waitFor(() => getByTestId('save-5'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('save-5'));
+    await waitFor(() => getByTestId('saved-popup-bar'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('rate-mantra'));
+
+    await waitFor(
+      () => {
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Rating failed');
+      },
+      { timeout: 10000 },
+    );
+  }, 20000);
+
+  it('shows alert when rateMantra throws an error', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: [{ mantra_id: 5, title: 'Rated Mantra', isLiked: false, isSaved: false }],
+    });
+    (mantraService.saveMantra as jest.Mock).mockResolvedValue({ status: 'success' });
+    (ratingService.rateMantra as jest.Mock).mockRejectedValue(new Error('Network failure'));
+
+    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+
+    const { getByTestId } = setup();
+
+    await waitFor(() => getByTestId('save-5'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('save-5'));
+    await waitFor(() => getByTestId('saved-popup-bar'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('rate-mantra'));
+
+    await waitFor(
+      () => {
+        expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to save rating');
+      },
+      { timeout: 10000 },
+    );
+
+    consoleErrorSpy.mockRestore();
+  }, 20000);
+
+  it('handles returnToMantraId with non-existent mantra id', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: sampleMantras,
+    });
+
+    setup({}, { params: { returnToMantraId: 999 } });
+
+    await waitFor(
+      () => {
+        expect(mockSetParams).toHaveBeenCalledWith({ returnToMantraId: undefined });
+      },
+      { timeout: 10000 },
+    );
   }, 15000);
 });

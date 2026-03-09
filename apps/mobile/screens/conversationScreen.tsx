@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, FlatList, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, FlatList, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { ChatBubble } from '../components/chat/ChatBubble';
@@ -7,23 +7,20 @@ import ChatInput from '../components/chat/ChatInput';
 import { Message, Conversation } from '../types/chat.types';
 import { chatService } from '../services/chat.service';
 import { storage } from '../utils/storage';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function ConversationScreen({ route, navigation }: any) {
   const { conversation } = route.params as { conversation: Conversation };
   const { colors } = useTheme();
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentUserId, setCurrentUserId] = useState<number>(1); // Will be fetched from storage
+  const [currentUserId, setCurrentUserId] = useState<number>(1);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
   useEffect(() => {
     loadMessages();
     loadCurrentUser();
-
-    navigation.setOptions({
-      title: conversation.participant_username,
-    });
   }, []);
 
   const loadCurrentUser = async () => {
@@ -82,7 +79,7 @@ export default function ConversationScreen({ route, navigation }: any) {
       );
 
       setMessages((prev) => [...prev, newMessage]);
-      setReplyingTo(null); // Clear reply state after sending
+      setReplyingTo(null);
 
       setTimeout(() => {
         flatListRef.current?.scrollToEnd({ animated: true });
@@ -93,7 +90,6 @@ export default function ConversationScreen({ route, navigation }: any) {
   };
 
   const handleSwipeReply = (message: Message) => {
-    // Allow replying to any message including shared mantras
     setReplyingTo(message);
   };
 
@@ -163,15 +159,36 @@ export default function ConversationScreen({ route, navigation }: any) {
   };
 
   return (
-    <KeyboardAvoidingView
-      className="flex-1"
-      style={{ backgroundColor: colors.primary }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-    >
-      {renderContent()}
+    <View className="flex-1" style={{ backgroundColor: colors.primary }}>
+      {/* Custom Header */}
+      <View
+        className="pt-16 pb-3 px-4 border-b border-white/10"
+        style={{ backgroundColor: colors.primary }}
+      >
+        <View className="flex-row items-center justify-center relative">
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            className="absolute left-0 p-1"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="arrow-back" size={24} color={colors.white} />
+          </TouchableOpacity>
 
-      <ChatInput onSend={handleSend} replyingTo={replyingTo} onCancelReply={handleCancelReply} />
-    </KeyboardAvoidingView>
+          <AppText className="text-2xl font-semibold" style={{ color: colors.white }}>
+            {conversation.participant_username}
+          </AppText>
+        </View>
+      </View>
+
+      {/* Messages Area with KeyboardAvoidingView */}
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
+        {renderContent()}
+
+        <ChatInput onSend={handleSend} replyingTo={replyingTo} onCancelReply={handleCancelReply} />
+      </KeyboardAvoidingView>
+    </View>
   );
 }

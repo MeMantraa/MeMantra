@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { Animated, Image, StyleSheet } from 'react-native';
+import { Animated, AppState, AppStateStatus, Image, StyleSheet } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import MainNavigator from './app/index';
 import splashLogo from './assets/logo.png';
@@ -9,6 +9,7 @@ import './global.css';
 import LibreBaskerville from './assets/fonts/LibreBaskerville-Regular.ttf';
 import * as Font from 'expo-font';
 import { setNavigationRef } from './services/api.config';
+import { engagementService } from './services/engagement.service';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -41,6 +42,13 @@ export default function App() {
     return () => {
       isMounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
+      if (state === 'active') engagementService.trackAppOpen();
+    });
+    return () => sub.remove();
   }, []);
 
   useEffect(() => {

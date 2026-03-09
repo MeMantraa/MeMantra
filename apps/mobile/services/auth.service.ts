@@ -9,6 +9,7 @@ export interface RegisterCredentials {
   username: string;
   email: string;
   password: string;
+  code: string;
   device_token?: string;
 }
 
@@ -85,6 +86,19 @@ export const authService = {
 
   async forgotPassword(email: string): Promise<SimpleResponse> {
     const response = await apiClient.post<SimpleResponse>('/auth/forgot-password', { email });
+    return response.data;
+  },
+
+  async sendSignupCode(email: string): Promise<SimpleResponse> {
+    const response = await apiClient.post<SimpleResponse>('/auth/signup/send-code', { email });
+    return response.data;
+  },
+
+  async verifySignupCode(email: string, code: string): Promise<SimpleResponse> {
+    const response = await apiClient.post<SimpleResponse>('/auth/signup/verify-code', {
+      email,
+      code,
+    });
     return response.data;
   },
 

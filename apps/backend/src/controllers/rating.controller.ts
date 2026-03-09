@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { RatingModel } from '../models/rating.model';
+import { UserCategoryScoreModel } from '../models/user-category-score.model';
 
 export const RatingController = {
   /**
@@ -32,12 +33,25 @@ export const RatingController = {
         });
       }
 
+      // Check for existing rating to handle score 
+      const existing = await RatingModel.findByUserAndMantra(userId, mantra_id);
+      const oldPoints = existing && existing.rating >= 4 ? existing.rating : 0;
+      const newPoints = rating >= 4 ? rating : 0;
+
       const result = await RatingModel.upsert(
         userId,
         mantra_id,
         rating,
         review_text
       );
+
+      // Update algorithm: add  (new - old) points for all categories
+      const delta = newPoints - oldPoints;
+      if (delta > 0) {
+        await UserCategoryScoreModel.addScoreForMantra(userId, mantra_id, delta).catch(() => {});
+      } else if (delta < 0) {
+        await UserCategoryScoreModel.removeScoreForMantra(userId, mantra_id, Math.abs(delta)).catch(() => {});
+      }
 
       return res.status(200).json({
         status: 'success',

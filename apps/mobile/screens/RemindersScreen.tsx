@@ -1,19 +1,14 @@
 import React, { useState, useCallback } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  FlatList,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
+import { View, TouchableOpacity, FlatList, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../src/navigation/types';
 import { storage } from '../utils/storage';
 import { reminderService, Reminder } from '../services/reminder.service';
+import { scheduleSuggestionsService } from '../services/schedule-suggestions.service';
+import { useTheme } from '../context/ThemeContext';
+import AppText from '../components/UI/textWrapper';
 
 type RemindersNavProp = StackNavigationProp<RootStackParamList>;
 
@@ -33,8 +28,14 @@ function formatTime(isoString: string | null): string {
   });
 }
 
+function formatScheduleTimes(times: string[] | null): string {
+  if (!times || times.length === 0) return 'No times set';
+  return times.map((t) => scheduleSuggestionsService.formatTimeForDisplay(t)).join(', ');
+}
+
 export default function RemindersScreen() {
   const navigation = useNavigation<RemindersNavProp>();
+  const { colors } = useTheme();
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -87,7 +88,6 @@ export default function RemindersScreen() {
             try {
               const token = await storage.getToken();
               if (!token) return;
-
               await reminderService.deleteReminder(reminder.reminder_id, token);
               await loadReminders();
             } catch (error) {
@@ -106,55 +106,116 @@ export default function RemindersScreen() {
     const linkedName = isMantra ? item.mantra_title : item.collection_name;
     const isActive = item.status === 'active';
     const isCompleted = item.status === 'completed';
+    const isRoutine = item.frequency === 'routine';
 
     return (
-      <View style={[styles.reminderCard, isCompleted && styles.completedCard]}>
-        <View style={styles.reminderHeader}>
-          <View style={styles.typeBadge}>
+      <View
+        className="bg-white rounded-xl p-4 mb-3"
+        style={isCompleted ? { opacity: 0.6 } : undefined}
+      >
+        {/* Header row: type badge + status badge */}
+        <View className="flex-row justify-between items-center mb-3">
+          <View
+            className="flex-row items-center gap-1 px-2.5 py-1 rounded-xl"
+            style={{ backgroundColor: colors.primaryDark + '22' }}
+          >
             <Ionicons
               name={isMantra ? 'leaf-outline' : 'folder-outline'}
               size={14}
-              color="#8E9A86"
+              color={colors.primaryDark}
             />
-            <Text style={styles.typeText}>{typeLabel}</Text>
+            <AppText className="text-xs" style={{ color: colors.primaryDark }}>
+              {typeLabel}
+            </AppText>
           </View>
-          <View style={[styles.statusBadge, isActive ? styles.activeBadge : styles.pausedBadge]}>
-            <Text style={[styles.statusText, isActive ? styles.activeText : styles.pausedText]}>
+
+          <View
+            className="px-2.5 py-1 rounded-xl"
+            style={{
+              backgroundColor: isActive ? colors.primaryDark + '22' : colors.secondary + '55',
+            }}
+          >
+            <AppText
+              className="text-xs"
+              style={{ color: isActive ? colors.primaryDark : '#92400E' }}
+            >
               {formatFrequency(item.status)}
-            </Text>
+            </AppText>
           </View>
         </View>
 
+        {/* Linked name */}
         {linkedName ? (
-          <Text style={styles.linkedName} numberOfLines={2}>
+          <AppText className="text-base text-[#333] mb-2.5" numberOfLines={2}>
             {linkedName}
-          </Text>
+          </AppText>
         ) : null}
 
-        <View style={styles.reminderBody}>
-          <View style={styles.reminderInfo}>
-            <Ionicons name="time-outline" size={16} color="#6B7280" />
-            <Text style={styles.timeText}>{formatTime(item.time)}</Text>
-          </View>
-          <View style={styles.reminderInfo}>
-            <Ionicons name="repeat-outline" size={16} color="#6B7280" />
-            <Text style={styles.frequencyText}>{formatFrequency(item.frequency)}</Text>
-          </View>
+        {/* Body: time / frequency info */}
+        <View className="gap-2 mb-3">
+          {isRoutine ? (
+            <>
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="time-outline" size={16} color="#6B7280" />
+                <AppText className="text-[15px] text-[#333] flex-1">
+                  {formatScheduleTimes(item.schedule_times)}
+                </AppText>
+              </View>
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="calendar-outline" size={16} color="#6B7280" />
+                <AppText className="text-sm text-[#6B7280]">
+                  {scheduleSuggestionsService.formatDaysForDisplay(item.schedule_days)}
+                </AppText>
+              </View>
+              {item.timezone && (
+                <View className="flex-row items-center gap-2">
+                  <Ionicons name="globe-outline" size={16} color="#6B7280" />
+                  <AppText className="text-sm text-[#6B7280]">
+                    {scheduleSuggestionsService.formatTimezoneDisplay(item.timezone)}
+                  </AppText>
+                </View>
+              )}
+            </>
+          ) : (
+            <>
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="time-outline" size={16} color="#6B7280" />
+                <AppText className="text-[15px] text-[#333] flex-1">
+                  {formatTime(item.time)}
+                </AppText>
+              </View>
+              <View className="flex-row items-center gap-2">
+                <Ionicons name="repeat-outline" size={16} color="#6B7280" />
+                <AppText className="text-sm text-[#6B7280]">
+                  {formatFrequency(item.frequency)}
+                </AppText>
+              </View>
+            </>
+          )}
         </View>
 
+        {/* Action row */}
         {!isCompleted && (
-          <View style={styles.reminderActions}>
-            <TouchableOpacity style={styles.actionButton} onPress={() => handleToggleStatus(item)}>
+          <View className="flex-row border-t border-[#F3F4F6] pt-3 gap-4">
+            <TouchableOpacity
+              className="flex-row items-center gap-1"
+              onPress={() => handleToggleStatus(item)}
+            >
               <Ionicons
                 name={isActive ? 'pause-outline' : 'play-outline'}
                 size={20}
-                color="#8E9A86"
+                color={colors.primaryDark}
               />
-              <Text style={styles.actionText}>{isActive ? 'Pause' : 'Resume'}</Text>
+              <AppText className="text-sm" style={{ color: colors.primaryDark }}>
+                {isActive ? 'Pause' : 'Resume'}
+              </AppText>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={() => handleDelete(item)}>
+            <TouchableOpacity
+              className="flex-row items-center gap-1"
+              onPress={() => handleDelete(item)}
+            >
               <Ionicons name="trash-outline" size={20} color="#EF4444" />
-              <Text style={[styles.actionText, { color: '#EF4444' }]}>Delete</Text>
+              <AppText className="text-sm text-[#EF4444]">Delete</AppText>
             </TouchableOpacity>
           </View>
         )}
@@ -163,45 +224,57 @@ export default function RemindersScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
-        <View style={styles.header}>
+    <View className="flex-1" style={{ backgroundColor: colors.primary }}>
+      {/* Top header area */}
+      <View className="pt-[70px] px-5">
+        <View className="flex-row items-center mb-2.5">
           <TouchableOpacity
             testID="back-button"
             onPress={() => navigation.goBack()}
-            style={styles.backButton}
+            className="p-1"
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
-            <Ionicons name="arrow-back" size={28} color="#FFFFFF" />
+            <Ionicons name="arrow-back" size={28} color={colors.text} />
           </TouchableOpacity>
         </View>
 
-        <View style={styles.titleRow}>
-          <Text style={styles.title}>Reminders</Text>
+        <View className="flex-row justify-between items-center mb-5">
+          <AppText className="text-[34px] font-bold" style={{ color: colors.text }}>
+            Reminders
+          </AppText>
           <TouchableOpacity
             testID="add-reminder-button"
-            style={styles.addButton}
+            className="p-1"
             onPress={() => navigation.navigate('CreateReminder' as any)}
           >
-            <Ionicons name="add-circle" size={36} color="#FFFFFF" />
+            <Ionicons name="add-circle" size={36} color={colors.text} />
           </TouchableOpacity>
         </View>
       </View>
 
+      {/* Content */}
       {loading ? (
-        <ActivityIndicator size="large" color="#FFFFFF" style={styles.loader} />
+        <ActivityIndicator size="large" color={colors.text} className="mt-10" />
       ) : reminders.length === 0 ? (
-        <View style={styles.emptyState}>
-          <Ionicons name="notifications-off-outline" size={64} color="rgba(255,255,255,0.5)" />
-          <Text style={styles.emptyTitle}>No reminders yet</Text>
-          <Text style={styles.emptySubtitle}>
+        <View className="flex-1 justify-center items-center px-10">
+          <Ionicons name="notifications-off-outline" size={64} color={colors.secondary} />
+          <AppText className="text-[22px] font-bold mt-4 mb-2" style={{ color: colors.text }}>
+            No reminders yet
+          </AppText>
+          <AppText
+            className="text-[15px] text-center leading-[22px] mb-6 opacity-80"
+            style={{ color: colors.text }}
+          >
             Create a reminder to get notified about your favourite mantras or collections.
-          </Text>
+          </AppText>
           <TouchableOpacity
-            style={styles.createButton}
+            className="py-3.5 px-8 rounded-xl"
+            style={{ backgroundColor: colors.primaryDark }}
             onPress={() => navigation.navigate('CreateReminder' as any)}
           >
-            <Text style={styles.createButtonText}>Create Reminder</Text>
+            <AppText className="text-base" style={{ color: colors.text }}>
+              Create Reminder
+            </AppText>
           </TouchableOpacity>
         </View>
       ) : (
@@ -209,174 +282,10 @@ export default function RemindersScreen() {
           data={reminders}
           keyExtractor={(item) => item.reminder_id.toString()}
           renderItem={renderReminder}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}
           showsVerticalScrollIndicator={false}
         />
       )}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#A8B3A2',
-  },
-  content: {
-    paddingTop: 70,
-    paddingHorizontal: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  backButton: {
-    padding: 4,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 34,
-    fontWeight: '700',
-    fontFamily: 'Red_Hat_Text-Bold',
-    color: 'white',
-  },
-  addButton: {
-    padding: 4,
-  },
-  loader: {
-    marginTop: 40,
-  },
-  listContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
-  },
-  reminderCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-  },
-  completedCard: {
-    opacity: 0.6,
-  },
-  reminderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  typeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#F0F4EF',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  typeText: {
-    fontSize: 12,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: '#8E9A86',
-  },
-  statusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  activeBadge: {
-    backgroundColor: '#DEF7EC',
-  },
-  pausedBadge: {
-    backgroundColor: '#FEF3C7',
-  },
-  statusText: {
-    fontSize: 12,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-  },
-  activeText: {
-    color: '#03543F',
-  },
-  pausedText: {
-    color: '#92400E',
-  },
-  linkedName: {
-    fontSize: 16,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: '#333',
-    marginBottom: 10,
-  },
-  reminderBody: {
-    gap: 8,
-    marginBottom: 12,
-  },
-  reminderInfo: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  timeText: {
-    fontSize: 15,
-    fontFamily: 'Red_Hat_Text-Regular',
-    color: '#333',
-  },
-  frequencyText: {
-    fontSize: 14,
-    fontFamily: 'Red_Hat_Text-Regular',
-    color: '#6B7280',
-  },
-  reminderActions: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#F3F4F6',
-    paddingTop: 12,
-    gap: 16,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  actionText: {
-    fontSize: 14,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: '#8E9A86',
-  },
-  emptyState: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyTitle: {
-    fontSize: 22,
-    fontFamily: 'Red_Hat_Text-Bold',
-    color: 'white',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.8)',
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 24,
-  },
-  createButton: {
-    backgroundColor: '#8E9A86',
-    paddingVertical: 14,
-    paddingHorizontal: 32,
-    borderRadius: 12,
-  },
-  createButtonText: {
-    fontSize: 16,
-    fontFamily: 'Red_Hat_Text-SemiBold',
-    color: 'white',
-  },
-});

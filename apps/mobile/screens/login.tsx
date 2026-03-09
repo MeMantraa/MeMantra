@@ -4,6 +4,7 @@ import { View, Image, Alert } from 'react-native';
 import logo from '../assets/logo.png';
 import { authService } from '../services/auth.service';
 import { storage } from '../utils/storage';
+import { notificationService } from '../services/notification.service';
 import { useTheme } from '../context/ThemeContext';
 import AppTextInput from '../components/UI/textInputWrapper';
 import AppText from '../components/UI/textWrapper';
@@ -31,6 +32,11 @@ export default function LoginScreen({ navigation }: any) {
       if (response.status === 'success') {
         await storage.saveToken(response.data.token);
         await storage.saveUserData(response.data.user);
+
+        // Register for push notifications now that we're authenticated
+        notificationService
+          .setupNotifications()
+          .catch((err) => console.error('Failed to set up push notifications after login:', err));
 
         navigation.reset({
           index: 0,

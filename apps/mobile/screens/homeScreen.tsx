@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   FlatList,
@@ -12,14 +12,20 @@ import { Ionicons } from '@expo/vector-icons';
 import MantraCarousel from '../components/carousel';
 import { mantraService, Mantra } from '../services/mantra.service';
 import { collectionService, Collection } from '../services/collection.service';
+import { categoryService, Category } from '../services/category.service';
 import { ratingService } from '../services/rating.service';
 import { storage } from '../utils/storage';
+import { logoutUser } from '../utils/auth';
+import SearchBar from '../components/UI/searchBar';
 import AppText from '../components/UI/textWrapper';
+import IconButton from '../components/UI/iconButton';
 import { useTheme } from '../context/ThemeContext';
 import { useSavedMantras } from '../context/SavedContext';
 import SavedPopupBar from '../components/UI/savedPopupBar';
 import CollectionsSheet from '../components/collectionsSheet';
+import CategoryFilterSheet from '../components/categoryFilterSheet';
 import { useReminders } from '../hooks/useReminders';
+import { engagementService } from '../services/engagement.service';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -32,6 +38,12 @@ export default function HomeScreen({ navigation, route }: any) {
   const [collectionToast, setCollectionToast] = useState('');
   const [collections, setCollections] = useState<Collection[]>([]);
   const [currentMantraId, setCurrentMantraId] = useState<number | null>(null);
+
+  // Category filter state
+  const [allCategories, setAllCategories] = useState<Category[]>([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
+  const [showCategoryFilter, setShowCategoryFilter] = useState(false);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
 
   //for smoother animations
   const [initialIndex, setInitialIndex] = useState(0);
@@ -46,6 +58,7 @@ export default function HomeScreen({ navigation, route }: any) {
   useEffect(() => {
     loadMantras();
     loadCollections();
+    loadCategories();
   }, []);
 
   const loadMantras = async () => {
@@ -106,7 +119,30 @@ export default function HomeScreen({ navigation, route }: any) {
 
     // clear param so it doesn't keep jumping
     navigation.setParams({ returnToMantraId: undefined });
-  }, [loading, feedData, route?.params?.returnToMantraId, navigation]);
+  }, [loading, feedData, route?.params?.returnToMantraId]);
+
+  const loadCategories = async () => {
+    try {
+      setCategoriesLoading(true);
+      const token = (await storage.getToken()) || 'mock-token';
+      const response = await categoryService.getAllCategories(token);
+      if (response.status === 'success' && response.data) {
+        setAllCategories(response.data.categories);
+      }
+    } catch (err) {
+      console.error('Error fetching categories:', err);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
+
+  // feed based on the categories selected in the filter
+  const filteredFeedData = useMemo(() => {
+    if (selectedCategoryIds.length === 0) return feedData;
+    return feedData.filter((mantra) =>
+      mantra.categories?.some((c) => selectedCategoryIds.includes(c.category_id)),
+    );
+  }, [feedData, selectedCategoryIds]);
 
   const loadCollections = async () => {
     try {
@@ -143,6 +179,7 @@ export default function HomeScreen({ navigation, route }: any) {
         await mantraService.unlikeMantra(mantraId, token);
       } else {
         await mantraService.likeMantra(mantraId, token);
+        engagementService.trackEvent('mantra_like');
       }
     } catch (err) {
       console.error('Error toggling like:', err);
@@ -175,6 +212,7 @@ export default function HomeScreen({ navigation, route }: any) {
         setSavedMantras((prev) => prev.filter((m) => m.mantra_id !== mantraId));
       } else {
         await mantraService.saveMantra(mantraId, token);
+        engagementService.trackEvent('mantra_save');
         const savedMantra = feedData.find((m) => m.mantra_id === mantraId);
         if (savedMantra) setSavedMantras((prev) => [...prev, savedMantra]);
 
@@ -220,6 +258,7 @@ export default function HomeScreen({ navigation, route }: any) {
       );
 
       if (response.status === 'success') {
+        engagementService.trackEvent('collection_add');
         const collection = collections.find((c) => c.collection_id === collectionId);
         setCollectionToast(collection?.name || 'collection');
         setTimeout(() => setCollectionToast(''), 2000);
@@ -232,12 +271,13 @@ export default function HomeScreen({ navigation, route }: any) {
     }
   };
 
-  const handleCreateCollection = async (name: string): Promise<number> => {
+  const handleCreateCollection = async (name: string, icon?: string): Promise<number> => {
     try {
       const token = (await storage.getToken()) || 'mock-token';
-      const response = await collectionService.createCollection(name, undefined, token);
+      const response = await collectionService.createCollection(name, undefined, token, icon);
 
       if (response.status === 'success' && response.data) {
+        engagementService.trackEvent('collection_create');
         const newCollection = response.data.collection;
         setCollections((prev) => [newCollection, ...prev]);
         return newCollection.collection_id;
@@ -257,7 +297,9 @@ export default function HomeScreen({ navigation, route }: any) {
       const token = (await storage.getToken()) || 'mock-token';
       const response = await ratingService.rateMantra(mantraId, rating, undefined, token);
 
-      if (response.status !== 'success') {
+      if (response.status === 'success') {
+        engagementService.trackEvent('mantra_rate');
+      } else {
         Alert.alert('Error', response.message || 'Failed to save rating');
       }
     } catch (err) {
@@ -266,10 +308,36 @@ export default function HomeScreen({ navigation, route }: any) {
     }
   };
 
+  const handleLogout = () => logoutUser(navigation);
+
+  const handleSearch = (query: string) => console.log('Searching for:', query);
+
   const handleEndReached = () => {
     if (originalMantras.length > 0) {
       setFeedData((prev) => [...prev, ...originalMantras]);
     }
+  };
+
+  const handleApplyCategoryFilter = (selected: number[]) => {
+    setSelectedCategoryIds(selected);
+  };
+
+  const handleUserPress = () => {
+    Alert.alert(
+      'Account',
+      'Are you sure you want to log out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Log out',
+          style: 'destructive',
+          onPress: () => {
+            void handleLogout();
+          },
+        },
+      ],
+      { cancelable: true },
+    );
   };
 
   let content;
@@ -308,12 +376,34 @@ export default function HomeScreen({ navigation, route }: any) {
         </TouchableOpacity>
       </View>
     );
+  } else if (filteredFeedData.length === 0) {
+    content = (
+      <View
+        className="flex-1 justify-center items-center px-6"
+        style={{ backgroundColor: colors.primary }}
+      >
+        <Ionicons name="funnel-outline" size={64} color={colors.secondary} />
+        <AppText className="mt-4 text-lg font-semibold text-center" style={{ color: colors.text }}>
+          No mantras match the selected categories
+        </AppText>
+        <TouchableOpacity
+          className="rounded-full px-6 py-3 mt-6"
+          onPress={() => setSelectedCategoryIds([])}
+          accessibilityRole="button"
+          style={{ backgroundColor: colors.secondary }}
+        >
+          <AppText className="font-semibold text-base" style={{ color: colors.primary }}>
+            Clear Filters
+          </AppText>
+        </TouchableOpacity>
+      </View>
+    );
   } else {
     content = (
       <FlatList
-        key={`feed-${initialIndex}`} // ✅ remount so initialScrollIndex is applied when it changes
+        key={`feed-${initialIndex}-${selectedCategoryIds.join(',')}`}
         ref={listRef}
-        data={feedData}
+        data={filteredFeedData}
         initialScrollIndex={initialIndex} // ✅ no flash to first item
         renderItem={({ item }) => (
           <MantraCarousel
@@ -357,20 +447,47 @@ export default function HomeScreen({ navigation, route }: any) {
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.primary }}>
-      <TouchableOpacity
-        className="absolute z-20 rounded-full items-center justify-center"
-        style={{
-          top: 68,
-          left: 24,
-          width: 42,
-          height: 42,
-          backgroundColor: colors.secondary,
-        }}
-        testID="home-search-button"
-        accessibilityRole="button"
-      >
-        <Ionicons name="search-outline" size={24} color={colors.white} />
-      </TouchableOpacity>
+      <View className="absolute top-5 left-0 right-0 z-10 flex-row justify-between items-center px-6 pt-14 pb-4">
+        <View className="flex-row items-center" style={{ gap: 8 }}>
+          <SearchBar onSearch={handleSearch} placeholder="Search mantras..." />
+          <TouchableOpacity
+            testID="category-filter-btn"
+            activeOpacity={0.7}
+            onPress={() => setShowCategoryFilter(true)}
+            className="items-center justify-center"
+          >
+            <View
+              className="rounded-full items-center justify-center"
+              style={{
+                width: 48,
+                height: 48,
+                backgroundColor: colors.secondary,
+              }}
+            >
+              <Ionicons
+                name={selectedCategoryIds.length > 0 ? 'funnel' : 'funnel-outline'}
+                size={24}
+                color={colors.primaryDark}
+              />
+            </View>
+            {selectedCategoryIds.length > 0 && (
+              <View
+                className="absolute -top-1 -right-1 rounded-full items-center justify-center"
+                style={{
+                  width: 20,
+                  height: 20,
+                  backgroundColor: colors.primaryDark,
+                }}
+              >
+                <AppText className="text-xs font-bold" style={{ color: colors.secondary }}>
+                  {selectedCategoryIds.length}
+                </AppText>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+        <IconButton type="profile" onPress={handleUserPress} testID="profile-btn" />
+      </View>
 
       {content}
 
@@ -397,6 +514,15 @@ export default function HomeScreen({ navigation, route }: any) {
         onSelectCollection={handleSelectCollection}
         onCreateCollection={handleCreateCollection}
         onRefresh={loadCollections}
+      />
+
+      <CategoryFilterSheet
+        visible={showCategoryFilter}
+        categories={allCategories}
+        selectedCategoryIds={selectedCategoryIds}
+        onApply={handleApplyCategoryFilter}
+        onClose={() => setShowCategoryFilter(false)}
+        loading={categoriesLoading}
       />
 
       {!!collectionToast && (

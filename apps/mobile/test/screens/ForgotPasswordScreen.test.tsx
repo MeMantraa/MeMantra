@@ -419,7 +419,7 @@ describe('ForgotPasswordScreen', () => {
     fireEvent.press(sendCodeButton);
 
     await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Forgot password error:', error);
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Email form error:', error);
     });
 
     consoleErrorSpy.mockRestore();

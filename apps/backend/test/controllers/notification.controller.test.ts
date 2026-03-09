@@ -3,9 +3,11 @@ import express from 'express';
 import { NotificationController } from '../../src/controllers/notification.controller';
 import { UserModel } from '../../src/models/user.model';
 import { NotificationService } from '../../src/services/notification.service';
+import { RecommendationNotificationService } from '../../src/services/recommendation-notification.service';
 
 jest.mock('../../src/models/user.model');
 jest.mock('../../src/services/notification.service');
+jest.mock('../../src/services/recommendation-notification.service');
 
 const app = express();
 app.use(express.json());
@@ -26,6 +28,7 @@ app.post('/register-token', mockAuthMiddleware, NotificationController.registerT
 app.post('/unregister-token', mockAuthMiddleware, NotificationController.unregisterToken);
 app.post('/send', mockAuthMiddleware, NotificationController.sendNotification);
 app.post('/send-bulk', mockAdminMiddleware, NotificationController.sendBulkNotification);
+app.get('/recommend', mockAuthMiddleware, NotificationController.sendRecommendationNotification);
 app.get('/test', mockAuthMiddleware, NotificationController.sendTestNotification);
 
 describe('NotificationController', () => {
@@ -59,6 +62,27 @@ describe('NotificationController', () => {
       });
       expect(UserModel.update).toHaveBeenCalledWith(1, {
         device_token: validToken,
+      });
+    });
+
+    it('should also save timezone when it is provided alongside the token', async () => {
+      const validToken = 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]';
+
+      (NotificationService.isExpoPushToken as jest.Mock).mockReturnValue(true);
+      (UserModel.update as jest.Mock).mockResolvedValue({
+        user_id: 1,
+        device_token: validToken,
+        timezone: 'America/New_York',
+      });
+
+      const res = await request(app)
+        .post('/register-token')
+        .send({ token: validToken, timezone: 'America/New_York' });
+
+      expect(res.status).toBe(200);
+      expect(UserModel.update).toHaveBeenCalledWith(1, {
+        device_token: validToken,
+        timezone: 'America/New_York',
       });
     });
 
@@ -270,6 +294,98 @@ describe('NotificationController', () => {
       expect(res.body).toMatchObject({
         status: 'error',
         message: 'Title, body, and userIds array are required',
+      });
+    });
+  });
+
+  describe('sendRecommendationNotification', () => {
+    it('should send recommendation notification successfully', async () => {
+      (UserModel.findById as jest.Mock).mockResolvedValue({
+        user_id: 1,
+        device_token: 'ExponentPushToken[xxx]',
+      });
+      (RecommendationNotificationService.sendToUser as jest.Mock).mockResolvedValue({
+        userId: 1,
+        success: true,
+      });
+
+      const res = await request(app).get('/recommend');
+
+      expect(res.status).toBe(200);
+      expect(res.body).toMatchObject({
+        status: 'success',
+        message: 'Recommendation notification sent successfully',
+      });
+      expect(RecommendationNotificationService.sendToUser).toHaveBeenCalledWith(
+        1,
+        'ExponentPushToken[xxx]',
+      );
+    });
+
+    it('should return 400 when user has no device token', async () => {
+      (UserModel.findById as jest.Mock).mockResolvedValue({
+        user_id: 1,
+        device_token: null,
+      });
+
+      const res = await request(app).get('/recommend');
+
+      expect(res.status).toBe(400);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'No device token registered. Please enable notifications in the app.',
+      });
+      expect(RecommendationNotificationService.sendToUser).not.toHaveBeenCalled();
+    });
+
+    it('should return 500 when the recommendation service reports failure', async () => {
+      (UserModel.findById as jest.Mock).mockResolvedValue({
+        user_id: 1,
+        device_token: 'ExponentPushToken[xxx]',
+      });
+      (RecommendationNotificationService.sendToUser as jest.Mock).mockResolvedValue({
+        userId: 1,
+        success: false,
+        error: 'No recommendations available',
+      });
+
+      const res = await request(app).get('/recommend');
+
+      expect(res.status).toBe(500);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'No recommendations available',
+      });
+    });
+
+    it('should return 500 with fallback message when service failure has no error string', async () => {
+      (UserModel.findById as jest.Mock).mockResolvedValue({
+        user_id: 1,
+        device_token: 'ExponentPushToken[xxx]',
+      });
+      (RecommendationNotificationService.sendToUser as jest.Mock).mockResolvedValue({
+        userId: 1,
+        success: false,
+      });
+
+      const res = await request(app).get('/recommend');
+
+      expect(res.status).toBe(500);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Failed to send recommendation notification',
+      });
+    });
+
+    it('should return 500 when an unexpected error is thrown', async () => {
+      (UserModel.findById as jest.Mock).mockRejectedValue(new Error('DB unavailable'));
+
+      const res = await request(app).get('/recommend');
+
+      expect(res.status).toBe(500);
+      expect(res.body).toMatchObject({
+        status: 'error',
+        message: 'Error sending recommendation notification',
       });
     });
   });

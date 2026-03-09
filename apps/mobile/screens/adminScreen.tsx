@@ -7,18 +7,24 @@ import {
   Platform,
   Modal,
   TextInput,
+  ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { Mantra, mantraService } from '../services/mantra.service';
 import { User, userService } from '../services/user.service';
+import { Category, categoryService } from '../services/category.service';
 import { storage } from '../utils/storage';
 import MantraForm from '../components/admin/MantraForm';
 import MantraList from '../components/admin/MantraList';
 import UserForm from '../components/admin/UserForm';
 import UserList from '../components/admin/UserList';
+import CategoryForm from '../components/admin/CategoryForm';
+import CategoryList from '../components/admin/CategoryList';
 import AppText from '../components/UI/textWrapper';
+import { EngagementAnalytics, engagementService } from '../services/engagement.service';
 
-type AdminMode = 'mantras' | 'users';
+type AdminMode = 'mantras' | 'users' | 'categories' | 'analytics';
 type ActionMode = 'add' | 'manage';
 
 const AdminScreen: React.FC = () => {
@@ -32,9 +38,14 @@ const AdminScreen: React.FC = () => {
   const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
+  const [categories, setCategories] = useState<Category[]>([]);
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingMantra, setEditingMantra] = useState<Mantra | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
+  // Category IDs selected for the current mantra being created/edited
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
 
   const [mantraForm, setMantraForm] = useState({
     title: '',
@@ -54,12 +65,41 @@ const AdminScreen: React.FC = () => {
     password: '',
     confirmPassword: '',
   });
+  const [categoryForm, setCategoryForm] = useState({
+    name: '',
+    description: '',
+    category_type: '',
+  });
+
   const [userSearchQuery, setUserSearchQuery] = useState('');
   const [viewAllUsers, setViewAllUsers] = useState(false);
+  const [categorySearchQuery, setCategorySearchQuery] = useState('');
+
+  const [analytics, setAnalytics] = useState<EngagementAnalytics | null>(null);
+  const [analyticsDays, setAnalyticsDays] = useState<7 | 30 | 90>(30);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   useEffect(() => {
-    loadData();
+    if (mode !== 'analytics') loadData();
   }, [mode]);
+
+  useEffect(() => {
+    if (mode === 'analytics') loadAnalytics();
+  }, [mode, analyticsDays]);
+
+  const loadAnalytics = async () => {
+    setAnalyticsLoading(true);
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      const response = await engagementService.getAnalytics(token, analyticsDays);
+      if (response.status === 'success') setAnalytics(response.data);
+    } catch (error) {
+      console.error('Failed to load analytics:', error);
+      Alert.alert('Error', 'Failed to load analytics');
+    } finally {
+      setAnalyticsLoading(false);
+    }
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -67,9 +107,19 @@ const AdminScreen: React.FC = () => {
       const token = (await storage.getToken()) || 'mock-token';
 
       if (mode === 'mantras') {
-        const response = await mantraService.getFeedMantras(token);
+        const response = await mantraService.getAllMantras(token);
         if (response.status === 'success') {
           setMantras(response.data);
+        }
+        // Also load categories for the category picker in MantraForm
+        const catResponse = await categoryService.getAllCategories(token);
+        if (catResponse.status === 'success') {
+          setCategories(catResponse.data.categories);
+        }
+      } else if (mode === 'categories') {
+        const response = await categoryService.getAllCategories(token);
+        if (response.status === 'success') {
+          setCategories(response.data.categories);
         }
       } else {
         const response = await userService.getAllUsers(token);
@@ -97,7 +147,17 @@ const AdminScreen: React.FC = () => {
       cbt_principles: '',
       references: '',
     });
+    setSelectedCategoryIds([]);
     setEditingMantra(null);
+  };
+
+  const resetCategoryForm = () => {
+    setCategoryForm({
+      name: '',
+      description: '',
+      category_type: '',
+    });
+    setEditingCategory(null);
   };
 
   const resetUserForm = () => {
@@ -108,11 +168,21 @@ const AdminScreen: React.FC = () => {
   };
 
   const handleMantraFormChange = (field: string, value: string) => {
-    setMantraForm({ ...mantraForm, [field]: value });
+    setMantraForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleCategoryFormChange = (field: string, value: string) => {
+    setCategoryForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleToggleCategory = (categoryId: number) => {
+    setSelectedCategoryIds((prev) =>
+      prev.includes(categoryId) ? prev.filter((id) => id !== categoryId) : [...prev, categoryId],
+    );
   };
 
   const handleUserFormChange = (field: string, value: string) => {
-    setUserForm({ ...userForm, [field]: value });
+    setUserForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleCreateMantra = async () => {
@@ -127,7 +197,12 @@ const AdminScreen: React.FC = () => {
       const response = await mantraService.createMantra(mantraForm, token);
 
       if (response.status === 'success') {
-        setMantras([response.data.mantra, ...mantras]);
+        const newMantra = response.data.mantra;
+        // Link selected categories to the new mantra
+        for (const categoryId of selectedCategoryIds) {
+          await categoryService.addMantraToCategory(categoryId, newMantra.mantra_id, token);
+        }
+        setMantras([newMantra, ...mantras]);
         resetMantraForm();
         Alert.alert('Success', 'Mantra created successfully');
       }
@@ -148,6 +223,26 @@ const AdminScreen: React.FC = () => {
       const response = await mantraService.updateMantra(editingMantra.mantra_id, mantraForm, token);
 
       if (response.status === 'success') {
+        // Sync categories: get current, compute diff, add/remove
+        const currentCatsRes = await categoryService.getCategoriesForMantra(
+          editingMantra.mantra_id,
+          token,
+        );
+        const currentCatIds =
+          currentCatsRes.status === 'success'
+            ? currentCatsRes.data.categories.map((c) => c.category_id)
+            : [];
+
+        const toAdd = selectedCategoryIds.filter((id) => !currentCatIds.includes(id));
+        const toRemove = currentCatIds.filter((id) => !selectedCategoryIds.includes(id));
+
+        for (const catId of toAdd) {
+          await categoryService.addMantraToCategory(catId, editingMantra.mantra_id, token);
+        }
+        for (const catId of toRemove) {
+          await categoryService.removeMantraFromCategory(catId, editingMantra.mantra_id, token);
+        }
+
         setMantras(
           mantras.map((m) => (m.mantra_id === editingMantra.mantra_id ? response.data.mantra : m)),
         );
@@ -244,7 +339,7 @@ const AdminScreen: React.FC = () => {
     }
   };
 
-  const openEditMantra = (mantra: Mantra) => {
+  const openEditMantra = async (mantra: Mantra) => {
     setEditingMantra(mantra);
     setMantraForm({
       title: mantra.title,
@@ -257,6 +352,21 @@ const AdminScreen: React.FC = () => {
       cbt_principles: mantra.cbt_principles || '',
       references: mantra.references || '',
     });
+    // Load existing categories for this mantra
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      const catRes = await categoryService.getCategoriesForMantra(mantra.mantra_id, token);
+      if (catRes.status === 'success') {
+        setSelectedCategoryIds(catRes.data.categories.map((c) => c.category_id));
+      }
+      // Also ensure all categories are loaded for the picker
+      const allCatsRes = await categoryService.getAllCategories(token);
+      if (allCatsRes.status === 'success') {
+        setCategories(allCatsRes.data.categories);
+      }
+    } catch {
+      setSelectedCategoryIds([]);
+    }
     setEditModalVisible(true);
   };
 
@@ -297,6 +407,113 @@ const AdminScreen: React.FC = () => {
     ]);
   };
 
+  // ── Category Handlers ──
+
+  const handleCreateCategory = async () => {
+    if (!categoryForm.name.trim()) {
+      Alert.alert('Error', 'Category name is required');
+      return;
+    }
+    if (!categoryForm.category_type) {
+      Alert.alert('Error', 'Please select a category layer');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      const payload: any = { name: categoryForm.name };
+      if (categoryForm.description) payload.description = categoryForm.description;
+      if (categoryForm.category_type) payload.category_type = categoryForm.category_type;
+
+      const response = await categoryService.createCategory(payload, token);
+
+      if (response.status === 'success') {
+        setCategories([response.data.category, ...categories]);
+        resetCategoryForm();
+        Alert.alert('Success', 'Category created successfully');
+      }
+    } catch (error) {
+      console.error('Failed to create category:', error);
+      Alert.alert('Error', 'Failed to create category');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleUpdateCategory = async () => {
+    if (!editingCategory) return;
+
+    setSubmitting(true);
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      const payload: any = {};
+      if (categoryForm.name) payload.name = categoryForm.name;
+      if (categoryForm.description) payload.description = categoryForm.description;
+      if (categoryForm.category_type) payload.category_type = categoryForm.category_type;
+
+      const response = await categoryService.updateCategory(
+        editingCategory.category_id,
+        payload,
+        token,
+      );
+
+      if (response.status === 'success') {
+        setCategories(
+          categories.map((c) =>
+            c.category_id === editingCategory.category_id ? response.data.category : c,
+          ),
+        );
+        resetCategoryForm();
+        setEditModalVisible(false);
+        Alert.alert('Success', 'Category updated successfully');
+      }
+    } catch (error) {
+      console.error('Failed to update category:', error);
+      Alert.alert('Error', 'Failed to update category');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId: number) => {
+    setDeletingId(categoryId);
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      await categoryService.deleteCategory(categoryId, token);
+      setCategories(categories.filter((c) => c.category_id !== categoryId));
+      Alert.alert('Success', 'Category deleted');
+    } catch (error) {
+      console.error('Failed to delete category:', error);
+      Alert.alert('Error', 'Failed to delete category');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const openEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    setCategoryForm({
+      name: category.name || '',
+      description: category.description || '',
+      category_type: category.category_type || '',
+    });
+    setEditModalVisible(true);
+  };
+
+  const confirmDeleteCategory = (categoryId: number, name: string) => {
+    Alert.alert('Delete Category', `Delete "${name}"?`, [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: () => {
+          void handleDeleteCategory(categoryId);
+        },
+      },
+    ]);
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -305,77 +522,76 @@ const AdminScreen: React.FC = () => {
       <View className="flex-1 px-6 pt-16 pb-6" style={{ backgroundColor: colors.primary }}>
         <AppText className="text-white text-3xl font-bold mb-4">Admin Controls</AppText>
 
-        {/* Mode Toggle: Mantras vs Users */}
+        {/* Mode Toggle */}
         <View
           className="flex-row p-1 rounded-full mb-4"
           style={{ backgroundColor: `${colors.primaryDark}55` }}
         >
-          <TouchableOpacity
-            className="flex-1 rounded-full px-4 py-3"
-            onPress={() => {
-              setMode('mantras');
-              setAction('add');
-              resetMantraForm();
-              resetUserForm();
-            }}
-            style={{ backgroundColor: mode === 'mantras' ? colors.secondary : 'transparent' }}
-          >
-            <AppText
-              className="text-center font-semibold"
-              style={{ color: mode === 'mantras' ? colors.primaryDark : colors.text }}
+          {(
+            [
+              { key: 'mantras', label: 'Mantras' },
+              { key: 'categories', label: 'Categories' },
+              { key: 'users', label: 'Users' },
+              { key: 'analytics', label: 'Analytics' },
+            ] as const
+          ).map(({ key, label }) => (
+            <TouchableOpacity
+              key={key}
+              className="flex-1 rounded-full py-3"
+              onPress={() => {
+                setMode(key);
+                if (key !== 'analytics') {
+                  setAction('add');
+                  resetMantraForm();
+                  resetUserForm();
+                  resetCategoryForm();
+                  setCategorySearchQuery('');
+                }
+              }}
+              style={{ backgroundColor: mode === key ? colors.secondary : 'transparent' }}
             >
-              Mantras
-            </AppText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="flex-1 rounded-full px-4 py-3"
-            onPress={() => {
-              setMode('users');
-              setAction('add');
-              resetMantraForm();
-              resetUserForm();
-            }}
-            style={{ backgroundColor: mode === 'users' ? colors.secondary : 'transparent' }}
-          >
-            <AppText
-              className="text-center font-semibold"
-              style={{ color: mode === 'users' ? colors.primaryDark : colors.text }}
-            >
-              Users
-            </AppText>
-          </TouchableOpacity>
+              <AppText
+                className="text-center font-semibold text-xs"
+                style={{ color: mode === key ? colors.primaryDark : colors.text }}
+              >
+                {label}
+              </AppText>
+            </TouchableOpacity>
+          ))}
         </View>
 
-        {/* Action Toggle: Add vs Manage */}
-        <View
-          className="flex-row p-1 rounded-full mb-6"
-          style={{ backgroundColor: `${colors.primaryDark}33` }}
-        >
-          <TouchableOpacity
-            className="flex-1 rounded-full px-4 py-2"
-            onPress={() => setAction('add')}
-            style={{ backgroundColor: action === 'add' ? colors.secondary : 'transparent' }}
+        {/* Action Toggle: Add vs Manage (hidden for analytics) */}
+        {mode !== 'analytics' && (
+          <View
+            className="flex-row p-1 rounded-full mb-6"
+            style={{ backgroundColor: `${colors.primaryDark}33` }}
           >
-            <AppText
-              className="text-center font-semibold text-sm"
-              style={{ color: action === 'add' ? colors.primaryDark : colors.text }}
+            <TouchableOpacity
+              className="flex-1 rounded-full px-4 py-2"
+              onPress={() => setAction('add')}
+              style={{ backgroundColor: action === 'add' ? colors.secondary : 'transparent' }}
             >
-              Add
-            </AppText>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="flex-1 rounded-full px-4 py-2"
-            onPress={() => setAction('manage')}
-            style={{ backgroundColor: action === 'manage' ? colors.secondary : 'transparent' }}
-          >
-            <AppText
-              className="text-center font-semibold text-sm"
-              style={{ color: action === 'manage' ? colors.primaryDark : colors.text }}
+              <AppText
+                className="text-center font-semibold text-sm"
+                style={{ color: action === 'add' ? colors.primaryDark : colors.text }}
+              >
+                Add
+              </AppText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="flex-1 rounded-full px-4 py-2"
+              onPress={() => setAction('manage')}
+              style={{ backgroundColor: action === 'manage' ? colors.secondary : 'transparent' }}
             >
-              Manage
-            </AppText>
-          </TouchableOpacity>
-        </View>
+              <AppText
+                className="text-center font-semibold text-sm"
+                style={{ color: action === 'manage' ? colors.primaryDark : colors.text }}
+              >
+                Manage
+              </AppText>
+            </TouchableOpacity>
+          </View>
+        )}
 
         {/* Content */}
         {mode === 'mantras' && action === 'add' && (
@@ -384,6 +600,9 @@ const AdminScreen: React.FC = () => {
             onFormChange={handleMantraFormChange}
             onSubmit={handleCreateMantra}
             submitting={submitting}
+            categories={categories}
+            selectedCategoryIds={selectedCategoryIds}
+            onToggleCategory={handleToggleCategory}
           />
         )}
 
@@ -395,6 +614,49 @@ const AdminScreen: React.FC = () => {
             onEdit={openEditMantra}
             onDelete={confirmDeleteMantra}
           />
+        )}
+
+        {mode === 'categories' && action === 'add' && (
+          <CategoryForm
+            formData={categoryForm}
+            onFormChange={handleCategoryFormChange}
+            onSubmit={handleCreateCategory}
+            submitting={submitting}
+          />
+        )}
+
+        {mode === 'categories' && action === 'manage' && (
+          <View className="flex-1">
+            <TextInput
+              className="bg-black/30 text-white p-4 rounded-xl mb-4"
+              placeholder="Search categories here"
+              placeholderTextColor="rgba(255, 255, 255, 0.5)"
+              value={categorySearchQuery}
+              onChangeText={setCategorySearchQuery}
+            />
+
+            {categorySearchQuery.trim() !== '' ? (
+              <CategoryList
+                categories={categories.filter(
+                  (c) =>
+                    c.name?.toLowerCase().includes(categorySearchQuery.toLowerCase()) ||
+                    c.description?.toLowerCase().includes(categorySearchQuery.toLowerCase()),
+                )}
+                loading={loading}
+                deletingId={deletingId}
+                onEdit={openEditCategory}
+                onDelete={confirmDeleteCategory}
+              />
+            ) : (
+              <CategoryList
+                categories={categories}
+                loading={loading}
+                deletingId={deletingId}
+                onEdit={openEditCategory}
+                onDelete={confirmDeleteCategory}
+              />
+            )}
+          </View>
         )}
 
         {mode === 'users' && action === 'add' && (
@@ -446,6 +708,178 @@ const AdminScreen: React.FC = () => {
           </View>
         )}
 
+        {/* Analytics */}
+        {mode === 'analytics' && (
+          <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+            {/* Days picker */}
+            <View
+              className="flex-row p-1 rounded-full mb-6"
+              style={{ backgroundColor: `${colors.primaryDark}33` }}
+            >
+              {([7, 30, 90] as const).map((d) => (
+                <TouchableOpacity
+                  key={d}
+                  className="flex-1 rounded-full py-2"
+                  onPress={() => setAnalyticsDays(d)}
+                  style={{
+                    backgroundColor: analyticsDays === d ? colors.secondary : 'transparent',
+                  }}
+                >
+                  <AppText
+                    className="text-center font-semibold text-sm"
+                    style={{ color: analyticsDays === d ? colors.primaryDark : colors.text }}
+                  >
+                    {d}d
+                  </AppText>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {analyticsLoading ? (
+              <ActivityIndicator size="large" color={colors.secondary} style={{ marginTop: 40 }} />
+            ) : analytics ? (
+              <>
+                {/* Notification Effectiveness */}
+                <AppText className="text-white text-lg font-bold mb-3">
+                  Notification Effectiveness
+                </AppText>
+                <View className="flex-row flex-wrap gap-3 mb-6">
+                  {[
+                    { label: 'Sent', value: String(analytics.notification_effectiveness.sent) },
+                    { label: 'Taps', value: String(analytics.notification_effectiveness.taps) },
+                    {
+                      label: 'Tap-Through',
+                      value:
+                        analytics.notification_effectiveness.tap_through_rate_pct != null
+                          ? `${analytics.notification_effectiveness.tap_through_rate_pct.toFixed(1)}%`
+                          : 'N/A',
+                    },
+                    {
+                      label: 'Post-Tap Conv.',
+                      value:
+                        analytics.notification_effectiveness.post_tap_conversion_rate_pct != null
+                          ? `${analytics.notification_effectiveness.post_tap_conversion_rate_pct.toFixed(1)}%`
+                          : 'N/A',
+                    },
+                  ].map(({ label, value }) => (
+                    <View
+                      key={label}
+                      className="rounded-2xl p-4"
+                      style={{
+                        backgroundColor: `${colors.primaryDark}55`,
+                        minWidth: '45%',
+                        flex: 1,
+                      }}
+                    >
+                      <AppText className="text-white text-2xl font-bold">{value}</AppText>
+                      <AppText className="text-sm" style={{ color: colors.text }}>
+                        {label}
+                      </AppText>
+                    </View>
+                  ))}
+                </View>
+
+                {/* Taps by hour */}
+                {analytics.tap_by_hour.length > 0 && (
+                  <>
+                    <AppText className="text-white text-lg font-bold mb-3">
+                      Taps by Hour (UTC)
+                    </AppText>
+                    <View
+                      className="mb-6 rounded-2xl p-4"
+                      style={{ backgroundColor: `${colors.primaryDark}55` }}
+                    >
+                      {(() => {
+                        const max = Math.max(...analytics.tap_by_hour.map((r) => r.count), 1);
+                        return analytics.tap_by_hour.map(({ hour, count }) => (
+                          <View key={hour} className="flex-row items-center mb-2">
+                            <AppText className="text-white w-8 text-xs">
+                              {String(hour).padStart(2, '0')}h
+                            </AppText>
+                            <View
+                              className="flex-1 mx-2 h-4 rounded-full"
+                              style={{ backgroundColor: `${colors.primaryDark}88` }}
+                            >
+                              <View
+                                className="h-4 rounded-full"
+                                style={{
+                                  width: `${(count / max) * 100}%`,
+                                  backgroundColor: colors.secondary,
+                                }}
+                              />
+                            </View>
+                            <AppText className="text-white text-xs w-6 text-right">{count}</AppText>
+                          </View>
+                        ));
+                      })()}
+                    </View>
+                  </>
+                )}
+
+                {/* Adaptive Timing */}
+                <AppText className="text-white text-lg font-bold mb-3">Adaptive Timing</AppText>
+                <View className="flex-row gap-3 mb-6">
+                  <View
+                    className="flex-1 rounded-2xl p-4"
+                    style={{ backgroundColor: `${colors.primaryDark}55` }}
+                  >
+                    <AppText className="text-white text-2xl font-bold">
+                      {analytics.adaptive_timing.users_with_optimal_hour}
+                    </AppText>
+                    <AppText className="text-sm" style={{ color: colors.text }}>
+                      Personalised
+                    </AppText>
+                  </View>
+                  <View
+                    className="flex-1 rounded-2xl p-4"
+                    style={{ backgroundColor: `${colors.primaryDark}55` }}
+                  >
+                    <AppText className="text-white text-2xl font-bold">
+                      {analytics.adaptive_timing.users_using_default}
+                    </AppText>
+                    <AppText className="text-sm" style={{ color: colors.text }}>
+                      Default (9 AM)
+                    </AppText>
+                  </View>
+                </View>
+
+                {/* Event counts */}
+                <AppText className="text-white text-lg font-bold mb-3">Event Breakdown</AppText>
+                <View
+                  className="rounded-2xl p-4 mb-8"
+                  style={{ backgroundColor: `${colors.primaryDark}55` }}
+                >
+                  {Object.entries(analytics.event_counts).length === 0 ? (
+                    <AppText style={{ color: colors.text }}>
+                      No events recorded in this window.
+                    </AppText>
+                  ) : (
+                    Object.entries(analytics.event_counts)
+                      .sort(([, a], [, b]) => b - a)
+                      .map(([type, count]) => (
+                        <View
+                          key={type}
+                          className="flex-row justify-between py-2 border-b border-white/10"
+                        >
+                          <AppText className="text-white text-sm">
+                            {type.replace(/_/g, ' ')}
+                          </AppText>
+                          <AppText className="font-bold" style={{ color: colors.secondary }}>
+                            {count}
+                          </AppText>
+                        </View>
+                      ))
+                  )}
+                </View>
+              </>
+            ) : (
+              <AppText className="text-center mt-10" style={{ color: colors.text }}>
+                No analytics data available.
+              </AppText>
+            )}
+          </ScrollView>
+        )}
+
         {/* Edit Modal */}
         <Modal
           visible={editModalVisible}
@@ -455,13 +889,14 @@ const AdminScreen: React.FC = () => {
           <View className="flex-1 px-6 pt-16 pb-6" style={{ backgroundColor: colors.primary }}>
             <View className="flex-row justify-between items-center mb-6">
               <AppText className="text-white text-2xl font-bold">
-                Edit {mode === 'mantras' ? 'Mantra' : 'User'}
+                Edit {mode === 'mantras' ? 'Mantra' : mode === 'categories' ? 'Category' : 'User'}
               </AppText>
               <TouchableOpacity
                 onPress={() => {
                   setEditModalVisible(false);
                   resetMantraForm();
                   resetUserForm();
+                  resetCategoryForm();
                 }}
               >
                 <AppText className="text-white text-2xl">✕</AppText>
@@ -473,6 +908,17 @@ const AdminScreen: React.FC = () => {
                 formData={mantraForm}
                 onFormChange={handleMantraFormChange}
                 onSubmit={handleUpdateMantra}
+                submitting={submitting}
+                isEdit
+                categories={categories}
+                selectedCategoryIds={selectedCategoryIds}
+                onToggleCategory={handleToggleCategory}
+              />
+            ) : mode === 'categories' ? (
+              <CategoryForm
+                formData={categoryForm}
+                onFormChange={handleCategoryFormChange}
+                onSubmit={handleUpdateCategory}
                 submitting={submitting}
                 isEdit
               />

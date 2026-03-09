@@ -18,6 +18,9 @@ export interface Database {
   MessageReaction: MessageReactionTable;
   Rating: RatingTable;
   JournalEntry: JournalEntryTable;
+  UserCategoryScore: UserCategoryScoreTable;
+  EngagementEvent: EngagementEventTable;
+  EmailVerificationToken: EmailVerificationTokenTable;
 }
 
 //table interfaces
@@ -30,7 +33,12 @@ export interface UserTable {
   password_hash: string | null;
   device_token: string | null;
   auth_provider: string | null;
+  theme: string | null;
   created_at: string | null;
+  timezone: string | null;
+  recommendation_notif_sent_at: string | null;
+  optimal_send_hour: number | null;
+  feature_flags: string[];
 }
 
 export interface AdminTable {
@@ -59,6 +67,7 @@ export interface CategoryTable {
   name: string;
   description: string | null;
   category_type: string | null;
+  parent_id: number | null;
   image_url: string | null;
   is_active: boolean | null;
 }
@@ -81,6 +90,7 @@ export interface CollectionTable {
   name: string | null;
   description: string | null;
   created_at: string | null;
+  icon: string | null;
 }
 
 export interface CollectionMantraTable {
@@ -99,6 +109,9 @@ export interface ReminderTable {
   frequency: string | null;
   status: string | null;
   last_sent_at: string | null;
+  schedule_times: string[] | null;
+  schedule_days: number[] | null;
+  timezone: string | null;
 }
 
 export interface RecommendationLogTable {
@@ -166,6 +179,13 @@ export interface JournalEntryTable {
   updated_at: string | null;
 }
 
+export interface UserCategoryScoreTable {
+  user_id: number;
+  category_id: number;
+  score: number;
+  updated_at: string;
+}
+
 //types for type safe operations (typescript ting)
 export type User = Selectable<UserTable>;
 export type NewUser = Insertable<UserTable>;
@@ -219,7 +239,6 @@ export type MessageReaction = Selectable<MessageReactionTable>;
 export type NewMessageReaction = Insertable<MessageReactionTable>;
 export type MessageReactionUpdate = Updateable<MessageReactionTable>;
 
-
 export type Rating = Selectable<RatingTable>;
 export type NewRating = Insertable<RatingTable>;
 export type RatingUpdate = Updateable<RatingTable>;
@@ -227,3 +246,29 @@ export type RatingUpdate = Updateable<RatingTable>;
 export type JournalEntry = Selectable<JournalEntryTable>;
 export type NewJournalEntry = Insertable<JournalEntryTable>;
 export type JournalEntryUpdate = Updateable<JournalEntryTable>;
+
+export type UserCategoryScore = Selectable<UserCategoryScoreTable>;
+export type NewUserCategoryScore = Insertable<UserCategoryScoreTable>;
+export type UserCategoryScoreUpdate = Updateable<UserCategoryScoreTable>;
+
+export interface EmailVerificationTokenTable {
+  token_id: Generated<number>;
+  email: string;
+  code: string;
+  expires_at: string;
+  created_at: string | null;
+}
+
+export interface EngagementEventTable {
+  event_id: Generated<number>;
+  user_id: number;
+  event_type: string;
+  occurred_at: Generated<string>;
+}
+
+export type EngagementEvent = Selectable<EngagementEventTable>;
+export type NewEngagementEvent = Insertable<EngagementEventTable>;
+export type EngagementEventUpdate = Updateable<EngagementEventTable>;
+
+export type EmailVerificationToken = Selectable<EmailVerificationTokenTable>;
+export type NewEmailVerificationToken = Insertable<EmailVerificationTokenTable>;

@@ -2,10 +2,12 @@ import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
 import { Platform } from 'react-native';
 import SavedPopupBar from '../../../components/UI/savedPopupBar';
+import { themes } from '../../../styles/theme';
 
 jest.mock('../../../context/ThemeContext', () => ({
   useTheme: () => ({
     colors: {
+      white: '#ffffff',
       secondary: '#ff9900',
       primaryDark: '#1a1a1a',
     },
@@ -218,12 +220,11 @@ describe('SavedPopupBar', () => {
     const popupBar = getByTestId('saved-popup-bar');
     const messageElement = getByText('Saved successfully');
 
-    expect(popupBar.props.style).toMatchObject(
-      expect.objectContaining({
-        backgroundColor: '#ff9900',
-        borderColor: '#ff9900',
-      }),
-    );
+    const styleProp = popupBar.props.style;
+    const mergedStyle = Object.assign({}, ...(Array.isArray(styleProp) ? styleProp : [styleProp]));
+
+    expect(mergedStyle.backgroundColor).toBe('#ffffff');
+    expect(mergedStyle.borderColor).toBe('#ff9900');
 
     expect(messageElement.props.style).toMatchObject(
       expect.objectContaining({
