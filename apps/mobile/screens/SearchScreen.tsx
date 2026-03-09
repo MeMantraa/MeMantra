@@ -69,15 +69,14 @@ export default function SearchScreen({ navigation, route }: any) {
       const before =
         beforeSpaces.length >= 3
           ? '...' +
-            beforeText.slice(
-              beforeSpaces[beforeSpaces.length - 3].index! +
-                beforeSpaces[beforeSpaces.length - 3][0].length,
-            )
+            beforeText.slice((beforeSpaces.at(-3)!.index ?? 0) + beforeSpaces.at(-3)![0].length)
           : beforeText;
 
       const afterSpaces = [...afterText.matchAll(/\s+/g)];
       const after =
-        afterSpaces.length >= 3 ? afterText.slice(0, afterSpaces[2].index!) + '...' : afterText;
+        afterSpaces.length >= 3
+          ? afterText.slice(0, afterSpaces.at(2)?.index ?? afterText.length) + '...'
+          : afterText;
 
       return { before, match, after };
     }
@@ -125,6 +124,71 @@ export default function SearchScreen({ navigation, route }: any) {
 
   const showEmpty = query.trim().length > 0 && results.length === 0;
   const showPlaceholder = query.trim().length === 0;
+
+  const renderBody = () => {
+    if (showPlaceholder) {
+      return (
+        <View
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }}
+        >
+          <Ionicons name="search-outline" size={56} color={colors.secondary} />
+          <AppText
+            style={{
+              color: colors.text,
+              fontSize: 16,
+              textAlign: 'center',
+              marginTop: 16,
+              opacity: 0.7,
+            }}
+          >
+            Type a keyword to search across all mantra content
+          </AppText>
+        </View>
+      );
+    }
+    if (showEmpty) {
+      return (
+        <View
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }}
+        >
+          <Ionicons name="file-tray-outline" size={56} color={colors.secondary} />
+          <AppText
+            style={{
+              color: colors.text,
+              fontSize: 16,
+              textAlign: 'center',
+              marginTop: 16,
+            }}
+          >
+            No mantras found for <AppText style={{ fontWeight: '700' }}>"{query.trim()}"</AppText>
+          </AppText>
+        </View>
+      );
+    }
+    return (
+      <>
+        <AppText
+          style={{
+            color: colors.text,
+            fontSize: 13,
+            opacity: 0.6,
+            paddingHorizontal: 20,
+            paddingTop: 12,
+            paddingBottom: 4,
+          }}
+        >
+          {results.length} result{results.length !== 1 ? 's' : ''} for &quot;{query.trim()}&quot;
+        </AppText>
+        <FlatList
+          data={results}
+          keyExtractor={(item) => item.mantra_id.toString()}
+          renderItem={renderItem}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        />
+      </>
+    );
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.primary }}>
@@ -195,62 +259,7 @@ export default function SearchScreen({ navigation, route }: any) {
       </View>
 
       {/* Body */}
-      {showPlaceholder ? (
-        <View
-          style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }}
-        >
-          <Ionicons name="search-outline" size={56} color={colors.secondary} />
-          <AppText
-            style={{
-              color: colors.text,
-              fontSize: 16,
-              textAlign: 'center',
-              marginTop: 16,
-              opacity: 0.7,
-            }}
-          >
-            Type a keyword to search across all mantra content
-          </AppText>
-        </View>
-      ) : showEmpty ? (
-        <View
-          style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }}
-        >
-          <Ionicons name="file-tray-outline" size={56} color={colors.secondary} />
-          <AppText
-            style={{
-              color: colors.text,
-              fontSize: 16,
-              textAlign: 'center',
-              marginTop: 16,
-            }}
-          >
-            No mantras found for <AppText style={{ fontWeight: '700' }}>"{query.trim()}"</AppText>
-          </AppText>
-        </View>
-      ) : (
-        <>
-          <AppText
-            style={{
-              color: colors.text,
-              fontSize: 13,
-              opacity: 0.6,
-              paddingHorizontal: 20,
-              paddingTop: 12,
-              paddingBottom: 4,
-            }}
-          >
-            {results.length} result{results.length !== 1 ? 's' : ''} for &quot;{query.trim()}&quot;
-          </AppText>
-          <FlatList
-            data={results}
-            keyExtractor={(item) => item.mantra_id.toString()}
-            renderItem={renderItem}
-            keyboardShouldPersistTaps="handled"
-            showsVerticalScrollIndicator={false}
-          />
-        </>
-      )}
+      {renderBody()}
     </View>
   );
 }
