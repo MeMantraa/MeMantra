@@ -95,6 +95,7 @@ export const notificationService = {
         token: expoPushToken,
         platform: Platform.OS,
         deviceName: Device.deviceName || `${Platform.OS} Device`,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       };
 
       const response = await apiClient.post<RegisterTokenResponse>(
@@ -141,7 +142,18 @@ export const notificationService = {
         return null;
       }
 
-      // Step 2: Get Expo push token
+      // Step 2: Create Android notification channel
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'Default',
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 250, 250, 250],
+          lightColor: '#8E9A86',
+          sound: 'default',
+        });
+      }
+
+      // Step 3: Get Expo push token
       const expoPushToken = await this.getExpoPushToken();
 
       if (!expoPushToken) {
@@ -149,7 +161,7 @@ export const notificationService = {
         return null;
       }
 
-      // Step 3: Register token with backend
+      // Step 4: Register token with backend
       await this.registerDeviceToken(expoPushToken);
 
       console.log('Notification setup completed successfully');

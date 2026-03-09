@@ -9,7 +9,16 @@ const DAY_MAP: Record<string, number> = {
 export function getCurrentTimeInTimezone(
   timezone: string,
 ): { hour: number; minute: number; dayOfWeek: number } {
-  const now = new Date();
+  return getTimeInTimezone(new Date(), timezone);
+}
+
+/**
+ * Return the hour, minute, and day-of-week for a specific date in a given IANA timezone.
+ */
+export function getTimeInTimezone(
+  date: Date,
+  timezone: string,
+): { hour: number; minute: number; dayOfWeek: number } {
   const formatter = new Intl.DateTimeFormat('en-US', {
     timeZone: timezone,
     hour: 'numeric',
@@ -17,10 +26,54 @@ export function getCurrentTimeInTimezone(
     weekday: 'short',
     hour12: false,
   });
-  const parts = formatter.formatToParts(now);
+  const parts = formatter.formatToParts(date);
   const hour = Number.parseInt(parts.find((p) => p.type === 'hour')?.value ?? '0', 10) % 24;
   const minute = Number.parseInt(parts.find((p) => p.type === 'minute')?.value ?? '0', 10);
   const weekdayStr = parts.find((p) => p.type === 'weekday')?.value ?? 'Sun';
   const dayOfWeek = DAY_MAP[weekdayStr] ?? 0;
   return { hour, minute, dayOfWeek };
+}
+
+/**
+ * Format a date as YYYY-MM-DD in the given timezone.
+ */
+export function formatDateInTimezone(date: Date, timezone: string): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: timezone }).format(date);
+}
+
+/**
+ * Format a date as YYYY-MM in the given timezone.
+ */
+export function formatMonthInTimezone(date: Date, timezone: string): string {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+  }).format(date);
+}
+
+/**
+ * Get day-of-week (0=Sun, 6=Sat) for a specific date in the given timezone.
+ */
+export function getDayOfWeekInTimezone(date: Date, timezone: string): number {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    weekday: 'short',
+  }).formatToParts(date);
+  const weekdayStr = parts.find((p) => p.type === 'weekday')?.value ?? 'Sun';
+  return DAY_MAP[weekdayStr] ?? 0;
+}
+
+/**
+ * Check if two dates fall in the same week (week starts on Sunday) in the given timezone.
+ */
+export function isSameWeekInTimezone(date1: Date, date2: Date, timezone: string): boolean {
+  const dow1 = getDayOfWeekInTimezone(date1, timezone);
+  const dow2 = getDayOfWeekInTimezone(date2, timezone);
+
+  const startOfWeek1 = new Date(date1.getTime() - dow1 * 86400000);
+  const startOfWeek2 = new Date(date2.getTime() - dow2 * 86400000);
+
+  return formatDateInTimezone(startOfWeek1, timezone) ===
+    formatDateInTimezone(startOfWeek2, timezone);
 }
