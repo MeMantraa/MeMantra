@@ -32,6 +32,7 @@ const makeUser = (id: number, timezone = 'UTC') => ({
   optimal_send_hour: null,
   theme: null,
   feature_flags: [],
+  profile_photo: null,
 });
 
 // ─── tests ────────────────────────────────────────────────────────────────────

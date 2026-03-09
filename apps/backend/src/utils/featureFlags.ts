@@ -1,4 +1,3 @@
-//add other flags here
 export const FEATURE_FLAGS = [
   'EXPERIMENTAL_FEATURE',
   'DARK_MODE',

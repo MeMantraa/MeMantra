@@ -367,4 +367,23 @@ describe('UserModel', () => {
       expect(result).toEqual(fakeUsers);
     });
   });
+
+  describe('updateProfilePhoto', () => {
+    it('should update user profile photo', async () => {
+      const photoBase64 = 'data:image/jpeg;base64,/9j/4AAQSkZJRg...';
+      const fakeUser = { user_id: 1, username: 'testuser', profile_photo: photoBase64 };
+      const executeTakeFirstMock = jest.fn().mockResolvedValue(fakeUser);
+      const returningAllMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
+      const whereMock = jest.fn().mockReturnValue({ returningAll: returningAllMock });
+      const setMock = jest.fn().mockReturnValue({ where: whereMock });
+      updateTableMock.mockReturnValue({ set: setMock });
+
+      const result = await UserModel.updateProfilePhoto(1, photoBase64);
+
+      expect(updateTableMock).toHaveBeenCalledWith('User');
+      expect(setMock).toHaveBeenCalledWith({ profile_photo: photoBase64 });
+      expect(whereMock).toHaveBeenCalledWith('user_id', '=', 1);
+      expect(result).toBe(fakeUser);
+    });
+  });
 });

@@ -39,6 +39,7 @@ export interface UserTable {
   recommendation_notif_sent_at: string | null;
   optimal_send_hour: number | null;
   feature_flags: string[];
+  profile_photo: string | null;
 }
 
 export interface AdminTable {
