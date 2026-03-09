@@ -6,7 +6,8 @@ import {
   ScrollView,
   TouchableWithoutFeedback,
   TouchableOpacity,
-  Modal,
+  Animated,
+  Easing,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Mantra } from '../services/mantra.service';
@@ -43,7 +44,8 @@ const MantraCarousel = memo(
     isFocusMode = false,
   }: Readonly<MantraCarouselProps>) {
     const [currentIndex, setCurrentIndex] = useState(0);
-    const [isActionsModalVisible, setIsActionsModalVisible] = useState(false);
+    const [isMoreExpanded, setIsMoreExpanded] = useState(false);
+    const moreAnim = useRef(new Animated.Value(0)).current;
     const { colors } = useTheme();
 
     const pages = [
@@ -88,15 +90,18 @@ const MantraCarousel = memo(
       if (onReminder) onReminder(item.mantra_id);
     };
 
-    const openActionsModal = () => {
-      setIsActionsModalVisible(true);
+    const toggleMoreExpanded = () => {
+      setIsMoreExpanded((prev) => !prev);
     };
 
-    const closeActionsModal = () => {
-      setIsActionsModalVisible(false);
-    };
-    const modalFontSize = 24;
-    const modalLineHeight = 30;
+    React.useEffect(() => {
+      Animated.timing(moreAnim, {
+        toValue: isMoreExpanded ? 1 : 0,
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: false,
+      }).start();
+    }, [isMoreExpanded, moreAnim]);
 
     return (
       <View
@@ -109,7 +114,6 @@ const MantraCarousel = memo(
           </AppText>
         </View>
 
-        {/* Horizontal scroll through pages */}
         <View style={{ width: SCREEN_WIDTH }} className="pt-2 justify-center items-center">
           <FlatList
             data={pages}
@@ -192,172 +196,103 @@ const MantraCarousel = memo(
         </View>
 
         {showButtons && (
-          <View className="absolute left-0 right-0 px-10" style={{ bottom: 136 }}>
+          <View className="absolute left-0 right-0 px-10" style={{ bottom: 156 }}>
             <View className="w-full flex-row items-end justify-between">
-              <TouchableOpacity
-                testID="more-button"
-                activeOpacity={0.8}
-                onPress={openActionsModal}
-                className="items-center justify-center rounded-full"
-                style={{
-                  width: 72,
-                  height: 72,
-                  backgroundColor: colors.primaryDark,
-                }}
-              >
-                <Ionicons name="share-outline" size={35} color={colors.text} />
-              </TouchableOpacity>
+              <View className="items-start">
+                <Animated.View
+                  pointerEvents={isMoreExpanded ? 'auto' : 'none'}
+                  className="rounded-3xl px-2 py-2 items-center"
+                  style={{
+                    marginBottom: moreAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 12],
+                    }),
+                    backgroundColor: 'rgba(109, 126, 104, 0.95)',
+                    width: 56,
+                    height: moreAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 112],
+                    }),
+                    opacity: moreAnim,
+                    overflow: 'hidden',
+                    transform: [
+                      {
+                        translateY: moreAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [8, 0],
+                        }),
+                      },
+                    ],
+                  }}
+                >
+                  <View className="items-center">
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => {
+                        handleJournal();
+                        setIsMoreExpanded(false);
+                      }}
+                      testID="journal-button"
+                      className="w-12 h-12 rounded-full items-center justify-center mb-2"
+                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.25)' }}
+                    >
+                      <Ionicons name="book-outline" size={24} color={colors.text} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={() => {
+                        handleShare();
+                        setIsMoreExpanded(false);
+                      }}
+                      testID="share-button"
+                      className="w-12 h-12 rounded-full items-center justify-center"
+                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.25)' }}
+                    >
+                      <Ionicons name="paper-plane-outline" size={24} color={colors.text} />
+                    </TouchableOpacity>
+                  </View>
+                </Animated.View>
+
+                <TouchableOpacity
+                  testID="more-button"
+                  activeOpacity={0.8}
+                  onPress={toggleMoreExpanded}
+                  className="items-center justify-center rounded-full"
+                  style={{
+                    width: 55,
+                    height: 55,
+                    backgroundColor: colors.primaryDark,
+                  }}
+                >
+                  <Ionicons
+                    name={isMoreExpanded ? 'close' : 'ellipsis-horizontal'}
+                    size={30}
+                    color={colors.text}
+                  />
+                </TouchableOpacity>
+              </View>
 
               <View className="items-center">
+                <IconButton type="reminder" active={hasReminder} onPress={handleReminder} />
+                <View className="h-3" />
                 <IconButton type="save" active={!!item.isSaved} onPress={handleSave} />
                 <View className="h-3" />
-                <IconButton type="like" active={!!item.isLiked} onPress={handleLike} />
-                {item.like_count !== undefined && (
-                  <AppText style={{ color: colors.text }} className="text-sm mt-1">
-                    {item.like_count}
-                  </AppText>
-                )}
+                <View className="items-center">
+                  <IconButton type="like" active={!!item.isLiked} onPress={handleLike} />
+                  {item.like_count !== undefined && (
+                    <AppText style={{ color: colors.text }} className="text-sm absolute -bottom-6">
+                      {item.like_count}
+                    </AppText>
+                  )}
+                </View>
               </View>
             </View>
           </View>
         )}
-
-        <Modal
-          visible={isActionsModalVisible}
-          animationType="fade"
-          transparent={false}
-          onRequestClose={closeActionsModal}
-        >
-          <View
-            className="flex-1"
-            style={{
-              backgroundColor: colors.primaryDark,
-              paddingTop: 66,
-              paddingHorizontal: 20,
-              paddingBottom: 36,
-            }}
-          >
-            <TouchableOpacity
-              onPress={closeActionsModal}
-              testID="close-actions-modal"
-              className="w-10 h-10 items-center justify-center"
-              accessibilityRole="button"
-            >
-              <Ionicons name="arrow-back" size={30} color={colors.text} />
-            </TouchableOpacity>
-
-            <View className="flex-1 justify-center">
-              <View
-                className="overflow-hidden"
-                style={{ backgroundColor: colors.primary, borderRadius: 26 }}
-              >
-                <ScrollView
-                  style={{ height: SCREEN_HEIGHT * 0.48, width: '100%' }}
-                  contentContainerStyle={{
-                    minHeight: SCREEN_HEIGHT * 0.48,
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    paddingHorizontal: 32,
-                    paddingVertical: 22,
-                  }}
-                  showsVerticalScrollIndicator={false}
-                >
-                  <AppText
-                    style={{ color: colors.text }}
-                    className="text-4xl opacity-60 text-center mb-10"
-                  >
-                    " "
-                  </AppText>
-                  <AppText
-                    style={{
-                      color: colors.text,
-                      fontSize: modalFontSize,
-                      lineHeight: modalLineHeight,
-                      maxWidth: '80%',
-                    }}
-                    className="text-center font-light"
-                  >
-                    {item.title}
-                  </AppText>
-                </ScrollView>
-                <View style={{ height: 74, backgroundColor: '#CFCFD1' }} />
-              </View>
-            </View>
-
-            <View className="flex-row items-center justify-between px-1">
-              <TouchableOpacity
-                activeOpacity={0.8}
-                className="w-16 h-16 rounded-full items-center justify-center"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.28)' }}
-                onPress={() => {
-                  handleReminder();
-                  closeActionsModal();
-                }}
-                testID="reminder-button"
-              >
-                <Ionicons
-                  name={hasReminder ? 'notifications' : 'notifications-outline'}
-                  size={28}
-                  color={hasReminder ? colors.secondary : colors.text}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                className="w-16 h-16 rounded-full items-center justify-center"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.28)' }}
-                onPress={() => {
-                  handleShare();
-                  closeActionsModal();
-                }}
-                testID="share-button"
-              >
-                <Ionicons name="paper-plane-outline" size={28} color={colors.text} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                className="w-16 h-16 rounded-full items-center justify-center"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.28)' }}
-                onPress={() => {
-                  handleJournal();
-                  closeActionsModal();
-                }}
-                testID="journal-button"
-              >
-                <Ionicons name="book-outline" size={29} color={colors.text} />
-              </TouchableOpacity>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                className="w-16 h-16 rounded-full items-center justify-center"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.28)' }}
-                onPress={() => {
-                  handleSave();
-                  closeActionsModal();
-                }}
-                testID="modal-save-button"
-              >
-                <Ionicons
-                  name={item.isSaved ? 'star' : 'star-outline'}
-                  size={30}
-                  color={colors.secondary}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                className="w-16 h-16 rounded-full items-center justify-center"
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.28)' }}
-                onPress={closeActionsModal}
-                testID="modal-more-button"
-              >
-                <Ionicons name="ellipsis-horizontal" size={30} color={colors.text} />
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
       </View>
     );
   },
   (prevProps, nextProps) => {
-    // Only re-render if these specific props change
     return (
       prevProps.item.mantra_id === nextProps.item.mantra_id &&
       prevProps.item.isLiked === nextProps.item.isLiked &&
