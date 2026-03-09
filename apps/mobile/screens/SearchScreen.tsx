@@ -177,7 +177,7 @@ export default function SearchScreen({ navigation, route }: any) {
             paddingBottom: 4,
           }}
         >
-          {results.length} result{results.length !== 1 ? 's' : ''} for &quot;{query.trim()}&quot;
+          {results.length} result{results.length === 1 ? '' : 's'} for &quot;{query.trim()}&quot;
         </AppText>
         <FlatList
           data={results}
