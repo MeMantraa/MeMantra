@@ -12,7 +12,8 @@ import { navigateFromOutside, isNavigationReady } from '../services/api.config';
 
 // Import screens
 import Login from '../screens/login';
-import Signup from '../screens/SignUp';
+import SignUpEmailScreen from '../screens/SignUpEmailScreen';
+import CompleteSignUpScreen from '../screens/CompleteSignUpScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import BottomTabNavigator from '../components/bottomTabNavigator';
 import UpdateEmailScreen from '../screens/UpdateEmailScreen';
@@ -284,9 +285,9 @@ export default function MainNavigator() {
           />
           <Stack.Screen
             name="Signup"
-            component={Signup}
+            component={SignUpEmailScreen}
             options={{
-              headerTitle: 'Signup',
+              headerTitle: 'Sign Up',
               cardStyleInterpolator: ({ current }) => ({
                 cardStyle: {
                   opacity: current.progress,
@@ -297,6 +298,11 @@ export default function MainNavigator() {
                 close: { animation: 'timing', config: { duration: 400 } },
               },
             }}
+          />
+          <Stack.Screen
+            name="CompleteSignUp"
+            component={CompleteSignUpScreen}
+            options={{ headerTitle: 'Complete Sign Up' }}
           />
           <Stack.Screen
             name="ForgotPassword"

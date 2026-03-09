@@ -165,6 +165,14 @@ const mockUserState = {
 
 /* istanbul ignore next */
 const mockMantraService = {
+  async getAllMantras(_token: string): Promise<MantraResponse> {
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    return {
+      status: 'success',
+      data: mockMantras,
+    };
+  },
+
   async getFeedMantras(_token: string): Promise<MantraResponse> {
     await new Promise((resolve) => setTimeout(resolve, 600));
     return {
@@ -317,6 +325,14 @@ const mockMantraService = {
  * The token parameter is kept for API compatibility but is no longer used directly.
  */
 const realMantraService = {
+  async getAllMantras(_token: string): Promise<MantraResponse> {
+    const response = await apiClient.get('/mantras?limit=100');
+    return {
+      status: response.data.status,
+      data: response.data.data.mantras,
+    };
+  },
+
   async getFeedMantras(_token: string): Promise<MantraResponse> {
     const response = await apiClient.get<MantraResponse>('/mantras/feed');
     return response.data;

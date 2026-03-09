@@ -64,7 +64,7 @@ export default function SettingsScreen() {
   return (
     <View className="flex-1 pt-16 px-10" style={{ backgroundColor: colors.white }}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <AppText style={[styles.backText, { color: colors.primaryDark }]}>Back</AppText>
+        <AppText style={[styles.backText, { color: colors.black }]}>Back</AppText>
       </TouchableOpacity>
       <AppText className="text-center text-[30px] pt-5" style={{ color: colors.black }}>
         Settings

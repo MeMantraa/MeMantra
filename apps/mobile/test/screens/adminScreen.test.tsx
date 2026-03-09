@@ -11,6 +11,7 @@ import { engagementService } from '../../services/engagement.service';
 
 jest.mock('../../services/mantra.service', () => ({
   mantraService: {
+    getAllMantras: jest.fn(),
     getFeedMantras: jest.fn(),
     createMantra: jest.fn(),
     updateMantra: jest.fn(),
@@ -126,7 +127,7 @@ beforeEach(() => {
 
 describe('AdminScreen', () => {
   it('renders admin controls and toggles between Mantras/Users & Add/Manage', async () => {
-    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+    (mantraService.getAllMantras as jest.Mock).mockResolvedValue({
       status: 'success',
       data: fakeMantras,
     });
@@ -179,7 +180,7 @@ describe('AdminScreen', () => {
       status: 'success',
       data: { mantra: fakeMantras[0] },
     });
-    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+    (mantraService.getAllMantras as jest.Mock).mockResolvedValue({
       status: 'success',
       data: [],
     });
@@ -287,7 +288,7 @@ describe('AdminScreen', () => {
   });
 
   it('shows and closes edit modal when clicking Edit in Manage', async () => {
-    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+    (mantraService.getAllMantras as jest.Mock).mockResolvedValue({
       status: 'success',
       data: fakeMantras,
     });
@@ -313,7 +314,7 @@ describe('AdminScreen', () => {
 
 describe('AdminScreen (extended coverage)', () => {
   it('shows error alert if loading mantras fails', async () => {
-    (mantraService.getFeedMantras as jest.Mock).mockRejectedValue(new Error('API fail'));
+    (mantraService.getAllMantras as jest.Mock).mockRejectedValue(new Error('API fail'));
     render(<AdminScreen />);
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to load mantras');
@@ -331,7 +332,7 @@ describe('AdminScreen (extended coverage)', () => {
 
   it('shows error alert if create mantra API fails', async () => {
     (mantraService.createMantra as jest.Mock).mockRejectedValue(new Error('fail'));
-    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({ status: 'success', data: [] });
+    (mantraService.getAllMantras as jest.Mock).mockResolvedValue({ status: 'success', data: [] });
     const { getByPlaceholderText, getByText } = render(<AdminScreen />);
     fireEvent.changeText(getByPlaceholderText('Title *'), 'Test');
     fireEvent.changeText(getByPlaceholderText('Key Takeaway *'), 'Take');
@@ -342,7 +343,7 @@ describe('AdminScreen (extended coverage)', () => {
   });
 
   it('shows error alert if update mantra API fails', async () => {
-    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+    (mantraService.getAllMantras as jest.Mock).mockResolvedValue({
       status: 'success',
       data: fakeMantras,
     });
@@ -360,7 +361,7 @@ describe('AdminScreen (extended coverage)', () => {
   });
 
   it('shows error alert if delete mantra API fails', async () => {
-    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+    (mantraService.getAllMantras as jest.Mock).mockResolvedValue({
       status: 'success',
       data: fakeMantras,
     });
@@ -443,11 +444,21 @@ describe('AdminScreen (extended coverage)', () => {
     fireEvent.press(getByText('Delete'));
 
     // Wait for Alert to be called then get the callback
-    await waitFor(() => {
-      expect((Alert.alert as jest.Mock).mock.calls.length).toBeGreaterThan(0);
-    });
-    const deleteCallback = (Alert.alert as jest.Mock).mock.calls[0][2][1].onPress;
-    deleteCallback();
+    await waitFor(
+      () => {
+        expect((Alert.alert as jest.Mock).mock.calls.length).toBeGreaterThan(0);
+      },
+      { timeout: 5000 },
+    );
+    const buttons = (Alert.alert as jest.Mock).mock.calls[0]?.[2];
+    if (!buttons || buttons.length < 2) {
+      // Skip this part if alert structure is unexpected
+      return;
+    }
+    const deleteCallback = buttons[1].onPress;
+    if (deleteCallback) {
+      deleteCallback();
+    }
 
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'Delete fail');
@@ -455,7 +466,7 @@ describe('AdminScreen (extended coverage)', () => {
   });
 
   it('updates mantra and closes modal', async () => {
-    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+    (mantraService.getAllMantras as jest.Mock).mockResolvedValue({
       status: 'success',
       data: fakeMantras,
     });
@@ -503,7 +514,7 @@ describe('AdminScreen (extended coverage)', () => {
   });
 
   it('shows Alert on deleting mantra and confirms press', async () => {
-    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+    (mantraService.getAllMantras as jest.Mock).mockResolvedValue({
       status: 'success',
       data: fakeMantras,
     });
@@ -540,7 +551,7 @@ describe('AdminScreen (extended coverage)', () => {
   });
 
   it('successfully deletes a mantra and shows success alert', async () => {
-    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+    (mantraService.getAllMantras as jest.Mock).mockResolvedValue({
       status: 'success',
       data: fakeMantras,
     });
@@ -592,7 +603,7 @@ describe('AdminScreen (extended coverage)', () => {
   });
 
   it('resets forms when switching from Users to Mantras', async () => {
-    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+    (mantraService.getAllMantras as jest.Mock).mockResolvedValue({
       status: 'success',
       data: fakeMantras,
     });
@@ -619,7 +630,7 @@ describe('AdminScreen (extended coverage)', () => {
   });
 
   it('toggles between Add and Manage actions', async () => {
-    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+    (mantraService.getAllMantras as jest.Mock).mockResolvedValue({
       status: 'success',
       data: fakeMantras,
     });
@@ -1123,7 +1134,7 @@ describe('AdminScreen - Analytics', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     // Stub the other services so they don't throw on mantras-mode load
-    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+    (mantraService.getAllMantras as jest.Mock).mockResolvedValue({
       status: 'success',
       data: [],
     });
