@@ -1,17 +1,19 @@
 import { db } from '../db';
 import { PasswordResetToken } from '../types/database.types';
+import bcrypt from 'bcryptjs';
 
 export const PasswordResetTokenModel = {
   
-   // Create a new password reset token
+   // Create a new password reset token (stores hashed code)
   async create(userId: number, code: string, expiresInMinutes: number = 10): Promise<PasswordResetToken> {
     const expiresAt = new Date(Date.now() + expiresInMinutes * 60 * 1000).toISOString();
+    const hashedCode = await bcrypt.hash(code, 10);
     
     const result = await db
       .insertInto('PasswordResetToken')
       .values({
         user_id: userId,
-        code,
+        code: hashedCode,
         expires_at: expiresAt,
       })
       .returningAll()
@@ -20,19 +22,25 @@ export const PasswordResetTokenModel = {
     return result;
   },
 
-  //Find a valid token by user_id and code
+  //Find a valid token by user_id and compare code against stored hash
   async findValidToken(userId: number, code: string): Promise<PasswordResetToken | null> {
     const now = new Date().toISOString();
-    const result = await db
+    const tokens = await db
       .selectFrom('PasswordResetToken')
       .selectAll()
       .where('user_id', '=', userId)
-      .where('code', '=', code)
       .where('expires_at', '>', now)
       .orderBy('created_at', 'desc')
-      .executeTakeFirst();
+      .execute();
     
-    return result || null;
+    for (const token of tokens) {
+      const isMatch = await bcrypt.compare(code, token.code);
+      if (isMatch) {
+        return token;
+      }
+    }
+    
+    return null;
   },
 
   // Delete all tokens for a user
