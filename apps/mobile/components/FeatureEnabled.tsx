@@ -37,10 +37,8 @@ export function FeatureEnabled({ featureFlag, children, fallback = null }: Props
       const freshUser = meResponse?.data?.user;
       if (!freshUser || !isMountedRef.current) return;
 
-      await storage.saveUserData({
-        ...(cachedUser ?? {}),
-        ...freshUser,
-      });
+      const mergedUser = cachedUser ? { ...cachedUser, ...freshUser } : freshUser;
+      await storage.saveUserData(mergedUser);
 
       if (!isMountedRef.current) return;
       setEnabledFlags(freshUser.feature_flags ?? []);
