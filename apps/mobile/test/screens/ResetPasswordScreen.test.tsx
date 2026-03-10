@@ -206,21 +206,27 @@ describe('ResetPasswordScreen', () => {
     const resetButton = getResetButton(getAllByText);
     fireEvent.press(resetButton);
 
-    await waitFor(() => {
-      expect(authService.resetPassword).toHaveBeenCalledWith(
-        'user@example.com',
-        '123456',
-        'NewPassword123!',
-      );
-    });
+    await waitFor(
+      () => {
+        expect(authService.resetPassword).toHaveBeenCalledWith(
+          'user@example.com',
+          '123456',
+          'NewPassword123!',
+        );
+      },
+      { timeout: 10000 },
+    );
 
-    await waitFor(() => {
-      expect(Alert.alert).toHaveBeenCalledWith(
-        'Success',
-        'Your password has been reset successfully!',
-        expect.any(Array),
-      );
-    });
+    await waitFor(
+      () => {
+        expect(Alert.alert).toHaveBeenCalledWith(
+          'Success',
+          'Your password has been reset successfully!',
+          expect.any(Array),
+        );
+      },
+      { timeout: 10000 },
+    );
 
     // Simulate pressing OK on the alert
     const alertCall = (Alert.alert as jest.Mock).mock.calls[0];

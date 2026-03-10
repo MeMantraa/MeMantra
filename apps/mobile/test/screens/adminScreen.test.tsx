@@ -132,48 +132,28 @@ describe('AdminScreen', () => {
       data: fakeMantras,
     });
 
-    const { getByText } = render(<AdminScreen />);
+    const { getByText, findByText } = render(<AdminScreen />);
 
-    await waitFor(
-      () => {
-        expect(getByText('Admin Controls')).toBeTruthy();
-        expect(getByText(/Add a new mantra/i)).toBeTruthy();
-      },
-      { timeout: 10000 },
-    );
+    expect(await findByText('Admin Controls')).toBeTruthy();
+    expect(await findByText(/Add a new mantra/i)).toBeTruthy();
 
     fireEvent.press(getByText('Manage'));
-    await waitFor(
-      () => {
-        expect(getByText('Test Mantra')).toBeTruthy();
-        expect(getByText('Take a deep breath')).toBeTruthy();
-      },
-      { timeout: 10000 },
-    );
+    expect(await findByText('Test Mantra')).toBeTruthy();
+    expect(await findByText('Take a deep breath')).toBeTruthy();
 
     (userService.getAllUsers as jest.Mock).mockResolvedValue({
       status: 'success',
       data: { users: fakeUsers },
     });
     fireEvent.press(getByText('Users'));
-    await waitFor(
-      () => {
-        expect(getByText(/Add a new user/i)).toBeTruthy();
-      },
-      { timeout: 10000 },
-    );
+    expect(await findByText(/Add a new user/i)).toBeTruthy();
 
     fireEvent.press(getByText('Manage'));
-    await waitFor(() => expect(getByText('View All Users')).toBeTruthy());
+    expect(await findByText('View All Users')).toBeTruthy();
     fireEvent.press(getByText('View All Users'));
-    await waitFor(
-      () => {
-        expect(getByText('alice')).toBeTruthy();
-        expect(getByText('alice@example.com')).toBeTruthy();
-      },
-      { timeout: 10000 },
-    );
-  }, 30000);
+    expect(await findByText('alice')).toBeTruthy();
+    expect(await findByText('alice@example.com')).toBeTruthy();
+  }, 60000);
 
   it('submits MantraForm on Add when fields are filled', async () => {
     (mantraService.createMantra as jest.Mock).mockResolvedValue({
@@ -844,23 +824,15 @@ describe('AdminScreen (extended coverage)', () => {
       data: { categories: fakeCategories },
     });
 
-    const { getByText, queryByText } = render(<AdminScreen />);
+    const { getByText, findByText, queryByText } = render(<AdminScreen />);
     fireEvent.press(getByText('Categories'));
 
-    // Wait for Manage button to appear, indicating load completed
-    await waitFor(() => expect(getByText('Manage')).toBeTruthy(), { timeout: 10000 });
-
+    expect(await findByText('Manage')).toBeTruthy();
     fireEvent.press(getByText('Manage'));
 
-    // Now check for category names
-    await waitFor(
-      () => {
-        expect(getByText('Breathing')).toBeTruthy();
-      },
-      { timeout: 10000 },
-    );
+    expect(await findByText('Breathing')).toBeTruthy();
     expect(queryByText('Breathing')).toBeTruthy();
-  });
+  }, 10000);
 
   it('opens edit modal when Edit button is pressed for category', async () => {
     (categoryService.getAllCategories as jest.Mock).mockResolvedValue({

@@ -476,7 +476,7 @@ describe('UserController', () => {
         .send({ flags: ['DARK_MODE'] });
 
       expect(res.status).toBe(500);
-      expect(res.body.message).toBe('Error updating feature flags');
+      expect(res.body.message).toBe('Error updating user feature flags');
     });
   });
 
@@ -540,7 +540,7 @@ describe('UserController', () => {
       const res = await request(app).post('/api/users/1/feature-flags/DARK_MODE');
 
       expect(res.status).toBe(500);
-      expect(res.body.message).toBe('Error enabling feature flag');
+      expect(res.body.message).toBe('Error enabling user feature flag');
     });
   });
 
@@ -589,7 +589,7 @@ describe('UserController', () => {
       const res = await request(app).delete('/api/users/1/feature-flags/DARK_MODE');
 
       expect(res.status).toBe(500);
-      expect(res.body.message).toBe('Error disabling feature flag');
+      expect(res.body.message).toBe('Error disabling user feature flag');
     });
   });
 });

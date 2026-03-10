@@ -52,12 +52,9 @@ describe('NotificationSettingsScreen', () => {
     });
 
     it('loads and displays settings', async () => {
-      const { getByText } = render(<NotificationSettingsScreen />);
+      const { findByText } = render(<NotificationSettingsScreen />);
 
-      await waitFor(() => {
-        expect(getByText('Notification Settings')).toBeTruthy();
-      });
-
+      expect(await findByText('Notification Settings')).toBeTruthy();
       expect(notificationSettingsService.getSettings).toHaveBeenCalled();
       expect(notificationService.getPermissionStatus).toHaveBeenCalled();
     });
