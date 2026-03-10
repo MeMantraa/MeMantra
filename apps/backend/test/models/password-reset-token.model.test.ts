@@ -14,6 +14,7 @@ jest.mock('../../src/db', () => ({
   },
 }));
 
+import bcrypt from 'bcryptjs';
 import { PasswordResetTokenModel } from '../../src/models/password-reset-token.model';
 
 describe('PasswordResetTokenModel', () => {
@@ -25,11 +26,11 @@ describe('PasswordResetTokenModel', () => {
   });
 
   describe('create', () => {
-    it('should create a password reset token with default 10 minute expiration', async () => {
+    it('should create a password reset token with a hashed code and default 10 minute expiration', async () => {
       const mockToken = {
         token_id: 1,
         user_id: 123,
-        code: '123456',
+        code: '$2a$10$hashedcode',
         expires_at: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
         created_at: new Date().toISOString(),
       };
@@ -42,13 +43,12 @@ describe('PasswordResetTokenModel', () => {
       const result = await PasswordResetTokenModel.create(123, '123456');
 
       expect(insertIntoMock).toHaveBeenCalledWith('PasswordResetToken');
-      expect(valuesMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          user_id: 123,
-          code: '123456',
-          expires_at: expect.any(String),
-        }),
-      );
+      // The stored code should be a bcrypt hash, not the plain code
+      const storedValues = valuesMock.mock.calls[0][0];
+      expect(storedValues.user_id).toBe(123);
+      expect(storedValues.code).not.toBe('123456');
+      expect(storedValues.code).toMatch(/^\$2[aby]\$/);
+      expect(storedValues.expires_at).toEqual(expect.any(String));
       expect(result).toBe(mockToken);
     });
 
@@ -56,7 +56,7 @@ describe('PasswordResetTokenModel', () => {
       const mockToken = {
         token_id: 2,
         user_id: 456,
-        code: '654321',
+        code: '$2a$10$hashedcode',
         expires_at: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
         created_at: new Date().toISOString(),
       };
@@ -69,13 +69,10 @@ describe('PasswordResetTokenModel', () => {
       const result = await PasswordResetTokenModel.create(456, '654321', 15);
 
       expect(insertIntoMock).toHaveBeenCalledWith('PasswordResetToken');
-      expect(valuesMock).toHaveBeenCalledWith(
-        expect.objectContaining({
-          user_id: 456,
-          code: '654321',
-          expires_at: expect.any(String),
-        }),
-      );
+      const storedValues = valuesMock.mock.calls[0][0];
+      expect(storedValues.user_id).toBe(456);
+      expect(storedValues.code).not.toBe('654321');
+      expect(storedValues.code).toMatch(/^\$2[aby]\$/);
       expect(result).toBe(mockToken);
     });
 
@@ -90,22 +87,28 @@ describe('PasswordResetTokenModel', () => {
   });
 
   describe('findValidToken', () => {
-    it('should find a valid token by userId and code', async () => {
-      const mockToken = {
-        token_id: 1,
-        user_id: 123,
-        code: '123456',
-        expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(), // 5 minutes in future
-        created_at: new Date().toISOString(),
-      };
-
-      const executeTakeFirstMock = jest.fn().mockResolvedValue(mockToken);
-      const orderByMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
-      const whereChain3 = jest.fn().mockReturnValue({ orderBy: orderByMock });
-      const whereChain2 = jest.fn().mockReturnValue({ where: whereChain3 });
+    // Helper to set up the selectFrom mock chain for findValidToken (now uses .execute() returning array)
+    function setupSelectMock(tokens: any[]) {
+      const executeMock = jest.fn().mockResolvedValue(tokens);
+      const orderByMock = jest.fn().mockReturnValue({ execute: executeMock });
+      const whereChain2 = jest.fn().mockReturnValue({ orderBy: orderByMock });
       const whereChain1 = jest.fn().mockReturnValue({ where: whereChain2 });
       const selectAllMock = jest.fn().mockReturnValue({ where: whereChain1 });
       selectFromMock.mockReturnValue({ selectAll: selectAllMock });
+      return { executeMock, orderByMock };
+    }
+
+    it('should find a valid token by userId and code via bcrypt compare', async () => {
+      const hashedCode = await bcrypt.hash('123456', 10);
+      const mockToken = {
+        token_id: 1,
+        user_id: 123,
+        code: hashedCode,
+        expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+        created_at: new Date().toISOString(),
+      };
+
+      setupSelectMock([mockToken]);
 
       const result = await PasswordResetTokenModel.findValidToken(123, '123456');
 
@@ -113,50 +116,42 @@ describe('PasswordResetTokenModel', () => {
       expect(result).toBe(mockToken);
     });
 
-    it('should return null if no valid token is found', async () => {
-      const executeTakeFirstMock = jest.fn().mockResolvedValue(undefined);
-      const orderByMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
-      const whereChain3 = jest.fn().mockReturnValue({ orderBy: orderByMock });
-      const whereChain2 = jest.fn().mockReturnValue({ where: whereChain3 });
-      const whereChain1 = jest.fn().mockReturnValue({ where: whereChain2 });
-      const selectAllMock = jest.fn().mockReturnValue({ where: whereChain1 });
-      selectFromMock.mockReturnValue({ selectAll: selectAllMock });
+    it('should return null if no valid token is found (empty array)', async () => {
+      setupSelectMock([]);
 
       const result = await PasswordResetTokenModel.findValidToken(123, 'wrongcode');
 
       expect(result).toBeNull();
     });
 
-    it('should return null for expired tokens', async () => {
-      const executeTakeFirstMock = jest.fn().mockResolvedValue(undefined);
-      const orderByMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
-      const whereChain3 = jest.fn().mockReturnValue({ orderBy: orderByMock });
-      const whereChain2 = jest.fn().mockReturnValue({ where: whereChain3 });
-      const whereChain1 = jest.fn().mockReturnValue({ where: whereChain2 });
-      const selectAllMock = jest.fn().mockReturnValue({ where: whereChain1 });
-      selectFromMock.mockReturnValue({ selectAll: selectAllMock });
+    it('should return null when code does not match any stored hash', async () => {
+      const hashedCode = await bcrypt.hash('654321', 10);
+      const mockToken = {
+        token_id: 1,
+        user_id: 123,
+        code: hashedCode,
+        expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+        created_at: new Date().toISOString(),
+      };
 
-      const result = await PasswordResetTokenModel.findValidToken(123, '123456');
+      setupSelectMock([mockToken]);
+
+      const result = await PasswordResetTokenModel.findValidToken(123, '000000');
 
       expect(result).toBeNull();
     });
 
     it('should order by created_at desc to get most recent token', async () => {
+      const hashedCode = await bcrypt.hash('123456', 10);
       const mockToken = {
         token_id: 2,
         user_id: 123,
-        code: '123456',
+        code: hashedCode,
         expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
         created_at: new Date().toISOString(),
       };
 
-      const executeTakeFirstMock = jest.fn().mockResolvedValue(mockToken);
-      const orderByMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
-      const whereChain3 = jest.fn().mockReturnValue({ orderBy: orderByMock });
-      const whereChain2 = jest.fn().mockReturnValue({ where: whereChain3 });
-      const whereChain1 = jest.fn().mockReturnValue({ where: whereChain2 });
-      const selectAllMock = jest.fn().mockReturnValue({ where: whereChain1 });
-      selectFromMock.mockReturnValue({ selectAll: selectAllMock });
+      const { orderByMock } = setupSelectMock([mockToken]);
 
       await PasswordResetTokenModel.findValidToken(123, '123456');
 
@@ -164,10 +159,9 @@ describe('PasswordResetTokenModel', () => {
     });
 
     it('should handle database errors during token lookup', async () => {
-      const executeTakeFirstMock = jest.fn().mockRejectedValue(new Error('Database error'));
-      const orderByMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
-      const whereChain3 = jest.fn().mockReturnValue({ orderBy: orderByMock });
-      const whereChain2 = jest.fn().mockReturnValue({ where: whereChain3 });
+      const executeMock = jest.fn().mockRejectedValue(new Error('Database error'));
+      const orderByMock = jest.fn().mockReturnValue({ execute: executeMock });
+      const whereChain2 = jest.fn().mockReturnValue({ orderBy: orderByMock });
       const whereChain1 = jest.fn().mockReturnValue({ where: whereChain2 });
       const selectAllMock = jest.fn().mockReturnValue({ where: whereChain1 });
       selectFromMock.mockReturnValue({ selectAll: selectAllMock });
