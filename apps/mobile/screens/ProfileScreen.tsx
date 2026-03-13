@@ -18,16 +18,42 @@ type ProfileNavProp = StackNavigationProp<RootStackParamList>;
 export default function ProfileScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation<ProfileNavProp>();
-  const [username, setUsername] = useState<string>('');
-  const [profilePhoto, setProfilePhoto] = useState<string | null>(null);
+  type UserState = {
+    username: string;           // username is always a string
+    profile_photo?: string;     // photo is optional
+  };
+  const [user, setUser] = useState<UserState | null>(null);
 
-  useEffect(() => {
-    const load = async () => {
-      const user = await storage.getUserData();
-      setUsername(user?.username || '');
-    };
-    load();
-  }, []);
+const loadUserFromServer = async () => {
+  try {
+    const token = await storage.getToken();
+    const userId = await storage.getUserId();
+    if (!token || !userId) return;
+
+    const res = await userService.getUserById(userId, token); // call API to get current user
+    if (res.status === 'success') {
+      setUser({
+        username: res.data.user.username || '',
+        profile_photo: res.data.user.profile_photo || undefined,
+      });
+      await storage.saveUserData(res.data.user);
+    }
+  } catch (err) {
+    console.error('Error fetching user from server', err);
+  }
+};
+
+useEffect(() => {
+  const init = async () => {
+    // Load from storage first
+    const storedUser = await storage.getUserData();
+    if (storedUser) setUser(storedUser);
+
+    // Then call the reusable function to fetch from server
+    await loadUserFromServer();
+  };
+  init();
+}, []);
 
   const uploadPickedPhoto = async (uri: string) => {
     try {
@@ -38,9 +64,7 @@ export default function ProfileScreen() {
       });
 
       const base64WithPrefix = `data:image/jpeg;base64,${resized.base64}`;
-      console.log('Uploading photo (first 50 chars):', base64WithPrefix.slice(0, 50), '...');
 
-      console.log('Base64 length (MB):', base64WithPrefix.length / 1e6);
       await uploadPhoto(base64WithPrefix);
     } catch (err) {
       console.error('Error converting/uploading photo:', err);
@@ -53,8 +77,14 @@ export default function ProfileScreen() {
       const res = await userService.updateProfilePhoto(base64WithPrefix, token);
 
       if (res.status === 'success') {
-        console.log('Photo uploaded:', res.data.user.profile_photo);
+
+        const updatedUser = res.data.user;
         // update local state if you have user profile in context or state
+        setUser({
+          username: updatedUser.username || '',          // never null
+          profile_photo: updatedUser.profile_photo || undefined,
+        });
+        await storage.saveUserData(res.data.user);
       } else {
         console.error('Failed to update photo:', res.message);
       }
@@ -76,7 +106,6 @@ export default function ProfileScreen() {
 
     if (!result.canceled) {
       const uri = result.assets[0].uri;
-      setProfilePhoto(uri);
       await uploadPickedPhoto(uri);
     }
   };
@@ -93,7 +122,6 @@ export default function ProfileScreen() {
 
     if (!result.canceled) {
       const uri = result.assets[0].uri;
-      setProfilePhoto(uri);
       await uploadPickedPhoto(uri);
     }
   };
@@ -122,12 +150,14 @@ export default function ProfileScreen() {
   return (
     <View className="flex-1 pt-16 px-10" style={{ backgroundColor: colors.primary }}>
       <AppText className="text-[30px] text-left mb-5 mt-2" style={{ color: colors.text }}>
-        {username}
+        {user?.username || ''}
       </AppText>
       <View style={{ alignSelf: 'center', alignItems: 'center', marginBottom: 5 }}>
         <Image
           source={
-            profilePhoto ? { uri: profilePhoto } : DefaultProfile // default profile image
+            user?.profile_photo
+            ? { uri: user.profile_photo }
+            : DefaultProfile // default profile image
           }
           style={{
             width: 150,

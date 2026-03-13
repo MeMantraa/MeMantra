@@ -103,7 +103,7 @@ export const userService = {
 
   async updateProfilePhoto(photoBase64: string, token: string): Promise<UserDetailResponse> {
     const response = await apiClient.put<UserDetailResponse>(
-      '/api/profile/photo',
+      '/profile/photo',
       { photo: photoBase64 },
       { headers: { Authorization: `Bearer ${token}` } },
     );

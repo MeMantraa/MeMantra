@@ -289,6 +289,7 @@ export const UserController = {
 
   async updateProfilePhoto(req: Request, res: Response) {
     try {
+
       const userId = req.user?.userId;
 
       if (!userId) {
