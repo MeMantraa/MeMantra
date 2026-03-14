@@ -3,7 +3,6 @@ import { TextInput, TouchableOpacity, Animated, Dimensions } from 'react-native'
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 import AppTextInput from './textInputWrapper';
-import { FeatureEnabled } from '../FeatureEnabled';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -61,61 +60,59 @@ const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   return (
-    <FeatureEnabled featureFlag="EXPERIMENTAL_FEATURE">
-      <Animated.View
-        style={{
-          width: animatedWidth,
-          height: 48,
-          backgroundColor: colors.secondary,
-          borderRadius: 24,
-          flexDirection: 'row',
-          alignItems: 'center',
-          paddingHorizontal: 12,
-          overflow: 'hidden',
-        }}
+    <Animated.View
+      style={{
+        width: animatedWidth,
+        height: 48,
+        backgroundColor: colors.secondary,
+        borderRadius: 24,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 12,
+        overflow: 'hidden',
+      }}
+    >
+      <TouchableOpacity
+        testID="search-toggle-button"
+        onPress={onIconPress ?? (isExpanded ? handleSubmit : handleToggle)}
+        className="items-center justify-center"
+        style={{ width: 24, height: 24 }}
       >
-        <TouchableOpacity
-          testID="search-toggle-button"
-          onPress={onIconPress ?? (isExpanded ? handleSubmit : handleToggle)}
-          className="items-center justify-center"
-          style={{ width: 24, height: 24 }}
-        >
-          <Ionicons name="search-outline" size={24} color={colors.primaryDark} />
-        </TouchableOpacity>
+        <Ionicons name="search-outline" size={24} color={colors.primaryDark} />
+      </TouchableOpacity>
 
-        {isExpanded && (
-          <>
-            <AppTextInput
-              testID="search-input"
-              ref={inputRef}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder={placeholder}
-              placeholderTextColor={colors.primaryDark}
-              style={{
-                color: colors.primaryDark,
-                backgroundColor: 'transparent',
-                paddingVertical: 12,
-                paddingHorizontal: 0,
-                height: 48,
-                lineHeight: 20,
-              }}
-              className="flex-1 ml-2 text-base"
-              returnKeyType="search"
-              onSubmitEditing={handleSubmit}
-            />
-            <TouchableOpacity
-              testID="search-close-button"
-              onPress={handleToggle}
-              className="items-center justify-center ml-2"
-              style={{ width: 24, height: 24 }}
-            >
-              <Ionicons name="close" size={24} color={colors.primaryDark} />
-            </TouchableOpacity>
-          </>
-        )}
-      </Animated.View>
-    </FeatureEnabled>
+      {isExpanded && (
+        <>
+          <AppTextInput
+            testID="search-input"
+            ref={inputRef}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            placeholder={placeholder}
+            placeholderTextColor={colors.primaryDark}
+            style={{
+              color: colors.primaryDark,
+              backgroundColor: 'transparent',
+              paddingVertical: 12,
+              paddingHorizontal: 0,
+              height: 48,
+              lineHeight: 20,
+            }}
+            className="flex-1 ml-2 text-base"
+            returnKeyType="search"
+            onSubmitEditing={handleSubmit}
+          />
+          <TouchableOpacity
+            testID="search-close-button"
+            onPress={handleToggle}
+            className="items-center justify-center ml-2"
+            style={{ width: 24, height: 24 }}
+          >
+            <Ionicons name="close" size={24} color={colors.primaryDark} />
+          </TouchableOpacity>
+        </>
+      )}
+    </Animated.View>
   );
 };
 

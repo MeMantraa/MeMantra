@@ -1355,6 +1355,17 @@ describe('AdminScreen - Features', () => {
 
     const buttons = (Alert.alert as jest.Mock).mock.calls.at(-1)?.[2];
     buttons[1].onPress();
+    await waitFor(() => {
+      expect(userService.setExactFeatureFlagRolloutToPercentage).toHaveBeenCalledWith(
+        'DARK_MODE',
+        10,
+        'mock-token',
+      );
+    });
+    (userService.setExactFeatureFlagRolloutToPercentage as jest.Mock).mockClear();
+    fireEvent.press(getByText('Set Exact'));
+    const secondButtons = (Alert.alert as jest.Mock).mock.calls.at(-1)?.[2];
+    secondButtons[1].onPress();
 
     await waitFor(() => {
       expect(userService.setExactFeatureFlagRolloutToPercentage).toHaveBeenCalledWith(

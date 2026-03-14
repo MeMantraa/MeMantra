@@ -141,12 +141,14 @@ describe('UserModel feature flag methods', () => {
       const set = jest.fn(() => ({ where: firstWhere }));
       return { set };
     };
+    const updateTable = jest.fn(() => makeUpdateChain());
     const trxUpdateTable = jest.fn(() => makeUpdateChain());
     const executeTransaction = jest.fn(async (callback: any) =>
       callback({ updateTable: trxUpdateTable }),
     );
 
     (db.selectFrom as jest.Mock).mockReturnValue({ select });
+    (db.updateTable as jest.Mock).mockImplementation(updateTable);
     (db.transaction as jest.Mock).mockReturnValue({ execute: executeTransaction });
 
     const result = await UserModel.rolloutFlagToPercentage('DARK_MODE', 50);
