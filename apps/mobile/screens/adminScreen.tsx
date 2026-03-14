@@ -187,6 +187,15 @@ const AdminScreen: React.FC = () => {
     setViewAllUsers(false);
   };
 
+  const runWithSubmitting = async (action: () => Promise<void>) => {
+    setSubmitting(true);
+    try {
+      await action();
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleMantraFormChange = (field: string, value: string) => {
     setMantraForm((prev) => ({ ...prev, [field]: value }));
   };
@@ -304,45 +313,43 @@ const AdminScreen: React.FC = () => {
       return;
     }
 
-    setSubmitting(true);
-    try {
-      const token = (await storage.getToken()) || 'mock-token';
-      const response = await userService.createUser(userForm, token);
+    await runWithSubmitting(async () => {
+      try {
+        const token = (await storage.getToken()) || 'mock-token';
+        const response = await userService.createUser(userForm, token);
 
-      if (response.status === 'success') {
-        setUsers([response.data.user, ...users]);
-        resetUserForm();
-        Alert.alert('Success', 'User created successfully');
+        if (response.status === 'success') {
+          setUsers([response.data.user, ...users]);
+          resetUserForm();
+          Alert.alert('Success', 'User created successfully');
+        }
+      } catch (error: any) {
+        Alert.alert('Error', error.response?.data?.message || 'Failed to create user');
       }
-    } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to create user');
-    } finally {
-      setSubmitting(false);
-    }
+    });
   };
 
   const handleUpdateUser = async () => {
     if (!editingUser) return;
 
-    setSubmitting(true);
-    try {
-      const token = (await storage.getToken()) || 'mock-token';
-      const payload: any = { username: userForm.username, email: userForm.email };
-      if (userForm.password) payload.password = userForm.password;
+    await runWithSubmitting(async () => {
+      try {
+        const token = (await storage.getToken()) || 'mock-token';
+        const payload: any = { username: userForm.username, email: userForm.email };
+        if (userForm.password) payload.password = userForm.password;
 
-      const response = await userService.updateUser(editingUser.user_id, payload, token);
+        const response = await userService.updateUser(editingUser.user_id, payload, token);
 
-      if (response.status === 'success') {
-        setUsers(users.map((u) => (u.user_id === editingUser.user_id ? response.data.user : u)));
-        resetUserForm();
-        setEditModalVisible(false);
-        Alert.alert('Success', 'User updated successfully');
+        if (response.status === 'success') {
+          setUsers(users.map((u) => (u.user_id === editingUser.user_id ? response.data.user : u)));
+          resetUserForm();
+          setEditModalVisible(false);
+          Alert.alert('Success', 'User updated successfully');
+        }
+      } catch (error: any) {
+        Alert.alert('Error', error.response?.data?.message || 'Failed to update user');
       }
-    } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to update user');
-    } finally {
-      setSubmitting(false);
-    }
+    });
   };
 
   const handleDeleteUser = async (userId: number) => {
