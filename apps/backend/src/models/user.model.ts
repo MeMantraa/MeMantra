@@ -11,6 +11,12 @@ interface CreateUserData {
   device_token?: string | null;
 }
 
+const getFeatureFlagRolloutScore = (userId: number, flagName: string): number => {
+  const digest = createHash('sha256').update(`${userId}:${flagName}`).digest('hex');
+  const value = Number.parseInt(digest.slice(0, 8), 16);
+  return value % 100;
+};
+
 export const UserModel = {
   async create(userData: CreateUserData): Promise<User> {
     //hash pass
@@ -274,14 +280,8 @@ async getTheme(userId: number): Promise<string | undefined> {
       return { totalUsers: 0, selectedUsers: 0 };
     }
 
-    const scoreFor = (userId: number, flag: string): number => {
-      const digest = createHash('sha256').update(`${userId}:${flag}`).digest('hex');
-      const value = Number.parseInt(digest.slice(0, 8), 16);
-      return value % 100;
-    };
-
     const selectedUserIds = users
-      .filter((u) => scoreFor(u.user_id, flagName) < percentage)
+      .filter((u) => getFeatureFlagRolloutScore(u.user_id, flagName) < percentage)
       .map((u) => u.user_id);
 
     if (selectedUserIds.length > 0) {
@@ -312,14 +312,8 @@ async getTheme(userId: number): Promise<string | undefined> {
       return { totalUsers: 0, selectedUsers: 0 };
     }
 
-    const scoreFor = (userId: number, flag: string): number => {
-      const digest = createHash('sha256').update(`${userId}:${flag}`).digest('hex');
-      const value = Number.parseInt(digest.slice(0, 8), 16);
-      return value % 100;
-    };
-
     const selectedUserIds = users
-      .filter((u) => scoreFor(u.user_id, flagName) < percentage)
+      .filter((u) => getFeatureFlagRolloutScore(u.user_id, flagName) < percentage)
       .map((u) => u.user_id);
 
     await db.transaction().execute(async (trx) => {
