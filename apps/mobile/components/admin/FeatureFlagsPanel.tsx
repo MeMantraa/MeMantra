@@ -32,6 +32,7 @@ interface FeatureFlagsPanelProps {
   onSelectFlag: (flagKey: string) => void;
   onChangeRolloutPercentage: (value: string) => void;
   onApplyRollout: (flagKey: string) => void;
+  onApplyExactRollout: (flagKey: string) => void;
   onEnableAll: (flagKey: string) => void;
   onDisableAll: (flagKey: string) => void;
   onToggleUserFlag: (userId: number, flagKey: string, enabled: boolean) => void;
@@ -55,6 +56,7 @@ const FeatureFlagsPanel: React.FC<FeatureFlagsPanelProps> = ({
   onSelectFlag,
   onChangeRolloutPercentage,
   onApplyRollout,
+  onApplyExactRollout,
   onEnableAll,
   onDisableAll,
   onToggleUserFlag,
@@ -192,9 +194,24 @@ const FeatureFlagsPanel: React.FC<FeatureFlagsPanelProps> = ({
                 onApplyRollout(selectedFlagKey);
               }}
             >
-              <AppText style={{ color: colors.primaryDark }}>Apply Rollout</AppText>
+              <AppText style={{ color: colors.primaryDark }}>Expand Rollout</AppText>
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="rounded-xl px-4 py-3"
+              style={{ backgroundColor: `${colors.primaryDark}88` }}
+              disabled={submitting}
+              onPress={() => {
+                onChangeRolloutPercentage(localRolloutPercentage);
+                onApplyExactRollout(selectedFlagKey);
+              }}
+            >
+              <AppText style={{ color: colors.text }}>Set Exact</AppText>
             </TouchableOpacity>
           </View>
+          <AppText className="text-xs mb-6" style={{ color: colors.text }}>
+            Expand Rollout only adds users. Set Exact may remove the flag from users outside the
+            target cohort.
+          </AppText>
         </>
       )}
 

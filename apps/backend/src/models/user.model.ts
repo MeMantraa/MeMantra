@@ -262,8 +262,46 @@ async getTheme(userId: number): Promise<string | undefined> {
   },
 
 
-  //Set a flag to true for a defined percentage of users (not dynamic)
-    async rolloutFlagToPercentage(
+  // Expand a flag to a defined percentage of users without removing existing assignments.
+  async rolloutFlagToPercentage(
+    flagName: string,
+    percentage: number,
+  ): Promise<{ totalUsers: number; selectedUsers: number }> {
+    const users = await db.selectFrom('User').select('user_id').execute();
+
+    const totalUsers = users.length;
+    if (totalUsers === 0) {
+      return { totalUsers: 0, selectedUsers: 0 };
+    }
+
+    const scoreFor = (userId: number, flag: string): number => {
+      const digest = createHash('sha256').update(`${userId}:${flag}`).digest('hex');
+      const value = Number.parseInt(digest.slice(0, 8), 16);
+      return value % 100;
+    };
+
+    const selectedUserIds = users
+      .filter((u) => scoreFor(u.user_id, flagName) < percentage)
+      .map((u) => u.user_id);
+
+    if (selectedUserIds.length > 0) {
+      await db
+        .updateTable('User')
+        .set({
+          feature_flags: sql`array_append(${sql.ref('feature_flags')}, ${sql.val(flagName)})`,
+        })
+        .where('user_id', 'in', selectedUserIds)
+        .where(
+          sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`,
+        )
+        .executeTakeFirst();
+    }
+
+    return { totalUsers, selectedUsers: selectedUserIds.length };
+  },
+
+  // Set an exact rollout percentage, removing the flag from users outside the selected cohort.
+  async setExactFlagRolloutToPercentage(
     flagName: string,
     percentage: number,
   ): Promise<{ totalUsers: number; selectedUsers: number }> {

@@ -425,7 +425,7 @@ export const UserController = {
 
       return res.status(200).json({
         status: 'success',
-        message: `Feature flag rollout applied: ${flag} -> ${percentage}%`,
+        message: `Feature flag rollout expanded: ${flag} -> ${percentage}%`,
         data: {
           flag,
           percentage,
@@ -436,6 +436,37 @@ export const UserController = {
     } catch (error) {
       console.error('Feature flag rollout error:', error);
       return sendError(res, 500, 'Error applying feature flag rollout');
+    }
+  },
+
+  // POST /api/users/feature-flags/:flag/rollout/exact
+  async setExactFeatureFlagRolloutToPercentage(req: Request, res: Response) {
+    try {
+      const flag = req.params.flag;
+      const percentage = Number(req.body?.percentage);
+
+      if (!isValidFeatureFlag(flag)) {
+        return sendError(res, 400, `Invalid feature flag: ${flag}`);
+      }
+      if (!Number.isFinite(percentage) || percentage < 0 || percentage > 100) {
+        return sendError(res, 400, 'percentage must be a number between 0 and 100');
+      }
+
+      const result = await UserModel.setExactFlagRolloutToPercentage(flag, percentage);
+
+      return res.status(200).json({
+        status: 'success',
+        message: `Exact feature flag rollout applied: ${flag} -> ${percentage}%`,
+        data: {
+          flag,
+          percentage,
+          total_users: result.totalUsers,
+          selected_users: result.selectedUsers,
+        },
+      });
+    } catch (error) {
+      console.error('Exact feature flag rollout error:', error);
+      return sendError(res, 500, 'Error applying exact feature flag rollout');
     }
   },
 

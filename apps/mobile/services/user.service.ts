@@ -185,4 +185,17 @@ export const userService = {
     );
     return response.data;
   },
+
+  async setExactFeatureFlagRolloutToPercentage(
+    flag: string,
+    percentage: number,
+    token: string,
+  ): Promise<FeatureFlagBulkResponse> {
+    const response = await apiClient.post<FeatureFlagBulkResponse>(
+      `/users/feature-flags/${flag}/rollout/exact`,
+      { percentage },
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    return response.data;
+  },
 };

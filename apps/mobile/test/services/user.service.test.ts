@@ -88,6 +88,7 @@ describe('userService', () => {
     await userService.setUserFeatureFlag(1, 'DARK_MODE', true, 't');
     await userService.setFeatureFlagForAllUsers('DARK_MODE', false, 't');
     await userService.rolloutFeatureFlagToPercentage('DARK_MODE', 40, 't');
+    await userService.setExactFeatureFlagRolloutToPercentage('DARK_MODE', 40, 't');
 
     expect(apiClient.get).toHaveBeenNthCalledWith(1, '/users/feature-flags', {
       headers: { Authorization: 'Bearer t' },
@@ -110,6 +111,12 @@ describe('userService', () => {
     expect(apiClient.post).toHaveBeenNthCalledWith(
       3,
       '/users/feature-flags/DARK_MODE/rollout',
+      { percentage: 40 },
+      { headers: { Authorization: 'Bearer t' } },
+    );
+    expect(apiClient.post).toHaveBeenNthCalledWith(
+      4,
+      '/users/feature-flags/DARK_MODE/rollout/exact',
       { percentage: 40 },
       { headers: { Authorization: 'Bearer t' } },
     );

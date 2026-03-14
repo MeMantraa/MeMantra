@@ -666,6 +666,40 @@ const AdminScreen: React.FC = () => {
     }
   };
 
+  const handleExactRollout = async (flag: string) => {
+    const pct = Number(rolloutPercentage);
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+      Alert.alert('Error', 'Rollout percentage must be a number between 0 and 100');
+      return;
+    }
+
+    Alert.alert(
+      'Set exact rollout?',
+      `This may remove ${flag} from users outside the ${pct}% cohort.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Set Exact',
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              setFeatureSubmitting(true);
+              try {
+                const token = (await storage.getToken()) || 'mock-token';
+                await userService.setExactFeatureFlagRolloutToPercentage(flag, pct, token);
+                await loadFeatureFlagsData();
+              } catch (error: any) {
+                Alert.alert('Error', error?.response?.data?.message || 'Failed exact rollout');
+              } finally {
+                setFeatureSubmitting(false);
+              }
+            })();
+          },
+        },
+      ],
+    );
+  };
+
   const formatPercentage = (value: number | null) =>
     typeof value === 'number' ? `${value.toFixed(1)}%` : 'N/A';
 
@@ -920,6 +954,9 @@ const AdminScreen: React.FC = () => {
             onChangeRolloutPercentage={setRolloutPercentage}
             onApplyRollout={(flagKey) => {
               void handleRollout(flagKey);
+            }}
+            onApplyExactRollout={(flagKey) => {
+              void handleExactRollout(flagKey);
             }}
             onEnableAll={(flagKey) => {
               void handleSetFlagForAllUsers(flagKey, true);

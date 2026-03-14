@@ -23,6 +23,7 @@ app.get('/api/users/feature-flags/users', UserController.getUsersWithFlags);
 app.post('/api/users/feature-flags/:flag/users/:id', UserController.setSingleUserFeatureFlag);
 app.post('/api/users/feature-flags/:flag/all', UserController.setFeatureFlagForAllUsers);
 app.post('/api/users/feature-flags/:flag/rollout', UserController.rolloutFeatureFlagToPercentage);
+app.post('/api/users/feature-flags/:flag/rollout/exact', UserController.setExactFeatureFlagRolloutToPercentage);
 app.get('/api/users/:id', UserController.getUserById);
 app.post('/api/users', UserController.createUser);
 app.put('/api/users/:id', UserController.updateUser);
@@ -754,7 +755,7 @@ describe('UserController', () => {
         .send({ percentage: 40 });
 
       expect(res.status).toBe(200);
-      expect(res.body.message).toBe('Feature flag rollout applied: DARK_MODE -> 40%');
+      expect(res.body.message).toBe('Feature flag rollout expanded: DARK_MODE -> 40%');
       expect(res.body.data).toEqual({
         flag: 'DARK_MODE',
         percentage: 40,
@@ -790,6 +791,28 @@ describe('UserController', () => {
 
       expect(res.status).toBe(500);
       expect(res.body.message).toBe('Error applying feature flag rollout');
+    });
+  });
+
+  describe('setExactFeatureFlagRolloutToPercentage', () => {
+    it('applies an exact rollout percentage', async () => {
+      (UserModel.setExactFlagRolloutToPercentage as jest.Mock).mockResolvedValue({
+        totalUsers: 10,
+        selectedUsers: 4,
+      });
+
+      const res = await request(app)
+        .post('/api/users/feature-flags/DARK_MODE/rollout/exact')
+        .send({ percentage: 40 });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Exact feature flag rollout applied: DARK_MODE -> 40%');
+      expect(res.body.data).toEqual({
+        flag: 'DARK_MODE',
+        percentage: 40,
+        total_users: 10,
+        selected_users: 4,
+      });
     });
   });
 });

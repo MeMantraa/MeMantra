@@ -35,6 +35,7 @@ const defaultProps = {
   onSelectFlag: jest.fn(),
   onChangeRolloutPercentage: jest.fn(),
   onApplyRollout: jest.fn(),
+  onApplyExactRollout: jest.fn(),
   onEnableAll: jest.fn(),
   onDisableAll: jest.fn(),
   onToggleUserFlag: jest.fn(),
@@ -64,9 +65,12 @@ describe('FeatureFlagsPanel', () => {
     expect(defaultProps.onSelectFlag).toHaveBeenCalledWith('ADVANCED_ANALYTICS');
 
     fireEvent.changeText(getByDisplayValue('25'), '60');
-    fireEvent.press(getByText('Apply Rollout'));
+    fireEvent.press(getByText('Expand Rollout'));
     expect(defaultProps.onChangeRolloutPercentage).toHaveBeenCalledWith('60');
     expect(defaultProps.onApplyRollout).toHaveBeenCalledWith('DARK_MODE');
+
+    fireEvent.press(getByText('Set Exact'));
+    expect(defaultProps.onApplyExactRollout).toHaveBeenCalledWith('DARK_MODE');
 
     fireEvent.press(getByText('Enable All'));
     expect(defaultProps.onEnableAll).toHaveBeenCalledWith('DARK_MODE');

@@ -33,6 +33,12 @@ router.post(
   UserController.rolloutFeatureFlagToPercentage,
 );
 
+router.post(
+  '/feature-flags/:flag/rollout/exact',
+  validateRequest(featureFlagRolloutSchema),
+  UserController.setExactFeatureFlagRolloutToPercentage,
+);
+
 router.get('/', UserController.getAllUsers);
 
 router.get(

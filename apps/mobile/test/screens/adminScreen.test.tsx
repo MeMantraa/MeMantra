@@ -30,6 +30,7 @@ jest.mock('../../services/user.service', () => ({
     setUserFeatureFlag: jest.fn(),
     setFeatureFlagForAllUsers: jest.fn(),
     rolloutFeatureFlagToPercentage: jest.fn(),
+    setExactFeatureFlagRolloutToPercentage: jest.fn(),
   },
 }));
 
@@ -165,6 +166,10 @@ beforeEach(() => {
     data: { flag: 'DARK_MODE', enabled: true, affected_users: 2 },
   });
   (userService.rolloutFeatureFlagToPercentage as jest.Mock).mockResolvedValue({
+    status: 'success',
+    data: { flag: 'DARK_MODE', percentage: 10, total_users: 2, selected_users: 1 },
+  });
+  (userService.setExactFeatureFlagRolloutToPercentage as jest.Mock).mockResolvedValue({
     status: 'success',
     data: { flag: 'DARK_MODE', percentage: 10, total_users: 2, selected_users: 1 },
   });
@@ -1293,9 +1298,9 @@ describe('AdminScreen - Features', () => {
     const { getByText, getByDisplayValue } = render(<AdminScreen />);
     fireEvent.press(getByText('Features'));
 
-    await waitFor(() => expect(getByText('Apply Rollout')).toBeTruthy());
+    await waitFor(() => expect(getByText('Expand Rollout')).toBeTruthy());
     fireEvent.changeText(getByDisplayValue('10'), '101');
-    fireEvent.press(getByText('Apply Rollout'));
+    fireEvent.press(getByText('Expand Rollout'));
     await waitFor(() =>
       expect(userService.rolloutFeatureFlagToPercentage).toHaveBeenCalledWith(
         'DARK_MODE',
@@ -1304,7 +1309,7 @@ describe('AdminScreen - Features', () => {
       ),
     );
     (userService.rolloutFeatureFlagToPercentage as jest.Mock).mockClear();
-    fireEvent.press(getByText('Apply Rollout'));
+    fireEvent.press(getByText('Expand Rollout'));
 
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith(
@@ -1318,9 +1323,9 @@ describe('AdminScreen - Features', () => {
     const { getByText, getByDisplayValue } = render(<AdminScreen />);
     fireEvent.press(getByText('Features'));
 
-    await waitFor(() => expect(getByText('Apply Rollout')).toBeTruthy());
+    await waitFor(() => expect(getByText('Expand Rollout')).toBeTruthy());
     fireEvent.changeText(getByDisplayValue('10'), '35');
-    fireEvent.press(getByText('Apply Rollout'));
+    fireEvent.press(getByText('Expand Rollout'));
     await waitFor(() =>
       expect(userService.rolloutFeatureFlagToPercentage).toHaveBeenCalledWith(
         'DARK_MODE',
@@ -1329,10 +1334,30 @@ describe('AdminScreen - Features', () => {
       ),
     );
     (userService.rolloutFeatureFlagToPercentage as jest.Mock).mockClear();
-    fireEvent.press(getByText('Apply Rollout'));
+    fireEvent.press(getByText('Expand Rollout'));
 
     await waitFor(() => {
       expect(userService.rolloutFeatureFlagToPercentage).toHaveBeenCalledWith(
+        'DARK_MODE',
+        35,
+        'mock-token',
+      );
+    });
+  });
+
+  it('confirms and submits exact rollout changes', async () => {
+    const { getByText, getByDisplayValue } = render(<AdminScreen />);
+    fireEvent.press(getByText('Features'));
+
+    await waitFor(() => expect(getByText('Set Exact')).toBeTruthy());
+    fireEvent.changeText(getByDisplayValue('10'), '35');
+    fireEvent.press(getByText('Set Exact'));
+
+    const buttons = (Alert.alert as jest.Mock).mock.calls.at(-1)?.[2];
+    buttons[1].onPress();
+
+    await waitFor(() => {
+      expect(userService.setExactFeatureFlagRolloutToPercentage).toHaveBeenCalledWith(
         'DARK_MODE',
         35,
         'mock-token',

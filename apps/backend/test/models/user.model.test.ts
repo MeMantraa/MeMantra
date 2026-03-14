@@ -154,6 +154,39 @@ describe('UserModel feature flag methods', () => {
     expect(result.totalUsers).toBe(3);
     expect(result.selectedUsers).toBeGreaterThanOrEqual(0);
     expect(result.selectedUsers).toBeLessThanOrEqual(3);
+    expect(db.transaction).not.toHaveBeenCalled();
+  });
+
+  it('sets an exact rollout to a deterministic subset of users', async () => {
+    const users = [{ user_id: 1 }, { user_id: 2 }, { user_id: 3 }];
+    const selectExecute = jest.fn().mockResolvedValue(users);
+    const select = jest.fn(() => ({ execute: selectExecute }));
+
+    const makeUpdateChain = () => {
+      const executeTakeFirst = jest.fn().mockResolvedValue({});
+      const secondWhere = jest.fn(() => ({ executeTakeFirst }));
+      const firstWhere = jest.fn((...args: unknown[]) => {
+        if (args.length === 1) {
+          return { executeTakeFirst };
+        }
+        return { where: secondWhere };
+      });
+      const set = jest.fn(() => ({ where: firstWhere }));
+      return { set };
+    };
+    const trxUpdateTable = jest.fn(() => makeUpdateChain());
+    const executeTransaction = jest.fn(async (callback: any) =>
+      callback({ updateTable: trxUpdateTable }),
+    );
+
+    (db.selectFrom as jest.Mock).mockReturnValue({ select });
+    (db.transaction as jest.Mock).mockReturnValue({ execute: executeTransaction });
+
+    const result = await UserModel.setExactFlagRolloutToPercentage('DARK_MODE', 50);
+
+    expect(result.totalUsers).toBe(3);
+    expect(result.selectedUsers).toBeGreaterThanOrEqual(0);
+    expect(result.selectedUsers).toBeLessThanOrEqual(3);
     expect(db.transaction).toHaveBeenCalled();
   });
 });
