@@ -2,7 +2,7 @@ import { db } from '../db';
 import bcrypt from 'bcryptjs';
 import { User, NewUser } from '../types/database.types';
 import { sql } from 'kysely';
-import { createHash } from 'crypto';
+import { createHash } from 'node:crypto';
 
 interface CreateUserData {
   username: string;
