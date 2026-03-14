@@ -18,7 +18,7 @@ router.get('/feature-flags/users', UserController.getUsersWithFlags);
 router.post(
   '/feature-flags/:flag/users/:id',
   validateRequest(featureFlagAssignUserSchema),
-  UserController.setUserFeatureFlags,
+  UserController.setSingleUserFeatureFlag,
 );
 
 router.post(

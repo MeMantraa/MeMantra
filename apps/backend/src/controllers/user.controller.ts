@@ -292,6 +292,43 @@ export const UserController = {
     }
   },
 
+  // POST /api/users/feature-flags/:flag/users/:id - Toggle a single feature flag for a user
+  async setSingleUserFeatureFlag(req: Request, res: Response) {
+    try {
+      const userId = Number(req.params.id);
+      const flag = req.params.flag;
+      const enabled = Boolean(req.body?.enabled);
+
+      if (!Number.isFinite(userId)) {
+        return sendError(res, 400, 'Invalid user id');
+      }
+      if (!isValidFeatureFlag(flag)) {
+        return sendError(res, 400, `Invalid feature flag: ${flag}`);
+      }
+
+      if (enabled) {
+        const updated = await UserModel.addFlag(userId, flag);
+        if (!updated) {
+          const existing = await UserModel.findById(userId);
+          if (!existing) {
+            return sendError(res, 404, 'User not found');
+          }
+          return sendFeatureFlagResponse(res, existing, `Feature flag already enabled: ${flag}`);
+        }
+        return sendFeatureFlagResponse(res, updated, `Feature flag enabled: ${flag}`);
+      }
+
+      const updated = await UserModel.removeFlag(userId, flag);
+      if (!updated) {
+        return sendError(res, 404, 'User not found');
+      }
+      return sendFeatureFlagResponse(res, updated, `Feature flag disabled: ${flag}`);
+    } catch (error) {
+      console.error('Set single user feature flag error:', error);
+      return sendError(res, 500, 'Error updating user feature flag');
+    }
+  },
+
   // POST /api/users/:id/feature-flags/:flag - Enable a feature flag for a user (admin only)
   async enableUserFeatureFlag(req: Request, res: Response) {
     try {

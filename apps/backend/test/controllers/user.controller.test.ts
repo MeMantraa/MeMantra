@@ -20,6 +20,7 @@ app.use(express.json());
 app.get('/api/users', UserController.getAllUsers);
 app.get('/api/users/feature-flags', UserController.listFeatureFlags);
 app.get('/api/users/feature-flags/users', UserController.getUsersWithFlags);
+app.post('/api/users/feature-flags/:flag/users/:id', UserController.setSingleUserFeatureFlag);
 app.post('/api/users/feature-flags/:flag/all', UserController.setFeatureFlagForAllUsers);
 app.post('/api/users/feature-flags/:flag/rollout', UserController.rolloutFeatureFlagToPercentage);
 app.get('/api/users/:id', UserController.getUserById);
@@ -694,6 +695,50 @@ describe('UserController', () => {
 
       expect(res.status).toBe(500);
       expect(res.body.message).toBe('Error updating feature flag for all users');
+    });
+  });
+
+  describe('setSingleUserFeatureFlag', () => {
+    it('enables a single user flag through the combined route', async () => {
+      (UserModel.addFlag as jest.Mock).mockResolvedValue({
+        user_id: 1,
+        feature_flags: ['EXPERIMENTAL_FEATURE'],
+      });
+
+      const res = await request(app)
+        .post('/api/users/feature-flags/EXPERIMENTAL_FEATURE/users/1')
+        .send({ enabled: true });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Feature flag enabled: EXPERIMENTAL_FEATURE');
+      expect(UserModel.addFlag).toHaveBeenCalledWith(1, 'EXPERIMENTAL_FEATURE');
+    });
+
+    it('disables a single user flag through the combined route', async () => {
+      (UserModel.removeFlag as jest.Mock).mockResolvedValue({
+        user_id: 1,
+        feature_flags: [],
+      });
+
+      const res = await request(app)
+        .post('/api/users/feature-flags/EXPERIMENTAL_FEATURE/users/1')
+        .send({ enabled: false });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Feature flag disabled: EXPERIMENTAL_FEATURE');
+      expect(UserModel.removeFlag).toHaveBeenCalledWith(1, 'EXPERIMENTAL_FEATURE');
+    });
+
+    it('returns 404 when enabling a flag for a missing user', async () => {
+      (UserModel.addFlag as jest.Mock).mockResolvedValue(undefined);
+      (UserModel.findById as jest.Mock).mockResolvedValue(undefined);
+
+      const res = await request(app)
+        .post('/api/users/feature-flags/EXPERIMENTAL_FEATURE/users/999')
+        .send({ enabled: true });
+
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe('User not found');
     });
   });
 
