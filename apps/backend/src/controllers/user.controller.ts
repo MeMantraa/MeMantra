@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { UserModel } from '../models/user.model';
 import bcrypt from 'bcryptjs';
-import { isValidFeatureFlag } from '../utils/featureFlags';
+import { FEATURE_FLAGS, isValidFeatureFlag } from '../utils/featureFlags';
 import { User } from '../types/database.types';
 
 function sanitizeUser(user: User) {
@@ -24,6 +24,39 @@ function sendFeatureFlagResponse(res: Response, user: User, message: string) {
     message,
     data: { user_id: user.user_id, feature_flags: user.feature_flags ?? [] },
   });
+}
+
+function toUserFlagSummary(user: User) {
+  return {
+    user_id: user.user_id,
+    username: user.username,
+    email: user.email,
+    created_at: user.created_at,
+    feature_flags: user.feature_flags ?? [],
+  };
+}
+
+async function validateUniqueUserFields(
+  userId: number,
+  existingUser: User,
+  username?: string,
+  email?: string,
+) {
+  if (email && email !== existingUser.email) {
+    const emailTaken = await UserModel.findByEmail(email);
+    if (emailTaken && emailTaken.user_id !== userId) {
+      return 'Email already in use';
+    }
+  }
+
+  if (username && username !== existingUser.username) {
+    const usernameTaken = await UserModel.findByUsername(username);
+    if (usernameTaken && usernameTaken.user_id !== userId) {
+      return 'Username already taken';
+    }
+  }
+
+  return null;
 }
 
 export const UserController = {
@@ -105,25 +138,17 @@ export const UserController = {
   async updateUser(req: Request, res: Response) {
     try {
       const { id } = req.params;
+      const userId = Number(id);
       const { username, email, password } = req.body;
 
-      const existingUser = await UserModel.findById(Number(id));
+      const existingUser = await UserModel.findById(userId);
       if (!existingUser) {
         return sendError(res, 404, 'User not found');
       }
 
-      if (email && email !== existingUser.email) {
-        const emailTaken = await UserModel.findByEmail(email);
-        if (emailTaken && emailTaken.user_id !== Number(id)) {
-          return sendError(res, 400, 'Email already in use');
-        }
-      }
-
-      if (username && username !== existingUser.username) {
-        const usernameTaken = await UserModel.findByUsername(username);
-        if (usernameTaken && usernameTaken.user_id !== Number(id)) {
-          return sendError(res, 400, 'Username already taken');
-        }
+      const uniquenessError = await validateUniqueUserFields(userId, existingUser, username, email);
+      if (uniquenessError) {
+        return sendError(res, 400, uniquenessError);
       }
 
       const updateData: any = {};
@@ -134,7 +159,7 @@ export const UserController = {
         updateData.password_hash = await bcrypt.hash(password, salt);
       }
 
-      const updatedUser = await UserModel.update(Number(id), updateData);
+      const updatedUser = await UserModel.update(userId, updateData);
 
       return res.status(200).json({
         status: 'success',
@@ -175,6 +200,24 @@ export const UserController = {
     }
   },
 
+  // GET /api/users/feature-flags
+  async listFeatureFlags(_req: Request, res: Response) {
+    try {
+      const flags = FEATURE_FLAGS.map((key) => ({
+        key,
+        label: key.replaceAll('_', ' '),
+      }));
+
+      return res.status(200).json({
+        status: 'success',
+        data: { flags },
+      });
+    } catch (error) {
+      console.error('List feature flags error:', error);
+      return sendError(res, 500, 'Error retrieving feature flags');
+    }
+  },
+
   //GET /api/users/:id/feature-flags - Get user feature flags (admin only)
   async getUserFeatureFlags(req: Request, res: Response) {
     try {
@@ -198,15 +241,33 @@ export const UserController = {
     }
   },
 
-  // PUT /api/users/:id/feature-flags - replace all (admin only)
+   // GET /api/users/feature-flags/users
+  async getUsersWithFlags(_req: Request, res: Response) {
+    try {
+      const users = await UserModel.findAll();
+
+      return res.status(200).json({
+        status: 'success',
+        data: {
+          users: users.map(toUserFlagSummary),
+        },
+      });
+    } catch (error) {
+      console.error('Get users with flags error:', error);
+      return sendError(res, 500, 'Error retrieving users with feature flags');
+    }
+  },
+
+  // PUT /api/users/:id/feature-flags - Set all feature flags for a user (admin only)
   async setUserFeatureFlags(req: Request, res: Response) {
     try {
       const userId = Number(req.params.id);
+      const { flags } = req.body;
+
       if (!Number.isFinite(userId)) {
         return sendError(res, 400, 'Invalid user id');
       }
 
-      const flags = req.body?.flags;
       if (!Array.isArray(flags)) {
         return sendError(res, 400, 'flags must be an array');
       }
@@ -215,11 +276,10 @@ export const UserController = {
         (f) => typeof f !== 'string' || !isValidFeatureFlag(f),
       );
       if (invalidFlag !== undefined) {
-        return sendError(res, 400, `Invalid feature flag: ${String(invalidFlag)}`);
+        return sendError(res, 400, `Invalid feature flag: ${invalidFlag}`);
       }
 
-      const uniqueFlags = Array.from(new Set(flags));
-
+      const uniqueFlags = [...new Set(flags)];
       const updated = await UserModel.setFlags(userId, uniqueFlags);
       if (!updated) {
         return sendError(res, 404, 'User not found');
@@ -228,11 +288,48 @@ export const UserController = {
       return sendFeatureFlagResponse(res, updated, 'Feature flags updated successfully');
     } catch (error) {
       console.error('Set user feature flags error:', error);
-      return sendError(res, 500, 'Error updating feature flags');
+      return sendError(res, 500, 'Error updating user feature flags');
     }
   },
 
-//POST /api/users/:id/feature-flags/:flag (enable one)
+  // POST /api/users/feature-flags/:flag/users/:id - Toggle a single feature flag for a user
+  async setSingleUserFeatureFlag(req: Request, res: Response) {
+    try {
+      const userId = Number(req.params.id);
+      const flag = req.params.flag;
+      const enabled = Boolean(req.body?.enabled);
+
+      if (!Number.isFinite(userId)) {
+        return sendError(res, 400, 'Invalid user id');
+      }
+      if (!isValidFeatureFlag(flag)) {
+        return sendError(res, 400, `Invalid feature flag: ${flag}`);
+      }
+
+      if (enabled) {
+        const updated = await UserModel.addFlag(userId, flag);
+        if (!updated) {
+          const existing = await UserModel.findById(userId);
+          if (!existing) {
+            return sendError(res, 404, 'User not found');
+          }
+          return sendFeatureFlagResponse(res, existing, `Feature flag already enabled: ${flag}`);
+        }
+        return sendFeatureFlagResponse(res, updated, `Feature flag enabled: ${flag}`);
+      }
+
+      const updated = await UserModel.removeFlag(userId, flag);
+      if (!updated) {
+        return sendError(res, 404, 'User not found');
+      }
+      return sendFeatureFlagResponse(res, updated, `Feature flag disabled: ${flag}`);
+    } catch (error) {
+      console.error('Set single user feature flag error:', error);
+      return sendError(res, 500, 'Error updating user feature flag');
+    }
+  },
+
+  // POST /api/users/:id/feature-flags/:flag - Enable a feature flag for a user (admin only)
   async enableUserFeatureFlag(req: Request, res: Response) {
     try {
       const userId = Number(req.params.id);
@@ -253,15 +350,14 @@ export const UserController = {
         }
         return sendFeatureFlagResponse(res, existing, `Feature flag already enabled: ${flag}`);
       }
-
       return sendFeatureFlagResponse(res, updated, `Feature flag enabled: ${flag}`);
     } catch (error) {
       console.error('Enable user feature flag error:', error);
-      return sendError(res, 500, 'Error enabling feature flag');
+      return sendError(res, 500, 'Error enabling user feature flag');
     }
   },
 
-//DELETE /api/users/:id/feature-flags/:flag (disable one)
+  // DELETE /api/users/:id/feature-flags/:flag - Disable a feature flag for a user (admin only)
   async disableUserFeatureFlag(req: Request, res: Response) {
     try {
       const userId = Number(req.params.id);
@@ -278,11 +374,99 @@ export const UserController = {
       if (!updated) {
         return sendError(res, 404, 'User not found');
       }
-
       return sendFeatureFlagResponse(res, updated, `Feature flag disabled: ${flag}`);
     } catch (error) {
       console.error('Disable user feature flag error:', error);
-      return sendError(res, 500, 'Error disabling feature flag');
+      return sendError(res, 500, 'Error disabling user feature flag');
+    }
+  },
+
+// POST /api/users/feature-flags/:flag/all
+  async setFeatureFlagForAllUsers(req: Request, res: Response) {
+    try {
+      const flag = req.params.flag;
+      const enabled = Boolean(req.body?.enabled);
+
+      if (!isValidFeatureFlag(flag)) {
+        return sendError(res, 400, `Invalid feature flag: ${flag}`);
+      }
+
+      const affectedUsers = enabled
+        ? await UserModel.enableFlagForAllUsers(flag)
+        : await UserModel.disableFlagForAllUsers(flag);
+
+      return res.status(200).json({
+        status: 'success',
+        message: enabled
+          ? `Feature flag enabled for all users: ${flag}`
+          : `Feature flag disabled for all users: ${flag}`,
+        data: { flag, enabled, affected_users: affectedUsers },
+      });
+    } catch (error) {
+      console.error('Set feature flag for all users error:', error);
+      return sendError(res, 500, 'Error updating feature flag for all users');
+    }
+  },
+
+  // POST /api/users/feature-flags/:flag/rollout
+  async rolloutFeatureFlagToPercentage(req: Request, res: Response) {
+    try {
+      const flag = req.params.flag;
+      const percentage = Number(req.body?.percentage);
+
+      if (!isValidFeatureFlag(flag)) {
+        return sendError(res, 400, `Invalid feature flag: ${flag}`);
+      }
+      if (!Number.isFinite(percentage) || percentage < 0 || percentage > 100) {
+        return sendError(res, 400, 'percentage must be a number between 0 and 100');
+      }
+
+      const result = await UserModel.rolloutFlagToPercentage(flag, percentage);
+
+      return res.status(200).json({
+        status: 'success',
+        message: `Feature flag rollout expanded: ${flag} -> ${percentage}%`,
+        data: {
+          flag,
+          percentage,
+          total_users: result.totalUsers,
+          selected_users: result.selectedUsers,
+        },
+      });
+    } catch (error) {
+      console.error('Feature flag rollout error:', error);
+      return sendError(res, 500, 'Error applying feature flag rollout');
+    }
+  },
+
+  // POST /api/users/feature-flags/:flag/rollout/exact
+  async setExactFeatureFlagRolloutToPercentage(req: Request, res: Response) {
+    try {
+      const flag = req.params.flag;
+      const percentage = Number(req.body?.percentage);
+
+      if (!isValidFeatureFlag(flag)) {
+        return sendError(res, 400, `Invalid feature flag: ${flag}`);
+      }
+      if (!Number.isFinite(percentage) || percentage < 0 || percentage > 100) {
+        return sendError(res, 400, 'percentage must be a number between 0 and 100');
+      }
+
+      const result = await UserModel.setExactFlagRolloutToPercentage(flag, percentage);
+
+      return res.status(200).json({
+        status: 'success',
+        message: `Exact feature flag rollout applied: ${flag} -> ${percentage}%`,
+        data: {
+          flag,
+          percentage,
+          total_users: result.totalUsers,
+          selected_users: result.selectedUsers,
+        },
+      });
+    } catch (error) {
+      console.error('Exact feature flag rollout error:', error);
+      return sendError(res, 500, 'Error applying exact feature flag rollout');
     }
   },
 

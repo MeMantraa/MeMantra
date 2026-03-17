@@ -8,6 +8,7 @@ import bcrypt from 'bcryptjs';
 jest.mock('../../src/models/user.model');
 jest.mock('bcryptjs');
 jest.mock('../../src/utils/featureFlags', () => ({
+  FEATURE_FLAGS: ['EXPERIMENTAL_FEATURE', 'DARK_MODE', 'ADVANCED_ANALYTICS'],
   isValidFeatureFlag: jest.fn((flag: string) =>
     ['EXPERIMENTAL_FEATURE', 'DARK_MODE', 'ADVANCED_ANALYTICS'].includes(flag),
   ),
@@ -17,6 +18,12 @@ jest.mock('../../src/utils/featureFlags', () => ({
 const app = express();
 app.use(express.json());
 app.get('/api/users', UserController.getAllUsers);
+app.get('/api/users/feature-flags', UserController.listFeatureFlags);
+app.get('/api/users/feature-flags/users', UserController.getUsersWithFlags);
+app.post('/api/users/feature-flags/:flag/users/:id', UserController.setSingleUserFeatureFlag);
+app.post('/api/users/feature-flags/:flag/all', UserController.setFeatureFlagForAllUsers);
+app.post('/api/users/feature-flags/:flag/rollout', UserController.rolloutFeatureFlagToPercentage);
+app.post('/api/users/feature-flags/:flag/rollout/exact', UserController.setExactFeatureFlagRolloutToPercentage);
 app.get('/api/users/:id', UserController.getUserById);
 app.post('/api/users', UserController.createUser);
 app.put('/api/users/:id', UserController.updateUser);
@@ -476,7 +483,7 @@ describe('UserController', () => {
         .send({ flags: ['DARK_MODE'] });
 
       expect(res.status).toBe(500);
-      expect(res.body.message).toBe('Error updating feature flags');
+      expect(res.body.message).toBe('Error updating user feature flags');
     });
   });
 
@@ -540,7 +547,7 @@ describe('UserController', () => {
       const res = await request(app).post('/api/users/1/feature-flags/DARK_MODE');
 
       expect(res.status).toBe(500);
-      expect(res.body.message).toBe('Error enabling feature flag');
+      expect(res.body.message).toBe('Error enabling user feature flag');
     });
   });
 
@@ -589,7 +596,223 @@ describe('UserController', () => {
       const res = await request(app).delete('/api/users/1/feature-flags/DARK_MODE');
 
       expect(res.status).toBe(500);
-      expect(res.body.message).toBe('Error disabling feature flag');
+      expect(res.body.message).toBe('Error disabling user feature flag');
+    });
+  });
+
+  describe('listFeatureFlags', () => {
+    it('returns the available feature flags', async () => {
+      const res = await request(app).get('/api/users/feature-flags');
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.flags).toEqual([
+        { key: 'EXPERIMENTAL_FEATURE', label: 'EXPERIMENTAL FEATURE' },
+        { key: 'DARK_MODE', label: 'DARK MODE' },
+        { key: 'ADVANCED_ANALYTICS', label: 'ADVANCED ANALYTICS' },
+      ]);
+    });
+  });
+
+  describe('getUsersWithFlags', () => {
+    it('returns feature flag summaries for all users', async () => {
+      (UserModel.findAll as jest.Mock).mockResolvedValue([
+        {
+          user_id: 1,
+          username: 'alice',
+          email: 'alice@example.com',
+          created_at: 'today',
+          feature_flags: ['DARK_MODE'],
+        },
+      ]);
+
+      const res = await request(app).get('/api/users/feature-flags/users');
+
+      expect(res.status).toBe(200);
+      expect(res.body.data.users).toEqual([
+        {
+          user_id: 1,
+          username: 'alice',
+          email: 'alice@example.com',
+          created_at: 'today',
+          feature_flags: ['DARK_MODE'],
+        },
+      ]);
+    });
+
+    it('handles failures while loading flagged users', async () => {
+      (UserModel.findAll as jest.Mock).mockRejectedValue(new Error('DB error'));
+
+      const res = await request(app).get('/api/users/feature-flags/users');
+
+      expect(res.status).toBe(500);
+      expect(res.body.message).toBe('Error retrieving users with feature flags');
+    });
+  });
+
+  describe('setFeatureFlagForAllUsers', () => {
+    it('enables a flag for all users', async () => {
+      (UserModel.enableFlagForAllUsers as jest.Mock).mockResolvedValue(8);
+
+      const res = await request(app)
+        .post('/api/users/feature-flags/DARK_MODE/all')
+        .send({ enabled: true });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Feature flag enabled for all users: DARK_MODE');
+      expect(res.body.data).toEqual({
+        flag: 'DARK_MODE',
+        enabled: true,
+        affected_users: 8,
+      });
+    });
+
+    it('disables a flag for all users', async () => {
+      (UserModel.disableFlagForAllUsers as jest.Mock).mockResolvedValue(3);
+
+      const res = await request(app)
+        .post('/api/users/feature-flags/DARK_MODE/all')
+        .send({ enabled: false });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Feature flag disabled for all users: DARK_MODE');
+      expect(res.body.data.affected_users).toBe(3);
+    });
+
+    it('rejects invalid flags for bulk updates', async () => {
+      const res = await request(app)
+        .post('/api/users/feature-flags/INVALID_FLAG/all')
+        .send({ enabled: true });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Invalid feature flag: INVALID_FLAG');
+    });
+
+    it('handles failures while bulk updating', async () => {
+      (UserModel.enableFlagForAllUsers as jest.Mock).mockRejectedValue(new Error('DB error'));
+
+      const res = await request(app)
+        .post('/api/users/feature-flags/DARK_MODE/all')
+        .send({ enabled: true });
+
+      expect(res.status).toBe(500);
+      expect(res.body.message).toBe('Error updating feature flag for all users');
+    });
+  });
+
+  describe('setSingleUserFeatureFlag', () => {
+    it('enables a single user flag through the combined route', async () => {
+      (UserModel.addFlag as jest.Mock).mockResolvedValue({
+        user_id: 1,
+        feature_flags: ['EXPERIMENTAL_FEATURE'],
+      });
+
+      const res = await request(app)
+        .post('/api/users/feature-flags/EXPERIMENTAL_FEATURE/users/1')
+        .send({ enabled: true });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Feature flag enabled: EXPERIMENTAL_FEATURE');
+      expect(UserModel.addFlag).toHaveBeenCalledWith(1, 'EXPERIMENTAL_FEATURE');
+    });
+
+    it('disables a single user flag through the combined route', async () => {
+      (UserModel.removeFlag as jest.Mock).mockResolvedValue({
+        user_id: 1,
+        feature_flags: [],
+      });
+
+      const res = await request(app)
+        .post('/api/users/feature-flags/EXPERIMENTAL_FEATURE/users/1')
+        .send({ enabled: false });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Feature flag disabled: EXPERIMENTAL_FEATURE');
+      expect(UserModel.removeFlag).toHaveBeenCalledWith(1, 'EXPERIMENTAL_FEATURE');
+    });
+
+    it('returns 404 when enabling a flag for a missing user', async () => {
+      (UserModel.addFlag as jest.Mock).mockResolvedValue(undefined);
+      (UserModel.findById as jest.Mock).mockResolvedValue(undefined);
+
+      const res = await request(app)
+        .post('/api/users/feature-flags/EXPERIMENTAL_FEATURE/users/999')
+        .send({ enabled: true });
+
+      expect(res.status).toBe(404);
+      expect(res.body.message).toBe('User not found');
+    });
+  });
+
+  describe('rolloutFeatureFlagToPercentage', () => {
+    it('applies a rollout percentage', async () => {
+      (UserModel.rolloutFlagToPercentage as jest.Mock).mockResolvedValue({
+        totalUsers: 10,
+        selectedUsers: 4,
+      });
+
+      const res = await request(app)
+        .post('/api/users/feature-flags/DARK_MODE/rollout')
+        .send({ percentage: 40 });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Feature flag rollout expanded: DARK_MODE -> 40%');
+      expect(res.body.data).toEqual({
+        flag: 'DARK_MODE',
+        percentage: 40,
+        total_users: 10,
+        selected_users: 4,
+      });
+    });
+
+    it('rejects invalid rollout percentages', async () => {
+      const res = await request(app)
+        .post('/api/users/feature-flags/DARK_MODE/rollout')
+        .send({ percentage: 140 });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('percentage must be a number between 0 and 100');
+    });
+
+    it('rejects invalid flags for rollouts', async () => {
+      const res = await request(app)
+        .post('/api/users/feature-flags/INVALID_FLAG/rollout')
+        .send({ percentage: 40 });
+
+      expect(res.status).toBe(400);
+      expect(res.body.message).toBe('Invalid feature flag: INVALID_FLAG');
+    });
+
+    it('handles rollout failures', async () => {
+      (UserModel.rolloutFlagToPercentage as jest.Mock).mockRejectedValue(new Error('DB error'));
+
+      const res = await request(app)
+        .post('/api/users/feature-flags/DARK_MODE/rollout')
+        .send({ percentage: 40 });
+
+      expect(res.status).toBe(500);
+      expect(res.body.message).toBe('Error applying feature flag rollout');
+    });
+  });
+
+  describe('setExactFeatureFlagRolloutToPercentage', () => {
+    it('applies an exact rollout percentage', async () => {
+      (UserModel.setExactFlagRolloutToPercentage as jest.Mock).mockResolvedValue({
+        totalUsers: 10,
+        selectedUsers: 4,
+      });
+
+      const res = await request(app)
+        .post('/api/users/feature-flags/DARK_MODE/rollout/exact')
+        .send({ percentage: 40 });
+
+      expect(res.status).toBe(200);
+      expect(res.body.message).toBe('Exact feature flag rollout applied: DARK_MODE -> 40%');
+      expect(res.body.data).toEqual({
+        flag: 'DARK_MODE',
+        percentage: 40,
+        total_users: 10,
+        selected_users: 4,
+      });
     });
   });
 });

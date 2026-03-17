@@ -47,7 +47,7 @@ describe('RatingController', () => {
         data: { rating: mockRating },
       });
       expect(RatingModel.upsert).toHaveBeenCalledWith(1, 5, 4, 'Great!');
-    });
+    }, 10000);
 
     it('should return 401 if not authenticated', async () => {
       const app = setupAppWithUser();

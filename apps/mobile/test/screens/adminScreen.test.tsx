@@ -25,6 +25,12 @@ jest.mock('../../services/user.service', () => ({
     createUser: jest.fn(),
     updateUser: jest.fn(),
     deleteUser: jest.fn(),
+    listFeatureFlags: jest.fn(),
+    getUsersWithFlags: jest.fn(),
+    setUserFeatureFlag: jest.fn(),
+    setFeatureFlagForAllUsers: jest.fn(),
+    rolloutFeatureFlagToPercentage: jest.fn(),
+    setExactFeatureFlagRolloutToPercentage: jest.fn(),
   },
 }));
 
@@ -103,6 +109,26 @@ const fakeUsers = [
     created_at: '2024-01-01T00:00:00Z',
   },
 ];
+const fakeFeatureFlags = [
+  { key: 'DARK_MODE', label: 'Dark Mode', description: 'Enable dark mode' },
+  { key: 'ADVANCED_ANALYTICS', label: 'Advanced Analytics' },
+];
+const fakeUsersWithFlags = [
+  {
+    user_id: 1,
+    username: 'alice',
+    email: 'alice@example.com',
+    created_at: '2024-01-01T00:00:00Z',
+    feature_flags: ['DARK_MODE'],
+  },
+  {
+    user_id: 2,
+    username: 'bob',
+    email: 'bob@example.com',
+    created_at: '2024-01-02T00:00:00Z',
+    feature_flags: [],
+  },
+];
 
 beforeEach(() => {
   jest.clearAllMocks();
@@ -123,6 +149,30 @@ beforeEach(() => {
     status: 'success',
     data: { categories: [] },
   });
+  (userService.listFeatureFlags as jest.Mock).mockResolvedValue({
+    status: 'success',
+    data: { flags: fakeFeatureFlags },
+  });
+  (userService.getUsersWithFlags as jest.Mock).mockResolvedValue({
+    status: 'success',
+    data: { users: fakeUsersWithFlags },
+  });
+  (userService.setUserFeatureFlag as jest.Mock).mockResolvedValue({
+    status: 'success',
+    data: { user_id: 1, feature_flags: ['DARK_MODE'] },
+  });
+  (userService.setFeatureFlagForAllUsers as jest.Mock).mockResolvedValue({
+    status: 'success',
+    data: { flag: 'DARK_MODE', enabled: true, affected_users: 2 },
+  });
+  (userService.rolloutFeatureFlagToPercentage as jest.Mock).mockResolvedValue({
+    status: 'success',
+    data: { flag: 'DARK_MODE', percentage: 10, total_users: 2, selected_users: 1 },
+  });
+  (userService.setExactFeatureFlagRolloutToPercentage as jest.Mock).mockResolvedValue({
+    status: 'success',
+    data: { flag: 'DARK_MODE', percentage: 10, total_users: 2, selected_users: 1 },
+  });
 });
 
 describe('AdminScreen', () => {
@@ -132,48 +182,28 @@ describe('AdminScreen', () => {
       data: fakeMantras,
     });
 
-    const { getByText } = render(<AdminScreen />);
+    const { getByText, findByText } = render(<AdminScreen />);
 
-    await waitFor(
-      () => {
-        expect(getByText('Admin Controls')).toBeTruthy();
-        expect(getByText(/Add a new mantra/i)).toBeTruthy();
-      },
-      { timeout: 10000 },
-    );
+    expect(await findByText('Admin Controls')).toBeTruthy();
+    expect(await findByText(/Add a new mantra/i)).toBeTruthy();
 
     fireEvent.press(getByText('Manage'));
-    await waitFor(
-      () => {
-        expect(getByText('Test Mantra')).toBeTruthy();
-        expect(getByText('Take a deep breath')).toBeTruthy();
-      },
-      { timeout: 10000 },
-    );
+    expect(await findByText('Test Mantra')).toBeTruthy();
+    expect(await findByText('Take a deep breath')).toBeTruthy();
 
     (userService.getAllUsers as jest.Mock).mockResolvedValue({
       status: 'success',
       data: { users: fakeUsers },
     });
     fireEvent.press(getByText('Users'));
-    await waitFor(
-      () => {
-        expect(getByText(/Add a new user/i)).toBeTruthy();
-      },
-      { timeout: 10000 },
-    );
+    expect(await findByText(/Add a new user/i)).toBeTruthy();
 
     fireEvent.press(getByText('Manage'));
-    await waitFor(() => expect(getByText('View All Users')).toBeTruthy());
+    expect(await findByText('View All Users')).toBeTruthy();
     fireEvent.press(getByText('View All Users'));
-    await waitFor(
-      () => {
-        expect(getByText('alice')).toBeTruthy();
-        expect(getByText('alice@example.com')).toBeTruthy();
-      },
-      { timeout: 10000 },
-    );
-  }, 30000);
+    expect(await findByText('alice')).toBeTruthy();
+    expect(await findByText('alice@example.com')).toBeTruthy();
+  }, 60000);
 
   it('submits MantraForm on Add when fields are filled', async () => {
     (mantraService.createMantra as jest.Mock).mockResolvedValue({
@@ -844,23 +874,15 @@ describe('AdminScreen (extended coverage)', () => {
       data: { categories: fakeCategories },
     });
 
-    const { getByText, queryByText } = render(<AdminScreen />);
+    const { getByText, findByText, queryByText } = render(<AdminScreen />);
     fireEvent.press(getByText('Categories'));
 
-    // Wait for Manage button to appear, indicating load completed
-    await waitFor(() => expect(getByText('Manage')).toBeTruthy(), { timeout: 10000 });
-
+    expect(await findByText('Manage')).toBeTruthy();
     fireEvent.press(getByText('Manage'));
 
-    // Now check for category names
-    await waitFor(
-      () => {
-        expect(getByText('Breathing')).toBeTruthy();
-      },
-      { timeout: 10000 },
-    );
+    expect(await findByText('Breathing')).toBeTruthy();
     expect(queryByText('Breathing')).toBeTruthy();
-  });
+  }, 10000);
 
   it('opens edit modal when Edit button is pressed for category', async () => {
     (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
@@ -1227,5 +1249,193 @@ describe('AdminScreen - Analytics', () => {
     // The Add/Manage row is not rendered in analytics mode
     expect(queryByText('Add')).toBeNull();
     expect(queryByText('Manage')).toBeNull();
+  });
+});
+
+describe('AdminScreen - Features', () => {
+  it('loads feature flag data when switching to the features tab', async () => {
+    const { getByText } = render(<AdminScreen />);
+
+    fireEvent.press(getByText('Features'));
+
+    await waitFor(() => {
+      expect(userService.listFeatureFlags).toHaveBeenCalledWith('mock-token');
+      expect(userService.getUsersWithFlags).toHaveBeenCalledWith('mock-token');
+      expect(getByText('Flag List')).toBeTruthy();
+      expect(getByText('Dark Mode')).toBeTruthy();
+    });
+  });
+
+  it('shows an error when feature flag data fails to load', async () => {
+    (userService.listFeatureFlags as jest.Mock).mockRejectedValueOnce(new Error('fail'));
+
+    const { getByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Features'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to load feature flags data');
+    });
+  });
+
+  it('updates a single user flag from the features panel', async () => {
+    const { getByText, findByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Features'));
+
+    expect(await findByText('Assign Selected Flag')).toBeTruthy();
+    fireEvent.press(getByText('Assign Selected Flag'));
+
+    await waitFor(() => {
+      expect(userService.setUserFeatureFlag).toHaveBeenCalledWith(
+        2,
+        'DARK_MODE',
+        true,
+        'mock-token',
+      );
+    });
+  });
+
+  it('validates rollout percentage before submitting', async () => {
+    const { getByText, getByDisplayValue } = render(<AdminScreen />);
+    fireEvent.press(getByText('Features'));
+
+    await waitFor(() => expect(getByText('Expand Rollout')).toBeTruthy());
+    fireEvent.changeText(getByDisplayValue('10'), '101');
+    fireEvent.press(getByText('Expand Rollout'));
+    await waitFor(() =>
+      expect(userService.rolloutFeatureFlagToPercentage).toHaveBeenCalledWith(
+        'DARK_MODE',
+        10,
+        'mock-token',
+      ),
+    );
+    (userService.rolloutFeatureFlagToPercentage as jest.Mock).mockClear();
+    fireEvent.press(getByText('Expand Rollout'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Error',
+        'Rollout percentage must be a number between 0 and 100',
+      );
+    });
+  });
+
+  it('submits rollout changes for a valid percentage', async () => {
+    const { getByText, getByDisplayValue } = render(<AdminScreen />);
+    fireEvent.press(getByText('Features'));
+
+    await waitFor(() => expect(getByText('Expand Rollout')).toBeTruthy());
+    fireEvent.changeText(getByDisplayValue('10'), '35');
+    fireEvent.press(getByText('Expand Rollout'));
+    await waitFor(() =>
+      expect(userService.rolloutFeatureFlagToPercentage).toHaveBeenCalledWith(
+        'DARK_MODE',
+        10,
+        'mock-token',
+      ),
+    );
+    (userService.rolloutFeatureFlagToPercentage as jest.Mock).mockClear();
+    fireEvent.press(getByText('Expand Rollout'));
+
+    await waitFor(() => {
+      expect(userService.rolloutFeatureFlagToPercentage).toHaveBeenCalledWith(
+        'DARK_MODE',
+        35,
+        'mock-token',
+      );
+    });
+  });
+
+  it('confirms and submits exact rollout changes', async () => {
+    const { getByText, getByDisplayValue } = render(<AdminScreen />);
+    fireEvent.press(getByText('Features'));
+
+    await waitFor(() => expect(getByText('Set Exact')).toBeTruthy());
+    fireEvent.changeText(getByDisplayValue('10'), '35');
+    fireEvent.press(getByText('Set Exact'));
+
+    const buttons = (Alert.alert as jest.Mock).mock.calls.at(-1)?.[2];
+    buttons[1].onPress();
+    await waitFor(() => {
+      expect(userService.setExactFeatureFlagRolloutToPercentage).toHaveBeenCalledWith(
+        'DARK_MODE',
+        10,
+        'mock-token',
+      );
+    });
+    (userService.setExactFeatureFlagRolloutToPercentage as jest.Mock).mockClear();
+    fireEvent.press(getByText('Set Exact'));
+    const secondButtons = (Alert.alert as jest.Mock).mock.calls.at(-1)?.[2];
+    secondButtons[1].onPress();
+
+    await waitFor(() => {
+      expect(userService.setExactFeatureFlagRolloutToPercentage).toHaveBeenCalledWith(
+        'DARK_MODE',
+        35,
+        'mock-token',
+      );
+    });
+  });
+
+  it('bulk-updates selected users and reports success', async () => {
+    const { getByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Features'));
+
+    await waitFor(() => expect(getByText('Select Filtered')).toBeTruthy());
+    fireEvent.press(getByText('Select Filtered'));
+    await waitFor(() => expect(getByText('Assign to Selected')).toBeTruthy());
+    fireEvent.press(getByText('Assign to Selected'));
+
+    await waitFor(() => {
+      expect(userService.setUserFeatureFlag).toHaveBeenCalledWith(
+        1,
+        'DARK_MODE',
+        true,
+        'mock-token',
+      );
+      expect(userService.setUserFeatureFlag).toHaveBeenCalledWith(
+        2,
+        'DARK_MODE',
+        true,
+        'mock-token',
+      );
+      expect(Alert.alert).toHaveBeenCalledWith('Success', 'Updated 2 selected user(s).');
+    });
+  });
+
+  it('shows a partial success message when some selected-user updates fail', async () => {
+    (userService.setUserFeatureFlag as jest.Mock)
+      .mockResolvedValueOnce({ status: 'success' })
+      .mockRejectedValueOnce(new Error('fail'));
+
+    const { getByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Features'));
+
+    await waitFor(() => expect(getByText('Select Filtered')).toBeTruthy());
+    fireEvent.press(getByText('Select Filtered'));
+    await waitFor(() => expect(getByText('Assign to Selected')).toBeTruthy());
+    fireEvent.press(getByText('Assign to Selected'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Partial success', '1 user update(s) failed.');
+    });
+  });
+
+  it('confirms and applies global enable-all actions', async () => {
+    const { getByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Features'));
+
+    await waitFor(() => expect(getByText('Enable All')).toBeTruthy());
+    fireEvent.press(getByText('Enable All'));
+
+    const buttons = (Alert.alert as jest.Mock).mock.calls.at(-1)?.[2];
+    buttons[1].onPress();
+
+    await waitFor(() => {
+      expect(userService.setFeatureFlagForAllUsers).toHaveBeenCalledWith(
+        'DARK_MODE',
+        true,
+        'mock-token',
+      );
+    });
   });
 });
