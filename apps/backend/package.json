@@ -27,7 +27,7 @@
     "google-auth-library": "^10.4.2",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
-    "kysely": "^0.28.7",
+    "kysely": "^0.28.11",
     "node-cron": "^4.2.1",
     "nodemailer": "^7.0.12",
     "pg": "^8.16.3",
