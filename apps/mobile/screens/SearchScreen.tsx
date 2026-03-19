@@ -104,18 +104,22 @@ export default function SearchScreen({ navigation, route }: any) {
         activeOpacity={0.7}
         onPress={() => handleSelectMantra(item)}
         style={{
+          marginHorizontal: 16,
+          marginBottom: 12,
           paddingVertical: 16,
-          paddingHorizontal: 20,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.secondary + '40',
+          paddingHorizontal: 16,
+          borderRadius: 18,
+          borderWidth: 1,
+          borderColor: colors.text + '1a',
+          backgroundColor: colors.primaryDark + '20',
         }}
       >
         <AppText
           style={{
             color: colors.text,
-            fontSize: 18,
+            fontSize: 17,
             fontWeight: '700',
-            lineHeight: 26,
+            lineHeight: 24,
           }}
         >
           {item.title}
@@ -123,10 +127,16 @@ export default function SearchScreen({ navigation, route }: any) {
         {snippet && (
           <AppText
             numberOfLines={1}
-            style={{ color: colors.text, fontSize: 13, opacity: 0.65, marginTop: 4 }}
+            style={{
+              color: colors.text,
+              fontSize: 14,
+              opacity: 0.72,
+              marginTop: 8,
+              lineHeight: 20,
+            }}
           >
             {snippet.before}
-            <AppText style={{ opacity: 1, fontWeight: '700', color: colors.text }}>
+            <AppText style={{ opacity: 1, fontWeight: '700', color: colors.secondary }}>
               {snippet.match}
             </AppText>
             {snippet.after}
@@ -206,24 +216,41 @@ export default function SearchScreen({ navigation, route }: any) {
     }
     return (
       <>
-        <AppText
+        <View
           style={{
-            color: colors.text,
-            fontSize: 13,
-            opacity: 0.6,
-            paddingHorizontal: 20,
+            paddingHorizontal: 16,
             paddingTop: 12,
-            paddingBottom: 4,
+            paddingBottom: 10,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'space-between',
           }}
         >
-          {results.length} result{results.length === 1 ? '' : 's'} for &quot;{query.trim()}&quot;
-        </AppText>
+          <AppText style={{ color: colors.text, fontSize: 13, opacity: 0.72 }}>
+            {results.length} result{results.length === 1 ? '' : 's'} for &quot;{query.trim()}&quot;
+          </AppText>
+          <View
+            style={{
+              borderRadius: 999,
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              backgroundColor: colors.secondary + '26',
+              borderWidth: 1,
+              borderColor: colors.secondary + '55',
+            }}
+          >
+            <AppText style={{ color: colors.secondary, fontSize: 12, fontWeight: '700' }}>
+              Tap to open
+            </AppText>
+          </View>
+        </View>
         <FlatList
           data={results}
           keyExtractor={(item) => item.mantra_id.toString()}
           renderItem={renderItem}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 20 }}
         />
       </>
     );
