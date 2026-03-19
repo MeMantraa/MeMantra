@@ -2699,4 +2699,24 @@ describe('HomeScreen - share, journal, rate, and route params', () => {
       { timeout: 10000 },
     );
   }, 15000);
+
+  it('navigates to Search screen with feedData when search icon is pressed', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    const sample = [
+      { mantra_id: 1, title: 'M1', isLiked: false, isSaved: false },
+      { mantra_id: 2, title: 'M2', isLiked: false, isSaved: false },
+    ];
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: sample,
+    });
+
+    const { getByTestId } = setup();
+
+    await waitFor(() => getByTestId('search-toggle-button'), { timeout: 10000 });
+
+    fireEvent.press(getByTestId('search-toggle-button'));
+
+    expect(mockNavigate).toHaveBeenCalledWith('Search', { mantras: sample });
+  }, 15000);
 });

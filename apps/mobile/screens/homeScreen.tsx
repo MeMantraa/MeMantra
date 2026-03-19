@@ -310,7 +310,7 @@ export default function HomeScreen({ navigation, route }: any) {
 
   const handleLogout = () => logoutUser(navigation);
 
-  const handleSearch = (query: string) => console.log('Searching for:', query);
+  const handleSearch = () => navigation.navigate('Search', { mantras: feedData });
 
   const handleEndReached = () => {
     if (originalMantras.length > 0) {
@@ -449,7 +449,11 @@ export default function HomeScreen({ navigation, route }: any) {
     <View className="flex-1" style={{ backgroundColor: colors.primary }}>
       <View className="absolute top-5 left-0 right-0 z-10 flex-row justify-between items-center px-6 pt-14 pb-4">
         <View className="flex-row items-center" style={{ gap: 8 }}>
-          <SearchBar onSearch={handleSearch} placeholder="Search mantras..." />
+          <SearchBar
+            onSearch={handleSearch}
+            onIconPress={handleSearch}
+            placeholder="Search mantras..."
+          />
           <TouchableOpacity
             testID="category-filter-btn"
             activeOpacity={0.7}

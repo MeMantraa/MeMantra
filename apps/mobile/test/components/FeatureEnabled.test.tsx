@@ -1,6 +1,7 @@
 import React from 'react';
 import { render } from '@testing-library/react-native';
 import { Text } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
 import { FeatureEnabled } from '../../components/FeatureEnabled';
 import { storage } from '../../utils/storage';
 
@@ -19,9 +20,11 @@ describe('FeatureEnabled', () => {
     });
 
     const { findByText } = render(
-      <FeatureEnabled featureFlag="DARK_MODE">
-        <Text>Dark Mode Content</Text>
-      </FeatureEnabled>,
+      <NavigationContainer>
+        <FeatureEnabled featureFlag="DARK_MODE">
+          <Text>Dark Mode Content</Text>
+        </FeatureEnabled>
+      </NavigationContainer>,
     );
 
     expect(await findByText('Dark Mode Content')).toBeTruthy();
@@ -35,9 +38,11 @@ describe('FeatureEnabled', () => {
     });
 
     const { findByText, queryByText } = render(
-      <FeatureEnabled featureFlag="DARK_MODE" fallback={<Text>Feature Not Available</Text>}>
-        <Text>Dark Mode Content</Text>
-      </FeatureEnabled>,
+      <NavigationContainer>
+        <FeatureEnabled featureFlag="DARK_MODE" fallback={<Text>Feature Not Available</Text>}>
+          <Text>Dark Mode Content</Text>
+        </FeatureEnabled>
+      </NavigationContainer>,
     );
 
     expect(await findByText('Feature Not Available')).toBeTruthy();
@@ -52,9 +57,11 @@ describe('FeatureEnabled', () => {
     });
 
     const { queryByText } = render(
-      <FeatureEnabled featureFlag="DARK_MODE">
-        <Text>Dark Mode Content</Text>
-      </FeatureEnabled>,
+      <NavigationContainer>
+        <FeatureEnabled featureFlag="DARK_MODE">
+          <Text>Dark Mode Content</Text>
+        </FeatureEnabled>
+      </NavigationContainer>,
     );
 
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -69,9 +76,11 @@ describe('FeatureEnabled', () => {
     });
 
     const { queryByText } = render(
-      <FeatureEnabled featureFlag="DARK_MODE">
-        <Text>Dark Mode Content</Text>
-      </FeatureEnabled>,
+      <NavigationContainer>
+        <FeatureEnabled featureFlag="DARK_MODE">
+          <Text>Dark Mode Content</Text>
+        </FeatureEnabled>
+      </NavigationContainer>,
     );
 
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -83,9 +92,11 @@ describe('FeatureEnabled', () => {
     (storage.getUserData as jest.Mock).mockResolvedValue(null);
 
     const { queryByText } = render(
-      <FeatureEnabled featureFlag="DARK_MODE">
-        <Text>Dark Mode Content</Text>
-      </FeatureEnabled>,
+      <NavigationContainer>
+        <FeatureEnabled featureFlag="DARK_MODE">
+          <Text>Dark Mode Content</Text>
+        </FeatureEnabled>
+      </NavigationContainer>,
     );
 
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -97,9 +108,11 @@ describe('FeatureEnabled', () => {
     (storage.getUserData as jest.Mock).mockResolvedValue(undefined);
 
     const { queryByText } = render(
-      <FeatureEnabled featureFlag="EXPERIMENTAL_FEATURE">
-        <Text>Experimental Content</Text>
-      </FeatureEnabled>,
+      <NavigationContainer>
+        <FeatureEnabled featureFlag="EXPERIMENTAL_FEATURE">
+          <Text>Experimental Content</Text>
+        </FeatureEnabled>
+      </NavigationContainer>,
     );
 
     await new Promise((resolve) => setTimeout(resolve, 100));
@@ -115,9 +128,11 @@ describe('FeatureEnabled', () => {
     });
 
     const { queryByText } = render(
-      <FeatureEnabled featureFlag="ADVANCED_ANALYTICS" fallback={<Text>Not Available</Text>}>
-        <Text>Analytics Content</Text>
-      </FeatureEnabled>,
+      <NavigationContainer>
+        <FeatureEnabled featureFlag="ADVANCED_ANALYTICS" fallback={<Text>Not Available</Text>}>
+          <Text>Analytics Content</Text>
+        </FeatureEnabled>
+      </NavigationContainer>,
     );
 
     await new Promise((resolve) => setTimeout(resolve, 100));

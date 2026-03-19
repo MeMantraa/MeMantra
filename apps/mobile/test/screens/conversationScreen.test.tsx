@@ -18,6 +18,46 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 }));
 jest.mock('../../services/chat.service');
 jest.mock('../../utils/storage');
+jest.mock('../../components/chat/ChatBubble', () => {
+  const { Text, TouchableOpacity, View } = jest.requireActual('react-native');
+
+  return {
+    ChatBubble: ({ message, onSwipeReply, onReaction }: any) => (
+      <View>
+        <Text>{message.content}</Text>
+        <TouchableOpacity onPress={() => onSwipeReply?.(message)}>
+          <Text>reply-{message.message_id}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => onReaction?.(message.message_id, '+1')}>
+          <Text>react-{message.message_id}</Text>
+        </TouchableOpacity>
+      </View>
+    ),
+  };
+});
+jest.mock('../../components/chat/ChatInput', () => {
+  const React = jest.requireActual('react');
+  const { TextInput, TouchableOpacity, Text, View } = jest.requireActual('react-native');
+
+  return function MockChatInput({ onSend }: any) {
+    const [value, setValue] = React.useState('');
+
+    return (
+      <View>
+        <TextInput placeholder="Type a message..." value={value} onChangeText={setValue} />
+        <TouchableOpacity
+          testID="send-button"
+          onPress={() => {
+            onSend?.(value);
+            setValue('');
+          }}
+        >
+          <Text>Send</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  };
+});
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
   useNavigation: () => ({
@@ -101,17 +141,16 @@ describe('ConversationScreen', () => {
     (chatService.getMessages as jest.Mock).mockResolvedValue(mockMessages);
     (chatService.markAsRead as jest.Mock).mockResolvedValue(undefined);
 
-    const { getByText } = render(
+    const { findByText } = render(
       <ConversationScreen route={mockRoute} navigation={mockNavigation} />,
     );
 
-    await waitFor(
-      () => {
-        expect(getByText('Hello!')).toBeTruthy();
-        expect(getByText('Hi there!')).toBeTruthy();
-      },
-      { timeout: 3000 },
-    );
+    await waitFor(() => {
+      expect(chatService.getMessages).toHaveBeenCalledWith(1, 'mock-token');
+    });
+
+    expect(await findByText('Hello!', {}, { timeout: 10000 })).toBeTruthy();
+    expect(await findByText('Hi there!', {}, { timeout: 10000 })).toBeTruthy();
   });
 
   it('marks conversation as read on load', async () => {

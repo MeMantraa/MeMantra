@@ -116,20 +116,21 @@ describe('ReminderSchedulerService', () => {
 
   describe('shouldSendReminder', () => {
     it('should return true for one-time reminder that has not been sent', () => {
-      const result = ReminderSchedulerService.shouldSendReminder('once', null);
+      const result = ReminderSchedulerService.shouldSendReminder('once', null, null);
       expect(result).toBe(true);
     });
 
     it('should return false for one-time reminder that has been sent', () => {
       const result = ReminderSchedulerService.shouldSendReminder(
         'once',
-        '2024-01-01T10:00:00.000Z'
+        '2024-01-01T10:00:00.000Z',
+        null
       );
       expect(result).toBe(false);
     });
 
     it('should return true for daily reminder never sent', () => {
-      const result = ReminderSchedulerService.shouldSendReminder('daily', null);
+      const result = ReminderSchedulerService.shouldSendReminder('daily', null, null);
       expect(result).toBe(true);
     });
 
@@ -139,7 +140,8 @@ describe('ReminderSchedulerService', () => {
 
       const result = ReminderSchedulerService.shouldSendReminder(
         'daily',
-        yesterday.toISOString()
+        yesterday.toISOString(),
+        'UTC'
       );
       expect(result).toBe(true);
     });
@@ -149,7 +151,8 @@ describe('ReminderSchedulerService', () => {
 
       const result = ReminderSchedulerService.shouldSendReminder(
         'daily',
-        today.toISOString()
+        today.toISOString(),
+        'UTC'
       );
       expect(result).toBe(false);
     });
@@ -160,7 +163,8 @@ describe('ReminderSchedulerService', () => {
 
       const result = ReminderSchedulerService.shouldSendReminder(
         'weekly',
-        lastWeek.toISOString()
+        lastWeek.toISOString(),
+        'UTC'
       );
       expect(result).toBe(true);
     });
@@ -171,7 +175,8 @@ describe('ReminderSchedulerService', () => {
 
       const result = ReminderSchedulerService.shouldSendReminder(
         'monthly',
-        lastMonth.toISOString()
+        lastMonth.toISOString(),
+        'UTC'
       );
       expect(result).toBe(true);
     });
@@ -181,58 +186,71 @@ describe('ReminderSchedulerService', () => {
 
       const result = ReminderSchedulerService.shouldSendReminder(
         'monthly',
-        thisMonth.toISOString()
+        thisMonth.toISOString(),
+        'UTC'
       );
       expect(result).toBe(false);
     });
   });
 
-  describe('isSameDay', () => {
-    it('should return true for same day', () => {
+  describe('formatDateInTimezone', () => {
+    it('should return same date for same UTC day', () => {
       const date1 = new Date('2024-06-15T10:00:00Z');
       const date2 = new Date('2024-06-15T23:59:59Z');
 
-      expect(ReminderSchedulerService.isSameDay(date1, date2)).toBe(true);
+      expect(ReminderSchedulerService.formatDateInTimezone(date1, 'UTC'))
+        .toBe(ReminderSchedulerService.formatDateInTimezone(date2, 'UTC'));
     });
 
-    it('should return false for different days', () => {
+    it('should return different dates for different UTC days', () => {
       const date1 = new Date('2024-06-15T10:00:00Z');
       const date2 = new Date('2024-06-16T10:00:00Z');
 
-      expect(ReminderSchedulerService.isSameDay(date1, date2)).toBe(false);
+      expect(ReminderSchedulerService.formatDateInTimezone(date1, 'UTC'))
+        .not.toBe(ReminderSchedulerService.formatDateInTimezone(date2, 'UTC'));
+    });
+
+    it('should respect timezone when comparing dates', () => {
+      // 11 PM UTC on June 15 = June 16 in UTC+2
+      const date = new Date('2024-06-15T23:00:00Z');
+
+      expect(ReminderSchedulerService.formatDateInTimezone(date, 'UTC')).toBe('2024-06-15');
+      expect(ReminderSchedulerService.formatDateInTimezone(date, 'Europe/Helsinki')).toBe('2024-06-16');
     });
   });
 
-  describe('isSameWeek', () => {
+  describe('isSameWeekInTimezone', () => {
     it('should return true for same week', () => {
       // Sunday and Saturday of the same week
       const sunday = new Date('2024-06-16T10:00:00Z'); // Sunday
       const saturday = new Date('2024-06-22T10:00:00Z'); // Saturday
 
-      expect(ReminderSchedulerService.isSameWeek(sunday, saturday)).toBe(true);
+      expect(ReminderSchedulerService.isSameWeekInTimezone(sunday, saturday, 'UTC')).toBe(true);
     });
 
     it('should return false for different weeks', () => {
       const week1 = new Date('2024-06-15T10:00:00Z');
       const week2 = new Date('2024-06-23T10:00:00Z');
 
-      expect(ReminderSchedulerService.isSameWeek(week1, week2)).toBe(false);
+      expect(ReminderSchedulerService.isSameWeekInTimezone(week1, week2, 'UTC')).toBe(false);
     });
   });
 
-  describe('isSameMonth', () => {
-    it('should return true for same month', () => {
+  describe('formatMonthInTimezone', () => {
+    it('should return same month for dates in same month', () => {
       const date1 = new Date('2024-06-01T10:00:00Z');
       const date2 = new Date('2024-06-30T10:00:00Z');
 
-      expect(ReminderSchedulerService.isSameMonth(date1, date2)).toBe(true);
+      expect(ReminderSchedulerService.formatMonthInTimezone(date1, 'UTC'))
+        .toBe(ReminderSchedulerService.formatMonthInTimezone(date2, 'UTC'));
     });
 
-    it('should return false for different months', () => {
+    it('should return different months for dates in different months', () => {
       const date1 = new Date('2024-06-15T10:00:00Z');
       const date2 = new Date('2024-07-15T10:00:00Z');
 
-      expect(ReminderSchedulerService.isSameMonth(date1, date2)).toBe(false);
+      expect(ReminderSchedulerService.formatMonthInTimezone(date1, 'UTC'))
+        .not.toBe(ReminderSchedulerService.formatMonthInTimezone(date2, 'UTC'));
     });
   });
 
@@ -1327,7 +1345,7 @@ describe('ReminderSchedulerService', () => {
 
   describe('shouldSendReminder with custom frequency', () => {
     it('should return true for custom frequency when never sent', () => {
-      const result = ReminderSchedulerService.shouldSendReminder('custom', null);
+      const result = ReminderSchedulerService.shouldSendReminder('custom', null, null);
       expect(result).toBe(true);
     });
 
@@ -1335,7 +1353,8 @@ describe('ReminderSchedulerService', () => {
       const today = new Date();
       const result = ReminderSchedulerService.shouldSendReminder(
         'custom',
-        today.toISOString()
+        today.toISOString(),
+        'UTC'
       );
       expect(result).toBe(false);
     });
@@ -1345,7 +1364,8 @@ describe('ReminderSchedulerService', () => {
       yesterday.setDate(yesterday.getDate() - 1);
       const result = ReminderSchedulerService.shouldSendReminder(
         'custom',
-        yesterday.toISOString()
+        yesterday.toISOString(),
+        'UTC'
       );
       expect(result).toBe(true);
     });

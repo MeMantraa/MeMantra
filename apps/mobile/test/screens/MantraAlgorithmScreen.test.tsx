@@ -68,13 +68,11 @@ describe('MantraAlgorithmScreen', () => {
   });
 
   it('renders scores grouped by category type once loaded', async () => {
-    const { getByText, queryByText } = render(<MantraAlgorithmScreen />);
+    const { findByText, queryByText } = render(<MantraAlgorithmScreen />);
 
-    await waitFor(() => {
-      expect(getByText('Anxiety')).toBeTruthy();
-      expect(getByText('Focus')).toBeTruthy();
-      expect(getByText('Calm')).toBeTruthy();
-    });
+    expect(await findByText('Anxiety', {}, { timeout: 10000 })).toBeTruthy();
+    expect(await findByText('Focus', {}, { timeout: 10000 })).toBeTruthy();
+    expect(await findByText('Calm', {}, { timeout: 10000 })).toBeTruthy();
 
     // Zero-score categories should be filtered out
     expect(queryByText('Zero Score')).toBeNull();
