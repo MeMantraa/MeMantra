@@ -308,8 +308,6 @@ export default function HomeScreen({ navigation, route }: any) {
     }
   };
 
-  const handleLogout = () => logoutUser(navigation);
-
   const handleSearch = () => navigation.navigate('Search', { mantras: feedData });
 
   const handleEndReached = () => {
@@ -386,7 +384,7 @@ export default function HomeScreen({ navigation, route }: any) {
         key={`feed-${initialIndex}-${selectedCategoryIds.join(',')}`}
         ref={listRef}
         data={filteredFeedData}
-        initialScrollIndex={initialIndex} // ✅ no flash to first item
+        initialScrollIndex={initialIndex}
         renderItem={({ item }) => (
           <MantraCarousel
             item={item}
@@ -429,49 +427,56 @@ export default function HomeScreen({ navigation, route }: any) {
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.primary }}>
-      <View className="absolute top-5 left-0 right-0 z-10 flex-row justify-between items-center px-6 pt-14 pb-4">
-        <View className="flex-row items-center" style={{ gap: 8 }}>
-          <SearchBar
-            onSearch={handleSearch}
-            onIconPress={handleSearch}
-            placeholder="Search mantras..."
-          />
-          <TouchableOpacity
-            testID="category-filter-btn"
-            activeOpacity={0.7}
-            onPress={() => setShowCategoryFilter(true)}
-            className="items-center justify-center"
+      <View className="absolute top-5 left-0 right-0 z-10 flex-row items-center justify-between px-6 pt-14 pb-4">
+        <TouchableOpacity
+          testID="category-filter-btn"
+          activeOpacity={0.7}
+          onPress={() => setShowCategoryFilter(true)}
+          className="items-center justify-center"
+        >
+          <View
+            className="rounded-full items-center justify-center"
+            style={{
+              width: 54,
+              height: 54,
+              backgroundColor: colors.secondary,
+              borderWidth: 1,
+              borderColor: colors.secondary + 'dd',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.12,
+              shadowRadius: 6,
+              elevation: 3,
+            }}
           >
+            <Ionicons
+              name={selectedCategoryIds.length > 0 ? 'funnel' : 'funnel-outline'}
+              size={25}
+              color={colors.primaryDark}
+            />
+          </View>
+          {selectedCategoryIds.length > 0 && (
             <View
-              className="rounded-full items-center justify-center"
+              className="absolute -top-1 -right-1 rounded-full items-center justify-center"
               style={{
-                width: 48,
-                height: 48,
-                backgroundColor: colors.secondary,
+                width: 20,
+                height: 20,
+                backgroundColor: colors.primaryDark,
               }}
             >
-              <Ionicons
-                name={selectedCategoryIds.length > 0 ? 'funnel' : 'funnel-outline'}
-                size={24}
-                color={colors.primaryDark}
-              />
+              <AppText className="text-xs font-bold" style={{ color: colors.secondary }}>
+                {selectedCategoryIds.length}
+              </AppText>
             </View>
-            {selectedCategoryIds.length > 0 && (
-              <View
-                className="absolute -top-1 -right-1 rounded-full items-center justify-center"
-                style={{
-                  width: 20,
-                  height: 20,
-                  backgroundColor: colors.primaryDark,
-                }}
-              >
-                <AppText className="text-xs font-bold" style={{ color: colors.secondary }}>
-                  {selectedCategoryIds.length}
-                </AppText>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
+          )}
+        </TouchableOpacity>
+
+        <SearchBar
+          compact
+          onSearch={handleSearch}
+          onIconPress={handleSearch}
+          placeholder="Search mantras..."
+        />
       </View>
 
       {content}

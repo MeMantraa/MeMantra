@@ -43,10 +43,11 @@ const MantraCarousel = memo(
     onPress,
     isFocusMode = false,
   }: Readonly<MantraCarouselProps>) {
-    const [currentIndex, setCurrentIndex] = useState(0);
     const [isMoreExpanded, setIsMoreExpanded] = useState(false);
     const moreAnim = useRef(new Animated.Value(0)).current;
+    const dotAnim = useRef(new Animated.Value(0)).current;
     const { colors } = useTheme();
+    const moreMenuExpandedHeight = onPress ? 166 : 112;
 
     const pages = [
       { title: 'Mantra', content: item.title },
@@ -67,7 +68,15 @@ const MantraCarousel = memo(
     ].filter((page): page is { title: string; content: string } => page !== null);
 
     const onViewableChanged = useRef(({ viewableItems }: any) => {
-      if (viewableItems.length > 0) setCurrentIndex(viewableItems[0].index ?? 0);
+      if (viewableItems.length > 0) {
+        const nextIndex = viewableItems[0].index ?? 0;
+        Animated.spring(dotAnim, {
+          toValue: nextIndex,
+          tension: 130,
+          friction: 12,
+          useNativeDriver: false,
+        }).start();
+      }
     }).current;
 
     const handleLike = () => {
@@ -90,6 +99,10 @@ const MantraCarousel = memo(
       if (onReminder) onReminder(item.mantra_id);
     };
 
+    const handleOpenFocus = () => {
+      if (onPress) onPress();
+    };
+
     const toggleMoreExpanded = () => {
       setIsMoreExpanded((prev) => !prev);
     };
@@ -108,8 +121,8 @@ const MantraCarousel = memo(
         style={{ height: SCREEN_HEIGHT, width: SCREEN_WIDTH, paddingBottom: 132 }}
         className="items-center"
       >
-        <View className="pt-36 mb-6">
-          <AppText style={{ color: colors.text }} className="text-6xl opacity-50">
+        <View className="pt-36 mb-5">
+          <AppText style={{ color: colors.text }} className="text-6xl opacity-35">
             " "
           </AppText>
         </View>
@@ -134,11 +147,17 @@ const MantraCarousel = memo(
                   <TouchableWithoutFeedback onPress={onPress}>
                     <View
                       className="w-full justify-center items-center"
-                      style={{ height: SCREEN_HEIGHT * 0.3, maxWidth: SCREEN_WIDTH - 100 }}
+                      style={{ height: SCREEN_HEIGHT * 0.31, maxWidth: SCREEN_WIDTH - 72 }}
                     >
                       <AppText
-                        style={{ color: colors.text }}
-                        className={`text-center leading-10 font-light tracking-wide ${isFocusMode ? 'text-4xl' : 'text-3xl'}`}
+                        style={{
+                          color: colors.text,
+                          textShadowColor: 'rgba(0, 0, 0, 0.10)',
+                          textShadowOffset: { width: 0, height: 1 },
+                          textShadowRadius: 4,
+                          lineHeight: isFocusMode ? 54 : 50,
+                        }}
+                        className={`text-center font-normal tracking-wide ${isFocusMode ? 'text-4xl' : 'text-3xl'}`}
                       >
                         {page.content}
                       </AppText>
@@ -183,14 +202,34 @@ const MantraCarousel = memo(
         </View>
 
         {/* Carousel dots */}
-        <View className="flex-row justify-center items-center mt-10">
-          {pages.map((page) => (
-            <View
+        <View className="flex-row justify-center items-center mt-9">
+          {pages.map((page, index) => (
+            <Animated.View
               key={`${item.mantra_id}-${page.title}`}
-              className={`h-2 rounded-full mx-1 ${
-                pages.indexOf(page) === currentIndex ? 'w-2' : 'w-2 opacity-40'
-              }`}
-              style={{ backgroundColor: colors.text }}
+              className="rounded-full mx-1"
+              style={{
+                height: 8,
+                width: dotAnim.interpolate({
+                  inputRange: [index - 1, index, index + 1],
+                  outputRange: [8, 18, 8],
+                  extrapolate: 'clamp',
+                }),
+                opacity: dotAnim.interpolate({
+                  inputRange: [index - 1, index, index + 1],
+                  outputRange: [0.4, 1, 0.4],
+                  extrapolate: 'clamp',
+                }),
+                backgroundColor: colors.text,
+                transform: [
+                  {
+                    scale: dotAnim.interpolate({
+                      inputRange: [index - 1, index, index + 1],
+                      outputRange: [1, 1.08, 1],
+                      extrapolate: 'clamp',
+                    }),
+                  },
+                ],
+              }}
             />
           ))}
         </View>
@@ -211,7 +250,7 @@ const MantraCarousel = memo(
                     width: 56,
                     height: moreAnim.interpolate({
                       inputRange: [0, 1],
-                      outputRange: [0, 112],
+                      outputRange: [0, moreMenuExpandedHeight],
                     }),
                     opacity: moreAnim,
                     overflow: 'hidden',
@@ -226,6 +265,20 @@ const MantraCarousel = memo(
                   }}
                 >
                   <View className="items-center">
+                    {!!onPress && (
+                      <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          handleOpenFocus();
+                          setIsMoreExpanded(false);
+                        }}
+                        testID="focus-button"
+                        className="w-12 h-12 rounded-full items-center justify-center mb-2"
+                        style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}
+                      >
+                        <Ionicons name="scan-outline" size={24} color={colors.text} />
+                      </TouchableOpacity>
+                    )}
                     <TouchableOpacity
                       activeOpacity={0.8}
                       onPress={() => {
@@ -234,7 +287,7 @@ const MantraCarousel = memo(
                       }}
                       testID="journal-button"
                       className="w-12 h-12 rounded-full items-center justify-center mb-2"
-                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.25)' }}
+                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}
                     >
                       <Ionicons name="book-outline" size={24} color={colors.text} />
                     </TouchableOpacity>
@@ -246,7 +299,7 @@ const MantraCarousel = memo(
                       }}
                       testID="share-button"
                       className="w-12 h-12 rounded-full items-center justify-center"
-                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.25)' }}
+                      style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}
                     >
                       <Ionicons name="paper-plane-outline" size={24} color={colors.text} />
                     </TouchableOpacity>
@@ -280,7 +333,10 @@ const MantraCarousel = memo(
                 <View className="items-center">
                   <IconButton type="like" active={!!item.isLiked} onPress={handleLike} />
                   {item.like_count !== undefined && (
-                    <AppText style={{ color: colors.text }} className="text-sm absolute -bottom-6">
+                    <AppText
+                      style={{ color: colors.text, opacity: 0.95 }}
+                      className="text-sm absolute -bottom-7"
+                    >
                       {item.like_count}
                     </AppText>
                   )}

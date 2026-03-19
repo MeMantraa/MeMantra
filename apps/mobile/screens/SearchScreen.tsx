@@ -1,6 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, FlatList, TouchableOpacity, TextInput, StatusBar } from 'react-native';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import {
+  View,
+  FlatList,
+  TouchableOpacity,
+  TextInput,
+  StatusBar,
+  InteractionManager,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import AppTextInput from '../components/UI/textInputWrapper';
@@ -24,10 +32,16 @@ export default function SearchScreen({ navigation, route }: any) {
   const allMantras: Mantra[] = route?.params?.mantras ?? [];
   const inputRef = useRef<TextInput>(null);
 
-  useEffect(() => {
-    const timer = setTimeout(() => inputRef.current?.focus(), 50);
-    return () => clearTimeout(timer);
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      // Wait for the navigation transition to settle before focusing.
+      const task = InteractionManager.runAfterInteractions(() => {
+        inputRef.current?.focus();
+      });
+
+      return () => task.cancel();
+    }, []),
+  );
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -129,19 +143,44 @@ export default function SearchScreen({ navigation, route }: any) {
     if (showPlaceholder) {
       return (
         <View
-          style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }}
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 28 }}
         >
-          <Ionicons name="search-outline" size={56} color={colors.secondary} />
+          <View
+            style={{
+              width: 96,
+              height: 96,
+              borderRadius: 48,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: colors.secondary + '22',
+              borderWidth: 1,
+              borderColor: colors.secondary + '55',
+            }}
+          >
+            <Ionicons name="search-outline" size={44} color={colors.secondary} />
+          </View>
+          <AppText
+            style={{
+              color: colors.text,
+              fontSize: 24,
+              textAlign: 'center',
+              marginTop: 24,
+              fontWeight: '700',
+            }}
+          >
+            Search all mantras
+          </AppText>
           <AppText
             style={{
               color: colors.text,
               fontSize: 16,
               textAlign: 'center',
-              marginTop: 16,
-              opacity: 0.7,
+              marginTop: 10,
+              opacity: 0.75,
+              lineHeight: 24,
             }}
           >
-            Type a keyword to search across all mantra content
+            Type a keyword to find matching titles and content instantly.
           </AppText>
         </View>
       );
@@ -199,21 +238,29 @@ export default function SearchScreen({ navigation, route }: any) {
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          paddingTop: 56,
+          paddingTop: 54,
           paddingBottom: 12,
           paddingHorizontal: 16,
           backgroundColor: colors.primary,
           borderBottomWidth: 1,
-          borderBottomColor: colors.secondary + '40',
+          borderBottomColor: colors.secondary + '2a',
         }}
       >
         <TouchableOpacity
           onPress={() => navigation.goBack()}
-          style={{ padding: 4, marginRight: 8 }}
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 22,
+            alignItems: 'center',
+            justifyContent: 'center',
+            marginRight: 10,
+            backgroundColor: colors.secondary + '20',
+          }}
           accessibilityRole="button"
           accessibilityLabel="Go back"
         >
-          <Ionicons name="chevron-back" size={28} color={colors.text} />
+          <Ionicons name="chevron-back" size={24} color={colors.text} />
         </TouchableOpacity>
 
         <View
@@ -221,27 +268,52 @@ export default function SearchScreen({ navigation, route }: any) {
             flex: 1,
             flexDirection: 'row',
             alignItems: 'center',
-            backgroundColor: colors.secondary,
-            borderRadius: 24,
-            paddingHorizontal: 16,
-            height: 48,
+            backgroundColor: colors.secondary + 'f2',
+            borderRadius: 28,
+            paddingHorizontal: 14,
+            height: 56,
+            borderWidth: 1,
+            borderColor: colors.secondary + 'd0',
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 6 },
+            shadowOpacity: 0.08,
+            shadowRadius: 10,
+            elevation: 2,
           }}
         >
-          <Ionicons name="search-outline" size={20} color={colors.primaryDark} />
+          <View
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 15,
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: colors.primary + '22',
+            }}
+          >
+            <Ionicons name="search-outline" size={18} color={colors.primaryDark} />
+          </View>
           <AppTextInput
             ref={inputRef}
             value={query}
             onChangeText={setQuery}
+            autoFocus
             placeholder="Search mantras..."
-            placeholderTextColor={colors.primaryDark + 'aa'}
+            placeholderTextColor={colors.primaryDark + '99'}
+            selectionColor={colors.primaryDark}
             style={{
               flex: 1,
-              marginLeft: 8,
+              marginLeft: 10,
               color: colors.primaryDark,
-              fontSize: 16,
+              fontSize: 17,
               backgroundColor: 'transparent',
+              borderWidth: 0,
+              borderColor: 'transparent',
+              borderRadius: 0,
+              paddingHorizontal: 0,
+              padding: 0,
               paddingVertical: 0,
-              height: 48,
+              height: 56,
             }}
             returnKeyType="search"
             autoCorrect={false}
@@ -250,9 +322,17 @@ export default function SearchScreen({ navigation, route }: any) {
           {query.length > 0 && (
             <TouchableOpacity
               onPress={() => setQuery('')}
+              style={{
+                width: 28,
+                height: 28,
+                borderRadius: 14,
+                alignItems: 'center',
+                justifyContent: 'center',
+                backgroundColor: colors.primary + '22',
+              }}
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
-              <Ionicons name="close-circle" size={20} color={colors.primaryDark} />
+              <Ionicons name="close" size={16} color={colors.primaryDark} />
             </TouchableOpacity>
           )}
         </View>
