@@ -322,24 +322,6 @@ export default function HomeScreen({ navigation, route }: any) {
     setSelectedCategoryIds(selected);
   };
 
-  const handleUserPress = () => {
-    Alert.alert(
-      'Account',
-      'Are you sure you want to log out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Log out',
-          style: 'destructive',
-          onPress: () => {
-            void handleLogout();
-          },
-        },
-      ],
-      { cancelable: true },
-    );
-  };
-
   let content;
 
   if (loading || (!readyToShowFeed && feedData.length > 0)) {
@@ -490,7 +472,6 @@ export default function HomeScreen({ navigation, route }: any) {
             )}
           </TouchableOpacity>
         </View>
-        <IconButton type="profile" onPress={handleUserPress} testID="profile-btn" />
       </View>
 
       {content}
