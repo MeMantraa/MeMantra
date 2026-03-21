@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Alert } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import * as Notifications from 'expo-notifications';
 import { ThemeProvider } from '../context/ThemeContext';
@@ -116,6 +116,7 @@ export default function MainNavigator() {
             }
           } catch (error) {
             console.error('Error toggling like:', error);
+            Alert.alert('Error', 'Failed to update like status.');
           }
         };
 
@@ -131,6 +132,7 @@ export default function MainNavigator() {
             }
           } catch (error) {
             console.error('Error toggling save:', error);
+            Alert.alert('Error', 'Failed to update save status.');
           }
         };
 
@@ -145,6 +147,7 @@ export default function MainNavigator() {
       }
     } catch (error) {
       console.error('Error navigating to mantra from notification:', error);
+      Alert.alert('Error', 'Failed to open mantra. Please try again.');
     }
   }, []);
 
@@ -177,6 +180,7 @@ export default function MainNavigator() {
         });
       } catch (error) {
         console.error('Error navigating to collection from notification:', error);
+        Alert.alert('Error', 'Failed to open collection. Please try again.');
       }
     },
     [],
