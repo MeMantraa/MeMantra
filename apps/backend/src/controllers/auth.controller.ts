@@ -248,6 +248,11 @@ export const AuthController = {
   async updatePassword(req: Request, res: Response) {
     try {
       const userId = req.user?.userId;
+
+      if (!userId) {
+        return res.status(401).json({ status: 'error', message: 'Not authenticated' });
+      }
+
       const { password } = req.body;
 
       if (!password) {
@@ -255,13 +260,14 @@ export const AuthController = {
       }
 
       const hashed = await bcrypt.hash(password, 10);
-      await UserModel.update(userId!, { password_hash: hashed });
+      await UserModel.update(userId, { password_hash: hashed });
 
       return res.json({
         status: 'success',
         message: 'Password updated',
       });
     } catch (err) {
+      console.error('Update password error:', err);
       return res.status(500).json({ status: 'error', message: 'Failed to update password' });
     }
   },
@@ -269,11 +275,17 @@ export const AuthController = {
   async deleteAccount(req: Request, res: Response) {
     try {
       const userId = req.user?.userId;
-      await UserModel.delete(userId!);
 
-      res.json({ status: 'success', message: 'Account deleted' });
+      if (!userId) {
+        return res.status(401).json({ status: 'error', message: 'Not authenticated' });
+      }
+
+      await UserModel.delete(userId);
+
+      return res.json({ status: 'success', message: 'Account deleted' });
     } catch (err) {
-      res.status(500).json({ status: 'error', message: 'Failed to delete account' });
+      console.error('Delete account error:', err);
+      return res.status(500).json({ status: 'error', message: 'Failed to delete account' });
     }
   },
 
