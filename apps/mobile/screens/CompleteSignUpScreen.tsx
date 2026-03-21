@@ -52,9 +52,13 @@ export default function CompleteSignUpScreen({ route, navigation }: any) {
         await storage.saveUserData(response.data.user);
 
         // Register for push notifications now that we're authenticated
-        notificationService
-          .setupNotifications()
-          .catch((err) => console.error('Failed to set up push notifications after signup:', err));
+        notificationService.setupNotifications().catch((err) => {
+          console.error('Failed to set up push notifications after signup:', err);
+          Alert.alert(
+            'Notifications',
+            'Could not enable push notifications. You can enable them later in Settings.',
+          );
+        });
 
         navigation.reset({
           index: 0,
