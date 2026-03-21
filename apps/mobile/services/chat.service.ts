@@ -7,7 +7,7 @@ import {
   MessageReaction,
 } from '../types/chat.types';
 
-const USE_MOCK_DATA = false; //Since backend is ready, I put it to false
+const USE_MOCK_DATA = false;
 
 /**
  * MOCK DATA

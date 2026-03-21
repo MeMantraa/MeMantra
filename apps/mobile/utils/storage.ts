@@ -1,4 +1,4 @@
-//locally manage the JWT token on device
+// Secure on-device storage for JWT tokens and user data.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
@@ -36,11 +36,11 @@ export const storage = {
     }
   },
 
-  async saveUserData(userData: any): Promise<void> {
+  async saveUserData(userData: Record<string, unknown>): Promise<void> {
     await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
   },
 
-  async getUserData(): Promise<any> {
+  async getUserData(): Promise<Record<string, unknown> | null> {
     const data = await AsyncStorage.getItem(USER_DATA_KEY);
     return data ? JSON.parse(data) : null;
   },
