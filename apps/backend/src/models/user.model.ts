@@ -19,11 +19,10 @@ const getFeatureFlagRolloutScore = (userId: number, flagName: string): number =>
 
 export const UserModel = {
   async create(userData: CreateUserData): Promise<User> {
-    //hash pass
+    // Hash the password before storing
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(userData.password, salt);
-    
-    //data for insertion
+
     const newUser: NewUser = {
       username: userData.username,
       email: userData.email,
@@ -32,44 +31,43 @@ export const UserModel = {
       created_at: new Date().toISOString(),
       feature_flags: [],
     };
-    
-    //insert in db
+
     const result = await db
       .insertInto('User')
       .values(newUser)
       .returningAll()
       .executeTakeFirstOrThrow();
-    
+
     return result;
   },
-  
+
   async findByEmail(email: string): Promise<User | undefined> {
     const user = await db
       .selectFrom('User')
       .where('email', '=', email)
       .selectAll()
       .executeTakeFirst();
-    
+
     return user;
   },
-  
+
   async findByUsername(username: string): Promise<User | undefined> {
     const user = await db
       .selectFrom('User')
       .where('username', '=', username)
       .selectAll()
       .executeTakeFirst();
-    
+
     return user;
   },
-  
+
   async findById(id: number): Promise<User | undefined> {
     const user = await db
       .selectFrom('User')
       .where('user_id', '=', id)
       .selectAll()
       .executeTakeFirst();
-    
+
     return user;
   },
 
@@ -77,23 +75,15 @@ export const UserModel = {
     if (ids.length === 0) {
       return [];
     }
-    
-    const users = await db
-      .selectFrom('User')
-      .where('user_id', 'in', ids)
-      .selectAll()
-      .execute();
-    
+
+    const users = await db.selectFrom('User').where('user_id', 'in', ids).selectAll().execute();
+
     return users;
   },
 
   async findAll(): Promise<User[]> {
-    const users = await db
-      .selectFrom('User')
-      .selectAll()
-      .orderBy('created_at', 'desc')
-      .execute();
-    
+    const users = await db.selectFrom('User').selectAll().orderBy('created_at', 'desc').execute();
+
     return users;
   },
 
@@ -104,46 +94,38 @@ export const UserModel = {
       .where('user_id', '=', id)
       .returningAll()
       .executeTakeFirst();
-    
+
     return user;
   },
 
   async delete(id: number): Promise<boolean> {
-    const result = await db
-      .deleteFrom('User')
-      .where('user_id', '=', id)
-      .executeTakeFirst();
+    const result = await db.deleteFrom('User').where('user_id', '=', id).executeTakeFirst();
 
     return result.numDeletedRows > 0;
   },
 
   async updateEmail(userId: number, email: string) {
-    return db
-      .updateTable('User')
-      .set({ email })
-      .where('user_id', '=', userId)
-      .executeTakeFirst();
+    return db.updateTable('User').set({ email }).where('user_id', '=', userId).executeTakeFirst();
   },
   // Theme functions
-async updateTheme(userId: number, theme: string): Promise<User | undefined> {
-  const user = await db
-    .updateTable('User')
-    .set({ theme })
-    .where('user_id', '=', userId)
-    .returningAll()
-    .executeTakeFirst();
-  return user;
-},
+  async updateTheme(userId: number, theme: string): Promise<User | undefined> {
+    const user = await db
+      .updateTable('User')
+      .set({ theme })
+      .where('user_id', '=', userId)
+      .returningAll()
+      .executeTakeFirst();
+    return user;
+  },
 
-async getTheme(userId: number): Promise<string | undefined> {
-  const user = await db
-    .selectFrom('User')
-    .select('theme')
-    .where('user_id', '=', userId)
-    .executeTakeFirst();
-  return user?.theme || 'default';
-}
-,
+  async getTheme(userId: number): Promise<string | undefined> {
+    const user = await db
+      .selectFrom('User')
+      .select('theme')
+      .where('user_id', '=', userId)
+      .executeTakeFirst();
+    return user?.theme || 'default';
+  },
   async clearDeviceToken(userId: number): Promise<void> {
     await db
       .updateTable('User')
@@ -153,19 +135,11 @@ async getTheme(userId: number): Promise<string | undefined> {
   },
 
   async findByDeviceToken(token: string): Promise<User | undefined> {
-    return db
-      .selectFrom('User')
-      .where('device_token', '=', token)
-      .selectAll()
-      .executeTakeFirst();
+    return db.selectFrom('User').where('device_token', '=', token).selectAll().executeTakeFirst();
   },
 
   async findAllWithDeviceTokens(): Promise<User[]> {
-    return db
-      .selectFrom('User')
-      .where('device_token', 'is not', null)
-      .selectAll()
-      .execute();
+    return db.selectFrom('User').where('device_token', 'is not', null).selectAll().execute();
   },
 
   // Check if user has specific flag enabled
@@ -188,9 +162,7 @@ async getTheme(userId: number): Promise<string | undefined> {
         feature_flags: sql`array_append(${sql.ref('feature_flags')}, ${sql.val(flagName)})`,
       })
       .where('user_id', '=', userId)
-      .where(
-        sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`,
-      )
+      .where(sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`)
       .returningAll()
       .executeTakeFirst();
   },
@@ -232,9 +204,7 @@ async getTheme(userId: number): Promise<string | undefined> {
   async findUsersWithoutFlag(flagName: string): Promise<User[]> {
     return await db
       .selectFrom('User')
-      .where(
-        sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`,
-      )
+      .where(sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`)
       .selectAll()
       .execute();
   },
@@ -246,9 +216,7 @@ async getTheme(userId: number): Promise<string | undefined> {
       .set({
         feature_flags: sql`array_append(${sql.ref('feature_flags')}, ${sql.val(flagName)})`,
       })
-      .where(
-        sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`,
-      )
+      .where(sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`)
       .executeTakeFirst();
 
     return Number(result.numUpdatedRows ?? 0);
@@ -266,7 +234,6 @@ async getTheme(userId: number): Promise<string | undefined> {
 
     return Number(result.numUpdatedRows ?? 0);
   },
-
 
   // Expand a flag to a defined percentage of users without removing existing assignments.
   async rolloutFlagToPercentage(
@@ -291,9 +258,7 @@ async getTheme(userId: number): Promise<string | undefined> {
           feature_flags: sql`array_append(${sql.ref('feature_flags')}, ${sql.val(flagName)})`,
         })
         .where('user_id', 'in', selectedUserIds)
-        .where(
-          sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`,
-        )
+        .where(sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`)
         .executeTakeFirst();
     }
 
@@ -332,16 +297,11 @@ async getTheme(userId: number): Promise<string | undefined> {
             feature_flags: sql`array_append(${sql.ref('feature_flags')}, ${sql.val(flagName)})`,
           })
           .where('user_id', 'in', selectedUserIds)
-          .where(
-            sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`,
-          )
+          .where(sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`)
           .executeTakeFirst();
       }
     });
 
     return { totalUsers, selectedUsers: selectedUserIds.length };
   },
-
-
 };
-

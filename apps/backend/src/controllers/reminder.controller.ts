@@ -1,10 +1,15 @@
 import { Request, Response } from 'express';
 import { ReminderModel } from '../models/reminder.model';
-import { CreateReminderInput, UpdateReminderInput, SchedulePreviewInput } from '../validators/reminder.validator';
+import {
+  CreateReminderInput,
+  UpdateReminderInput,
+  SchedulePreviewInput,
+} from '../validators/reminder.validator';
 import { UserCategoryScoreModel } from '../models/user-category-score.model';
+import type { Reminder } from '../types/database.types';
 
 // --- Utility helpers ---
-const handleError = (res: Response, message: string, error?: any, status = 500) => {
+const handleError = (res: Response, message: string, error?: unknown, status = 500) => {
   console.error(message, error);
   return res.status(status).json({ status: 'error', message });
 };
@@ -18,7 +23,11 @@ const requireAuth = (req: Request, res: Response): number | undefined => {
   return userId;
 };
 
-const verifyOwnership = (res: Response, reminder: any, userId: number): boolean => {
+const verifyOwnership = (
+  res: Response,
+  reminder: Reminder | undefined,
+  userId: number,
+): boolean => {
   if (!reminder) {
     res.status(404).json({ status: 'error', message: 'Reminder not found' });
     return false;
@@ -45,7 +54,13 @@ const validateFutureTime = (res: Response, time: string | Date): boolean => {
 };
 
 const DAY_MAP: Record<string, number> = {
-  Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
 };
 
 // --- Controller ---
@@ -228,7 +243,8 @@ export const ReminderController = {
         const dayOfWeek = DAY_MAP[dayStr] ?? 0;
 
         // Check if this day is scheduled
-        const isDayActive = !schedule_days || schedule_days.length === 0 || schedule_days.includes(dayOfWeek);
+        const isDayActive =
+          !schedule_days || schedule_days.length === 0 || schedule_days.includes(dayOfWeek);
 
         if (isDayActive) {
           const dateFormatter = new Intl.DateTimeFormat('en-US', {
@@ -267,9 +283,24 @@ export const ReminderController = {
     try {
       const suggestions = {
         templates: [
-          { name: 'Morning', icon: 'sunny-outline', times: ['07:00'], description: 'Start your day mindfully' },
-          { name: 'Lunch', icon: 'restaurant-outline', times: ['12:00'], description: 'Midday mindfulness break' },
-          { name: 'Bedtime', icon: 'moon-outline', times: ['22:00'], description: 'End your day with intention' },
+          {
+            name: 'Morning',
+            icon: 'sunny-outline',
+            times: ['07:00'],
+            description: 'Start your day mindfully',
+          },
+          {
+            name: 'Lunch',
+            icon: 'restaurant-outline',
+            times: ['12:00'],
+            description: 'Midday mindfulness break',
+          },
+          {
+            name: 'Bedtime',
+            icon: 'moon-outline',
+            times: ['22:00'],
+            description: 'End your day with intention',
+          },
         ],
         recommended_times: ['07:00', '12:00', '18:00', '22:00'],
         day_presets: [

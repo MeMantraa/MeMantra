@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import { CollectionModel } from '../models/collection.model';
 import { CreateCollectionInput, UpdateCollectionInput } from '../validators/collection.validator';
+import type { Collection } from '../types/database.types';
 
 // --- Utility helpers ---
-const handleError = (res: Response, message: string, error?: any, status = 500) => {
+const handleError = (res: Response, message: string, error?: unknown, status = 500) => {
   console.error(message, error);
   return res.status(status).json({ status: 'error', message });
 };
@@ -22,8 +23,8 @@ const requireAuth = (req: Request, res: Response): number | undefined => {
 
 const verifyOwnership = (
   res: Response,
-  collection: any,
-  userId: number
+  collection: Collection | undefined,
+  userId: number,
 ): boolean => {
   if (!collection) {
     res.status(404).json({
@@ -99,7 +100,7 @@ export const CollectionController = {
         userId,
         data.name,
         data.description,
-        data.icon 
+        data.icon,
       );
 
       return res.status(201).json({
@@ -124,10 +125,7 @@ export const CollectionController = {
 
       if (!verifyOwnership(res, existingCollection, userId)) return;
 
-      const updatedCollection = await CollectionModel.update(
-        Number(id),
-        updateData
-      );
+      const updatedCollection = await CollectionModel.update(Number(id), updateData);
 
       return res.status(200).json({
         status: 'success',
@@ -173,10 +171,7 @@ export const CollectionController = {
       if (!verifyOwnership(res, collection, userId)) return;
 
       // CRITICAL: Check if mantra is already in collection BEFORE trying to insert
-      const exists = await CollectionModel.isMantraInCollection(
-        Number(id),
-        Number(mantraId)
-      );
+      const exists = await CollectionModel.isMantraInCollection(Number(id), Number(mantraId));
 
       if (exists) {
         return res.status(200).json({
@@ -197,7 +192,8 @@ export const CollectionController = {
       // Handle duplicate key error gracefully (backup check)
       if (error && typeof error === 'object' && 'code' in error) {
         const pgError = error as { code: string };
-        if (pgError.code === '23505') { // PostgreSQL unique violation
+        if (pgError.code === '23505') {
+          // PostgreSQL unique violation
           return res.status(200).json({
             status: 'success',
             message: 'Mantra already in collection',

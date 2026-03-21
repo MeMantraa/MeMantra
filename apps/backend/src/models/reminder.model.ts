@@ -6,20 +6,14 @@ import { Reminder, NewReminder, ReminderUpdate } from '../types/database.types';
  * Matches legacy time-based reminders that are due OR routine reminders
  * (whose time/day matching is handled by the scheduler).
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 function buildDueReminderFilter(eb: any, nowIso: string) {
   return eb.or([
     eb.and([
       eb('Reminder.time', '<=', nowIso),
       eb.or([
-        eb.and([
-          eb('Reminder.frequency', '=', 'once'),
-          eb('Reminder.last_sent_at', 'is', null),
-        ]),
-        eb.and([
-          eb('Reminder.frequency', '!=', 'once'),
-          eb('Reminder.frequency', '!=', 'routine'),
-        ]),
+        eb.and([eb('Reminder.frequency', '=', 'once'), eb('Reminder.last_sent_at', 'is', null)]),
+        eb.and([eb('Reminder.frequency', '!=', 'once'), eb('Reminder.frequency', '!=', 'routine')]),
       ]),
     ]),
     eb('Reminder.frequency', '=', 'routine'),
@@ -58,7 +52,9 @@ export const ReminderModel = {
   },
 
   // Get all reminders for a user with linked mantra/collection names
-  async findByUserIdWithNames(userId: number): Promise<Array<Reminder & { mantra_title: string | null; collection_name: string | null }>> {
+  async findByUserIdWithNames(
+    userId: number,
+  ): Promise<Array<Reminder & { mantra_title: string | null; collection_name: string | null }>> {
     return await db
       .selectFrom('Reminder')
       .leftJoin('Mantra', 'Mantra.mantra_id', 'Reminder.mantra_id')
@@ -168,10 +164,7 @@ export const ReminderModel = {
 
   // Delete all reminders for a user
   async deleteByUserId(userId: number): Promise<number> {
-    const result = await db
-      .deleteFrom('Reminder')
-      .where('user_id', '=', userId)
-      .executeTakeFirst();
+    const result = await db.deleteFrom('Reminder').where('user_id', '=', userId).executeTakeFirst();
 
     return Number(result.numDeletedRows);
   },
@@ -234,13 +227,10 @@ export const ReminderModel = {
       .where((eb) =>
         eb.or([
           // One-time reminders that haven't been sent
-          eb.and([
-            eb('frequency', '=', 'once'),
-            eb('last_sent_at', 'is', null),
-          ]),
+          eb.and([eb('frequency', '=', 'once'), eb('last_sent_at', 'is', null)]),
           // Recurring reminders - we'll filter further in the service
           eb('frequency', '!=', 'once'),
-        ])
+        ]),
       )
       .selectAll()
       .orderBy('time', 'asc')
@@ -276,12 +266,15 @@ export const ReminderModel = {
   /**
    * Get reminder with user and mantra details for notification sending
    */
-  async findByIdWithDetails(reminderId: number): Promise<{
-    reminder: Reminder;
-    user_device_token: string | null;
-    mantra_title: string | null;
-    mantra_key_takeaway: string | null;
-  } | undefined> {
+  async findByIdWithDetails(reminderId: number): Promise<
+    | {
+        reminder: Reminder;
+        user_device_token: string | null;
+        mantra_title: string | null;
+        mantra_key_takeaway: string | null;
+      }
+    | undefined
+  > {
     const result = await db
       .selectFrom('Reminder')
       .innerJoin('User', 'User.user_id', 'Reminder.user_id')
@@ -332,21 +325,23 @@ export const ReminderModel = {
    * This is an optimized query that fetches everything needed to send notifications
    * Only returns mantra-based reminders (collection_id is null)
    */
-  async findDueRemindersWithDetails(): Promise<Array<{
-    reminder_id: number;
-    user_id: number | null;
-    mantra_id: number | null;
-    time: string | null;
-    frequency: string | null;
-    status: string | null;
-    last_sent_at: string | null;
-    user_device_token: string | null;
-    mantra_title: string | null;
-    mantra_key_takeaway: string | null;
-    schedule_times: string[] | null;
-    schedule_days: number[] | null;
-    timezone: string | null;
-  }>> {
+  async findDueRemindersWithDetails(): Promise<
+    Array<{
+      reminder_id: number;
+      user_id: number | null;
+      mantra_id: number | null;
+      time: string | null;
+      frequency: string | null;
+      status: string | null;
+      last_sent_at: string | null;
+      user_device_token: string | null;
+      mantra_title: string | null;
+      mantra_key_takeaway: string | null;
+      schedule_times: string[] | null;
+      schedule_days: number[] | null;
+      timezone: string | null;
+    }>
+  > {
     const now = new Date();
 
     return await db
@@ -379,21 +374,23 @@ export const ReminderModel = {
    * Get all due collection reminders with user and collection details
    * This is an optimized query for collection-based reminders
    */
-  async findDueCollectionRemindersWithDetails(): Promise<Array<{
-    reminder_id: number;
-    user_id: number | null;
-    collection_id: number | null;
-    time: string | null;
-    frequency: string | null;
-    status: string | null;
-    last_sent_at: string | null;
-    user_device_token: string | null;
-    collection_name: string | null;
-    collection_description: string | null;
-    schedule_times: string[] | null;
-    schedule_days: number[] | null;
-    timezone: string | null;
-  }>> {
+  async findDueCollectionRemindersWithDetails(): Promise<
+    Array<{
+      reminder_id: number;
+      user_id: number | null;
+      collection_id: number | null;
+      time: string | null;
+      frequency: string | null;
+      status: string | null;
+      last_sent_at: string | null;
+      user_device_token: string | null;
+      collection_name: string | null;
+      collection_description: string | null;
+      schedule_times: string[] | null;
+      schedule_days: number[] | null;
+      timezone: string | null;
+    }>
+  > {
     const now = new Date();
 
     return await db
@@ -453,4 +450,3 @@ export const ReminderModel = {
     return Number(result.numDeletedRows);
   },
 };
-

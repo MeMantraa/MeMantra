@@ -5,7 +5,9 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const THEME_STORAGE_KEY = '@app_theme';
 
-export const logoutUser = async (navigation: any) => {
+export const logoutUser = async (navigation: {
+  reset: (state: { index: number; routes: { name: string }[] }) => void;
+}) => {
   try {
     // Unregister device token from backend before clearing auth
     await apiClient
