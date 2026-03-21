@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
-import HomeScreen from '../screens/homeScreen';
-import AdminScreen from '../screens/adminScreen';
-import CollectionsScreen from '../screens/collectionScreen';
-import ChatScreen from '../screens/chatScreen';
+import HomeScreen from '../screens/HomeScreen';
+import AdminScreen from '../screens/AdminScreen';
+import CollectionsScreen from '../screens/CollectionScreen';
+import ChatScreen from '../screens/ChatScreen';
 import JournalScreen from '../screens/JournalScreen';
 import { storage } from '../utils/storage';
 import { isAdminEmail } from '../utils/admin';

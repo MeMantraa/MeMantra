@@ -1,6 +1,6 @@
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert } from 'react-native';
-import HomeScreen from '../../screens/homeScreen';
+import HomeScreen from '../../screens/HomeScreen';
 import { mantraService } from '../../services/mantra.service';
 import { collectionService } from '../../services/collection.service';
 import { categoryService } from '../../services/category.service';
@@ -1403,7 +1403,7 @@ describe('HomeScreen - Full Coverage', () => {
           'New Test Collection',
           undefined,
           'token',
-          undefined
+          undefined,
         );
       },
       { timeout: 10000 },

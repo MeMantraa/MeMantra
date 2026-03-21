@@ -11,7 +11,7 @@ import { mantraService, Mantra } from '../services/mantra.service';
 import { navigateFromOutside, isNavigationReady } from '../services/api.config';
 
 // Import screens
-import Login from '../screens/login';
+import Login from '../screens/LoginScreen';
 import SignUpEmailScreen from '../screens/SignUpEmailScreen';
 import CompleteSignUpScreen from '../screens/CompleteSignUpScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -19,14 +19,14 @@ import BottomTabNavigator from '../components/bottomTabNavigator';
 import UpdateEmailScreen from '../screens/UpdateEmailScreen';
 import UpdatePasswordScreen from '../screens/UpdatePasswordScreen';
 import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
-import FocusScreen from '../screens/focusScreen';
+import FocusScreen from '../screens/FocusScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import VerifyCodeScreen from '../screens/VerifyCodeScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
-import ConversationScreen from '../screens/conversationScreen';
+import ConversationScreen from '../screens/ConversationScreen';
 import NewConversationScreen from '../screens/NewConversationScreen';
 import ShareMantraScreen from '../screens/ShareMantraScreen';
-import BookmarkScreen from '../screens/bookmarkScreen';
+import BookmarkScreen from '../screens/BookmarkScreen';
 import LikedScreen from '../screens/LikedScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import JournalEditorScreen from '../screens/JournalEditorScreen';
