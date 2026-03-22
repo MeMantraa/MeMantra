@@ -149,7 +149,9 @@ export const JournalController = {
 
       // Update algorithm: +2 points for all categories of the mantra
       if (journalData.mantra_id) {
-        await UserCategoryScoreModel.addScoreForMantra(userId, journalData.mantra_id, 2).catch(() => {});
+        await UserCategoryScoreModel.addScoreForMantra(userId, journalData.mantra_id, 2).catch((err) => {
+          console.error(`Failed to update category score for user ${userId}, mantra ${journalData.mantra_id}:`, err);
+        });
       }
 
       return res.status(201).json({

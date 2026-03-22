@@ -48,9 +48,13 @@ export const RatingController = {
       // Update algorithm: add  (new - old) points for all categories
       const delta = newPoints - oldPoints;
       if (delta > 0) {
-        await UserCategoryScoreModel.addScoreForMantra(userId, mantra_id, delta).catch(() => {});
+        await UserCategoryScoreModel.addScoreForMantra(userId, mantra_id, delta).catch((err) => {
+          console.error(`Failed to update category score for user ${userId}, mantra ${mantra_id}:`, err);
+        });
       } else if (delta < 0) {
-        await UserCategoryScoreModel.removeScoreForMantra(userId, mantra_id, Math.abs(delta)).catch(() => {});
+        await UserCategoryScoreModel.removeScoreForMantra(userId, mantra_id, Math.abs(delta)).catch((err) => {
+          console.error(`Failed to remove category score for user ${userId}, mantra ${mantra_id}:`, err);
+        });
       }
 
       return res.status(200).json({
