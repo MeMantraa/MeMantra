@@ -1,11 +1,33 @@
-# apps/backend/dockerfile
-FROM node:22-bookworm-slim
+FROM node:22-bookworm-slim AS base
 
-# Install pnpm globally
-RUN npm i -g pnpm@9.15.9
+ENV PNPM_HOME=/pnpm
+ENV PATH=$PNPM_HOME:$PATH
 
-# Work from backend app directory (code is bind-mounted at runtime)
+RUN corepack enable && corepack prepare pnpm@9.15.9 --activate
+
+FROM base AS dev
 WORKDIR /app/apps/backend
 
+FROM base AS build
+WORKDIR /app
+
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
+COPY apps/backend/package.json apps/backend/package.json
+
+RUN pnpm install --frozen-lockfile
+
+COPY apps/backend apps/backend
+
+RUN pnpm --filter backend build
+RUN pnpm deploy --filter backend --prod /prod/backend
+
+FROM node:22-bookworm-slim AS runtime
+ENV NODE_ENV=production
+ENV PORT=3000
+WORKDIR /app
+
+COPY --from=build /prod/backend ./
+
 EXPOSE 3000
-CMD ["pnpm", "run", "dev"]
+
+CMD ["node", "dist/index.js"]
