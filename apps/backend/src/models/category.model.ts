@@ -24,11 +24,7 @@ export const CategoryModel = {
 
   // Get all categories
   async findAll(): Promise<Category[]> {
-    return await db
-      .selectFrom('Category')
-      .selectAll()
-      .orderBy('name', 'asc')
-      .execute();
+    return await db.selectFrom('Category').selectAll().orderBy('name', 'asc').execute();
   },
 
   // Get all active categories only
@@ -54,11 +50,7 @@ export const CategoryModel = {
 
   // Find category by name
   async findByName(name: string): Promise<Category | undefined> {
-    return await db
-      .selectFrom('Category')
-      .where('name', '=', name)
-      .selectAll()
-      .executeTakeFirst();
+    return await db.selectFrom('Category').where('name', '=', name).selectAll().executeTakeFirst();
   },
 
   // Link a mantra to a category (many-to-many relationship)
@@ -109,23 +101,29 @@ export const CategoryModel = {
   },
 
   // Get categories for multiple mantras in a single query (avoids N+1)
-  async getCategoriesForMantras(mantraIds: number[]): Promise<Array<{ mantra_id: number; category_id: number; name: string }>> {
+  async getCategoriesForMantras(
+    mantraIds: number[],
+  ): Promise<Array<{ mantra_id: number; category_id: number; name: string }>> {
     if (mantraIds.length === 0) return [];
 
     return await db
       .selectFrom('MantraCategory')
       .innerJoin('Category', 'Category.category_id', 'MantraCategory.category_id')
       .where('MantraCategory.mantra_id', 'in', mantraIds)
-      .select([
-        'MantraCategory.mantra_id',
-        'Category.category_id',
-        'Category.name',
-      ])
+      .select(['MantraCategory.mantra_id', 'Category.category_id', 'Category.name'])
       .execute();
   },
 
   // Update category details
-  async update(categoryId: number, updates: Partial<Pick<Category, 'name' | 'description' | 'category_type' | 'parent_id' | 'image_url' | 'is_active'>>): Promise<Category | undefined> {
+  async update(
+    categoryId: number,
+    updates: Partial<
+      Pick<
+        Category,
+        'name' | 'description' | 'category_type' | 'parent_id' | 'image_url' | 'is_active'
+      >
+    >,
+  ): Promise<Category | undefined> {
     return await db
       .updateTable('Category')
       .set(updates)
@@ -188,4 +186,3 @@ export const CategoryModel = {
       .execute();
   },
 };
-

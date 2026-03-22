@@ -139,10 +139,7 @@ export const RecommendationNotificationService = {
    * @param userId - The user's ID (used to run the recommendation engine)
    * @param deviceToken - The user's Expo push token
    */
-  async sendToUser(
-    userId: number,
-    deviceToken: string,
-  ): Promise<RecommendationNotificationResult> {
+  async sendToUser(userId: number, deviceToken: string): Promise<RecommendationNotificationResult> {
     try {
       const recommendations = await RecommendationEngine.generateRecommendations(userId, {
         limit: 1,

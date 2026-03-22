@@ -50,7 +50,7 @@ export const NotificationService = {
    * @returns Response from Expo Push API
    */
   async sendPushNotification(
-    messages: ExpoPushMessage | ExpoPushMessage[]
+    messages: ExpoPushMessage | ExpoPushMessage[],
   ): Promise<ExpoPushResponse> {
     try {
       const messagesArray = Array.isArray(messages) ? messages : [messages];
@@ -65,13 +65,9 @@ export const NotificationService = {
         });
       });
 
-      const response = await axios.post<ExpoPushResponse>(
-        EXPO_PUSH_URL,
-        messagesArray,
-        {
-          headers: getExpoPushHeaders(),
-        }
-      );
+      const response = await axios.post<ExpoPushResponse>(EXPO_PUSH_URL, messagesArray, {
+        headers: getExpoPushHeaders(),
+      });
 
       // Fire-and-forget: clean up invalid tokens
       this.handleTicketErrors(response.data.data, messagesArray).catch(() => {});
@@ -94,7 +90,7 @@ export const NotificationService = {
     deviceToken: string,
     title: string,
     body: string,
-    data?: object
+    data?: object,
   ): Promise<ExpoPushResponse> {
     const message: ExpoPushMessage = {
       to: deviceToken,
@@ -120,7 +116,7 @@ export const NotificationService = {
     deviceTokens: string[],
     title: string,
     body: string,
-    data?: object
+    data?: object,
   ): Promise<ExpoPushResponse> {
     const messages: ExpoPushMessage[] = deviceTokens.map((token) => ({
       to: token,
@@ -147,7 +143,7 @@ export const NotificationService = {
     deviceToken: string,
     mantraText: string,
     reminderId: number,
-    mantraId?: number
+    mantraId?: number,
   ): Promise<ExpoPushResponse> {
     const title = 'Time for your mantra';
     const body = mantraText.length > 100 ? `${mantraText.substring(0, 97)}...` : mantraText;
@@ -174,7 +170,7 @@ export const NotificationService = {
     mantraText: string,
     reminderId: number,
     mantraId?: number,
-    options?: Partial<NotificationContentOptions>
+    options?: Partial<NotificationContentOptions>,
   ): Promise<ExpoPushResponse> {
     // Generate notification content using templates
     const { title, body } = generateNotificationContent({
@@ -207,7 +203,7 @@ export const NotificationService = {
     reminderId: number,
     collectionId: number,
     mantraCount?: number,
-    options?: Partial<NotificationContentOptions>
+    options?: Partial<NotificationContentOptions>,
   ): Promise<ExpoPushResponse> {
     // Generate notification content with collection context
     const collectionText = mantraCount
@@ -243,7 +239,7 @@ export const NotificationService = {
       collectionName?: string;
       categoryName?: string;
       ctaStyle?: CTAStyle;
-    }>
+    }>,
   ): Promise<ExpoPushResponse> {
     const messages: ExpoPushMessage[] = notifications.map((notif) => {
       const { title, body } = generateNotificationContent({
@@ -287,25 +283,17 @@ export const NotificationService = {
    * @param tickets - Ticket responses from Expo Push API
    * @param messages - The original messages that were sent (parallel array)
    */
-  async handleTicketErrors(
-    tickets: ExpoPushTicket[],
-    messages: ExpoPushMessage[]
-  ): Promise<void> {
+  async handleTicketErrors(tickets: ExpoPushTicket[], messages: ExpoPushMessage[]): Promise<void> {
     for (let i = 0; i < tickets.length; i++) {
       const ticket = tickets[i];
-      if (
-        ticket.status === 'error' &&
-        ticket.details?.error === 'DeviceNotRegistered'
-      ) {
+      if (ticket.status === 'error' && ticket.details?.error === 'DeviceNotRegistered') {
         const message = messages[i];
         const token = Array.isArray(message.to) ? message.to[0] : message.to;
         try {
           const user = await UserModel.findByDeviceToken(token);
           if (user) {
             await UserModel.clearDeviceToken(user.user_id);
-            console.log(
-              `Cleared stale device token for user ${user.user_id}`
-            );
+            console.log(`Cleared stale device token for user ${user.user_id}`);
           }
         } catch (err) {
           console.error('Error clearing stale device token:', err);
@@ -338,7 +326,7 @@ export const NotificationService = {
         { ids: receiptIds },
         {
           headers: getExpoPushHeaders(),
-        }
+        },
       );
 
       return response.data;

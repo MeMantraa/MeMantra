@@ -17,16 +17,12 @@ import { UserCategoryScore } from '../types/database.types';
  *   Journal    +2 for every category of the mantra
  */
 export const UserCategoryScoreModel = {
-  // CRUD operations for algorithm updates 
+  // CRUD operations for algorithm updates
 
   /**
    * Increment scores for all categories associated with a mantra.
    */
-  async addScoreForMantra(
-    userId: number,
-    mantraId: number,
-    points: number,
-  ): Promise<void> {
+  async addScoreForMantra(userId: number, mantraId: number, points: number): Promise<void> {
     // 1. Look up which categories the mantra belongs to
     const categories = await db
       .selectFrom('MantraCategory')
@@ -61,11 +57,7 @@ export const UserCategoryScoreModel = {
    * Subtract scores for all categories associated with a mantra (undo action).
    * Score never drops below 0.
    */
-  async removeScoreForMantra(
-    userId: number,
-    mantraId: number,
-    points: number,
-  ): Promise<void> {
+  async removeScoreForMantra(userId: number, mantraId: number, points: number): Promise<void> {
     const categories = await db
       .selectFrom('MantraCategory')
       .where('mantra_id', '=', mantraId)
@@ -105,9 +97,7 @@ export const UserCategoryScoreModel = {
   /**
    * Get category scores for a user enriched with category name and type.
    */
-  async getScoresForUserWithNames(
-    userId: number,
-  ): Promise<
+  async getScoresForUserWithNames(userId: number): Promise<
     Array<{
       category_id: number;
       name: string;
@@ -117,11 +107,7 @@ export const UserCategoryScoreModel = {
   > {
     return await db
       .selectFrom('UserCategoryScore')
-      .innerJoin(
-        'Category',
-        'Category.category_id',
-        'UserCategoryScore.category_id',
-      )
+      .innerJoin('Category', 'Category.category_id', 'UserCategoryScore.category_id')
       .where('UserCategoryScore.user_id', '=', userId)
       .select([
         'UserCategoryScore.category_id',
@@ -149,11 +135,7 @@ export const UserCategoryScoreModel = {
   > {
     return await db
       .selectFrom('UserCategoryScore')
-      .innerJoin(
-        'Category',
-        'Category.category_id',
-        'UserCategoryScore.category_id',
-      )
+      .innerJoin('Category', 'Category.category_id', 'UserCategoryScore.category_id')
       .where('UserCategoryScore.user_id', '=', userId)
       .where('UserCategoryScore.score', '>', 0)
       .select([
@@ -170,10 +152,7 @@ export const UserCategoryScoreModel = {
   /**
    * Get score for a specific user and category pair.
    */
-  async getScore(
-    userId: number,
-    categoryId: number,
-  ): Promise<number> {
+  async getScore(userId: number, categoryId: number): Promise<number> {
     const row = await db
       .selectFrom('UserCategoryScore')
       .where('user_id', '=', userId)
@@ -189,11 +168,7 @@ export const UserCategoryScoreModel = {
   /**
    * Set the score for a specific user + category directly.
    */
-  async setScore(
-    userId: number,
-    categoryId: number,
-    score: number,
-  ): Promise<UserCategoryScore> {
+  async setScore(userId: number, categoryId: number, score: number): Promise<UserCategoryScore> {
     const now = new Date().toISOString();
     const result = await db
       .insertInto('UserCategoryScore')
@@ -219,10 +194,7 @@ export const UserCategoryScoreModel = {
    * Reset all category scores for a user to 0.
    */
   async resetAllScores(userId: number): Promise<void> {
-    await db
-      .deleteFrom('UserCategoryScore')
-      .where('user_id', '=', userId)
-      .execute();
+    await db.deleteFrom('UserCategoryScore').where('user_id', '=', userId).execute();
   },
 
   /**

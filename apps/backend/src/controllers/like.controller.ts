@@ -70,7 +70,9 @@ export const LikeController = {
       await LikeModel.remove(userId, Number(mantraId));
 
       // Update algorithm: -3 points (undo like)
-      await UserCategoryScoreModel.removeScoreForMantra(userId, Number(mantraId), 3).catch(() => {});
+      await UserCategoryScoreModel.removeScoreForMantra(userId, Number(mantraId), 3).catch(
+        () => {},
+      );
 
       return res.status(200).json({
         status: 'success',

@@ -25,7 +25,7 @@ export const generateToken = (payload: TokenPayload): string => {
   const algorithm: Algorithm = 'HS256';
 
   const envExpires = process.env.JWT_EXPIRES_IN;
-  
+
   // Compute expiresIn in a separate statement to avoid nested ternary (SonarQube)
   let resolvedExpires: SignOptions['expiresIn'];
 

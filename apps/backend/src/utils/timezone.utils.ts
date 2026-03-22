@@ -1,14 +1,22 @@
 const DAY_MAP: Record<string, number> = {
-  Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
 };
 
 /**
  * Return the current hour, minute, and day-of-week in a given IANA timezone.
  * Uses Intl.DateTimeFormat — no external dependencies.
  */
-export function getCurrentTimeInTimezone(
-  timezone: string,
-): { hour: number; minute: number; dayOfWeek: number } {
+export function getCurrentTimeInTimezone(timezone: string): {
+  hour: number;
+  minute: number;
+  dayOfWeek: number;
+} {
   return getTimeInTimezone(new Date(), timezone);
 }
 
@@ -74,6 +82,7 @@ export function isSameWeekInTimezone(date1: Date, date2: Date, timezone: string)
   const startOfWeek1 = new Date(date1.getTime() - dow1 * 86400000);
   const startOfWeek2 = new Date(date2.getTime() - dow2 * 86400000);
 
-  return formatDateInTimezone(startOfWeek1, timezone) ===
-    formatDateInTimezone(startOfWeek2, timezone);
+  return (
+    formatDateInTimezone(startOfWeek1, timezone) === formatDateInTimezone(startOfWeek2, timezone)
+  );
 }

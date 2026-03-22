@@ -24,17 +24,17 @@ if (process.env.NODE_ENV !== 'test' && process.env.EMAIL_USER && process.env.EMA
   console.warn('Email credentials not configured. Password reset emails will not be sent.');
 }
 
-// Generate a random 6-digit code 
+// Generate a random 6-digit code
 export const generate6DigitCode = (): string => {
   const range = 900000; // 900000 possible values (100000 to 999999)
-  const maxAcceptable = Math.floor(0xFFFFFFFF / range) * range;
-  
+  const maxAcceptable = Math.floor(0xffffffff / range) * range;
+
   let randomNumber: number;
   do {
     const randomBytes = crypto.randomBytes(4);
     randomNumber = randomBytes.readUInt32BE(0);
   } while (randomNumber >= maxAcceptable);
-  
+
   const code = (randomNumber % range) + 100000;
   return code.toString();
 };

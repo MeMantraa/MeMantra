@@ -58,7 +58,7 @@ export const ThemeController = {
         });
       }
 
-      // Validate theme 
+      // Validate theme
       if (!VALID_THEMES.includes(theme)) {
         return res.status(400).json({
           status: 'error',

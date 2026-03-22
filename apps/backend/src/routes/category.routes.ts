@@ -18,19 +18,15 @@ router.get('/', CategoryController.getAllCategories);
 router.get(
   '/type/:type',
   validateRequest(categoryTypeSchema),
-  CategoryController.getCategoriesByType
+  CategoryController.getCategoriesByType,
 );
 
-router.get(
-  '/:id',
-  validateRequest(categoryIdSchema),
-  CategoryController.getCategoryById
-);
+router.get('/:id', validateRequest(categoryIdSchema), CategoryController.getCategoryById);
 
 router.get(
   '/:id/mantras',
   validateRequest(categoryIdSchema),
-  CategoryController.getMantrasInCategory
+  CategoryController.getMantrasInCategory,
 );
 
 // Protected routes (require authentication)
@@ -38,7 +34,7 @@ router.post(
   '/',
   authenticate,
   validateRequest(createCategorySchema),
-  CategoryController.createCategory
+  CategoryController.createCategory,
 );
 
 router.put(
@@ -46,28 +42,28 @@ router.put(
   authenticate,
   validateRequest(categoryIdSchema),
   validateRequest(updateCategorySchema),
-  CategoryController.updateCategory
+  CategoryController.updateCategory,
 );
 
 router.delete(
   '/:id',
   authenticate,
   validateRequest(categoryIdSchema),
-  CategoryController.deleteCategory
+  CategoryController.deleteCategory,
 );
 
 router.post(
   '/:id/mantras/:mantraId',
   authenticate,
   validateRequest(mantraCategorySchema),
-  CategoryController.addMantraToCategory
+  CategoryController.addMantraToCategory,
 );
 
 router.delete(
   '/:id/mantras/:mantraId',
   authenticate,
   validateRequest(mantraCategorySchema),
-  CategoryController.removeMantraFromCategory
+  CategoryController.removeMantraFromCategory,
 );
 
 export default router;

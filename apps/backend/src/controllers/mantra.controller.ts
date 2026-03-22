@@ -2,7 +2,11 @@ import { Request, Response } from 'express';
 import { MantraModel } from '../models/mantra.model';
 import { CollectionModel } from '../models/collection.model';
 import { CategoryModel } from '../models/category.model';
-import { CreateMantraInput, UpdateMantraInput, MantraQueryInput } from '../validators/mantra.validator';
+import {
+  CreateMantraInput,
+  UpdateMantraInput,
+  MantraQueryInput,
+} from '../validators/mantra.validator';
 import { db } from '../db';
 import { UserCategoryScoreModel } from '../models/user-category-score.model';
 import { LikeModel } from '../models/like.model';
@@ -247,36 +251,40 @@ export const MantraController = {
 
       if (userId) {
         const [liked, saved] = await Promise.all([
-          db
-            .selectFrom('Like')
-            .where('user_id', '=', userId)
-            .select('mantra_id')
-            .execute(),
+          db.selectFrom('Like').where('user_id', '=', userId).select('mantra_id').execute(),
           db
             .selectFrom('Collection')
-            .innerJoin('CollectionMantra', 'Collection.collection_id', 'CollectionMantra.collection_id')
+            .innerJoin(
+              'CollectionMantra',
+              'Collection.collection_id',
+              'CollectionMantra.collection_id',
+            )
             .where('Collection.user_id', '=', userId)
             .select('CollectionMantra.mantra_id')
             .execute(),
         ]);
-        likedMantraIds = liked.map(l => l.mantra_id).filter((id): id is number => id !== null);
-        savedMantraIds = [...new Set(saved.map(s => s.mantra_id).filter((id): id is number => id !== null))];
+        likedMantraIds = liked.map((l) => l.mantra_id).filter((id): id is number => id !== null);
+        savedMantraIds = [
+          ...new Set(saved.map((s) => s.mantra_id).filter((id): id is number => id !== null)),
+        ];
       }
 
       // Try personalised ordering when user is authenticated
       if (userId) {
         try {
-          const { RecommendationEngine } = await import('../services/recommendation-engine.service');
+          const { RecommendationEngine } = await import(
+            '../services/recommendation-engine.service'
+          );
           const recommendations = await RecommendationEngine.generateRecommendations(userId, {
             limit,
             mood,
           });
 
           if (recommendations.length > 0) {
-            const mantraIds = recommendations.map(rec => rec.mantra.mantra_id);
+            const mantraIds = recommendations.map((rec) => rec.mantra.mantra_id);
             const likeCounts = await LikeModel.getCountsByMantraIds(mantraIds);
 
-            const feedMantras = recommendations.map(rec => ({
+            const feedMantras = recommendations.map((rec) => ({
               ...rec.mantra,
               like_count: likeCounts.get(rec.mantra.mantra_id) ?? 0,
               isLiked: likedMantraIds.includes(rec.mantra.mantra_id),
@@ -299,7 +307,7 @@ export const MantraController = {
       // Fallback: non-personalised (popularity-based) feed
       const mantras = await MantraModel.findWithLikeCount(limit, offset);
 
-      const mantrasWithStatus = mantras.map(mantra => ({
+      const mantrasWithStatus = mantras.map((mantra) => ({
         ...mantra,
         isLiked: likedMantraIds.includes(mantra.mantra_id),
         isSaved: savedMantraIds.includes(mantra.mantra_id),
@@ -344,18 +352,18 @@ export const MantraController = {
 
       // 4. Find or create "Saved Mantras" collection (lazy creation)
       const allCollections = await CollectionModel.findByUserId(userId);
-      let savedCollection = allCollections.find(c => c.name === 'Saved Mantras');
+      let savedCollection = allCollections.find((c) => c.name === 'Saved Mantras');
 
       savedCollection ??= await CollectionModel.create(
         userId,
         'Saved Mantras',
-        'Your saved mantras'
+        'Your saved mantras',
       );
 
       // 5. Check if mantra is already saved (prevent duplicates)
       const isAlreadySaved = await CollectionModel.isMantraInCollection(
         savedCollection.collection_id,
-        mantraId
+        mantraId,
       );
 
       if (isAlreadySaved) {
@@ -366,11 +374,7 @@ export const MantraController = {
       }
 
       // 6. Add mantra to collection
-      await CollectionModel.addMantra(
-        savedCollection.collection_id,
-        mantraId,
-        userId
-      );
+      await CollectionModel.addMantra(savedCollection.collection_id, mantraId, userId);
 
       // Update algorithm: +3 points for all categories of this mantra
       await UserCategoryScoreModel.addScoreForMantra(userId, mantraId, 3).catch(() => {});
@@ -416,10 +420,7 @@ export const MantraController = {
       // 4. UPDATED: Remove mantra from ALL collections
       let removedCount = 0;
       for (const collection of allCollections) {
-        const removed = await CollectionModel.removeMantra(
-          collection.collection_id,
-          mantraId
-        );
+        const removed = await CollectionModel.removeMantra(collection.collection_id, mantraId);
         if (removed) {
           removedCount++;
         }
@@ -454,7 +455,7 @@ export const MantraController = {
   async getSavedMantras(req: Request, res: Response) {
     try {
       const userId = req.user?.userId;
-      
+
       if (!userId) {
         return res.status(401).json({
           status: 'error',
@@ -464,7 +465,7 @@ export const MantraController = {
 
       // Find user's "Saved Mantras" collection
       const allCollections = await CollectionModel.findByUserId(userId);
-      const savedCollection = allCollections.find(c => c.name === 'Saved Mantras');
+      const savedCollection = allCollections.find((c) => c.name === 'Saved Mantras');
 
       if (!savedCollection) {
         return res.status(200).json({
