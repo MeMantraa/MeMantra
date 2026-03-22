@@ -29,7 +29,9 @@ export const LikeController = {
       await LikeModel.create(userId, Number(mantraId));
 
       // Update algorithm: +3 points for all categories of this mantra
-      await UserCategoryScoreModel.addScoreForMantra(userId, Number(mantraId), 3).catch(() => {});
+      await UserCategoryScoreModel.addScoreForMantra(userId, Number(mantraId), 3).catch((err) => {
+        console.error(`Failed to update category score for user ${userId}, mantra ${mantraId}:`, err);
+      });
 
       return res.status(201).json({
         status: 'success',
@@ -70,7 +72,9 @@ export const LikeController = {
       await LikeModel.remove(userId, Number(mantraId));
 
       // Update algorithm: -3 points (undo like)
-      await UserCategoryScoreModel.removeScoreForMantra(userId, Number(mantraId), 3).catch(() => {});
+      await UserCategoryScoreModel.removeScoreForMantra(userId, Number(mantraId), 3).catch((err) => {
+        console.error(`Failed to remove category score for user ${userId}, mantra ${mantraId}:`, err);
+      });
 
       return res.status(200).json({
         status: 'success',
