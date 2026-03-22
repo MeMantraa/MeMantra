@@ -23,8 +23,9 @@ import CategoryForm from '../components/admin/CategoryForm';
 import CategoryList from '../components/admin/CategoryList';
 import AppText from '../components/UI/textWrapper';
 import { EngagementAnalytics, engagementService } from '../services/engagement.service';
+import FeatureFlagsPanel from '../components/admin/FeatureFlagsPanel';
 
-type AdminMode = 'mantras' | 'users' | 'categories' | 'analytics';
+type AdminMode = 'mantras' | 'users' | 'categories' | 'analytics' | 'features';
 type ActionMode = 'add' | 'manage';
 
 const AdminScreen: React.FC = () => {
@@ -43,6 +44,17 @@ const AdminScreen: React.FC = () => {
   const [editingMantra, setEditingMantra] = useState<Mantra | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+
+  const [featureFlags, setFeatureFlags] = useState<
+    Array<{ key: string; label: string; description?: string }>
+  >([]);
+  const [usersWithFlags, setUsersWithFlags] = useState<User[]>([]);
+  const [featuresLoading, setFeaturesLoading] = useState(false);
+  const [featureSubmitting, setFeatureSubmitting] = useState(false);
+  const [selectedFlagKey, setSelectedFlagKey] = useState<string>('');
+  const [selectedFeatureUserIds, setSelectedFeatureUserIds] = useState<number[]>([]);
+  const [featureUserSearchQuery, setFeatureUserSearchQuery] = useState('');
+  const [rolloutPercentage, setRolloutPercentage] = useState('10');
 
   // Category IDs selected for the current mantra being created/edited
   const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]);
@@ -80,12 +92,20 @@ const AdminScreen: React.FC = () => {
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
 
   useEffect(() => {
-    if (mode !== 'analytics') loadData();
+    if (mode === 'analytics') {
+      loadAnalytics();
+      return;
+    }
+    if (mode === 'features') {
+      loadFeatureFlagsData();
+      return;
+    }
+    loadData();
   }, [mode]);
 
   useEffect(() => {
     if (mode === 'analytics') loadAnalytics();
-  }, [mode, analyticsDays]);
+  }, [analyticsDays]);
 
   const loadAnalytics = async () => {
     setAnalyticsLoading(true);
@@ -165,6 +185,15 @@ const AdminScreen: React.FC = () => {
     setEditingUser(null);
     setUserSearchQuery('');
     setViewAllUsers(false);
+  };
+
+  const runWithSubmitting = async (action: () => Promise<void>) => {
+    setSubmitting(true);
+    try {
+      await action();
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleMantraFormChange = (field: string, value: string) => {
@@ -284,45 +313,43 @@ const AdminScreen: React.FC = () => {
       return;
     }
 
-    setSubmitting(true);
-    try {
-      const token = (await storage.getToken()) || 'mock-token';
-      const response = await userService.createUser(userForm, token);
+    await runWithSubmitting(async () => {
+      try {
+        const token = (await storage.getToken()) || 'mock-token';
+        const response = await userService.createUser(userForm, token);
 
-      if (response.status === 'success') {
-        setUsers([response.data.user, ...users]);
-        resetUserForm();
-        Alert.alert('Success', 'User created successfully');
+        if (response.status === 'success') {
+          setUsers([response.data.user, ...users]);
+          resetUserForm();
+          Alert.alert('Success', 'User created successfully');
+        }
+      } catch (error: any) {
+        Alert.alert('Error', error.response?.data?.message || 'Failed to create user');
       }
-    } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to create user');
-    } finally {
-      setSubmitting(false);
-    }
+    });
   };
 
   const handleUpdateUser = async () => {
     if (!editingUser) return;
 
-    setSubmitting(true);
-    try {
-      const token = (await storage.getToken()) || 'mock-token';
-      const payload: any = { username: userForm.username, email: userForm.email };
-      if (userForm.password) payload.password = userForm.password;
+    await runWithSubmitting(async () => {
+      try {
+        const token = (await storage.getToken()) || 'mock-token';
+        const payload: any = { username: userForm.username, email: userForm.email };
+        if (userForm.password) payload.password = userForm.password;
 
-      const response = await userService.updateUser(editingUser.user_id, payload, token);
+        const response = await userService.updateUser(editingUser.user_id, payload, token);
 
-      if (response.status === 'success') {
-        setUsers(users.map((u) => (u.user_id === editingUser.user_id ? response.data.user : u)));
-        resetUserForm();
-        setEditModalVisible(false);
-        Alert.alert('Success', 'User updated successfully');
+        if (response.status === 'success') {
+          setUsers(users.map((u) => (u.user_id === editingUser.user_id ? response.data.user : u)));
+          resetUserForm();
+          setEditModalVisible(false);
+          Alert.alert('Success', 'User updated successfully');
+        }
+      } catch (error: any) {
+        Alert.alert('Error', error.response?.data?.message || 'Failed to update user');
       }
-    } catch (error: any) {
-      Alert.alert('Error', error.response?.data?.message || 'Failed to update user');
-    } finally {
-      setSubmitting(false);
-    }
+    });
   };
 
   const handleDeleteUser = async (userId: number) => {
@@ -514,6 +541,230 @@ const AdminScreen: React.FC = () => {
     ]);
   };
 
+  /*
+    // ── Feature Flag Handlers ──
+  */
+
+  const loadFeatureFlagsData = async () => {
+    setFeaturesLoading(true);
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      const [flagsRes, usersRes] = await Promise.all([
+        userService.listFeatureFlags(token),
+        userService.getUsersWithFlags(token),
+      ]);
+      if (flagsRes.status === 'success') {
+        setFeatureFlags(flagsRes.data.flags);
+        if (!selectedFlagKey && flagsRes.data.flags.length > 0) {
+          setSelectedFlagKey(flagsRes.data.flags[0].key);
+        }
+      }
+      if (usersRes.status === 'success') {
+        setUsersWithFlags(usersRes.data.users);
+        setSelectedFeatureUserIds((prev) => {
+          const validIds = new Set(usersRes.data.users.map((u) => u.user_id));
+          return prev.filter((id) => validIds.has(id));
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load feature flags data:', error);
+      Alert.alert('Error', 'Failed to load feature flags data');
+    } finally {
+      setFeaturesLoading(false);
+    }
+  };
+
+  const handleSetUserFlag = async (userId: number, flag: string, enabled: boolean) => {
+    setFeatureSubmitting(true);
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      await userService.setUserFeatureFlag(userId, flag, enabled, token);
+      await loadFeatureFlagsData();
+    } catch (error: any) {
+      Alert.alert('Error', error?.response?.data?.message || 'Failed to update user feature flag');
+    } finally {
+      setFeatureSubmitting(false);
+    }
+  };
+
+  const handleToggleFeatureUserSelection = (userId: number) => {
+    setSelectedFeatureUserIds((prev) =>
+      prev.includes(userId) ? prev.filter((id) => id !== userId) : [...prev, userId],
+    );
+  };
+
+  const handleSelectAllFeatureUsers = (userIds: number[]) => {
+    setSelectedFeatureUserIds(userIds);
+  };
+
+  const handleApplyFlagToSelectedUsers = async (flag: string, enabled: boolean) => {
+    if (selectedFeatureUserIds.length === 0) {
+      Alert.alert('No users selected', 'Select at least one user first.');
+      return;
+    }
+
+    setFeatureSubmitting(true);
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      const results = await Promise.allSettled(
+        selectedFeatureUserIds.map((userId) =>
+          userService.setUserFeatureFlag(userId, flag, enabled, token),
+        ),
+      );
+
+      const failedCount = results.filter((result) => result.status === 'rejected').length;
+      await loadFeatureFlagsData();
+
+      if (failedCount > 0) {
+        Alert.alert('Partial success', `${failedCount} user update(s) failed.`);
+      } else {
+        Alert.alert('Success', `Updated ${selectedFeatureUserIds.length} selected user(s).`);
+      }
+    } catch (error: any) {
+      Alert.alert('Error', error?.response?.data?.message || 'Failed to update selected users');
+    } finally {
+      setFeatureSubmitting(false);
+    }
+  };
+
+  const handleSetFlagForAllUsers = async (flag: string, enabled: boolean) => {
+    Alert.alert(
+      enabled ? 'Enable for all users?' : 'Disable for all users?',
+      `This will ${enabled ? 'enable' : 'disable'} ${flag} for all users.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: enabled ? 'Enable All' : 'Disable All',
+          style: enabled ? 'default' : 'destructive',
+          onPress: () => {
+            void (async () => {
+              setFeatureSubmitting(true);
+              try {
+                const token = (await storage.getToken()) || 'mock-token';
+                await userService.setFeatureFlagForAllUsers(flag, enabled, token);
+                await loadFeatureFlagsData();
+              } catch (error: any) {
+                Alert.alert('Error', error?.response?.data?.message || 'Failed bulk update');
+              } finally {
+                setFeatureSubmitting(false);
+              }
+            })();
+          },
+        },
+      ],
+    );
+  };
+
+  const handleRollout = async (flag: string) => {
+    const pct = Number(rolloutPercentage);
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+      Alert.alert('Error', 'Rollout percentage must be a number between 0 and 100');
+      return;
+    }
+    setFeatureSubmitting(true);
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      await userService.rolloutFeatureFlagToPercentage(flag, pct, token);
+      await loadFeatureFlagsData();
+    } catch (error: any) {
+      Alert.alert('Error', error?.response?.data?.message || 'Failed rollout');
+    } finally {
+      setFeatureSubmitting(false);
+    }
+  };
+
+  const handleExactRollout = async (flag: string) => {
+    const pct = Number(rolloutPercentage);
+    if (!Number.isFinite(pct) || pct < 0 || pct > 100) {
+      Alert.alert('Error', 'Rollout percentage must be a number between 0 and 100');
+      return;
+    }
+
+    Alert.alert(
+      'Set exact rollout?',
+      `This may remove ${flag} from users outside the ${pct}% cohort.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Set Exact',
+          style: 'destructive',
+          onPress: () => {
+            void (async () => {
+              setFeatureSubmitting(true);
+              try {
+                const token = (await storage.getToken()) || 'mock-token';
+                await userService.setExactFeatureFlagRolloutToPercentage(flag, pct, token);
+                await loadFeatureFlagsData();
+              } catch (error: any) {
+                Alert.alert('Error', error?.response?.data?.message || 'Failed exact rollout');
+              } finally {
+                setFeatureSubmitting(false);
+              }
+            })();
+          },
+        },
+      ],
+    );
+  };
+
+  const formatPercentage = (value: number | null) =>
+    typeof value === 'number' ? `${value.toFixed(1)}%` : 'N/A';
+
+  const getEditModalTitle = () => {
+    if (mode === 'mantras') return 'Mantra';
+    if (mode === 'categories') return 'Category';
+    return 'User';
+  };
+
+  const renderEditForm = () => {
+    if (mode === 'mantras') {
+      return (
+        <MantraForm
+          formData={mantraForm}
+          onFormChange={handleMantraFormChange}
+          onSubmit={handleUpdateMantra}
+          submitting={submitting}
+          isEdit
+          categories={categories}
+          selectedCategoryIds={selectedCategoryIds}
+          onToggleCategory={handleToggleCategory}
+        />
+      );
+    }
+
+    if (mode === 'categories') {
+      return (
+        <CategoryForm
+          formData={categoryForm}
+          onFormChange={handleCategoryFormChange}
+          onSubmit={handleUpdateCategory}
+          submitting={submitting}
+          isEdit
+        />
+      );
+    }
+
+    return (
+      <UserForm
+        formData={userForm}
+        onFormChange={handleUserFormChange}
+        onSubmit={handleUpdateUser}
+        submitting={submitting}
+        isEdit
+      />
+    );
+  };
+
+  const categorySearch = categorySearchQuery.trim().toLowerCase();
+  const hasCategorySearch = categorySearch.length > 0;
+  const filteredCategories = hasCategorySearch
+    ? categories.filter(
+        (c) =>
+          c.name?.toLowerCase().includes(categorySearch) ||
+          c.description?.toLowerCase().includes(categorySearch),
+      )
+    : categories;
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -533,6 +784,7 @@ const AdminScreen: React.FC = () => {
               { key: 'categories', label: 'Categories' },
               { key: 'users', label: 'Users' },
               { key: 'analytics', label: 'Analytics' },
+              { key: 'features', label: 'Features' },
             ] as const
           ).map(({ key, label }) => (
             <TouchableOpacity
@@ -540,7 +792,7 @@ const AdminScreen: React.FC = () => {
               className="flex-1 rounded-full py-3"
               onPress={() => {
                 setMode(key);
-                if (key !== 'analytics') {
+                if (key !== 'analytics' && key !== 'features') {
                   setAction('add');
                   resetMantraForm();
                   resetUserForm();
@@ -561,7 +813,7 @@ const AdminScreen: React.FC = () => {
         </View>
 
         {/* Action Toggle: Add vs Manage (hidden for analytics) */}
-        {mode !== 'analytics' && (
+        {mode !== 'analytics' && mode !== 'features' && (
           <View
             className="flex-row p-1 rounded-full mb-6"
             style={{ backgroundColor: `${colors.primaryDark}33` }}
@@ -634,28 +886,13 @@ const AdminScreen: React.FC = () => {
               value={categorySearchQuery}
               onChangeText={setCategorySearchQuery}
             />
-
-            {categorySearchQuery.trim() !== '' ? (
-              <CategoryList
-                categories={categories.filter(
-                  (c) =>
-                    c.name?.toLowerCase().includes(categorySearchQuery.toLowerCase()) ||
-                    c.description?.toLowerCase().includes(categorySearchQuery.toLowerCase()),
-                )}
-                loading={loading}
-                deletingId={deletingId}
-                onEdit={openEditCategory}
-                onDelete={confirmDeleteCategory}
-              />
-            ) : (
-              <CategoryList
-                categories={categories}
-                loading={loading}
-                deletingId={deletingId}
-                onEdit={openEditCategory}
-                onDelete={confirmDeleteCategory}
-              />
-            )}
+            <CategoryList
+              categories={hasCategorySearch ? filteredCategories : categories}
+              loading={loading}
+              deletingId={deletingId}
+              onEdit={openEditCategory}
+              onDelete={confirmDeleteCategory}
+            />
           </View>
         )}
 
@@ -708,6 +945,45 @@ const AdminScreen: React.FC = () => {
           </View>
         )}
 
+        {/* Feature Flags */}
+        {mode === 'features' && (
+          <FeatureFlagsPanel
+            colors={colors}
+            loading={featuresLoading}
+            submitting={featureSubmitting}
+            flags={featureFlags}
+            selectedFlagKey={selectedFlagKey}
+            rolloutPercentage={rolloutPercentage}
+            userSearchQuery={featureUserSearchQuery}
+            users={usersWithFlags}
+            selectedUserIds={selectedFeatureUserIds}
+            onSelectFlag={setSelectedFlagKey}
+            onChangeRolloutPercentage={setRolloutPercentage}
+            onApplyRollout={(flagKey) => {
+              void handleRollout(flagKey);
+            }}
+            onApplyExactRollout={(flagKey) => {
+              void handleExactRollout(flagKey);
+            }}
+            onEnableAll={(flagKey) => {
+              void handleSetFlagForAllUsers(flagKey, true);
+            }}
+            onDisableAll={(flagKey) => {
+              void handleSetFlagForAllUsers(flagKey, false);
+            }}
+            onToggleUserFlag={(userId, flagKey, enabled) => {
+              void handleSetUserFlag(userId, flagKey, enabled);
+            }}
+            onToggleUserSelection={handleToggleFeatureUserSelection}
+            onSelectAllUsers={handleSelectAllFeatureUsers}
+            onClearUserSelection={() => setSelectedFeatureUserIds([])}
+            onApplySelectedUsers={(flagKey, enabled) => {
+              void handleApplyFlagToSelectedUsers(flagKey, enabled);
+            }}
+            onChangeUserSearchQuery={setFeatureUserSearchQuery}
+          />
+        )}
+
         {/* Analytics */}
         {mode === 'analytics' && (
           <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
@@ -735,148 +1011,162 @@ const AdminScreen: React.FC = () => {
               ))}
             </View>
 
-            {analyticsLoading ? (
-              <ActivityIndicator size="large" color={colors.secondary} style={{ marginTop: 40 }} />
-            ) : analytics ? (
-              <>
-                {/* Notification Effectiveness */}
-                <AppText className="text-white text-lg font-bold mb-3">
-                  Notification Effectiveness
-                </AppText>
-                <View className="flex-row flex-wrap gap-3 mb-6">
-                  {[
-                    { label: 'Sent', value: String(analytics.notification_effectiveness.sent) },
-                    { label: 'Taps', value: String(analytics.notification_effectiveness.taps) },
-                    {
-                      label: 'Tap-Through',
-                      value:
-                        analytics.notification_effectiveness.tap_through_rate_pct != null
-                          ? `${analytics.notification_effectiveness.tap_through_rate_pct.toFixed(1)}%`
-                          : 'N/A',
-                    },
-                    {
-                      label: 'Post-Tap Conv.',
-                      value:
-                        analytics.notification_effectiveness.post_tap_conversion_rate_pct != null
-                          ? `${analytics.notification_effectiveness.post_tap_conversion_rate_pct.toFixed(1)}%`
-                          : 'N/A',
-                    },
-                  ].map(({ label, value }) => (
-                    <View
-                      key={label}
-                      className="rounded-2xl p-4"
-                      style={{
-                        backgroundColor: `${colors.primaryDark}55`,
-                        minWidth: '45%',
-                        flex: 1,
-                      }}
-                    >
-                      <AppText className="text-white text-2xl font-bold">{value}</AppText>
-                      <AppText className="text-sm" style={{ color: colors.text }}>
-                        {label}
-                      </AppText>
-                    </View>
-                  ))}
-                </View>
+            {(() => {
+              if (analyticsLoading) {
+                return (
+                  <ActivityIndicator
+                    size="large"
+                    color={colors.secondary}
+                    style={{ marginTop: 40 }}
+                  />
+                );
+              }
 
-                {/* Taps by hour */}
-                {analytics.tap_by_hour.length > 0 && (
-                  <>
-                    <AppText className="text-white text-lg font-bold mb-3">
-                      Taps by Hour (UTC)
-                    </AppText>
+              if (!analytics) {
+                return (
+                  <AppText className="text-center mt-10" style={{ color: colors.text }}>
+                    No analytics data available.
+                  </AppText>
+                );
+              }
+
+              return (
+                <>
+                  {/* Notification Effectiveness */}
+                  <AppText className="text-white text-lg font-bold mb-3">
+                    Notification Effectiveness
+                  </AppText>
+                  <View className="flex-row flex-wrap gap-3 mb-6">
+                    {[
+                      { label: 'Sent', value: String(analytics.notification_effectiveness.sent) },
+                      { label: 'Taps', value: String(analytics.notification_effectiveness.taps) },
+                      {
+                        label: 'Tap-Through',
+                        value: formatPercentage(
+                          analytics.notification_effectiveness.tap_through_rate_pct,
+                        ),
+                      },
+                      {
+                        label: 'Post-Tap Conv.',
+                        value: formatPercentage(
+                          analytics.notification_effectiveness.post_tap_conversion_rate_pct,
+                        ),
+                      },
+                    ].map(({ label, value }) => (
+                      <View
+                        key={label}
+                        className="rounded-2xl p-4"
+                        style={{
+                          backgroundColor: `${colors.primaryDark}55`,
+                          minWidth: '45%',
+                          flex: 1,
+                        }}
+                      >
+                        <AppText className="text-white text-2xl font-bold">{value}</AppText>
+                        <AppText className="text-sm" style={{ color: colors.text }}>
+                          {label}
+                        </AppText>
+                      </View>
+                    ))}
+                  </View>
+
+                  {/* Taps by hour */}
+                  {analytics.tap_by_hour.length > 0 && (
+                    <>
+                      <AppText className="text-white text-lg font-bold mb-3">
+                        Taps by Hour (UTC)
+                      </AppText>
+                      <View
+                        className="mb-6 rounded-2xl p-4"
+                        style={{ backgroundColor: `${colors.primaryDark}55` }}
+                      >
+                        {(() => {
+                          const max = Math.max(...analytics.tap_by_hour.map((r) => r.count), 1);
+                          return analytics.tap_by_hour.map(({ hour, count }) => (
+                            <View key={hour} className="flex-row items-center mb-2">
+                              <AppText className="text-white w-8 text-xs">
+                                {String(hour).padStart(2, '0')}h
+                              </AppText>
+                              <View
+                                className="flex-1 mx-2 h-4 rounded-full"
+                                style={{ backgroundColor: `${colors.primaryDark}88` }}
+                              >
+                                <View
+                                  className="h-4 rounded-full"
+                                  style={{
+                                    width: `${(count / max) * 100}%`,
+                                    backgroundColor: colors.secondary,
+                                  }}
+                                />
+                              </View>
+                              <AppText className="text-white text-xs w-6 text-right">
+                                {count}
+                              </AppText>
+                            </View>
+                          ));
+                        })()}
+                      </View>
+                    </>
+                  )}
+
+                  {/* Adaptive Timing */}
+                  <AppText className="text-white text-lg font-bold mb-3">Adaptive Timing</AppText>
+                  <View className="flex-row gap-3 mb-6">
                     <View
-                      className="mb-6 rounded-2xl p-4"
+                      className="flex-1 rounded-2xl p-4"
                       style={{ backgroundColor: `${colors.primaryDark}55` }}
                     >
-                      {(() => {
-                        const max = Math.max(...analytics.tap_by_hour.map((r) => r.count), 1);
-                        return analytics.tap_by_hour.map(({ hour, count }) => (
-                          <View key={hour} className="flex-row items-center mb-2">
-                            <AppText className="text-white w-8 text-xs">
-                              {String(hour).padStart(2, '0')}h
-                            </AppText>
-                            <View
-                              className="flex-1 mx-2 h-4 rounded-full"
-                              style={{ backgroundColor: `${colors.primaryDark}88` }}
-                            >
-                              <View
-                                className="h-4 rounded-full"
-                                style={{
-                                  width: `${(count / max) * 100}%`,
-                                  backgroundColor: colors.secondary,
-                                }}
-                              />
-                            </View>
-                            <AppText className="text-white text-xs w-6 text-right">{count}</AppText>
-                          </View>
-                        ));
-                      })()}
+                      <AppText className="text-white text-2xl font-bold">
+                        {analytics.adaptive_timing.users_with_optimal_hour}
+                      </AppText>
+                      <AppText className="text-sm" style={{ color: colors.text }}>
+                        Personalised
+                      </AppText>
                     </View>
-                  </>
-                )}
+                    <View
+                      className="flex-1 rounded-2xl p-4"
+                      style={{ backgroundColor: `${colors.primaryDark}55` }}
+                    >
+                      <AppText className="text-white text-2xl font-bold">
+                        {analytics.adaptive_timing.users_using_default}
+                      </AppText>
+                      <AppText className="text-sm" style={{ color: colors.text }}>
+                        Default (9 AM)
+                      </AppText>
+                    </View>
+                  </View>
 
-                {/* Adaptive Timing */}
-                <AppText className="text-white text-lg font-bold mb-3">Adaptive Timing</AppText>
-                <View className="flex-row gap-3 mb-6">
+                  {/* Event counts */}
+                  <AppText className="text-white text-lg font-bold mb-3">Event Breakdown</AppText>
                   <View
-                    className="flex-1 rounded-2xl p-4"
+                    className="rounded-2xl p-4 mb-8"
                     style={{ backgroundColor: `${colors.primaryDark}55` }}
                   >
-                    <AppText className="text-white text-2xl font-bold">
-                      {analytics.adaptive_timing.users_with_optimal_hour}
-                    </AppText>
-                    <AppText className="text-sm" style={{ color: colors.text }}>
-                      Personalised
-                    </AppText>
+                    {Object.entries(analytics.event_counts).length === 0 ? (
+                      <AppText style={{ color: colors.text }}>
+                        No events recorded in this window.
+                      </AppText>
+                    ) : (
+                      Object.entries(analytics.event_counts)
+                        .sort(([, a], [, b]) => b - a)
+                        .map(([type, count]) => (
+                          <View
+                            key={type}
+                            className="flex-row justify-between py-2 border-b border-white/10"
+                          >
+                            <AppText className="text-white text-sm">
+                              {type.replaceAll('_', ' ')}
+                            </AppText>
+                            <AppText className="font-bold" style={{ color: colors.secondary }}>
+                              {count}
+                            </AppText>
+                          </View>
+                        ))
+                    )}
                   </View>
-                  <View
-                    className="flex-1 rounded-2xl p-4"
-                    style={{ backgroundColor: `${colors.primaryDark}55` }}
-                  >
-                    <AppText className="text-white text-2xl font-bold">
-                      {analytics.adaptive_timing.users_using_default}
-                    </AppText>
-                    <AppText className="text-sm" style={{ color: colors.text }}>
-                      Default (9 AM)
-                    </AppText>
-                  </View>
-                </View>
-
-                {/* Event counts */}
-                <AppText className="text-white text-lg font-bold mb-3">Event Breakdown</AppText>
-                <View
-                  className="rounded-2xl p-4 mb-8"
-                  style={{ backgroundColor: `${colors.primaryDark}55` }}
-                >
-                  {Object.entries(analytics.event_counts).length === 0 ? (
-                    <AppText style={{ color: colors.text }}>
-                      No events recorded in this window.
-                    </AppText>
-                  ) : (
-                    Object.entries(analytics.event_counts)
-                      .sort(([, a], [, b]) => b - a)
-                      .map(([type, count]) => (
-                        <View
-                          key={type}
-                          className="flex-row justify-between py-2 border-b border-white/10"
-                        >
-                          <AppText className="text-white text-sm">
-                            {type.replace(/_/g, ' ')}
-                          </AppText>
-                          <AppText className="font-bold" style={{ color: colors.secondary }}>
-                            {count}
-                          </AppText>
-                        </View>
-                      ))
-                  )}
-                </View>
-              </>
-            ) : (
-              <AppText className="text-center mt-10" style={{ color: colors.text }}>
-                No analytics data available.
-              </AppText>
-            )}
+                </>
+              );
+            })()}
           </ScrollView>
         )}
 
@@ -889,7 +1179,7 @@ const AdminScreen: React.FC = () => {
           <View className="flex-1 px-6 pt-16 pb-6" style={{ backgroundColor: colors.primary }}>
             <View className="flex-row justify-between items-center mb-6">
               <AppText className="text-white text-2xl font-bold">
-                Edit {mode === 'mantras' ? 'Mantra' : mode === 'categories' ? 'Category' : 'User'}
+                Edit {getEditModalTitle()}
               </AppText>
               <TouchableOpacity
                 onPress={() => {
@@ -903,34 +1193,7 @@ const AdminScreen: React.FC = () => {
               </TouchableOpacity>
             </View>
 
-            {mode === 'mantras' ? (
-              <MantraForm
-                formData={mantraForm}
-                onFormChange={handleMantraFormChange}
-                onSubmit={handleUpdateMantra}
-                submitting={submitting}
-                isEdit
-                categories={categories}
-                selectedCategoryIds={selectedCategoryIds}
-                onToggleCategory={handleToggleCategory}
-              />
-            ) : mode === 'categories' ? (
-              <CategoryForm
-                formData={categoryForm}
-                onFormChange={handleCategoryFormChange}
-                onSubmit={handleUpdateCategory}
-                submitting={submitting}
-                isEdit
-              />
-            ) : (
-              <UserForm
-                formData={userForm}
-                onFormChange={handleUserFormChange}
-                onSubmit={handleUpdateUser}
-                submitting={submitting}
-                isEdit
-              />
-            )}
+            {renderEditForm()}
           </View>
         </Modal>
       </View>

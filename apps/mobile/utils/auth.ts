@@ -1,11 +1,17 @@
 import { Alert } from 'react-native';
 import { storage } from './storage';
+import { apiClient } from '../services/api.config';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const THEME_STORAGE_KEY = '@app_theme';
 
 export const logoutUser = async (navigation: any) => {
   try {
+    // Unregister device token from backend before clearing auth
+    await apiClient
+      .post('/notifications/unregister-token', {})
+      .catch((err) => console.error('Failed to unregister device token:', err));
+
     // Remove theme
     await AsyncStorage.removeItem(THEME_STORAGE_KEY);
 

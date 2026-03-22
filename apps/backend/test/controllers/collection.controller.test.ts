@@ -218,7 +218,7 @@ describe('CollectionController', () => {
         message: 'Collection created successfully',
         data: { collection: createdCollection },
       });
-      expect(CollectionModel.create).toHaveBeenCalledWith(1, 'New Collection', 'Test');
+      expect(CollectionModel.create).toHaveBeenCalledWith(1, 'New Collection', 'Test', undefined);
     });
 
     it('should create collection without description', async () => {
@@ -237,7 +237,7 @@ describe('CollectionController', () => {
         message: 'Collection created successfully',
         data: { collection: createdCollection },
       });
-      expect(CollectionModel.create).toHaveBeenCalledWith(1, 'New Collection', undefined);
+      expect(CollectionModel.create).toHaveBeenCalledWith(1, 'New Collection', undefined, undefined);
     });
 
     it('should return 401 if not authenticated', async () => {

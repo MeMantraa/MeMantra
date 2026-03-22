@@ -129,7 +129,12 @@ export default function CollectionsScreen({ navigation }: any) {
         }}
         onPress={() => handleCollectionPress(item)}
       >
-        <Ionicons name="folder" size={40} color={colors.secondary} className="mb-2" />
+        <Ionicons 
+          name={(item.icon || 'folder') as any} 
+          size={40} 
+          color={colors.secondary} 
+          className="mb-2" 
+        />
         <AppText
           className="text-base font-bold text-center mb-1"
           style={{ color: colors.text }}

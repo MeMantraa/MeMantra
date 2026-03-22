@@ -1,196 +1,124 @@
-// ---- Mock Setup ----
-const INITIAL_USERS = [
-  {
-    user_id: 1,
-    username: 'alice',
-    email: 'alice@email.com',
-    auth_provider: 'local',
-    created_at: new Date().toISOString(),
-  },
-  {
-    user_id: 2,
-    username: 'bob',
-    email: 'bob@email.com',
-    auth_provider: 'local',
-    created_at: new Date().toISOString(),
-  },
-];
-
-let mockUserState: { users: typeof INITIAL_USERS };
-
-function resetUserState() {
-  mockUserState = {
-    users: INITIAL_USERS.map((u) => ({ ...u })),
-  };
-}
-
 jest.mock('../../services/api.config', () => ({
   apiClient: {
-    get: jest.fn((url: string) => {
-      const { users } = mockUserState;
-      if (url === '/users' || url === '/chat/users') {
-        return Promise.resolve({
-          data: {
-            status: 'success',
-            data: { users },
-          },
-        });
-      }
-      if (url.startsWith('/users/')) {
-        const id = Number(url.split('/').pop());
-        const user = users.find((u) => u.user_id === id);
-        if (user) {
-          return Promise.resolve({
-            data: {
-              status: 'success',
-              data: { user },
-            },
-          });
-        } else {
-          return Promise.resolve({
-            data: {
-              status: 'error',
-              message: 'User not found',
-              data: { user: null },
-            },
-          });
-        }
-      }
-      return Promise.resolve({ data: {} });
-    }),
-    post: jest.fn((url: string, body: any) => {
-      const { users } = mockUserState;
-      if (url === '/users') {
-        const nextId = users.length ? Math.max(...users.map((u) => u.user_id)) + 1 : 1;
-        const newUser = {
-          user_id: nextId,
-          username: body.username,
-          email: body.email,
-          created_at: new Date().toISOString(),
-          auth_provider: 'local',
-        };
-        mockUserState.users = [...users, newUser];
-        return Promise.resolve({
-          data: {
-            status: 'success',
-            data: { user: newUser },
-          },
-        });
-      }
-      return Promise.resolve({ data: {} });
-    }),
-    put: jest.fn((url: string, body: any) => {
-      const { users } = mockUserState;
-      if (url.startsWith('/users/')) {
-        const id = Number(url.split('/').pop());
-        let updatedUser = null;
-        mockUserState.users = users.map((u) => {
-          if (u.user_id === id) {
-            updatedUser = { ...u, ...body };
-            return updatedUser;
-          }
-          return u;
-        });
-        return Promise.resolve({
-          data: {
-            status: 'success',
-            data: { user: updatedUser },
-          },
-        });
-      }
-      return Promise.resolve({ data: {} });
-    }),
-    delete: jest.fn((url: string) => {
-      const { users } = mockUserState;
-      if (url.startsWith('/users/')) {
-        const id = Number(url.split('/').pop());
-        const exists = users.some((u) => u.user_id === id);
-        if (exists) {
-          mockUserState.users = users.filter((u) => u.user_id !== id);
-          return Promise.resolve({
-            data: {
-              status: 'success',
-              message: 'User deleted successfully',
-            },
-          });
-        } else {
-          return Promise.resolve({
-            data: {
-              status: 'error',
-              message: 'User not found',
-            },
-          });
-        }
-      }
-      return Promise.resolve({ data: {} });
-    }),
+    get: jest.fn(),
+    post: jest.fn(),
+    put: jest.fn(),
+    delete: jest.fn(),
   },
 }));
 
+import { apiClient } from '../../services/api.config';
 import { userService } from '../../services/user.service';
 
-describe('userService (mock implementation)', () => {
+describe('userService', () => {
   beforeEach(() => {
-    resetUserState();
-    jest.resetModules();
+    jest.clearAllMocks();
   });
 
   it('gets all users', async () => {
-    const response = await userService.getAllUsers('token');
-    expect(response.status).toBe('success');
-    expect(response.data.users).toBeInstanceOf(Array);
-    expect(response.data.users.length).toBe(2);
-    expect(response.data.users[0].username).toBe('alice');
-    expect(response.data.users[1].username).toBe('bob');
+    (apiClient.get as jest.Mock).mockResolvedValue({ data: { status: 'success' } });
+
+    await expect(userService.getAllUsers('token')).resolves.toEqual({ status: 'success' });
+    expect(apiClient.get).toHaveBeenCalledWith('/chat/users', {
+      headers: { Authorization: 'Bearer token' },
+    });
   });
 
-  it('gets user by ID', async () => {
-    const response = await userService.getUserById(1, 'token');
-    expect(response.status).toBe('success');
-    expect(response.data.user).toBeTruthy();
-    expect(response.data.user.username).toBe('alice');
+  it('gets a user by id', async () => {
+    (apiClient.get as jest.Mock).mockResolvedValue({ data: { status: 'success' } });
+
+    await userService.getUserById(4, 'token');
+    expect(apiClient.get).toHaveBeenCalledWith('/users/4', {
+      headers: { Authorization: 'Bearer token' },
+    });
   });
 
-  it('returns error for missing user', async () => {
-    const response = await userService.getUserById(99, 'token');
-    expect(response.status).toBe('error');
-    expect(response.message).toBe('User not found');
-    expect(response.data.user).toBeNull();
+  it('creates, updates, and deletes a user', async () => {
+    (apiClient.post as jest.Mock).mockResolvedValue({ data: { status: 'success' } });
+    (apiClient.put as jest.Mock).mockResolvedValue({ data: { status: 'success' } });
+    (apiClient.delete as jest.Mock).mockResolvedValue({ data: { status: 'success' } });
+
+    await userService.createUser(
+      { username: 'alice', email: 'a@example.com', password: 'pw' },
+      't',
+    );
+    await userService.updateUser(9, { username: 'bob' }, 't');
+    await userService.deleteUser(9, 't');
+
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/users',
+      { username: 'alice', email: 'a@example.com', password: 'pw' },
+      { headers: { Authorization: 'Bearer t' } },
+    );
+    expect(apiClient.put).toHaveBeenCalledWith(
+      '/users/9',
+      { username: 'bob' },
+      {
+        headers: { Authorization: 'Bearer t' },
+      },
+    );
+    expect(apiClient.delete).toHaveBeenCalledWith('/users/9', {
+      headers: { Authorization: 'Bearer t' },
+    });
   });
 
-  it('creates a new user', async () => {
-    const newUserData = { username: 'charlie', email: 'charlie@email.com', password: '1234' };
-    const response = await userService.createUser(newUserData, 'token');
-    expect(response.status).toBe('success');
-    expect(response.data.user).toBeTruthy();
-    expect(response.data.user.username).toBe('charlie');
+  it('gets and updates theme', async () => {
+    (apiClient.get as jest.Mock).mockResolvedValue({ data: { status: 'success' } });
+    (apiClient.put as jest.Mock).mockResolvedValue({ data: { status: 'success' } });
 
-    const allUsers = await userService.getAllUsers('token');
-    expect(allUsers.data.users.find((u) => u.username === 'charlie')).toBeTruthy();
+    await userService.getTheme('t');
+    await userService.updateTheme('dark', 't');
+
+    expect(apiClient.get).toHaveBeenCalledWith('/theme', {
+      headers: { Authorization: 'Bearer t' },
+    });
+    expect(apiClient.put).toHaveBeenCalledWith(
+      '/theme',
+      { theme: 'dark' },
+      { headers: { Authorization: 'Bearer t' } },
+    );
   });
 
-  it('updates an existing user', async () => {
-    const updatedData = { email: 'alice@newmail.com' };
-    const response = await userService.updateUser(1, updatedData, 'token');
-    expect(response.status).toBe('success');
-    expect(response.data.user.email).toBe('alice@newmail.com');
+  it('calls feature flag endpoints', async () => {
+    (apiClient.get as jest.Mock).mockResolvedValue({ data: { status: 'success' } });
+    (apiClient.post as jest.Mock).mockResolvedValue({ data: { status: 'success' } });
 
-    const checkUser = await userService.getUserById(1, 'token');
-    expect(checkUser.data.user.email).toBe('alice@newmail.com');
-  });
+    await userService.listFeatureFlags('t');
+    await userService.getUsersWithFlags('t');
+    await userService.setUserFeatureFlag(1, 'DARK_MODE', true, 't');
+    await userService.setFeatureFlagForAllUsers('DARK_MODE', false, 't');
+    await userService.rolloutFeatureFlagToPercentage('DARK_MODE', 40, 't');
+    await userService.setExactFeatureFlagRolloutToPercentage('DARK_MODE', 40, 't');
 
-  it('deletes an existing user', async () => {
-    const response = await userService.deleteUser(1, 'token');
-    expect(response.status).toBe('success');
-    expect(response.message).toBe('User deleted successfully');
-
-    const allUsers = await userService.getAllUsers('token');
-    expect(allUsers.data.users.find((u) => u.user_id === 1)).toBeUndefined();
-  });
-
-  it('returns error when deleting unknown user', async () => {
-    const response = await userService.deleteUser(99, 'token');
-    expect(response.status).toBe('error');
-    expect(response.message).toBe('User not found');
+    expect(apiClient.get).toHaveBeenNthCalledWith(1, '/users/feature-flags', {
+      headers: { Authorization: 'Bearer t' },
+    });
+    expect(apiClient.get).toHaveBeenNthCalledWith(2, '/users/feature-flags/users', {
+      headers: { Authorization: 'Bearer t' },
+    });
+    expect(apiClient.post).toHaveBeenNthCalledWith(
+      1,
+      '/users/feature-flags/DARK_MODE/users/1',
+      { enabled: true },
+      { headers: { Authorization: 'Bearer t' } },
+    );
+    expect(apiClient.post).toHaveBeenNthCalledWith(
+      2,
+      '/users/feature-flags/DARK_MODE/all',
+      { enabled: false },
+      { headers: { Authorization: 'Bearer t' } },
+    );
+    expect(apiClient.post).toHaveBeenNthCalledWith(
+      3,
+      '/users/feature-flags/DARK_MODE/rollout',
+      { percentage: 40 },
+      { headers: { Authorization: 'Bearer t' } },
+    );
+    expect(apiClient.post).toHaveBeenNthCalledWith(
+      4,
+      '/users/feature-flags/DARK_MODE/rollout/exact',
+      { percentage: 40 },
+      { headers: { Authorization: 'Bearer t' } },
+    );
   });
 });

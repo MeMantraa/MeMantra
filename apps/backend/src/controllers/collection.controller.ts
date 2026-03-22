@@ -89,7 +89,6 @@ export const CollectionController = {
     }
   },
 
-  // POST /api/collections
   async createCollection(req: Request, res: Response) {
     const userId = requireAuth(req, res);
     if (!userId) return;
@@ -99,7 +98,8 @@ export const CollectionController = {
       const newCollection = await CollectionModel.create(
         userId,
         data.name,
-        data.description
+        data.description,
+        data.icon 
       );
 
       return res.status(201).json({

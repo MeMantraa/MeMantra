@@ -2,6 +2,7 @@ import { db } from '../db';
 import bcrypt from 'bcryptjs';
 import { User, NewUser } from '../types/database.types';
 import { sql } from 'kysely';
+import { createHash } from 'node:crypto';
 
 interface CreateUserData {
   username: string;
@@ -9,6 +10,12 @@ interface CreateUserData {
   password: string;
   device_token?: string | null;
 }
+
+const getFeatureFlagRolloutScore = (userId: number, flagName: string): number => {
+  const digest = createHash('sha256').update(`${userId}:${flagName}`).digest('hex');
+  const value = Number.parseInt(digest.slice(0, 8), 16);
+  return value % 100;
+};
 
 export const UserModel = {
   async create(userData: CreateUserData): Promise<User> {
@@ -137,6 +144,22 @@ async getTheme(userId: number): Promise<string | undefined> {
   return user?.theme || 'default';
 }
 ,
+  async clearDeviceToken(userId: number): Promise<void> {
+    await db
+      .updateTable('User')
+      .set({ device_token: null })
+      .where('user_id', '=', userId)
+      .execute();
+  },
+
+  async findByDeviceToken(token: string): Promise<User | undefined> {
+    return db
+      .selectFrom('User')
+      .where('device_token', '=', token)
+      .selectAll()
+      .executeTakeFirst();
+  },
+
   async findAllWithDeviceTokens(): Promise<User[]> {
     return db
       .selectFrom('User')
@@ -215,6 +238,110 @@ async getTheme(userId: number): Promise<string | undefined> {
       .selectAll()
       .execute();
   },
+
+  //Set a flag to true for all users at once
+  async enableFlagForAllUsers(flagName: string): Promise<number> {
+    const result = await db
+      .updateTable('User')
+      .set({
+        feature_flags: sql`array_append(${sql.ref('feature_flags')}, ${sql.val(flagName)})`,
+      })
+      .where(
+        sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`,
+      )
+      .executeTakeFirst();
+
+    return Number(result.numUpdatedRows ?? 0);
+  },
+
+  //Set a flag to false for all users at once
+  async disableFlagForAllUsers(flagName: string): Promise<number> {
+    const result = await db
+      .updateTable('User')
+      .set({
+        feature_flags: sql`array_remove(${sql.ref('feature_flags')}, ${sql.val(flagName)})`,
+      })
+      .where(sql<boolean>`${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}]`)
+      .executeTakeFirst();
+
+    return Number(result.numUpdatedRows ?? 0);
+  },
+
+
+  // Expand a flag to a defined percentage of users without removing existing assignments.
+  async rolloutFlagToPercentage(
+    flagName: string,
+    percentage: number,
+  ): Promise<{ totalUsers: number; selectedUsers: number }> {
+    const users = await db.selectFrom('User').select('user_id').execute();
+
+    const totalUsers = users.length;
+    if (totalUsers === 0) {
+      return { totalUsers: 0, selectedUsers: 0 };
+    }
+
+    const selectedUserIds = users
+      .filter((u) => getFeatureFlagRolloutScore(u.user_id, flagName) < percentage)
+      .map((u) => u.user_id);
+
+    if (selectedUserIds.length > 0) {
+      await db
+        .updateTable('User')
+        .set({
+          feature_flags: sql`array_append(${sql.ref('feature_flags')}, ${sql.val(flagName)})`,
+        })
+        .where('user_id', 'in', selectedUserIds)
+        .where(
+          sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`,
+        )
+        .executeTakeFirst();
+    }
+
+    return { totalUsers, selectedUsers: selectedUserIds.length };
+  },
+
+  // Set an exact rollout percentage, removing the flag from users outside the selected cohort.
+  async setExactFlagRolloutToPercentage(
+    flagName: string,
+    percentage: number,
+  ): Promise<{ totalUsers: number; selectedUsers: number }> {
+    const users = await db.selectFrom('User').select('user_id').execute();
+
+    const totalUsers = users.length;
+    if (totalUsers === 0) {
+      return { totalUsers: 0, selectedUsers: 0 };
+    }
+
+    const selectedUserIds = users
+      .filter((u) => getFeatureFlagRolloutScore(u.user_id, flagName) < percentage)
+      .map((u) => u.user_id);
+
+    await db.transaction().execute(async (trx) => {
+      await trx
+        .updateTable('User')
+        .set({
+          feature_flags: sql`array_remove(${sql.ref('feature_flags')}, ${sql.val(flagName)})`,
+        })
+        .where(sql<boolean>`${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}]`)
+        .executeTakeFirst();
+
+      if (selectedUserIds.length > 0) {
+        await trx
+          .updateTable('User')
+          .set({
+            feature_flags: sql`array_append(${sql.ref('feature_flags')}, ${sql.val(flagName)})`,
+          })
+          .where('user_id', 'in', selectedUserIds)
+          .where(
+            sql<boolean>`NOT (${sql.ref('feature_flags')} @> ARRAY[${sql.val(flagName)}])`,
+          )
+          .executeTakeFirst();
+      }
+    });
+
+    return { totalUsers, selectedUsers: selectedUserIds.length };
+  },
+
 
   async updateProfilePhoto(userId: number, photoBase64: string): Promise<User | undefined> {
     return await db
