@@ -262,7 +262,7 @@ export const AuthController = {
       const hashed = await bcrypt.hash(password, 10);
       await UserModel.update(userId, { password_hash: hashed });
 
-      return res.json({
+      return res.status(200).json({
         status: 'success',
         message: 'Password updated',
       });
@@ -282,7 +282,7 @@ export const AuthController = {
 
       await UserModel.delete(userId);
 
-      return res.json({ status: 'success', message: 'Account deleted' });
+      return res.status(200).json({ status: 'success', message: 'Account deleted' });
     } catch (err) {
       console.error('Delete account error:', err);
       return res.status(500).json({ status: 'error', message: 'Failed to delete account' });
