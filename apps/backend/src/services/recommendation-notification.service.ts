@@ -116,7 +116,7 @@ export const RecommendationNotificationService = {
           await UserModel.update(user.user_id, {
             recommendation_notif_sent_at: new Date().toISOString(),
           }).catch((err) => {
-            console.error(`Failed to update recommendation_notif_sent_at for user ${user.user_id}:`, err);
+            console.error('Failed to update recommendation_notif_sent_at for user:', user.user_id, err);
           });
         }
 
@@ -176,7 +176,7 @@ export const RecommendationNotificationService = {
       );
       // Track the send for tap-through rate analytics (fire-and-forget)
       EngagementModel.create(userId, 'notification_sent').catch((err) => {
-        console.error(`Failed to log engagement event for user ${userId}:`, err);
+        console.error('Failed to log engagement event for user:', userId, err);
       });
       return { userId, success: true };
     } catch (error) {

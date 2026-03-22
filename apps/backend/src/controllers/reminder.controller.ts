@@ -133,7 +133,7 @@ export const ReminderController = {
       // Update algorithm: +5 points for all categories of this mantra
       if (data.mantra_id) {
         await UserCategoryScoreModel.addScoreForMantra(userId, data.mantra_id, 5).catch((err) => {
-          console.error(`Failed to update category score for user ${userId}, mantra ${data.mantra_id}:`, err);
+          console.error('Failed to update category score for user:', userId, 'mantra:', data.mantra_id, err);
         });
       }
 
