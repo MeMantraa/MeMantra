@@ -152,8 +152,8 @@ cp apps/backend/.env.example apps/backend/.env
 - **Local DB:** start PostgreSQL and load `apps/backend/database/init.sql`.
 - **Hosted Neon:** paste the shared `DATABASE_URL` into `apps/backend/.env`.
 - **Dockerized:** run `docker compose up -d` to boot backend + Postgres.
-- **Staging-like:** copy `apps/backend/.env.staging.example` to `apps/backend/.env.staging`, set `EXPO_PUBLIC_API_BASE_URL`, then run `docker compose -f docker-compose.staging.yml up -d --build`.
-- **Production-like:** copy `apps/backend/.env.production.example` to `apps/backend/.env.production`, set `EXPO_PUBLIC_API_BASE_URL`, then run `docker compose -f docker-compose.prod.yml up -d --build`.
+- **Staging-like:** copy `apps/backend/.env.example` to `apps/backend/.env.staging`, set staging values, create `apps/mobile/.env` from `apps/mobile/.env.example` with the staging API URL, then run `docker compose -f docker-compose.staging.yml up -d --build`.
+- **Production-like:** copy `apps/backend/.env.example` to `apps/backend/.env.production`, set production values, create `apps/mobile/.env` from `apps/mobile/.env.example` with the production API URL, then run `docker compose -f docker-compose.prod.yml up -d --build`.
 
 ---
 

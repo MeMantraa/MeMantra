@@ -11,7 +11,7 @@ pnpm install                  # install dependencies (from repo root only once)
 ```
 
 **Environment file:** `apps/backend/.env`. Root-level scripts and Docker compose reuse it.
-For immutable staging/production Compose stacks, create `apps/backend/.env.staging` or `apps/backend/.env.production` from the matching `*.example` file.
+For immutable staging/production Compose stacks, create `apps/backend/.env.staging` or `apps/backend/.env.production` from `apps/backend/.env.example` and replace values using the commented staging/production examples.
 
 **Database connectivity:** ensure `DATABASE_URL` (Neon) or discrete `DB_*` variables (local) are correct before running the server.
 

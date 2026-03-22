@@ -40,10 +40,6 @@ coverage
 !.env.example
 !apps/backend/.env.example
 !apps/mobile/.env.example
-!apps/backend/.env.staging.example
-!apps/backend/.env.production.example
-!apps/mobile/.env.staging.example
-!apps/mobile/.env.production.example
 
 # System files
 .DS_Store

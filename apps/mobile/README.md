@@ -78,4 +78,4 @@ The repo now includes a dedicated [`Dockerfile`](/c:/Users/Philippe/MeMantra/app
 - `docker-compose.yaml` runs the mobile workspace in its own development container with Expo web.
 - `docker-compose.staging.yml` and `docker-compose.prod.yml` build a static web artifact and serve it from its own runtime container.
 
-Set `EXPO_PUBLIC_API_BASE_URL` in `apps/mobile/.env`, or use the staging/production example env files as templates for environment-specific builds.
+Set `EXPO_PUBLIC_API_BASE_URL` in `apps/mobile/.env`. [`apps/mobile/.env.example`](/c:/Users/Philippe/MeMantra/apps/mobile/.env.example) now includes local, staging, and production example values as comments.
