@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { LikeModel } from '../models/like.model';
 import { UserCategoryScoreModel } from '../models/user-category-score.model';
+import { sanitizeForLog } from '../utils/sanitize.utils';
 
 export const LikeController = {
   // POST /api/likes/:mantraId - Like a mantra
@@ -30,7 +31,7 @@ export const LikeController = {
 
       // Update algorithm: +3 points for all categories of this mantra
       await UserCategoryScoreModel.addScoreForMantra(userId, Number(mantraId), 3).catch((err) => {
-        console.error('Failed to update category score for user:', userId, 'mantra:', mantraId, err);
+        console.error('Failed to update category score for user:', sanitizeForLog(userId), 'mantra:', sanitizeForLog(mantraId), err);
       });
 
       return res.status(201).json({
@@ -73,7 +74,7 @@ export const LikeController = {
 
       // Update algorithm: -3 points (undo like)
       await UserCategoryScoreModel.removeScoreForMantra(userId, Number(mantraId), 3).catch((err) => {
-        console.error('Failed to remove category score for user:', userId, 'mantra:', mantraId, err);
+        console.error('Failed to remove category score for user:', sanitizeForLog(userId), 'mantra:', sanitizeForLog(mantraId), err);
       });
 
       return res.status(200).json({
