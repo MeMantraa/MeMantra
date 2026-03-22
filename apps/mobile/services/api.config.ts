@@ -3,10 +3,19 @@ import { Platform } from 'react-native';
 import { storage } from '../utils/storage';
 import Constants from 'expo-constants';
 
+const runtimeProcess = globalThis.process;
+
+const normalizeBaseUrl = (value: string): string => {
+  const trimmedValue = value.trim().replace(/\/$/, '');
+  return trimmedValue.endsWith('/api') ? trimmedValue : `${trimmedValue}/api`;
+};
+
+const ENV_API_BASE_URL = runtimeProcess?.env.EXPO_PUBLIC_API_BASE_URL?.trim() || null;
+
 // Try to import local config (gitignored) - copy api.config.local.example.ts to api.config.local.ts
 let LOCAL_DEV_IP: string | null = null;
-// eslint-disable-next-line no-undef
-if (process.env.NODE_ENV !== 'test') {
+
+if (runtimeProcess?.env.NODE_ENV !== 'test') {
   try {
     // eslint-disable-next-line no-undef
     const localConfig = require('./api.config.local');
@@ -33,6 +42,10 @@ const getLocalIpAddress = (): string | null => {
 };
 
 const getBaseUrl = () => {
+  if (ENV_API_BASE_URL) {
+    return normalizeBaseUrl(ENV_API_BASE_URL);
+  }
+
   const autoDetectedIP = getLocalIpAddress();
   const PORT = '4000';
 
@@ -59,7 +72,7 @@ const getBaseUrl = () => {
     // Android emulator uses 10.0.2.2 to access host machine
     // For real device with tunnel, set DEV_IP above
     const host = DEV_IP || '10.0.2.2';
-    return `http://${host}:${PORT}/api`;
+    return normalizeBaseUrl(`http://${host}:${PORT}`);
   }
 
   //if ios
@@ -67,14 +80,14 @@ const getBaseUrl = () => {
     // iOS simulator uses localhost
     // For physical device or tunnel, set DEV_IP above
     const host = DEV_IP || 'localhost';
-    return `http://${host}:${PORT}/api`;
+    return normalizeBaseUrl(`http://${host}:${PORT}`);
   }
 
   // Web or unknown platform fallback
   if (Platform.OS === 'web') {
     // Web uses same-origin or configured URL
     const webHost = DEV_IP || 'localhost';
-    return `http://${webHost}:${PORT}/api`;
+    return normalizeBaseUrl(`http://${webHost}:${PORT}`);
   }
 
   // Unknown platform - throw clear error

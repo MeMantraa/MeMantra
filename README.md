@@ -113,15 +113,17 @@ Add video links (YouTube/Drive/Zoom) for each release:
 
 ## Repository Layout
 
-| Path                    | Notes                                                                                |
-| ----------------------- | ------------------------------------------------------------------------------------ |
-| `apps/mobile`           | Expo app (screens, components, services, NativeWind styles, Jest + Maestro tests).   |
-| `apps/backend`          | Express API, Kysely models, validators, database docs, Jest tests.                   |
-| `apps/backend/database` | SQL schema, reset scripts, and DB onboarding guide.                                  |
-| `docs/`                 | Docker guides, prototypes, diagrams, and supplemental docs created for this request. |
-| `maestro/`              | E2E scripts (`test.yaml`).                                                           |
-| `docker-compose.yaml`   | Local stack (backend + Postgres + optional pgAdmin + containerized tests).           |
-| `turbo.json`            | Pipeline definitions for `build`, `test`, `lint`, `dev`, etc.                        |
+| Path                         | Notes                                                                                |
+| ---------------------------- | ------------------------------------------------------------------------------------ |
+| `apps/mobile`                | Expo app (screens, components, services, NativeWind styles, Jest + Maestro tests).   |
+| `apps/backend`               | Express API, Kysely models, validators, database docs, Jest tests.                   |
+| `apps/backend/database`      | SQL schema, reset scripts, and DB onboarding guide.                                  |
+| `docs/`                      | Docker guides, prototypes, diagrams, and supplemental docs created for this request. |
+| `maestro/`                   | E2E scripts (`test.yaml`).                                                           |
+| `docker-compose.yaml`        | Local development stack (backend + mobile + Postgres + optional pgAdmin + tests).    |
+| `docker-compose.staging.yml` | Staging-oriented stack with immutable backend/mobile images.                         |
+| `docker-compose.prod.yml`    | Production-oriented stack with immutable backend/mobile images.                      |
+| `turbo.json`                 | Pipeline definitions for `build`, `test`, `lint`, `dev`, etc.                        |
 
 ---
 
@@ -150,6 +152,8 @@ cp apps/backend/.env.example apps/backend/.env
 - **Local DB:** start PostgreSQL and load `apps/backend/database/init.sql`.
 - **Hosted Neon:** paste the shared `DATABASE_URL` into `apps/backend/.env`.
 - **Dockerized:** run `docker compose up -d` to boot backend + Postgres.
+- **Staging-like:** copy `apps/backend/.env.staging.example` to `apps/backend/.env.staging`, set `EXPO_PUBLIC_API_BASE_URL`, then run `docker compose -f docker-compose.staging.yml up -d --build`.
+- **Production-like:** copy `apps/backend/.env.production.example` to `apps/backend/.env.production`, set `EXPO_PUBLIC_API_BASE_URL`, then run `docker compose -f docker-compose.prod.yml up -d --build`.
 
 ---
 

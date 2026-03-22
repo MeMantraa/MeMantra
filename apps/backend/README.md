@@ -11,6 +11,7 @@ pnpm install                  # install dependencies (from repo root only once)
 ```
 
 **Environment file:** `apps/backend/.env`. Root-level scripts and Docker compose reuse it.
+For immutable staging/production Compose stacks, create `apps/backend/.env.staging` or `apps/backend/.env.production` from the matching `*.example` file.
 
 **Database connectivity:** ensure `DATABASE_URL` (Neon) or discrete `DB_*` variables (local) are correct before running the server.
 
@@ -59,6 +60,7 @@ Run all commands from the repo root with workspace filtering if you prefer: `pnp
    - **Hosted:** Use the shared Neon connection string (preferred). Paste into `DATABASE_URL`.
    - **Local:** Install PostgreSQL, create `me_mantra_db`, and execute `database/init.sql`.
    - **Docker:** Run `docker compose up -d` from repo root to start `db` + `backend`.
+   - **Staging/Prod Compose:** Run `docker compose -f docker-compose.staging.yml up -d --build` or `docker compose -f docker-compose.prod.yml up -d --build` after creating the matching env file.
 
 2. **Initialize / reset:**
 
