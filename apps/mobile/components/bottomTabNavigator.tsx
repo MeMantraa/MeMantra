@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Alert } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import HomeScreen from '../screens/HomeScreen';
@@ -54,6 +55,7 @@ export default function BottomTabNavigator() {
         console.error('Failed to determine admin status', error);
         if (isMounted) {
           setIsAdmin(false);
+          Alert.alert('Error', 'Failed to load user data. Some features may be unavailable.');
         }
       }
     };

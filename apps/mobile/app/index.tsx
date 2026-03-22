@@ -69,6 +69,10 @@ export default function MainNavigator() {
           }
         } catch (error) {
           console.error('Failed to set up push notifications:', error);
+          Alert.alert(
+            'Notifications',
+            'Could not enable push notifications. You can enable them later in Settings.',
+          );
         }
       };
 
