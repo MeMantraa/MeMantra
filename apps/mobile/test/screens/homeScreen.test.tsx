@@ -1,6 +1,6 @@
 import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert, FlatList } from 'react-native';
-import HomeScreen from '../../screens/homeScreen';
+import HomeScreen from '../../screens/HomeScreen';
 import { mantraService } from '../../services/mantra.service';
 import { collectionService } from '../../services/collection.service';
 import { categoryService } from '../../services/category.service';
@@ -184,6 +184,7 @@ jest.mock('@react-navigation/native', () => {
 jest.mock('../../services/mantra.service', () => ({
   mantraService: {
     getFeedMantras: jest.fn(),
+    getSavedMantras: jest.fn().mockResolvedValue([]),
     likeMantra: jest.fn(),
     unlikeMantra: jest.fn(),
     saveMantra: jest.fn(),

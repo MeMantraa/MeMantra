@@ -6,7 +6,12 @@ export const RatingModel = {
    * User rates a mantra (creates or updates existing rating)
    * @example await RatingModel.upsert(userId, mantraId, 5, 'This mantra changed my life!')
    */
-  async upsert(userId: number, mantraId: number, rating: number, reviewText?: string): Promise<Rating> {
+  async upsert(
+    userId: number,
+    mantraId: number,
+    rating: number,
+    reviewText?: string,
+  ): Promise<Rating> {
     // Check if user already rated this mantra
     const existing = await this.findByUserAndMantra(userId, mantraId);
 
@@ -23,7 +28,6 @@ export const RatingModel = {
         .returningAll()
         .executeTakeFirstOrThrow();
     } else {
-
       return await db
         .insertInto('Rating')
         .values({
@@ -47,6 +51,17 @@ export const RatingModel = {
       .selectFrom('Rating')
       .where('user_id', '=', userId)
       .where('mantra_id', '=', mantraId)
+      .selectAll()
+      .executeTakeFirst();
+  },
+
+  /**
+   * Find a rating by its ID
+   */
+  async findById(ratingId: number): Promise<Rating | undefined> {
+    return await db
+      .selectFrom('Rating')
+      .where('rating_id', '=', ratingId)
       .selectAll()
       .executeTakeFirst();
   },

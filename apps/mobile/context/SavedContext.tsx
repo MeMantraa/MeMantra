@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useEffect, useMemo, useCallback } from 'react';
+import { Alert } from 'react-native';
 import { Mantra, mantraService } from '../services/mantra.service';
 import { storage } from '../utils/storage';
 
@@ -27,6 +28,7 @@ export const SavedProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (!isTestEnv) {
         console.log('Error fetching saved mantras:', err);
       }
+      Alert.alert('Error', 'Failed to load saved mantras. Please try again later.');
     }
   }, [isTestEnv]);
 

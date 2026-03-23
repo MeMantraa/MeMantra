@@ -43,7 +43,7 @@ export default function UpdateEmailScreen() {
           {
             text: 'OK',
             onPress: () => {
-              void logoutUser(navigation);
+              void logoutUser(navigation as any);
             },
           },
         ],

@@ -33,7 +33,7 @@ export function useReminders() {
         setRemindersByCollection(collectionMap);
       }
     } catch {
-      // non-critical
+      Alert.alert('Error', 'Failed to load reminders. Please try again later.');
     }
   }, []);
 

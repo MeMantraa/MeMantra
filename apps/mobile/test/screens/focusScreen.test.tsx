@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, act } from '@testing-library/react-native';
 import { Alert } from 'react-native';
-import FocusScreen from '../../screens/focusScreen';
+import FocusScreen from '../../screens/FocusScreen';
 import { useTheme } from '../../context/ThemeContext';
 import MantraCarousel from '../../components/carousel';
 import { useReminders } from '../../hooks/useReminders';

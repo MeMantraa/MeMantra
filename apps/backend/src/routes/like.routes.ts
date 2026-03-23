@@ -10,30 +10,18 @@ const router = Router();
 router.get(
   '/popular',
   validateRequest(popularMantrasQuerySchema),
-  LikeController.getMostLikedMantras
+  LikeController.getMostLikedMantras,
 );
 
 // Protected routes (require authentication)
 router.use(authenticate);
 
-router.post(
-  '/:mantraId',
-  validateRequest(likeMantraIdSchema),
-  LikeController.likeMantra
-);
+router.post('/:mantraId', validateRequest(likeMantraIdSchema), LikeController.likeMantra);
 
-router.delete(
-  '/:mantraId',
-  validateRequest(likeMantraIdSchema),
-  LikeController.unlikeMantra
-);
+router.delete('/:mantraId', validateRequest(likeMantraIdSchema), LikeController.unlikeMantra);
 
 router.get('/mantras', LikeController.getLikedMantras);
 
-router.get(
-  '/:mantraId/check',
-  validateRequest(likeMantraIdSchema),
-  LikeController.checkIfLiked
-);
+router.get('/:mantraId/check', validateRequest(likeMantraIdSchema), LikeController.checkIfLiked);
 
 export default router;

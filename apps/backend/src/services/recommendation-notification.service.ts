@@ -117,7 +117,11 @@ export const RecommendationNotificationService = {
           await UserModel.update(user.user_id, {
             recommendation_notif_sent_at: new Date().toISOString(),
           }).catch((err) => {
-            console.error('Failed to update recommendation_notif_sent_at for user:', sanitizeForLog(user.user_id), err);
+            console.error(
+              'Failed to update recommendation_notif_sent_at for user:',
+              sanitizeForLog(user.user_id),
+              err,
+            );
           });
         }
 
@@ -140,10 +144,7 @@ export const RecommendationNotificationService = {
    * @param userId - The user's ID (used to run the recommendation engine)
    * @param deviceToken - The user's Expo push token
    */
-  async sendToUser(
-    userId: number,
-    deviceToken: string,
-  ): Promise<RecommendationNotificationResult> {
+  async sendToUser(userId: number, deviceToken: string): Promise<RecommendationNotificationResult> {
     try {
       const recommendations = await RecommendationEngine.generateRecommendations(userId, {
         limit: 1,

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
-import AdminScreen from '../../screens/adminScreen';
+import AdminScreen from '../../screens/AdminScreen';
 
 import * as ThemeContext from '../../context/ThemeContext';
 import { mantraService } from '../../services/mantra.service';

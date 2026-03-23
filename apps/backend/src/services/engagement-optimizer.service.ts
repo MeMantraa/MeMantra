@@ -57,7 +57,9 @@ export const EngagementOptimizerService = {
 
       const updated = results.filter((r) => !r.skipped && !r.error).length;
       const errors = results.filter((r) => r.error).length;
-      console.log(`Engagement optimizer: ${updated} updated, ${errors} errors out of ${results.length} users`);
+      console.log(
+        `Engagement optimizer: ${updated} updated, ${errors} errors out of ${results.length} users`,
+      );
     } catch (error) {
       console.error('Error in EngagementOptimizerService.processAllUsers:', error);
     }

@@ -21,25 +21,25 @@ jest.mock('@expo/vector-icons', () => {
   };
 });
 
-jest.mock('../../screens/homeScreen', () => {
+jest.mock('../../screens/HomeScreen', () => {
   const React = jest.requireActual('react');
   const { Text } = jest.requireActual('react-native');
   return () => React.createElement(Text, null, 'Mock Home Screen');
 });
 
-jest.mock('../../screens/bookmarkScreen', () => {
+jest.mock('../../screens/BookmarkScreen', () => {
   const React = jest.requireActual('react');
   const { Text } = jest.requireActual('react-native');
   return () => React.createElement(Text, null, 'Bookmark Screen');
 });
 
-jest.mock('../../screens/collectionScreen', () => {
+jest.mock('../../screens/CollectionScreen', () => {
   const React = jest.requireActual('react');
   const { Text } = jest.requireActual('react-native');
   return () => React.createElement(Text, null, 'Collections Screen');
 });
 
-jest.mock('../../screens/adminScreen', () => {
+jest.mock('../../screens/AdminScreen', () => {
   const React = jest.requireActual('react');
   const { Text } = jest.requireActual('react-native');
   return () => React.createElement(Text, null, 'Admin Screen');
@@ -52,7 +52,7 @@ jest.mock('../../screens/ProfileScreen', () => {
   return () => React.createElement(Text, null, 'Profile Screen');
 });
 
-jest.mock('../../screens/chatScreen', () => {
+jest.mock('../../screens/ChatScreen', () => {
   const React = jest.requireActual('react');
   const { Text } = jest.requireActual('react-native');
   return () => React.createElement(Text, null, 'Chat Screen');

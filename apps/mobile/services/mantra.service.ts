@@ -273,7 +273,7 @@ const mockMantraService = {
 
   async updateMantra(
     mantraId: number,
-    updateData: any,
+    updateData: Partial<CreateMantraPayload>,
     _token: string,
   ): Promise<MantraDetailResponse> {
     const index = mockMantras.findIndex((m) => m.mantra_id === mantraId);
@@ -281,8 +281,8 @@ const mockMantraService = {
       return {
         status: 'error',
         message: 'Mantra not found',
-        data: { mantra: null },
-      } as any;
+        data: { mantra: null as unknown as Mantra },
+      };
     }
     const updatedMantra = {
       ...mockMantras[index],
@@ -301,8 +301,8 @@ const mockMantraService = {
       return {
         status: 'error',
         message: 'Mantra not found',
-        data: null,
-      } as any;
+        data: null as unknown as { mantra: Mantra },
+      };
     }
     return {
       status: 'success',
@@ -383,7 +383,7 @@ const realMantraService = {
 
   async updateMantra(
     mantraId: number,
-    updateData: any,
+    updateData: Partial<CreateMantraPayload>,
     _token: string,
   ): Promise<MantraDetailResponse> {
     const response = await apiClient.put<MantraDetailResponse>(`/mantras/${mantraId}`, updateData);
