@@ -838,7 +838,9 @@ const AdminScreen: React.FC = () => {
       style={{ flex: 1 }}
     >
       <View className="flex-1 px-6 pt-16 pb-6" style={{ backgroundColor: colors.primary }}>
-        <AppText className="text-white text-3xl font-bold mb-4">Admin Controls</AppText>
+        <AppText className="text-[28px] font-bold mb-4" style={{ color: colors.text }}>
+          Admin
+        </AppText>
 
         {/* Mode Toggle */}
         <View

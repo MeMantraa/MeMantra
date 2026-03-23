@@ -2759,4 +2759,46 @@ describe('HomeScreen - share, journal, rate, and route params', () => {
 
     expect(mockNavigate).toHaveBeenCalledWith('Search', { mantras: sample });
   }, 15000);
+
+  it('appends more mantras when end of feed is reached', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    const sample = [
+      { mantra_id: 1, title: 'M1', isLiked: false, isSaved: false },
+      { mantra_id: 2, title: 'M2', isLiked: false, isSaved: false },
+    ];
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: sample,
+    });
+
+    const { getByTestId, getAllByText } = setup();
+
+    await waitFor(() => getByTestId('feed-list'), { timeout: 10000 });
+
+    // Initially there should be one of each mantra
+    expect(getAllByText('M1')).toHaveLength(1);
+    expect(getAllByText('M2')).toHaveLength(1);
+
+    fireEvent(getByTestId('feed-list'), 'endReached');
+
+    await waitFor(() => expect(getAllByText('M1')).toHaveLength(2), { timeout: 10000 });
+    expect(getAllByText('M2')).toHaveLength(2);
+  }, 15000);
+
+  it('does not append mantras when originalMantras is empty and end is reached', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (mantraService.getFeedMantras as jest.Mock).mockResolvedValueOnce({
+      status: 'success',
+      data: [],
+    });
+
+    const { queryByTestId } = setup();
+
+    await waitFor(() => expect(mantraService.getFeedMantras).toHaveBeenCalled(), {
+      timeout: 10000,
+    });
+
+    // feed-list is not rendered when feedData is empty, so endReached cannot fire — this is the empty branch
+    expect(queryByTestId('feed-list')).toBeNull();
+  }, 15000);
 });

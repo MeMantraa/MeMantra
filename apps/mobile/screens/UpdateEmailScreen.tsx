@@ -57,50 +57,50 @@ export default function UpdateEmailScreen() {
   return (
     <View
       className="flex-1 pt-16 px-10"
-      style={[styles.container, { backgroundColor: colors.white }]}
+      style={[styles.container, { backgroundColor: colors.primary }]}
     >
       {/* Back Button */}
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <AppText style={[styles.backText, { color: colors.primaryDark }]}>Back</AppText>
+        <AppText style={[styles.backText, { color: colors.text }]}>Back</AppText>
       </TouchableOpacity>
 
-      <AppText style={[styles.title, { color: colors.black }]}>Update Email</AppText>
+      <AppText style={[styles.title, { color: colors.text }]}>Update Email</AppText>
 
       <AppTextInput
-        style={[styles.input, { borderColor: colors.primary, color: colors.black }]}
+        style={[styles.input, { borderColor: colors.primaryDark, color: colors.text }]}
         value={oldEmail}
         onChangeText={setOldEmail}
         autoCapitalize="none"
         keyboardType="email-address"
         placeholder="Current email"
-        placeholderTextColor="#aaa"
+        placeholderTextColor={colors.placeholderText}
       />
 
       <AppTextInput
-        style={[styles.input, { borderColor: colors.primary, color: colors.black }]}
+        style={[styles.input, { borderColor: colors.primaryDark, color: colors.text }]}
         value={password}
         onChangeText={setPassword}
         autoCapitalize="none"
         placeholder="Current password"
-        placeholderTextColor="#aaa"
+        placeholderTextColor={colors.placeholderText}
         secureTextEntry
       />
 
       <AppTextInput
-        style={[styles.input, { borderColor: colors.primary, color: colors.black }]}
+        style={[styles.input, { borderColor: colors.primaryDark, color: colors.text }]}
         value={newEmail}
         onChangeText={setNewEmail}
         autoCapitalize="none"
         keyboardType="email-address"
         placeholder="New email"
-        placeholderTextColor="#aaa"
+        placeholderTextColor={colors.placeholderText}
       />
 
       <TouchableOpacity
-        style={[styles.button, { backgroundColor: colors.settings }]}
+        style={[styles.button, { backgroundColor: colors.primaryDark }]}
         onPress={handleUpdate}
       >
-        <AppText style={[styles.buttonText, { color: colors.black }]}>Save Email</AppText>
+        <AppText style={[styles.buttonText, { color: colors.text }]}>Save Email</AppText>
       </TouchableOpacity>
     </View>
   );
