@@ -2,7 +2,7 @@
  * ADD MANTRAS SCRIPT
  * Adds new mantras to the database with duplicate protection.
  * Run: npx tsx src/scripts/add-mantras.ts (from backend folder)
- * 
+ *
  * Prerequisites: Admin user must exist (run seed.ts first if needed)
  */
 
@@ -23,7 +23,7 @@ async function addMantras() {
 
     if (!admin) {
       throw new Error(
-        `Admin user not found with email: ${adminEmail}\nPlease run seed.ts first to create the admin user.`
+        `Admin user not found with email: ${adminEmail}\nPlease run seed.ts first to create the admin user.`,
       );
     }
 
@@ -75,15 +75,14 @@ async function addMantras() {
       addedCount++;
     }
 
-
     // Step 4: Verify total mantras in database
     console.log('Current mantras in database:\n');
     const allMantras = await MantraModel.findAll();
-    
+
     allMantras.forEach((mantra, index) => {
       console.log(`  ${index + 1}. ${mantra.title}`);
     });
-    
+
     console.log(`\nTotal: ${allMantras.length} mantras\n`);
 
     console.log('Mantra addition completed successfully!');
@@ -101,4 +100,3 @@ if (require.main === module) {
 }
 
 export { addMantras };
-

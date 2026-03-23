@@ -74,6 +74,7 @@ export default function HomeScreen({ navigation, route }: any) {
       }
     } catch (err) {
       console.error('Error fetching mantras:', err);
+      Alert.alert('Error', 'Failed to load mantras. Please try again.');
       setFeedData([]);
     } finally {
       setLoading(false);
@@ -127,6 +128,7 @@ export default function HomeScreen({ navigation, route }: any) {
       }
     } catch (err) {
       console.error('Error fetching categories:', err);
+      Alert.alert('Error', 'Failed to load categories.');
     } finally {
       setCategoriesLoading(false);
     }
@@ -150,6 +152,7 @@ export default function HomeScreen({ navigation, route }: any) {
       }
     } catch (err) {
       console.error('Error fetching collections:', err);
+      Alert.alert('Error', 'Failed to load collections.');
     }
   };
 

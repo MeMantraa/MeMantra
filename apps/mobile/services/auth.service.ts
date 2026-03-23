@@ -29,7 +29,7 @@ export interface AuthResponse {
 export interface SimpleResponse {
   status: string;
   message: string;
-  data?: any;
+  data?: Record<string, unknown>;
   waitTime?: number;
 }
 

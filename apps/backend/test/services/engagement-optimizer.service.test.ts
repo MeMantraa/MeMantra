@@ -211,7 +211,10 @@ describe('EngagementOptimizerService', () => {
     });
 
     it('marks a user as skipped on error and continues', async () => {
-      mockedUserModel.findAllWithDeviceTokensPaginated.mockResolvedValueOnce([makeUser(1), makeUser(2)]);
+      mockedUserModel.findAllWithDeviceTokensPaginated.mockResolvedValueOnce([
+        makeUser(1),
+        makeUser(2),
+      ]);
       mockedEngagementModel.getOptimalHour
         .mockRejectedValueOnce(new Error('DB error'))
         .mockResolvedValueOnce(7);

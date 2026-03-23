@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity } from 'react-native';
+import { View, TouchableOpacity, Alert } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import ChatList from '../components/chat/ChatList';
@@ -28,6 +28,7 @@ export default function ChatScreen({ navigation }: any) {
       setConversations(data);
     } catch (err) {
       console.error('Error loading conversations:', err);
+      Alert.alert('Error', 'Failed to load conversations. Please try again.');
     } finally {
       setLoading(false);
     }

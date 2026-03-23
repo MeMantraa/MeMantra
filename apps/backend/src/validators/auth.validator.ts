@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-//registration schema
+// Schema for user registration.
 export const registerSchema = z.object({
   body: z.object({
     username: z.string().min(3, 'Username must be at least 3 characters'),
@@ -26,7 +26,7 @@ export const verifySignupCodeSchema = z.object({
   }),
 });
 
-//login schema
+// Schema for user login.
 export const loginSchema = z.object({
   body: z.object({
     email: z.string().email({ message: 'Invalid email address' }),

@@ -130,6 +130,7 @@ export default function CreateReminderScreen() {
       }
     } catch (error) {
       console.error('Error loading items:', error);
+      Alert.alert('Error', 'Failed to load items. Please try again.');
     } finally {
       setLoadingItems(false);
     }

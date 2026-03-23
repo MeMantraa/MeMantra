@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { Platform } from 'react-native';
 import { storage } from '../utils/storage';
 import Constants from 'expo-constants';
@@ -51,11 +51,15 @@ const getLocalIpAddress = (): string | null => {
 };
 
 const getBaseUrl = () => {
+<<<<<<< HEAD
   if (ENV_API_BASE_URL) {
     return normalizeBaseUrl(ENV_API_BASE_URL);
   }
 
   const autoDetectedIP = getLocalIpAddress();
+=======
+  const autoDetectedIP = getLocalIpAddress(); //
+>>>>>>> fbabf66 (refactor(#496): code quality cleanup (#489) (#4900 (#491))
   const PORT = '4000';
   const isUsingTunnel = Constants.expoConfig?.hostUri?.includes('exp.direct');
   const shouldUseLocalConfig = LOCAL_DEV_IP && isUsingTunnel;
@@ -103,6 +107,7 @@ export const apiClient = axios.create({
   timeout: 30000,
 });
 
+<<<<<<< HEAD
 const buildRouteName = (url?: string): string | undefined => {
   if (!url) return undefined;
   return url.split('?')[0];
@@ -145,8 +150,15 @@ const emitApiPerformanceEvent = async (params: {
 };
 
 let navigationRef: any = null;
+=======
+// Navigation ref to handle logout navigation and deep linking
+let navigationRef: {
+  navigate: (name: string, params?: object) => void;
+  reset: (state: { index: number; routes: { name: string }[] }) => void;
+} | null = null;
+>>>>>>> fbabf66 (refactor(#496): code quality cleanup (#489) (#4900 (#491))
 
-export const setNavigationRef = (ref: any) => {
+export const setNavigationRef = (ref: typeof navigationRef) => {
   navigationRef = ref;
 };
 
@@ -164,6 +176,7 @@ export const isNavigationReady = (): boolean => {
   return navigationRef !== null;
 };
 
+<<<<<<< HEAD
 apiClient.interceptors.request.use(
   async (config: any) => {
     const extendedConfig = config as ExtendedRequestConfig;
@@ -174,6 +187,11 @@ apiClient.interceptors.request.use(
       extendedConfig.skipPerformanceMonitoring ||
       false;
 
+=======
+// Attach the stored JWT token to every outgoing request.
+apiClient.interceptors.request.use(
+  async (config: InternalAxiosRequestConfig) => {
+>>>>>>> fbabf66 (refactor(#496): code quality cleanup (#489) (#4900 (#491))
     const token = await storage.getToken();
     if (token) {
       extendedConfig.headers = extendedConfig.headers || {};
@@ -181,11 +199,12 @@ apiClient.interceptors.request.use(
     }
     return config;
   },
-  (error: any) => {
+  (error: AxiosError) => {
     return Promise.reject(error);
   },
 );
 
+<<<<<<< HEAD
 apiClient.interceptors.response.use(
   (response: any) => {
     const config: ExtendedRequestConfig | undefined = response?.config;
@@ -210,6 +229,12 @@ apiClient.interceptors.response.use(
       errorMessage: error?.message,
     });
 
+=======
+// Global response error handler — clears auth on 401.
+apiClient.interceptors.response.use(
+  (response: AxiosResponse) => response,
+  async (error: { response: { status: number } }) => {
+>>>>>>> fbabf66 (refactor(#496): code quality cleanup (#489) (#4900 (#491))
     if (error.response?.status === 401) {
       console.log('Unauthorized access - token expired or invalid');
 

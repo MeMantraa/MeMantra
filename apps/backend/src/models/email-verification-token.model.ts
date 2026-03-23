@@ -3,7 +3,11 @@ import { EmailVerificationToken } from '../types/database.types';
 
 export const EmailVerificationTokenModel = {
   // Create a new email verification token (replaces any previous one for the same email)
-  async create(email: string, code: string, expiresInMinutes: number = 10): Promise<EmailVerificationToken> {
+  async create(
+    email: string,
+    code: string,
+    expiresInMinutes: number = 10,
+  ): Promise<EmailVerificationToken> {
     // Remove any previous tokens for this email first to keep the table clean
     await db
       .deleteFrom('EmailVerificationToken')
@@ -63,9 +67,6 @@ export const EmailVerificationTokenModel = {
   // Delete all expired tokens (cleanup utility)
   async deleteExpired(): Promise<void> {
     const now = new Date().toISOString();
-    await db
-      .deleteFrom('EmailVerificationToken')
-      .where('expires_at', '<', now)
-      .execute();
+    await db.deleteFrom('EmailVerificationToken').where('expires_at', '<', now).execute();
   },
 };

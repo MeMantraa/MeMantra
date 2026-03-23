@@ -4,7 +4,7 @@ import { db } from '../db';
 const ADMIN_EMAILS = new Set(
   (process.env.ADMIN_EMAILS || 'admin@memantra.com')
     .split(',')
-    .map(email => email.trim().toLowerCase())
+    .map((email) => email.trim().toLowerCase()),
 );
 
 export const requireAdmin = async (req: Request, res: Response, next: NextFunction) => {

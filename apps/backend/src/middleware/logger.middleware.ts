@@ -3,7 +3,6 @@ import { Request, Response, NextFunction } from 'express';
 const sanitizeForLog = (value: unknown): string =>
   String(value).replaceAll(/[\r\n\u2028\u2029]+/g, ' ');
 
-
 const SENSITIVE_FIELDS = new Set([
   'password',
   'code',
@@ -14,7 +13,6 @@ const SENSITIVE_FIELDS = new Set([
   'review',
   'device',
 ]);
-
 
 const keyCache = new Map<string, boolean>();
 
@@ -39,19 +37,18 @@ const shouldRedactKey = (key: string): boolean => {
   return shouldRedact;
 };
 
-const redactSensitiveData = (data: any): any => {
+const redactSensitiveData = (data: unknown): unknown => {
   if (data === null || data === undefined) {
     return data;
   }
 
   if (Array.isArray(data)) {
-    return data.map(item => redactSensitiveData(item));
+    return data.map((item) => redactSensitiveData(item));
   }
 
   if (typeof data === 'object') {
-    const redacted: any = Object.create(null);
+    const redacted: Record<string, unknown> = Object.create(null);
     for (const [key, value] of Object.entries(data)) {
-      
       if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
         continue;
       }
@@ -61,21 +58,21 @@ const redactSensitiveData = (data: any): any => {
           value: '[REDACTED]',
           enumerable: true,
           configurable: true,
-          writable: true
+          writable: true,
         });
       } else if (value !== null && typeof value === 'object') {
         Object.defineProperty(redacted, key, {
           value: redactSensitiveData(value),
           enumerable: true,
           configurable: true,
-          writable: true
+          writable: true,
         });
       } else {
         Object.defineProperty(redacted, key, {
           value: value,
           enumerable: true,
           configurable: true,
-          writable: true
+          writable: true,
         });
       }
     }
@@ -88,7 +85,6 @@ const redactSensitiveData = (data: any): any => {
 export const requestLogger = (req: Request, res: Response, next: NextFunction) => {
   const startTime = Date.now();
 
-  //log requests
   console.log('\n==================== API REQUEST ====================');
   console.log(`[${new Date().toISOString()}]`);
   console.log(`Method: ${sanitizeForLog(req.method)}`);
@@ -99,14 +95,12 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
   console.log(fullUrl);
   console.log(`IP: ${sanitizeForLog(req.ip || req.socket.remoteAddress || '')}`);
 
-  //log headers
   console.log('Headers:', {
     'content-type': sanitizeForLog(req.get('content-type') || ''),
     'user-agent': sanitizeForLog(req.get('user-agent') || ''),
     authorization: req.get('authorization') ? 'Bearer [REDACTED]' : 'None',
   });
 
-  //log body with sensitive data redacted
   if (req.body && Object.keys(req.body).length > 0) {
     const sanitizedBody = Array.isArray(req.body)
       ? [...req.body]
@@ -128,9 +122,8 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
     }
   }
 
-  //response
   const originalSend = res.send;
-  res.send = function (data: any): Response {
+  res.send = function (data: string | Buffer): Response {
     const duration = Date.now() - startTime;
 
     console.log('\n==================== API RESPONSE ====================');
@@ -156,18 +149,19 @@ export const requestLogger = (req: Request, res: Response, next: NextFunction) =
   next();
 };
 
-export const errorLogger = (err: any, req: Request, _res: Response, next: NextFunction) => {
+export const errorLogger = (
+  err: Error & { stack?: string },
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+) => {
   console.error('\n==================== API ERROR ====================');
   console.error(`[${new Date().toISOString()}]`);
   console.error(`Method: ${sanitizeForLog(req.method)}`);
   console.error(`Path: ${sanitizeForLog(req.path)}`);
   console.error(`Error Name: ${sanitizeForLog(err?.name || 'Error')}`);
-  console.error(
-    `Error Message: ${sanitizeForLog(err?.message || 'Unknown error')}`,
-  );
-  console.error(
-    `Stack Trace: ${sanitizeForLog(err?.stack ? err.stack : 'None')}`,
-  );
+  console.error(`Error Message: ${sanitizeForLog(err?.message || 'Unknown error')}`);
+  console.error(`Stack Trace: ${sanitizeForLog(err?.stack ? err.stack : 'None')}`);
   console.error('====================================================\n');
 
   next(err);

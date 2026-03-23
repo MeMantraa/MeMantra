@@ -32,7 +32,13 @@ describe('RatingController', () => {
 
   describe('rateMantra', () => {
     it('should create/update rating successfully', async () => {
-      const mockRating = { rating_id: 1, user_id: 1, mantra_id: 5, rating: 4, review_text: 'Great!' };
+      const mockRating = {
+        rating_id: 1,
+        user_id: 1,
+        mantra_id: 5,
+        rating: 4,
+        review_text: 'Great!',
+      };
       (RatingModel.upsert as jest.Mock).mockResolvedValue(mockRating);
 
       const app = setupAppWithUser(1, 'test@test.com');
@@ -51,9 +57,7 @@ describe('RatingController', () => {
 
     it('should return 401 if not authenticated', async () => {
       const app = setupAppWithUser();
-      const res = await request(app)
-        .post('/ratings')
-        .send({ mantra_id: 5, rating: 4 });
+      const res = await request(app).post('/ratings').send({ mantra_id: 5, rating: 4 });
 
       expect(res.status).toBe(401);
       expect(res.body).toMatchObject({
@@ -64,9 +68,7 @@ describe('RatingController', () => {
 
     it('should return 400 if mantra_id missing', async () => {
       const app = setupAppWithUser(1, 'test@test.com');
-      const res = await request(app)
-        .post('/ratings')
-        .send({ rating: 4 });
+      const res = await request(app).post('/ratings').send({ rating: 4 });
 
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
@@ -77,9 +79,7 @@ describe('RatingController', () => {
 
     it('should return 400 if rating missing', async () => {
       const app = setupAppWithUser(1, 'test@test.com');
-      const res = await request(app)
-        .post('/ratings')
-        .send({ mantra_id: 5 });
+      const res = await request(app).post('/ratings').send({ mantra_id: 5 });
 
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
@@ -90,9 +90,7 @@ describe('RatingController', () => {
 
     it('should return 400 if rating below 1', async () => {
       const app = setupAppWithUser(1, 'test@test.com');
-      const res = await request(app)
-        .post('/ratings')
-        .send({ mantra_id: 5, rating: 0 });
+      const res = await request(app).post('/ratings').send({ mantra_id: 5, rating: 0 });
 
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
@@ -103,9 +101,7 @@ describe('RatingController', () => {
 
     it('should return 400 if rating above 5', async () => {
       const app = setupAppWithUser(1, 'test@test.com');
-      const res = await request(app)
-        .post('/ratings')
-        .send({ mantra_id: 5, rating: 6 });
+      const res = await request(app).post('/ratings').send({ mantra_id: 5, rating: 6 });
 
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
@@ -118,9 +114,7 @@ describe('RatingController', () => {
       (RatingModel.upsert as jest.Mock).mockRejectedValue(new Error('DB error'));
 
       const app = setupAppWithUser(1, 'test@test.com');
-      const res = await request(app)
-        .post('/ratings')
-        .send({ mantra_id: 5, rating: 4 });
+      const res = await request(app).post('/ratings').send({ mantra_id: 5, rating: 4 });
 
       expect(res.status).toBe(500);
       expect(res.body).toMatchObject({
@@ -217,7 +211,7 @@ describe('RatingController', () => {
   describe('deleteRating', () => {
     it('should delete rating successfully', async () => {
       const mockRating = { rating_id: 1, user_id: 1, mantra_id: 5, rating: 4 };
-      (RatingModel.findByUserAndMantra as jest.Mock).mockResolvedValue(mockRating);
+      (RatingModel.findById as jest.Mock).mockResolvedValue(mockRating);
       (RatingModel.delete as jest.Mock).mockResolvedValue(true);
 
       const app = setupAppWithUser(1, 'test@test.com');
@@ -228,7 +222,7 @@ describe('RatingController', () => {
         status: 'success',
         message: 'Rating deleted successfully',
       });
-      expect(RatingModel.findByUserAndMantra).toHaveBeenCalledWith(1, 1);
+      expect(RatingModel.findById).toHaveBeenCalledWith(1);
       expect(RatingModel.delete).toHaveBeenCalledWith(1);
     });
 
@@ -244,7 +238,7 @@ describe('RatingController', () => {
     });
 
     it('should return 404 if rating not found in verification', async () => {
-      (RatingModel.findByUserAndMantra as jest.Mock).mockResolvedValue(null);
+      (RatingModel.findById as jest.Mock).mockResolvedValue(null);
 
       const app = setupAppWithUser(1, 'test@test.com');
       const res = await request(app).delete('/ratings/999');
@@ -259,7 +253,7 @@ describe('RatingController', () => {
 
     it('should return 404 if delete returns false', async () => {
       const mockRating = { rating_id: 1, user_id: 1, mantra_id: 5, rating: 4 };
-      (RatingModel.findByUserAndMantra as jest.Mock).mockResolvedValue(mockRating);
+      (RatingModel.findById as jest.Mock).mockResolvedValue(mockRating);
       (RatingModel.delete as jest.Mock).mockResolvedValue(false);
 
       const app = setupAppWithUser(1, 'test@test.com');
@@ -273,7 +267,7 @@ describe('RatingController', () => {
     });
 
     it('should handle errors', async () => {
-      (RatingModel.findByUserAndMantra as jest.Mock).mockRejectedValue(new Error('DB error'));
+      (RatingModel.findById as jest.Mock).mockRejectedValue(new Error('DB error'));
 
       const app = setupAppWithUser(1, 'test@test.com');
       const res = await request(app).delete('/ratings/1');

@@ -19,21 +19,21 @@ router.use(authenticate);
 router.post(
   '/register-token',
   validateRequest(registerTokenSchema),
-  NotificationController.registerToken
+  NotificationController.registerToken,
 );
 
 // POST /api/notifications/unregister-token - Remove device token
 router.post(
   '/unregister-token',
   validateRequest(unregisterTokenSchema),
-  NotificationController.unregisterToken
+  NotificationController.unregisterToken,
 );
 
 // POST /api/notifications/send - Send notification to current user
 router.post(
   '/send',
   validateRequest(sendNotificationSchema),
-  NotificationController.sendNotification
+  NotificationController.sendNotification,
 );
 
 // POST /api/notifications/send-bulk - Send bulk notifications (admin only)
@@ -41,7 +41,7 @@ router.post(
   '/send-bulk',
   requireAdmin,
   validateRequest(sendBulkNotificationSchema),
-  NotificationController.sendBulkNotification
+  NotificationController.sendBulkNotification,
 );
 
 // GET /api/notifications/recommend - Send a personalised recommendation notification to current user

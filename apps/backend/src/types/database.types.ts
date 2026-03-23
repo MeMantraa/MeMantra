@@ -1,6 +1,6 @@
 import { Generated, Insertable, Selectable, Updateable } from 'kysely';
 
-//db interface
+// Kysely database schema — maps table names to their row interfaces.
 export interface Database {
   User: UserTable;
   Admin: AdminTable;
@@ -24,7 +24,6 @@ export interface Database {
   EmailVerificationToken: EmailVerificationTokenTable;
 }
 
-//table interfaces
 export interface UserTable {
   user_id: Generated<number>;
   first_name: string | null;
@@ -187,7 +186,7 @@ export interface UserCategoryScoreTable {
   updated_at: string;
 }
 
-//types for type safe operations (typescript ting)
+// Type-safe row aliases for SELECT / INSERT / UPDATE operations.
 export type User = Selectable<UserTable>;
 export type NewUser = Insertable<UserTable>;
 export type UserUpdate = Updateable<UserTable>;

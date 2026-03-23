@@ -49,7 +49,7 @@ router.use('/chat', chatRoutes);
 router.use('/notifications', notificationRoutes);
 
 // Rating routes
-router.use('/ratings', ratingRoutes); 
+router.use('/ratings', ratingRoutes);
 
 // Journal routes
 router.use('/journal', journalRoutes);
@@ -61,7 +61,6 @@ router.use('/algorithm', algorithmRoutes);
 router.use('/theme', themeRoutes);
 // Engagement routes (app-open tracking for adaptive notification timing)
 router.use('/engagement', engagementRoutes);
-
 // Performance monitoring routes
 router.use('/performance', performanceRoutes);
 

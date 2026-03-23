@@ -5,7 +5,7 @@ export const createCollectionSchema = z.object({
   body: z.object({
     name: z.string().min(1, 'Name is required').max(100, 'Name must be less than 100 characters'),
     description: z.string().optional(),
-    icon: z.string().optional(), 
+    icon: z.string().optional(),
   }),
 });
 
@@ -14,7 +14,7 @@ export const updateCollectionSchema = z.object({
   body: z.object({
     name: z.string().min(1).max(100).optional(),
     description: z.string().optional(),
-    icon: z.string().optional(), 
+    icon: z.string().optional(),
   }),
 });
 
