@@ -71,11 +71,15 @@ function buildReferenceItems(content: string): string[] {
   if (!trimmed) return [];
 
   const rows = trimmed
-    .split(/\n+/)
+    .split('\n')
     .map((line) => line.trim())
-    .flatMap((line) => line.split(/\s*;\s*/))
-    .map((item) => item.trim())
-    .filter((item) => item.length > 0);
+    .filter((line) => line.length > 0)
+    .flatMap((line) =>
+      line
+        .split(';')
+        .map((item) => item.trim())
+        .filter((item) => item.length > 0),
+    );
 
   return rows.length > 0 ? rows : [trimmed];
 }
