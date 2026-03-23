@@ -14,6 +14,20 @@ jest.mock('../../src/utils/featureFlags', () => ({
   ),
 }));
 
+// Silence expected error-path logs in this suite.
+const originalConsoleLog = console.log;
+const originalConsoleError = console.error;
+
+beforeAll(() => {
+  console.log = jest.fn();
+  console.error = jest.fn();
+});
+
+afterAll(() => {
+  console.log = originalConsoleLog;
+  console.error = originalConsoleError;
+});
+
 // Setup express app with all routes
 const app = express();
 app.use(express.json());

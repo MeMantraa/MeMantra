@@ -1,4 +1,5 @@
 require('@testing-library/jest-native/extend-expect');
+const { cleanup } = require('@testing-library/react-native');
 
 // Set React act environment
 global.IS_REACT_ACT_ENVIRONMENT = true;
@@ -23,6 +24,12 @@ beforeAll(() => {
 
 afterAll(() => {
   console.error = originalError;
+});
+
+afterEach(() => {
+  cleanup();
+  jest.clearAllTimers();
+  jest.useRealTimers();
 });
 
 // Mock expo-splash-screen

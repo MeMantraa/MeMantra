@@ -4,6 +4,7 @@ module.exports = {
   roots: ['<rootDir>/src', '<rootDir>/test'],
   testMatch: ['**/test/**/*.test.ts', '**/*.test.ts'],
   setupFiles: ['<rootDir>/setupEnv.ts'],
+  setupFilesAfterEnv: ['<rootDir>/test/jest.cleanup.ts'],
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
@@ -13,5 +14,4 @@ module.exports = {
   coverageReporters: ['text', 'lcov', 'html'],
   verbose: true,
   moduleFileExtensions: ['ts', 'js', 'json'],
-  // No setupFilesAfterEnv needed - backend doesn't use React Testing Library
 };
