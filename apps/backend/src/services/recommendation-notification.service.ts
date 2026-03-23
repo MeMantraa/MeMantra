@@ -5,6 +5,7 @@ import { NotificationService } from './notification.service';
 import { generateNotificationContent } from '../config/notification-content.config';
 import { User } from '../types/database.types';
 import { getCurrentTimeInTimezone as _getCurrentTimeInTimezone } from '../utils/timezone.utils';
+import { sanitizeForLog } from '../utils/sanitize.utils';
 import {
   SchedulerConfig,
   startScheduler,
@@ -115,8 +116,8 @@ export const RecommendationNotificationService = {
           // Persist the send timestamp so the user isn't notified twice today
           await UserModel.update(user.user_id, {
             recommendation_notif_sent_at: new Date().toISOString(),
-          }).catch(() => {
-            // Non-critical: don't fail the whole run if the update fails
+          }).catch((err) => {
+            console.error('Failed to update recommendation_notif_sent_at for user:', sanitizeForLog(user.user_id), err);
           });
         }
 
@@ -175,7 +176,9 @@ export const RecommendationNotificationService = {
         `✅ Recommendation notification sent to user ${userId} (mantra ${topRec.mantra.mantra_id})`,
       );
       // Track the send for tap-through rate analytics (fire-and-forget)
-      EngagementModel.create(userId, 'notification_sent').catch(() => {});
+      EngagementModel.create(userId, 'notification_sent').catch((err) => {
+        console.error('Failed to log engagement event for user:', sanitizeForLog(userId), err);
+      });
       return { userId, success: true };
     } catch (error) {
       console.error(`❌ Error sending recommendation notification to user ${userId}:`, error);
