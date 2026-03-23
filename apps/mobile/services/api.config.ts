@@ -45,8 +45,18 @@ const getLocalIpAddress = (): string | null => {
   return debuggerHost || null;
 };
 
+// Production API URL (Render-hosted backend)
+const PRODUCTION_API_URL = 'https://memantra.onrender.com/api';
+
 const getBaseUrl = () => {
-  const autoDetectedIP = getLocalIpAddress(); //
+  // In production/preview builds, always use the hosted backend
+  // eslint-disable-next-line no-undef
+  if (!__DEV__) {
+    return PRODUCTION_API_URL;
+  }
+
+  // --- Development mode: use local backend ---
+  const autoDetectedIP = getLocalIpAddress();
   const PORT = '4000';
 
   // Determine if we're using Expo tunnel

@@ -10,7 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.memantra.mobile"
+      "bundleIdentifier": "com.memantra.mobile",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -50,8 +53,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "072863e5-efd5-4b9c-8f68-7edfca4409d0"
+        "projectId": "3b71c23f-4587-4f54-ac22-817a51121a0f"
       }
-    }
+    },
+    "owner": "yo_franc"
   }
 }
