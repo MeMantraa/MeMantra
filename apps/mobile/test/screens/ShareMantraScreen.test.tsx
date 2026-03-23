@@ -216,16 +216,11 @@ describe('ShareMantraScreen', () => {
   it('shows empty state when no conversations', async () => {
     (chatService.getConversations as jest.Mock).mockResolvedValue([]);
 
-    const { getByText, queryByText } = render(
+    const { findByText } = render(
       <ShareMantraScreen route={mockRoute} navigation={mockNavigation} />,
     );
 
-    // Wait for loading to complete
-    await waitFor(() => {
-      expect(queryByText('Loading conversations...')).toBeNull();
-    });
-
-    expect(getByText(/No conversations yet/)).toBeTruthy();
+    expect(await findByText(/No conversations yet/)).toBeTruthy();
   });
 
   it('creates correct mantra share payload', async () => {

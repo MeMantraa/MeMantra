@@ -153,3 +153,64 @@ jest.mock(
   },
   { virtual: true },
 );
+
+// Mock expo-image-picker
+jest.mock(
+  'expo-image-picker',
+  () => ({
+    __esModule: true,
+    launchImageLibraryAsync: jest.fn(() =>
+      Promise.resolve({
+        canceled: false,
+        assets: [{ uri: 'file://test-image.jpg', width: 100, height: 100 }],
+      }),
+    ),
+    launchCameraAsync: jest.fn(() =>
+      Promise.resolve({
+        canceled: false,
+        assets: [{ uri: 'file://test-camera.jpg', width: 100, height: 100 }],
+      }),
+    ),
+    requestMediaLibraryPermissionsAsync: jest.fn(() =>
+      Promise.resolve({ status: 'granted' }),
+    ),
+    requestCameraPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
+    MediaTypeOptions: {
+      Images: 'Images',
+      Videos: 'Videos',
+      All: 'All',
+    },
+  }),
+  { virtual: true },
+);
+
+// Mock expo-image-manipulator
+jest.mock(
+  'expo-image-manipulator',
+  () => ({
+    __esModule: true,
+    manipulateAsync: jest.fn((uri, actions, options) =>
+      Promise.resolve({
+        uri: 'file://manipulated-image.jpg',
+        width: 800,
+        height: 800,
+      }),
+    ),
+    SaveFormat: {
+      JPEG: 'jpeg',
+      PNG: 'png',
+      WEBP: 'webp',
+    },
+    FlipType: {
+      Horizontal: 'horizontal',
+      Vertical: 'vertical',
+    },
+    Action: {
+      Resize: 'resize',
+      Rotate: 'rotate',
+      Flip: 'flip',
+      Crop: 'crop',
+    },
+  }),
+  { virtual: true },
+);

@@ -50,7 +50,7 @@ describe('ProfileScreen', () => {
 
     await waitFor(() => {
       expect(getByText('memantrauser')).toBeTruthy();
-      expect(getByText('Profile Photo Goes Here')).toBeTruthy();
+      expect(getByText('Edit')).toBeTruthy();
       expect(getByText('Notifications')).toBeTruthy();
       expect(getByText('Liked')).toBeTruthy();
       expect(getByText('Settings')).toBeTruthy();

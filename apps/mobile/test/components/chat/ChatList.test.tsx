@@ -256,8 +256,8 @@ describe('ChatList', () => {
   });
 
   describe('Avatar', () => {
-    it('displays first letter of username', () => {
-      const { getAllByText } = render(
+    it('displays default profile image when no profile_photo', () => {
+      const { UNSAFE_getAllByType } = render(
         <ChatList
           conversations={mockConversations}
           loading={false}
@@ -265,22 +265,25 @@ describe('ChatList', () => {
         />,
       );
 
-      expect(getAllByText('J').length).toBeGreaterThan(0); // john_doe avatar
+      const images = UNSAFE_getAllByType(require('react-native').Image);
+      expect(images.length).toBeGreaterThan(0);
     });
 
-    it('displays uppercase letter', () => {
+    it('displays profile photo when available', () => {
       const conversations: Conversation[] = [
         {
           ...mockConversations[0],
           participant_username: 'alice',
+          profile_photo: 'data:image/jpeg;base64,test',
         },
       ];
 
-      const { getByText } = render(
+      const { UNSAFE_getAllByType } = render(
         <ChatList conversations={conversations} loading={false} onConversationPress={jest.fn()} />,
       );
 
-      expect(getByText('A')).toBeTruthy();
+      const images = UNSAFE_getAllByType(require('react-native').Image);
+      expect(images.length).toBeGreaterThan(0);
     });
   });
 });

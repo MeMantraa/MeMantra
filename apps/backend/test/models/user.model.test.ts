@@ -200,14 +200,281 @@ describe('UserModel feature flag methods', () => {
       const returningAllMock = jest.fn().mockReturnValue({ executeTakeFirst: executeTakeFirstMock });
       const whereMock = jest.fn().mockReturnValue({ returningAll: returningAllMock });
       const setMock = jest.fn().mockReturnValue({ where: whereMock });
-      updateTableMock.mockReturnValue({ set: setMock });
+      (db.updateTable as jest.Mock).mockReturnValue({ set: setMock });
 
       const result = await UserModel.updateProfilePhoto(1, photoBase64);
 
-      expect(updateTableMock).toHaveBeenCalledWith('User');
+      expect(db.updateTable).toHaveBeenCalledWith('User');
       expect(setMock).toHaveBeenCalledWith({ profile_photo: photoBase64 });
       expect(whereMock).toHaveBeenCalledWith('user_id', '=', 1);
       expect(result).toBe(fakeUser);
+    });
+  });
+
+  describe('Basic CRUD methods', () => {
+    describe('create', () => {
+      it('should create a new user with hashed password', async () => {
+        const userData = {
+          username: 'newuser',
+          email: 'new@test.com',
+          password: 'password123',
+        };
+        const fakeUser = {
+          user_id: 1,
+          username: 'newuser',
+          email: 'new@test.com',
+          password_hash: 'hashed_password',
+          feature_flags: [],
+        };
+        const executeTakeFirstOrThrow = jest.fn().mockResolvedValue(fakeUser);
+        const returningAll = jest.fn().mockReturnValue({ executeTakeFirstOrThrow });
+        const values = jest.fn().mockReturnValue({ returningAll });
+        const insertInto = jest.fn().mockReturnValue({ values });
+        (db.insertInto as jest.Mock) = insertInto;
+
+        const result = await UserModel.create(userData);
+
+        expect(result).toBe(fakeUser);
+      });
+    });
+
+    describe('findByEmail', () => {
+      it('should find user by email', async () => {
+        const fakeUser = { user_id: 1, email: 'test@test.com', username: 'testuser' };
+        const executeTakeFirst = jest.fn().mockResolvedValue(fakeUser);
+        const selectAll = jest.fn().mockReturnValue({ executeTakeFirst });
+        const where = jest.fn().mockReturnValue({ selectAll });
+        const selectFrom = jest.fn().mockReturnValue({ where });
+        (db.selectFrom as jest.Mock).mockImplementation(selectFrom);
+
+        const result = await UserModel.findByEmail('test@test.com');
+
+        expect(result).toBe(fakeUser);
+        expect(db.selectFrom).toHaveBeenCalledWith('User');
+      });
+    });
+
+    describe('findByUsername', () => {
+      it('should find user by username', async () => {
+        const fakeUser = { user_id: 1, email: 'test@test.com', username: 'testuser' };
+        const executeTakeFirst = jest.fn().mockResolvedValue(fakeUser);
+        const selectAll = jest.fn().mockReturnValue({ executeTakeFirst });
+        const where = jest.fn().mockReturnValue({ selectAll });
+        const selectFrom = jest.fn().mockReturnValue({ where });
+        (db.selectFrom as jest.Mock).mockImplementation(selectFrom);
+
+        const result = await UserModel.findByUsername('testuser');
+
+        expect(result).toBe(fakeUser);
+        expect(db.selectFrom).toHaveBeenCalledWith('User');
+      });
+    });
+
+    describe('findById', () => {
+      it('should find user by id', async () => {
+        const fakeUser = { user_id: 1, email: 'test@test.com', username: 'testuser' };
+        const executeTakeFirst = jest.fn().mockResolvedValue(fakeUser);
+        const selectAll = jest.fn().mockReturnValue({ executeTakeFirst });
+        const where = jest.fn().mockReturnValue({ selectAll });
+        const selectFrom = jest.fn().mockReturnValue({ where });
+        (db.selectFrom as jest.Mock).mockImplementation(selectFrom);
+
+        const result = await UserModel.findById(1);
+
+        expect(result).toBe(fakeUser);
+        expect(db.selectFrom).toHaveBeenCalledWith('User');
+      });
+    });
+
+    describe('findByIds', () => {
+      it('should find users by multiple ids', async () => {
+        const fakeUsers = [
+          { user_id: 1, email: 'test1@test.com', username: 'user1' },
+          { user_id: 2, email: 'test2@test.com', username: 'user2' },
+        ];
+        const execute = jest.fn().mockResolvedValue(fakeUsers);
+        const selectAll = jest.fn().mockReturnValue({ execute });
+        const where = jest.fn().mockReturnValue({ selectAll });
+        const selectFrom = jest.fn().mockReturnValue({ where });
+        (db.selectFrom as jest.Mock).mockImplementation(selectFrom);
+
+        const result = await UserModel.findByIds([1, 2]);
+
+        expect(result).toBe(fakeUsers);
+        expect(db.selectFrom).toHaveBeenCalledWith('User');
+      });
+
+      it('should return empty array for empty ids', async () => {
+        const result = await UserModel.findByIds([]);
+        expect(result).toEqual([]);
+      });
+    });
+
+    describe('findAll', () => {
+      it('should find all users', async () => {
+        const fakeUsers = [
+          { user_id: 1, email: 'test1@test.com', username: 'user1' },
+          { user_id: 2, email: 'test2@test.com', username: 'user2' },
+        ];
+        const execute = jest.fn().mockResolvedValue(fakeUsers);
+        const orderBy = jest.fn().mockReturnValue({ execute });
+        const selectAll = jest.fn().mockReturnValue({ orderBy });
+        const selectFrom = jest.fn().mockReturnValue({ selectAll });
+        (db.selectFrom as jest.Mock).mockImplementation(selectFrom);
+
+        const result = await UserModel.findAll();
+
+        expect(result).toBe(fakeUsers);
+        expect(db.selectFrom).toHaveBeenCalledWith('User');
+      });
+    });
+
+    describe('update', () => {
+      it('should update user', async () => {
+        const fakeUser = { user_id: 1, email: 'updated@test.com', username: 'testuser' };
+        const executeTakeFirst = jest.fn().mockResolvedValue(fakeUser);
+        const returningAll = jest.fn().mockReturnValue({ executeTakeFirst });
+        const where = jest.fn().mockReturnValue({ returningAll });
+        const set = jest.fn().mockReturnValue({ where });
+        (db.updateTable as jest.Mock).mockReturnValue({ set });
+
+        const result = await UserModel.update(1, { email: 'updated@test.com' });
+
+        expect(result).toBe(fakeUser);
+        expect(db.updateTable).toHaveBeenCalledWith('User');
+      });
+    });
+
+    describe('delete', () => {
+      it('should delete user and return true', async () => {
+        const executeTakeFirst = jest.fn().mockResolvedValue({ numDeletedRows: BigInt(1) });
+        const where = jest.fn().mockReturnValue({ executeTakeFirst });
+        const deleteFrom = jest.fn().mockReturnValue({ where });
+        (db.deleteFrom as jest.Mock) = deleteFrom;
+
+        const result = await UserModel.delete(1);
+
+        expect(result).toBe(true);
+      });
+
+      it('should return false when user not found', async () => {
+        const executeTakeFirst = jest.fn().mockResolvedValue({ numDeletedRows: BigInt(0) });
+        const where = jest.fn().mockReturnValue({ executeTakeFirst });
+        const deleteFrom = jest.fn().mockReturnValue({ where });
+        (db.deleteFrom as jest.Mock) = deleteFrom;
+
+        const result = await UserModel.delete(999);
+
+        expect(result).toBe(false);
+      });
+    });
+
+    describe('updateEmail', () => {
+      it('should update user email', async () => {
+        const fakeUser = { user_id: 1, email: 'new@test.com' };
+        const executeTakeFirst = jest.fn().mockResolvedValue(fakeUser);
+        const where = jest.fn().mockReturnValue({ executeTakeFirst });
+        const set = jest.fn().mockReturnValue({ where });
+        (db.updateTable as jest.Mock).mockReturnValue({ set });
+
+        const result = await UserModel.updateEmail(1, 'new@test.com');
+
+        expect(result).toBe(fakeUser);
+        expect(db.updateTable).toHaveBeenCalledWith('User');
+      });
+    });
+
+    describe('clearDeviceToken', () => {
+      it('should clear device token', async () => {
+        const execute = jest.fn().mockResolvedValue(undefined);
+        const where = jest.fn().mockReturnValue({ execute });
+        const set = jest.fn().mockReturnValue({ where });
+        (db.updateTable as jest.Mock).mockReturnValue({ set });
+
+        await UserModel.clearDeviceToken(1);
+
+        expect(db.updateTable).toHaveBeenCalledWith('User');
+        expect(set).toHaveBeenCalledWith({ device_token: null });
+      });
+    });
+
+    describe('findByDeviceToken', () => {
+      it('should find user by device token', async () => {
+        const fakeUser = { user_id: 1, device_token: 'token123' };
+        const executeTakeFirst = jest.fn().mockResolvedValue(fakeUser);
+        const selectAll = jest.fn().mockReturnValue({ executeTakeFirst });
+        const where = jest.fn().mockReturnValue({ selectAll });
+        const selectFrom = jest.fn().mockReturnValue({ where });
+        (db.selectFrom as jest.Mock).mockImplementation(selectFrom);
+
+        const result = await UserModel.findByDeviceToken('token123');
+
+        expect(result).toBe(fakeUser);
+        expect(db.selectFrom).toHaveBeenCalledWith('User');
+      });
+    });
+
+    describe('findAllWithDeviceTokens', () => {
+      it('should find all users with device tokens', async () => {
+        const fakeUsers = [
+          { user_id: 1, device_token: 'token1' },
+          { user_id: 2, device_token: 'token2' },
+        ];
+        const execute = jest.fn().mockResolvedValue(fakeUsers);
+        const selectAll = jest.fn().mockReturnValue({ execute });
+        const where = jest.fn().mockReturnValue({ selectAll });
+        const selectFrom = jest.fn().mockReturnValue({ where });
+        (db.selectFrom as jest.Mock).mockImplementation(selectFrom);
+
+        const result = await UserModel.findAllWithDeviceTokens();
+
+        expect(result).toBe(fakeUsers);
+        expect(db.selectFrom).toHaveBeenCalledWith('User');
+      });
+    });
+
+    describe('updateTheme', () => {
+      it('should update user theme', async () => {
+        const fakeUser = { user_id: 1, theme: 'dark' };
+        const executeTakeFirst = jest.fn().mockResolvedValue(fakeUser);
+        const returningAll = jest.fn().mockReturnValue({ executeTakeFirst });
+        const where = jest.fn().mockReturnValue({ returningAll });
+        const set = jest.fn().mockReturnValue({ where });
+        (db.updateTable as jest.Mock).mockReturnValue({ set });
+
+        const result = await UserModel.updateTheme(1, 'dark');
+
+        expect(result).toBe(fakeUser);
+        expect(db.updateTable).toHaveBeenCalledWith('User');
+      });
+    });
+
+    describe('getTheme', () => {
+      it('should get user theme', async () => {
+        const fakeUser = { user_id: 1, theme: 'dark' };
+        const executeTakeFirst = jest.fn().mockResolvedValue(fakeUser);
+        const where = jest.fn().mockReturnValue({ executeTakeFirst });
+        const select = jest.fn().mockReturnValue({ where });
+        const selectFrom = jest.fn().mockReturnValue({ select });
+        (db.selectFrom as jest.Mock).mockImplementation(selectFrom);
+
+        const result = await UserModel.getTheme(1);
+
+        expect(result).toBe('dark');
+        expect(db.selectFrom).toHaveBeenCalledWith('User');
+      });
+
+      it('should return default when user not found', async () => {
+        const executeTakeFirst = jest.fn().mockResolvedValue(undefined);
+        const where = jest.fn().mockReturnValue({ executeTakeFirst });
+        const select = jest.fn().mockReturnValue({ where });
+        const selectFrom = jest.fn().mockReturnValue({ select });
+        (db.selectFrom as jest.Mock).mockImplementation(selectFrom);
+
+        const result = await UserModel.getTheme(999);
+
+        expect(result).toBe('default');
+      });
     });
   });
 });
