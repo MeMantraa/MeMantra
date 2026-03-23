@@ -3,7 +3,7 @@ import { Pool, types } from 'pg';
 import { Database } from '../types/database.types';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 // OID 1114 = TIMESTAMP WITHOUT TIME ZONE
 // By default pg interprets these in the server's local timezone, causing

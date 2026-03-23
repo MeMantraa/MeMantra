@@ -53,7 +53,9 @@ jobs:
         run: pnpm -w typecheck
 
       - name: Test and coverage
-        run: pnpm -w test -- --coverage
+        run: |
+          pnpm --filter backend test -- --coverage --runInBand --watchman=false --forceExit
+          pnpm --filter mobile test -- --coverage --runInBand --watchman=false --forceExit
 
       - name: Upload coverage
         if: always()

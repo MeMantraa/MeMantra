@@ -32,7 +32,9 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Test and coverage
-        run: pnpm -w test -- --coverage
+        run: |
+          pnpm --filter backend test -- --coverage --runInBand --watchman=false --forceExit
+          pnpm --filter mobile test -- --coverage --runInBand --watchman=false --forceExit
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
