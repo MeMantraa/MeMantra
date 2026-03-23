@@ -15,10 +15,8 @@ import { collectionService, Collection } from '../services/collection.service';
 import { categoryService, Category } from '../services/category.service';
 import { ratingService } from '../services/rating.service';
 import { storage } from '../utils/storage';
-import { logoutUser } from '../utils/auth';
 import SearchBar from '../components/UI/searchBar';
 import AppText from '../components/UI/textWrapper';
-import IconButton from '../components/UI/iconButton';
 import { useTheme } from '../context/ThemeContext';
 import { useSavedMantras } from '../context/SavedContext';
 import SavedPopupBar from '../components/UI/savedPopupBar';
@@ -70,7 +68,7 @@ export default function HomeScreen({ navigation, route }: any) {
 
       if (response.status === 'success') {
         setOriginalMantras(response.data);
-        setFeedData(response.data);
+        setFeedData([...response.data]);
       } else {
         setOriginalMantras([]);
         setFeedData([]);
@@ -311,7 +309,7 @@ export default function HomeScreen({ navigation, route }: any) {
     }
   };
 
-  const handleSearch = () => navigation.navigate('Search', { mantras: feedData });
+  const handleSearch = () => navigation.navigate('Search', { mantras: originalMantras });
 
   const handleEndReached = () => {
     if (originalMantras.length > 0) {
@@ -384,6 +382,7 @@ export default function HomeScreen({ navigation, route }: any) {
   } else {
     content = (
       <FlatList
+        testID="feed-list"
         key={`feed-${initialIndex}-${selectedCategoryIds.join(',')}`}
         ref={listRef}
         data={filteredFeedData}

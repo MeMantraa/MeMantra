@@ -29,7 +29,15 @@ const SEARCHABLE_FIELDS: (keyof Mantra)[] = [
 export default function SearchScreen({ navigation, route }: any) {
   const { colors } = useTheme();
   const [query, setQuery] = useState('');
-  const allMantras: Mantra[] = route?.params?.mantras ?? [];
+  const allMantras: Mantra[] = useMemo(() => {
+    const raw: Mantra[] = route?.params?.mantras ?? [];
+    const seen = new Set<number>();
+    return raw.filter((m) => {
+      if (seen.has(m.mantra_id)) return false;
+      seen.add(m.mantra_id);
+      return true;
+    });
+  }, [route?.params?.mantras]);
   const inputRef = useRef<TextInput>(null);
 
   useFocusEffect(

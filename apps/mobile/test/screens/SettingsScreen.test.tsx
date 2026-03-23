@@ -13,9 +13,11 @@ jest.mock('../../utils/auth');
 jest.mock('../../context/ThemeContext', () => ({
   useTheme: () => ({
     colors: {
+      primary: '#9AA793',
+      primaryDark: '#6D7E68',
+      text: '#ffffff',
       white: '#ffffff',
       black: '#000000',
-      primaryDark: '#6D7E68',
       settings: '#D9D9D9',
       error: '#E44438',
     },
