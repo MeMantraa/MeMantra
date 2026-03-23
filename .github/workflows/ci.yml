@@ -55,7 +55,7 @@ jobs:
       - name: Test and coverage
         run: |
           pnpm --filter backend test -- --coverage --runInBand --watchman=false --forceExit
-          pnpm --filter mobile test -- --coverage --runInBand --watchman=false --forceExit --detectOpenHandles --verbose --testTimeout=30000
+          pnpm --filter mobile test -- --coverage --runInBand --watchman=false --forceExit --testTimeout=30000
 
       - name: Upload coverage
         if: always()
