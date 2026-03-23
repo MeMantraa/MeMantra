@@ -187,6 +187,7 @@ jest.mock('@react-navigation/native', () => {
 jest.mock('../../services/mantra.service', () => ({
   mantraService: {
     getFeedMantras: jest.fn(),
+    getSavedMantras: jest.fn().mockResolvedValue([]),
     likeMantra: jest.fn(),
     unlikeMantra: jest.fn(),
     saveMantra: jest.fn(),

@@ -34,7 +34,7 @@ export default function ConversationScreen({ route, navigation }: any) {
     try {
       const userData = await storage.getUserData();
       if (userData?.user_id) {
-        setCurrentUserId(userData.user_id);
+        setCurrentUserId(Number(userData.user_id));
       }
     } catch (err) {
       console.error('Error loading current user:', err);

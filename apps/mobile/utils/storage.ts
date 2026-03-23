@@ -2,6 +2,15 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
+import type { FeatureFlagName } from '../../backend/src/utils/featureFlags';
+
+export interface UserData {
+  user_id?: number;
+  username?: string | null;
+  email?: string | null;
+  feature_flags?: FeatureFlagName[];
+  [key: string]: unknown;
+}
 
 const AUTH_TOKEN_KEY = 'auth_token';
 const USER_DATA_KEY = '@user_data';
@@ -36,18 +45,18 @@ export const storage = {
     }
   },
 
-  async saveUserData(userData: Record<string, unknown>): Promise<void> {
+  async saveUserData(userData: UserData | null): Promise<void> {
     await AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
   },
 
-  async getUserData(): Promise<Record<string, unknown> | null> {
+  async getUserData(): Promise<UserData | null> {
     const data = await AsyncStorage.getItem(USER_DATA_KEY);
-    return data ? JSON.parse(data) : null;
+    return data ? (JSON.parse(data) as UserData) : null;
   },
 
   async getUserId(): Promise<number | null> {
     const userData = await this.getUserData();
-    return userData?.user_id || null;
+    return userData?.user_id ?? null;
   },
 
   async removeUserData(): Promise<void> {

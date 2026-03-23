@@ -7,6 +7,7 @@ const THEME_STORAGE_KEY = '@app_theme';
 
 export const logoutUser = async (navigation: {
   reset: (state: { index: number; routes: { name: string }[] }) => void;
+  [key: string]: unknown;
 }) => {
   try {
     // Unregister device token from backend before clearing auth

@@ -19,7 +19,7 @@ export default function ProfileScreen() {
   useEffect(() => {
     const load = async () => {
       const user = await storage.getUserData();
-      setUsername(user?.username || '');
+      setUsername(user?.username ?? '');
     };
     load();
   }, []);
