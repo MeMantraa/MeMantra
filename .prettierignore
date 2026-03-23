@@ -1,0 +1,9 @@
+node_modules
+dist
+build
+coverage
+.expo
+.turbo
+ios
+android
+pnpm-lock.yaml

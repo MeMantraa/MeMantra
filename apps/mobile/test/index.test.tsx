@@ -3,10 +3,10 @@ import { render, waitFor } from '@testing-library/react-native';
 import MainNavigator from '../app/index';
 import { storage } from '../utils/storage';
 
-jest.mock('../screens/login', () => () => null);
-jest.mock('../screens/SignUp', () => () => null);
+jest.mock('../screens/LoginScreen', () => () => null);
+jest.mock('../screens/SignUpEmailScreen', () => () => null);
 jest.mock('../components/bottomTabNavigator', () => () => null);
-jest.mock('../screens/focusScreen', () => () => null);
+jest.mock('../screens/FocusScreen', () => () => null);
 
 jest.mock('../context/ThemeContext', () => ({
   ThemeProvider: ({ children }: any) => children,

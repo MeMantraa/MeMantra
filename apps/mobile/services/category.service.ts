@@ -244,7 +244,11 @@ const mockCategoryService = {
   async getCategoryById(id: number, _token: string): Promise<SingleCategoryResponse> {
     const category = mockCategories.find((c) => c.category_id === id);
     if (!category) {
-      return { status: 'error', message: 'Category not found', data: { category: null } } as any;
+      return {
+        status: 'error',
+        message: 'Category not found',
+        data: { category: null as unknown as Category },
+      };
     }
     return { status: 'success', data: { category } };
   },
@@ -274,7 +278,11 @@ const mockCategoryService = {
   ): Promise<SingleCategoryResponse> {
     const index = mockCategories.findIndex((c) => c.category_id === id);
     if (index === -1) {
-      return { status: 'error', message: 'Category not found', data: { category: null } } as any;
+      return {
+        status: 'error',
+        message: 'Category not found',
+        data: { category: null as unknown as Category },
+      };
     }
     mockCategories[index] = { ...mockCategories[index], ...data };
     return { status: 'success', data: { category: mockCategories[index] } };

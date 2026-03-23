@@ -4,7 +4,7 @@ import { NotificationService } from '../services/notification.service';
 import { RecommendationNotificationService } from '../services/recommendation-notification.service';
 
 // --- Utility helpers ---
-const handleError = (res: Response, message: string, error?: any, status = 500) => {
+const handleError = (res: Response, message: string, error?: unknown, status = 500) => {
   console.error(message, error);
   return res.status(status).json({ status: 'error', message });
 };
@@ -56,7 +56,9 @@ export const NotificationController = {
 
       const safePlatform = platform ? String(platform).replaceAll(/[\r\n]/g, '') : '';
       const safeDeviceName = deviceName ? String(deviceName).replaceAll(/[\r\n]/g, '') : '';
-      console.log(`Device token registered for user ${userId}: ${safePlatform} - ${safeDeviceName}`);
+      console.log(
+        `Device token registered for user ${userId}: ${safePlatform} - ${safeDeviceName}`,
+      );
 
       return res.status(200).json({
         status: 'success',
@@ -123,7 +125,7 @@ export const NotificationController = {
         user.device_token,
         title,
         body,
-        data
+        data,
       );
 
       // Check if notification was sent successfully
@@ -182,7 +184,7 @@ export const NotificationController = {
         deviceTokens,
         title,
         body,
-        data
+        data,
       );
 
       const successful = result.data.filter((ticket) => ticket.status === 'ok').length;
@@ -222,10 +224,7 @@ export const NotificationController = {
         });
       }
 
-      const result = await RecommendationNotificationService.sendToUser(
-        userId,
-        user.device_token,
-      );
+      const result = await RecommendationNotificationService.sendToUser(userId, user.device_token);
 
       if (!result.success) {
         return res.status(500).json({
@@ -265,7 +264,7 @@ export const NotificationController = {
         user.device_token,
         'Test Notification',
         'This is a test notification from MeMantra',
-        { type: 'test' }
+        { type: 'test' },
       );
 
       const ticket = result.data[0];

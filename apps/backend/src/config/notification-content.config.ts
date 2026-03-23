@@ -62,7 +62,7 @@ export const MOTIVATIONAL_CTAS = {
     'Your mindful moment awaits 🌟',
   ],
   encouraging: [
-    'You\'ve got this! 💪',
+    "You've got this! 💪",
     'Believe in yourself today ❤️',
     'You are capable of amazing things 🌟',
     'Take a breath and affirm 🌬️',
@@ -92,7 +92,7 @@ export const CATEGORY_TEMPLATES: Record<string, NotificationTemplate[]> = {
   confidence: [
     { title: '💪 Boost your confidence', ctaSuffix: 'Step into your power!' },
     { title: '🌟 You are capable', ctaSuffix: 'Believe in yourself today' },
-    { title: '⚡ Embrace your strength', ctaSuffix: 'You\'ve got this!' },
+    { title: '⚡ Embrace your strength', ctaSuffix: "You've got this!" },
   ],
   gratitude: [
     { title: '🙏 Practice gratitude', ctaSuffix: 'Count your blessings' },
@@ -106,7 +106,7 @@ export const CATEGORY_TEMPLATES: Record<string, NotificationTemplate[]> = {
   ],
   motivation: [
     { title: '🚀 Take action', ctaSuffix: 'Your goals await!' },
-    { title: '🎯 Stay focused', ctaSuffix: 'You\'re making progress' },
+    { title: '🎯 Stay focused', ctaSuffix: "You're making progress" },
     { title: '💫 Keep going', ctaSuffix: 'Success is within reach' },
   ],
   selfLove: [
@@ -193,7 +193,7 @@ export function getCategoryTemplate(categoryName: string): NotificationTemplate 
 export function formatNotificationBody(
   mantraText: string,
   cta: string,
-  maxLength: number = 500
+  maxLength: number = 500,
 ): string {
   const separator = '\n\n';
   const fullBody = `"${mantraText}"${separator}${cta}`;
@@ -234,9 +234,10 @@ export interface NotificationContentOptions {
   customCTA?: string;
 }
 
-export function generateNotificationContent(
-  options: NotificationContentOptions
-): { title: string; body: string } {
+export function generateNotificationContent(options: NotificationContentOptions): {
+  title: string;
+  body: string;
+} {
   const {
     mantraText,
     categoryName,

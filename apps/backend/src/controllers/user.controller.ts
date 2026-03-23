@@ -151,7 +151,7 @@ export const UserController = {
         return sendError(res, 400, uniquenessError);
       }
 
-      const updateData: any = {};
+      const updateData: Partial<{ username: string; email: string; password_hash: string }> = {};
       if (username) updateData.username = username;
       if (email) updateData.email = email;
       if (password) {
@@ -241,7 +241,7 @@ export const UserController = {
     }
   },
 
-   // GET /api/users/feature-flags/users
+  // GET /api/users/feature-flags/users
   async getUsersWithFlags(_req: Request, res: Response) {
     try {
       const users = await UserModel.findAll();
@@ -272,9 +272,7 @@ export const UserController = {
         return sendError(res, 400, 'flags must be an array');
       }
 
-      const invalidFlag = flags.find(
-        (f) => typeof f !== 'string' || !isValidFeatureFlag(f),
-      );
+      const invalidFlag = flags.find((f) => typeof f !== 'string' || !isValidFeatureFlag(f));
       if (invalidFlag !== undefined) {
         return sendError(res, 400, `Invalid feature flag: ${invalidFlag}`);
       }
@@ -381,7 +379,7 @@ export const UserController = {
     }
   },
 
-// POST /api/users/feature-flags/:flag/all
+  // POST /api/users/feature-flags/:flag/all
   async setFeatureFlagForAllUsers(req: Request, res: Response) {
     try {
       const flag = req.params.flag;
@@ -469,5 +467,4 @@ export const UserController = {
       return sendError(res, 500, 'Error applying exact feature flag rollout');
     }
   },
-
 };

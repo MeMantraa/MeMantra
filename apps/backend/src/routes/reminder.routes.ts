@@ -23,47 +23,35 @@ router.get('/active', ReminderController.getActiveReminders);
 router.get(
   '/upcoming',
   validateRequest(upcomingQuerySchema),
-  ReminderController.getUpcomingReminders
+  ReminderController.getUpcomingReminders,
 );
 
 router.get(
   '/frequency',
   validateRequest(frequencyQuerySchema),
-  ReminderController.getRemindersByFrequency
+  ReminderController.getRemindersByFrequency,
 );
 
 // New: Schedule preview and suggestions (must be before /:id)
 router.post(
   '/preview-schedule',
   validateRequest(schedulePreviewSchema),
-  ReminderController.getSchedulePreview
+  ReminderController.getSchedulePreview,
 );
 
 router.get('/suggestions', ReminderController.getSuggestions);
 
-router.get(
-  '/:id',
-  validateRequest(reminderIdSchema),
-  ReminderController.getReminderById
-);
+router.get('/:id', validateRequest(reminderIdSchema), ReminderController.getReminderById);
 
-router.post(
-  '/',
-  validateRequest(createReminderSchema),
-  ReminderController.createReminder
-);
+router.post('/', validateRequest(createReminderSchema), ReminderController.createReminder);
 
 router.put(
   '/:id',
   validateRequest(reminderIdSchema),
   validateRequest(updateReminderSchema),
-  ReminderController.updateReminder
+  ReminderController.updateReminder,
 );
 
-router.delete(
-  '/:id',
-  validateRequest(reminderIdSchema),
-  ReminderController.deleteReminder
-);
+router.delete('/:id', validateRequest(reminderIdSchema), ReminderController.deleteReminder);
 
 export default router;

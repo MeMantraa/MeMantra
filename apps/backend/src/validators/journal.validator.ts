@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-// Mood options 
+// Mood options
 export const moodOptions = [
   'happy',
   'calm',

@@ -49,6 +49,7 @@ export default function NotificationSettingsScreen() {
       setPermissionStatus(status.status);
     } catch (error) {
       console.error('Error checking permission status:', error);
+      Alert.alert('Error', 'Failed to check notification permissions.');
     }
   };
 
