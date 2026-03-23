@@ -6,6 +6,7 @@ import {
   JournalQueryInput,
 } from '../validators/journal.validator';
 import { UserCategoryScoreModel } from '../models/user-category-score.model';
+import { sanitizeForLog } from '../utils/sanitize.utils';
 
 export const JournalController = {
   // GET /api/journal - Get all journal entries for the authenticated user
@@ -154,7 +155,15 @@ export const JournalController = {
       // Update algorithm: +2 points for all categories of the mantra
       if (journalData.mantra_id) {
         await UserCategoryScoreModel.addScoreForMantra(userId, journalData.mantra_id, 2).catch(
-          () => {},
+          (err) => {
+            console.error(
+              'Failed to update category score for user:',
+              sanitizeForLog(userId),
+              'mantra:',
+              sanitizeForLog(journalData.mantra_id),
+              err,
+            );
+          },
         );
       }
 

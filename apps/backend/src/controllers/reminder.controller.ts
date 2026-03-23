@@ -7,6 +7,7 @@ import {
 } from '../validators/reminder.validator';
 import { UserCategoryScoreModel } from '../models/user-category-score.model';
 import type { Reminder } from '../types/database.types';
+import { sanitizeForLog } from '../utils/sanitize.utils';
 
 // --- Utility helpers ---
 const handleError = (res: Response, message: string, error?: unknown, status = 500) => {
@@ -147,7 +148,15 @@ export const ReminderController = {
 
       // Update algorithm: +5 points for all categories of this mantra
       if (data.mantra_id) {
-        await UserCategoryScoreModel.addScoreForMantra(userId, data.mantra_id, 5).catch(() => {});
+        await UserCategoryScoreModel.addScoreForMantra(userId, data.mantra_id, 5).catch((err) => {
+          console.error(
+            'Failed to update category score for user:',
+            sanitizeForLog(userId),
+            'mantra:',
+            sanitizeForLog(data.mantra_id),
+            err,
+          );
+        });
       }
 
       return res.status(201).json({

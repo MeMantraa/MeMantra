@@ -38,21 +38,30 @@ export const EngagementOptimizerService = {
    */
   async processAllUsers(): Promise<ProcessUserResult[]> {
     const results: ProcessUserResult[] = [];
+    const PAGE_SIZE = 100;
 
     try {
-      const users = await UserModel.findAllWithDeviceTokens();
-      console.log(`📊 Computing optimal send hours for ${users.length} user(s)`);
+      let offset = 0;
+      let batch: Awaited<ReturnType<typeof UserModel.findAllWithDeviceTokensPaginated>>;
 
-      for (const user of users) {
-        const result = await this.processUser(user.user_id, user.timezone ?? 'UTC');
-        results.push(result);
-      }
+      do {
+        batch = await UserModel.findAllWithDeviceTokensPaginated(PAGE_SIZE, offset);
+
+        for (const user of batch) {
+          const result = await this.processUser(user.user_id, user.timezone ?? 'UTC');
+          results.push(result);
+        }
+
+        offset += PAGE_SIZE;
+      } while (batch.length === PAGE_SIZE);
 
       const updated = results.filter((r) => !r.skipped && !r.error).length;
       const errors = results.filter((r) => r.error).length;
-      console.log(`✅ Engagement optimizer: ${updated} updated, ${errors} errors`);
+      console.log(
+        `Engagement optimizer: ${updated} updated, ${errors} errors out of ${results.length} users`,
+      );
     } catch (error) {
-      console.error('❌ Error in EngagementOptimizerService.processAllUsers:', error);
+      console.error('Error in EngagementOptimizerService.processAllUsers:', error);
     }
 
     return results;

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { RatingModel } from '../models/rating.model';
 import { UserCategoryScoreModel } from '../models/user-category-score.model';
+import { sanitizeForLog } from '../utils/sanitize.utils';
 
 export const RatingController = {
   /**
@@ -43,10 +44,26 @@ export const RatingController = {
       // Update algorithm: add  (new - old) points for all categories
       const delta = newPoints - oldPoints;
       if (delta > 0) {
-        await UserCategoryScoreModel.addScoreForMantra(userId, mantra_id, delta).catch(() => {});
+        await UserCategoryScoreModel.addScoreForMantra(userId, mantra_id, delta).catch((err) => {
+          console.error(
+            'Failed to update category score for user:',
+            sanitizeForLog(userId),
+            'mantra:',
+            sanitizeForLog(mantra_id),
+            err,
+          );
+        });
       } else if (delta < 0) {
         await UserCategoryScoreModel.removeScoreForMantra(userId, mantra_id, Math.abs(delta)).catch(
-          () => {},
+          (err) => {
+            console.error(
+              'Failed to remove category score for user:',
+              sanitizeForLog(userId),
+              'mantra:',
+              sanitizeForLog(mantra_id),
+              err,
+            );
+          },
         );
       }
 

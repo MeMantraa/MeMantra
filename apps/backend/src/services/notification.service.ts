@@ -70,7 +70,9 @@ export const NotificationService = {
       });
 
       // Fire-and-forget: clean up invalid tokens
-      this.handleTicketErrors(response.data.data, messagesArray).catch(() => {});
+      this.handleTicketErrors(response.data.data, messagesArray).catch((err) => {
+        console.error('Error handling push ticket errors:', err);
+      });
 
       return response.data;
     } catch (error) {

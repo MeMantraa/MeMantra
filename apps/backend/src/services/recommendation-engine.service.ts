@@ -153,9 +153,13 @@ export const RecommendationEngine = {
     ]);
 
     const savedMantraIds: number[] = [];
-    for (const collection of collections) {
-      const mantras = await CollectionModel.getMantrasInCollection(collection.collection_id);
-      savedMantraIds.push(...mantras.map((m) => m.mantra_id));
+    if (collections.length > 0) {
+      const collectionMantraResults = await Promise.all(
+        collections.map((c) => CollectionModel.getMantrasInCollection(c.collection_id)),
+      );
+      for (const mantras of collectionMantraResults) {
+        savedMantraIds.push(...mantras.map((m) => m.mantra_id));
+      }
     }
 
     const allMantraIds = [
