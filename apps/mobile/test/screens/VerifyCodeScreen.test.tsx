@@ -34,9 +34,6 @@ jest.mock('../../components/UI/textWrapper', () => {
   return ({ children, ...props }: any) => <Text {...props}>{children}</Text>;
 });
 
-// Mock timers
-jest.useFakeTimers();
-
 describe('VerifyCodeScreen', () => {
   const mockNavigation = {
     navigate: jest.fn(),
@@ -59,6 +56,7 @@ describe('VerifyCodeScreen', () => {
   };
 
   beforeEach(() => {
+    jest.useFakeTimers();
     jest.clearAllMocks();
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   });

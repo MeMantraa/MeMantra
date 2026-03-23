@@ -57,7 +57,7 @@ jobs:
 
       - name: Mobile Test and coverage
         timeout-minutes: 25
-        run: pnpm --filter mobile test -- --coverage --watchman=false --maxWorkers=50% --forceExit --testTimeout=30000
+        run: pnpm --filter mobile test -- --coverage --watchman=false --runInBand --forceExit --testTimeout=30000 --watchAll=false
 
       - name: Upload coverage
         if: always()

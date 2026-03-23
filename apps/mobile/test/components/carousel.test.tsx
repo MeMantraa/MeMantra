@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent } from '@testing-library/react-native';
-import { View, FlatList } from 'react-native';
+import { View, FlatList, Animated } from 'react-native';
 import MantraCarousel from '../../components/carousel';
 import type { Mantra } from '../../services/mantra.service';
 
@@ -51,10 +51,10 @@ describe('MantraCarousel', () => {
 
   it('renders correct number of carousel dots', () => {
     const { UNSAFE_getAllByType } = render(<MantraCarousel item={mockItem} />);
-    const dots = UNSAFE_getAllByType(View).filter(
+    const dots = UNSAFE_getAllByType(Animated.View).filter(
       (v) =>
         typeof v.props.className === 'string' &&
-        v.props.className.includes('h-2') &&
+        v.props.className.includes('rounded-full') &&
         v.props.className.includes('mx-1'),
     );
 
@@ -125,6 +125,7 @@ describe('MantraCarousel', () => {
     const onShare = jest.fn();
     const { getByTestId } = render(<MantraCarousel item={mockItem} onShare={onShare} />);
 
+    fireEvent.press(getByTestId('more-button'));
     fireEvent.press(getByTestId('share-button'));
 
     expect(onShare).toHaveBeenCalledWith(mockItem.mantra_id);
@@ -134,6 +135,7 @@ describe('MantraCarousel', () => {
     const onJournal = jest.fn();
     const { getByTestId } = render(<MantraCarousel item={mockItem} onJournal={onJournal} />);
 
+    fireEvent.press(getByTestId('more-button'));
     fireEvent.press(getByTestId('journal-button'));
 
     expect(onJournal).toHaveBeenCalledWith(mockItem.mantra_id, mockItem.title);

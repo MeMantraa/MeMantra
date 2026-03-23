@@ -1654,6 +1654,15 @@ describe('HomeScreen - Full Coverage', () => {
 
   it('filters mantras when category is selected via filter sheet', async () => {
     (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: {
+        categories: [
+          { category_id: 1, name: 'Mind & Emotional Health' },
+          { category_id: 20, name: 'Boost Confidence' },
+        ],
+      },
+    });
     (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
       status: 'success',
       data: [
@@ -1696,6 +1705,15 @@ describe('HomeScreen - Full Coverage', () => {
 
   it('shows "No mantras match" when filter excludes all mantras', async () => {
     (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: {
+        categories: [
+          { category_id: 1, name: 'Mind & Emotional Health' },
+          { category_id: 20, name: 'Boost Confidence' },
+        ],
+      },
+    });
     (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
       status: 'success',
       data: [
@@ -1729,6 +1747,15 @@ describe('HomeScreen - Full Coverage', () => {
 
   it('clears filters when "Clear Filters" button is pressed in empty state', async () => {
     (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: {
+        categories: [
+          { category_id: 1, name: 'Mind & Emotional Health' },
+          { category_id: 20, name: 'Boost Confidence' },
+        ],
+      },
+    });
     (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
       status: 'success',
       data: [
@@ -1771,6 +1798,15 @@ describe('HomeScreen - Full Coverage', () => {
 
   it('shows filter badge with count when categories are selected', async () => {
     (storage.getToken as jest.Mock).mockResolvedValue('token');
+    (categoryService.getAllCategories as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: {
+        categories: [
+          { category_id: 1, name: 'Mind & Emotional Health' },
+          { category_id: 20, name: 'Boost Confidence' },
+        ],
+      },
+    });
     (mantraService.getFeedMantras as jest.Mock).mockResolvedValue({
       status: 'success',
       data: [
