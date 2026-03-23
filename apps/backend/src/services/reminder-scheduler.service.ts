@@ -344,12 +344,13 @@ export const ReminderSchedulerService = {
       return false;
     }
 
-    // Guard against double-sends: skip if last sent within 2 minutes
+    // Guard against double-sends: skip if last sent within 3 minutes
+    // (wider than the 1-minute cron interval to account for slow processing)
     if (lastSentAt) {
       const lastSent = new Date(lastSentAt);
       const now = new Date();
       const diffMs = now.getTime() - lastSent.getTime();
-      if (diffMs < 2 * 60 * 1000) {
+      if (diffMs < 3 * 60 * 1000) {
         return false;
       }
     }

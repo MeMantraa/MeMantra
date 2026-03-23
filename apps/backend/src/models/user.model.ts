@@ -168,6 +168,16 @@ async getTheme(userId: number): Promise<string | undefined> {
       .execute();
   },
 
+  async findAllWithDeviceTokensPaginated(limit: number, offset: number): Promise<User[]> {
+    return db
+      .selectFrom('User')
+      .where('device_token', 'is not', null)
+      .selectAll()
+      .limit(limit)
+      .offset(offset)
+      .execute();
+  },
+
   // Check if user has specific flag enabled
   async hasFlag(userId: number, flagName: string): Promise<boolean> {
     const result = await db

@@ -6,6 +6,7 @@ import { CreateMantraInput, UpdateMantraInput, MantraQueryInput } from '../valid
 import { db } from '../db';
 import { UserCategoryScoreModel } from '../models/user-category-score.model';
 import { LikeModel } from '../models/like.model';
+import { sanitizeForLog } from '../utils/sanitize.utils';
 
 export const MantraController = {
   // GET /api/mantras - List all mantras with optional search and pagination
@@ -373,7 +374,9 @@ export const MantraController = {
       );
 
       // Update algorithm: +3 points for all categories of this mantra
-      await UserCategoryScoreModel.addScoreForMantra(userId, mantraId, 3).catch(() => {});
+      await UserCategoryScoreModel.addScoreForMantra(userId, mantraId, 3).catch((err) => {
+        console.error('Failed to update category score for user:', sanitizeForLog(userId), 'mantra:', sanitizeForLog(mantraId), err);
+      });
 
       return res.status(200).json({
         status: 'success',
@@ -427,7 +430,9 @@ export const MantraController = {
 
       // Update algorithm: -3 points (undo save)
       if (removedCount > 0) {
-        await UserCategoryScoreModel.removeScoreForMantra(userId, mantraId, 3).catch(() => {});
+        await UserCategoryScoreModel.removeScoreForMantra(userId, mantraId, 3).catch((err) => {
+          console.error('Failed to remove category score for user:', sanitizeForLog(userId), 'mantra:', sanitizeForLog(mantraId), err);
+        });
       }
 
       // 5. If not found in any collection, return error
