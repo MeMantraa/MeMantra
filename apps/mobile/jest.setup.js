@@ -1,6 +1,35 @@
 require('@testing-library/jest-native/extend-expect');
 const { cleanup } = require('@testing-library/react-native');
 
+const originalSetTimeout = global.setTimeout;
+const originalClearTimeout = global.clearTimeout;
+const originalSetInterval = global.setInterval;
+const originalClearInterval = global.clearInterval;
+const activeTimeouts = new Set();
+const activeIntervals = new Set();
+
+global.setTimeout = (...args) => {
+  const id = originalSetTimeout(...args);
+  activeTimeouts.add(id);
+  return id;
+};
+
+global.clearTimeout = (id) => {
+  activeTimeouts.delete(id);
+  return originalClearTimeout(id);
+};
+
+global.setInterval = (...args) => {
+  const id = originalSetInterval(...args);
+  activeIntervals.add(id);
+  return id;
+};
+
+global.clearInterval = (id) => {
+  activeIntervals.delete(id);
+  return originalClearInterval(id);
+};
+
 // Set React act environment
 global.IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -28,8 +57,23 @@ afterAll(() => {
 
 afterEach(() => {
   cleanup();
+  for (const id of activeTimeouts) {
+    originalClearTimeout(id);
+  }
+  activeTimeouts.clear();
+  for (const id of activeIntervals) {
+    originalClearInterval(id);
+  }
+  activeIntervals.clear();
   jest.clearAllTimers();
   jest.useRealTimers();
+});
+
+afterAll(() => {
+  global.setTimeout = originalSetTimeout;
+  global.clearTimeout = originalClearTimeout;
+  global.setInterval = originalSetInterval;
+  global.clearInterval = originalClearInterval;
 });
 
 // Mock expo-splash-screen

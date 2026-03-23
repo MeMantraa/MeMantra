@@ -36,6 +36,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Check immediately
     checkToken();
 
+    // Avoid leaking polling timers during Jest runs; tests don't need
+    // auth-token polling to re-run every 50ms.
+    if (globalThis?.process?.env?.NODE_ENV === 'test') {
+      return;
+    }
+
     const interval = setInterval(checkToken, 50);
     return () => clearInterval(interval);
   }, []);
