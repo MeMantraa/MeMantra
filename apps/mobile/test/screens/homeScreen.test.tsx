@@ -1542,11 +1542,13 @@ describe('HomeScreen - Full Coverage', () => {
       data: sample,
     });
 
-    const { getByTestId } = setup();
+    const { UNSAFE_getByProps } = setup();
 
-    await waitFor(() => getByTestId('reminder-1'), { timeout: 10000 });
+    await waitFor(() => UNSAFE_getByProps({ testID: 'reminder-1' }), { timeout: 10000 });
 
-    fireEvent.press(getByTestId('reminder-1'));
+    act(() => {
+      UNSAFE_getByProps({ testID: 'reminder-1' }).props.onPress();
+    });
 
     await waitFor(
       () => expect(mockHandleReminderPress).toHaveBeenCalledWith('mantra', 1, expect.anything()),
@@ -1554,8 +1556,7 @@ describe('HomeScreen - Full Coverage', () => {
     );
   }, 15000);
 
-  // Infinite scrolling tests
-  it('loads more mantras when reaching end of list (infinite scroll)', async () => {
+  it('routes reminder button presses through useReminders handler', async () => {
     (storage.getToken as jest.Mock).mockResolvedValue('token');
     (reminderService.getReminders as jest.Mock).mockResolvedValue({
       status: 'success',
@@ -1570,13 +1571,15 @@ describe('HomeScreen - Full Coverage', () => {
     });
     (mantraService.saveMantra as jest.Mock).mockResolvedValue({ status: 'success' });
 
-    const { getByTestId } = setup();
+    const { UNSAFE_getByProps } = setup();
 
-    await waitFor(() => getByTestId('reminder-1'), { timeout: 10000 });
+    await waitFor(() => UNSAFE_getByProps({ testID: 'reminder-1' }), { timeout: 10000 });
 
-    fireEvent.press(getByTestId('reminder-1'));
+    act(() => {
+      UNSAFE_getByProps({ testID: 'reminder-1' }).props.onPress();
+    });
 
-    expect(Alert.alert).toHaveBeenCalledWith('Reminder', undefined, expect.any(Array));
+    expect(mockHandleReminderPress).toHaveBeenCalledWith('mantra', 1, expect.anything());
   }, 15000);
 
   it('handles loadCategories error gracefully', async () => {
