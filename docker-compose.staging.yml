@@ -2,7 +2,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: ./apps/backend/Dockerfile
+      dockerfile: ./apps/backend/dockerfile
       target: runtime
     image: memantra/backend:staging
     ports:
@@ -13,6 +13,8 @@ services:
       NODE_ENV: staging
       PORT: 3000
       DB_HOST: db
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/me_mantra_db
+      ALLOWED_ORIGINS: http://localhost:8080
     healthcheck:
       test:
         [
@@ -38,7 +40,7 @@ services:
   mobile:
     build:
       context: .
-      dockerfile: ./apps/mobile/Dockerfile
+      dockerfile: ./apps/mobile/dockerfile
       target: runtime
       args:
         EXPO_PUBLIC_API_BASE_URL: '${EXPO_PUBLIC_API_BASE_URL:-http://localhost:4000/api}'
@@ -59,11 +61,15 @@ services:
     image: postgres:17
     env_file:
       - ./apps/backend/.env
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: me_mantra_db
     ports:
       - '${DB_PORT:-5432}:5432'
     volumes:
       - postgres_staging_data:/var/lib/postgresql/data
-      - ./apps/backend/database:/docker-entrypoint-initdb.d:ro
+      - ./apps/backend/database/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
     healthcheck:
       test:
         ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-me_mantra_db}']

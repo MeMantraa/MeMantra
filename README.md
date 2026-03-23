@@ -100,6 +100,15 @@ We use **GitHub Actions** to maintain quality and stability:
 
 ---
 
+## Deployment Status & Policy
+
+- **Current status:** `docker-compose.yaml` is the local development stack. It is intentionally dev-oriented and uses bind mounts and startup-time installs for fast iteration.
+- **Staging policy:** `docker-compose.staging.yml` is the production-style validation stack. It uses built images for backend and mobile, no source bind mounts, database healthchecks, and restart policies.
+- **Production policy:** `docker-compose.prod.yml` mirrors the staging shape with production-oriented image/runtime settings. For local validation it currently reuses `apps/backend/.env` and `apps/mobile/.env`; in a real deployment those should be replaced with environment-specific secrets and values.
+- **Database bootstrap policy:** the containerized database initializes from `apps/backend/database/init.sql` only. Other SQL files in `apps/backend/database/` are treated as manual migrations, not automatic bootstrap scripts.
+
+---
+
 ## Release Demos
 
 Add video links (YouTube/Drive/Zoom) for each release:
@@ -113,17 +122,17 @@ Add video links (YouTube/Drive/Zoom) for each release:
 
 ## Repository Layout
 
-| Path                         | Notes                                                                                |
-| ---------------------------- | ------------------------------------------------------------------------------------ |
-| `apps/mobile`                | Expo app (screens, components, services, NativeWind styles, Jest + Maestro tests).   |
-| `apps/backend`               | Express API, Kysely models, validators, database docs, Jest tests.                   |
-| `apps/backend/database`      | SQL schema, reset scripts, and DB onboarding guide.                                  |
-| `docs/`                      | Docker guides, prototypes, diagrams, and supplemental docs created for this request. |
-| `maestro/`                   | E2E scripts (`test.yaml`).                                                           |
-| `docker-compose.yaml`        | Local development stack (backend + mobile + Postgres + optional pgAdmin + tests).    |
-| `docker-compose.staging.yml` | Staging-oriented stack with immutable backend/mobile images.                         |
-| `docker-compose.prod.yml`    | Production-oriented stack with immutable backend/mobile images.                      |
-| `turbo.json`                 | Pipeline definitions for `build`, `test`, `lint`, `dev`, etc.                        |
+| Path                         | Notes                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------ |
+| `apps/mobile`                | Expo app (screens, components, services, NativeWind styles, Jest + Maestro tests).         |
+| `apps/backend`               | Express API, Kysely models, validators, database docs, Jest tests, and backend Dockerfile. |
+| `apps/backend/database`      | SQL schema, reset scripts, and DB onboarding guide.                                        |
+| `docs/`                      | Docker guides, prototypes, diagrams, and supplemental docs created for this request.       |
+| `maestro/`                   | E2E scripts (`test.yaml`).                                                                 |
+| `docker-compose.yaml`        | Local development stack (backend + mobile + Postgres + optional pgAdmin + tests).          |
+| `docker-compose.staging.yml` | Staging-oriented stack with immutable backend/mobile images.                               |
+| `docker-compose.prod.yml`    | Production-oriented stack with immutable backend/mobile images.                            |
+| `turbo.json`                 | Pipeline definitions for `build`, `test`, `lint`, `dev`, etc.                              |
 
 ---
 

@@ -73,7 +73,7 @@ These can also be invoked through root scripts defined in `package.json`.
 
 ## Docker
 
-The repo now includes a dedicated [`Dockerfile`](/c:/Users/Philippe/MeMantra/apps/mobile/Dockerfile) for the mobile app:
+The repo now includes a dedicated [`dockerfile`](/c:/Users/Philippe/MeMantra/apps/mobile/dockerfile) for the mobile app:
 
 - `docker-compose.yaml` runs the mobile workspace in its own development container with Expo web.
 - `docker-compose.staging.yml` and `docker-compose.prod.yml` build a static web artifact and serve it from its own runtime container.

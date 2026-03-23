@@ -2,7 +2,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: ./apps/backend/Dockerfile
+      dockerfile: ./apps/backend/dockerfile
       target: dev
     working_dir: /app/apps/backend
     ports:
@@ -38,7 +38,7 @@ services:
   mobile:
     build:
       context: .
-      dockerfile: ./apps/mobile/Dockerfile
+      dockerfile: ./apps/mobile/dockerfile
       target: dev
     working_dir: /app/apps/mobile
     ports:
@@ -80,8 +80,7 @@ services:
       - '${DB_PORT:-5432}:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      # Initialize the database with init script
-      - ./apps/backend/database:/docker-entrypoint-initdb.d:ro
+      - ./apps/backend/database/init.sql:/docker-entrypoint-initdb.d/001-init.sql:ro
     healthcheck:
       test:
         ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-me_mantra_db}']
