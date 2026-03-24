@@ -5,6 +5,7 @@ import { render, waitFor } from '@testing-library/react-native';
 import * as renderer from 'react-test-renderer';
 import App from '../App';
 import * as expo from 'expo';
+import * as Font from 'expo-font';
 
 // Mock CSS imports
 jest.mock('../global.css', () => ({}));
@@ -58,19 +59,6 @@ jest.mock('expo', () => ({
   registerRootComponent: jest.fn(),
 }));
 
-// Mock expo-font
-const mockLoadAsync = jest.fn().mockResolvedValue(undefined);
-jest.mock('expo-font', () => ({
-  loadAsync: mockLoadAsync,
-}));
-
-// Mock SplashScreen
-const mockHideAsync = jest.fn().mockResolvedValue(undefined);
-jest.mock('expo-splash-screen', () => ({
-  preventAutoHideAsync: jest.fn(),
-  hideAsync: mockHideAsync,
-}));
-
 jest.mock('react-native/Libraries/Animated/Animated', () => {
   const Animated = jest.requireActual('react-native/Libraries/Animated/Animated');
 
@@ -108,17 +96,12 @@ jest.mock('react-native/Libraries/Animated/Animated', () => {
   };
 });
 
-beforeAll(() => {
+beforeEach(() => {
   jest.useFakeTimers();
 });
 
 afterEach(() => {
-  jest.runOnlyPendingTimers();
   jest.clearAllMocks();
-});
-
-afterAll(() => {
-  jest.useRealTimers();
 });
 
 describe('App Component', () => {
@@ -143,7 +126,7 @@ describe('App Component', () => {
     const testError = new Error('Font loading failed');
 
     // Mock Font.loadAsync to reject
-    mockLoadAsync.mockRejectedValueOnce(testError);
+    (Font.loadAsync as jest.Mock).mockRejectedValueOnce(testError);
 
     render(<App />);
 

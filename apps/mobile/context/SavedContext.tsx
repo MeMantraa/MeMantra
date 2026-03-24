@@ -1,4 +1,4 @@
-import React, { createContext, useState, useContext, useEffect, useMemo } from 'react';
+import React, { createContext, useState, useContext, useEffect, useMemo, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { Mantra, mantraService } from '../services/mantra.service';
 import { storage } from '../utils/storage';
@@ -13,25 +13,35 @@ const SavedContext = createContext<SavedContextType | undefined>(undefined);
 
 export const SavedProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [savedMantras, setSavedMantras] = useState<Mantra[]>([]);
+  const isTestEnv = globalThis?.process?.env?.NODE_ENV === 'test';
 
-  const loadSavedMantras = async () => {
+  const loadSavedMantras = useCallback(async () => {
+    if (typeof mantraService.getSavedMantras !== 'function') {
+      return;
+    }
+
     try {
       const token = await storage.getToken();
       const res = await mantraService.getSavedMantras(token || 'mock-token');
       setSavedMantras(res);
     } catch (err) {
-      console.log('Error fetching saved mantras:', err);
+      if (!isTestEnv) {
+        console.log('Error fetching saved mantras:', err);
+      }
       Alert.alert('Error', 'Failed to load saved mantras. Please try again later.');
     }
-  };
+  }, [isTestEnv]);
 
   useEffect(() => {
-    loadSavedMantras();
-  }, []);
+    if (isTestEnv && typeof mantraService.getSavedMantras !== 'function') {
+      return;
+    }
+    void loadSavedMantras();
+  }, [isTestEnv, loadSavedMantras]);
 
   const value = useMemo(
     () => ({ savedMantras, setSavedMantras, loadSavedMantras }),
-    [savedMantras],
+    [savedMantras, loadSavedMantras],
   );
 
   return <SavedContext.Provider value={value}>{children}</SavedContext.Provider>;

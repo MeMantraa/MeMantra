@@ -1,7 +1,7 @@
 import jwt, { Algorithm, SignOptions, Secret } from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const JWT_SECRET = process.env.JWT_SECRET || '';
 const NODE_ENV = process.env.NODE_ENV || 'development';

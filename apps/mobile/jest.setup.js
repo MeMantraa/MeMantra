@@ -1,4 +1,51 @@
 require('@testing-library/jest-native/extend-expect');
+const { cleanup, configure } = require('@testing-library/react-native');
+
+// React Native 0.81+ can try to evaluate NativeModules while formatting query errors
+// in @testing-library/react-native. Ensure a bridge config exists in Jest.
+if (!global.__fbBatchedBridgeConfig) {
+  global.__fbBatchedBridgeConfig = {
+    remoteModuleConfig: [],
+    localModulesConfig: [],
+  };
+}
+
+if (!global.nativeModuleProxy) {
+  global.nativeModuleProxy = {};
+}
+
+configure({
+  defaultIncludeHiddenElements: true,
+});
+
+const originalSetTimeout = global.setTimeout;
+const originalClearTimeout = global.clearTimeout;
+const originalSetInterval = global.setInterval;
+const originalClearInterval = global.clearInterval;
+const activeTimeouts = new Set();
+const activeIntervals = new Set();
+
+global.setTimeout = (...args) => {
+  const id = originalSetTimeout(...args);
+  activeTimeouts.add(id);
+  return id;
+};
+
+global.clearTimeout = (id) => {
+  activeTimeouts.delete(id);
+  return originalClearTimeout(id);
+};
+
+global.setInterval = (...args) => {
+  const id = originalSetInterval(...args);
+  activeIntervals.add(id);
+  return id;
+};
+
+global.clearInterval = (id) => {
+  activeIntervals.delete(id);
+  return originalClearInterval(id);
+};
 
 // Set React act environment
 global.IS_REACT_ACT_ENVIRONMENT = true;
@@ -11,7 +58,7 @@ beforeAll(() => {
   console.error = (...args) => {
     if (
       typeof args[0] === 'string' &&
-      args[0].includes('Warning: An update to') &&
+      args[0].includes('An update to') &&
       args[0].includes('inside a test was not wrapped in act')
     ) {
       return;
@@ -25,6 +72,27 @@ afterAll(() => {
   console.error = originalError;
 });
 
+afterEach(() => {
+  cleanup();
+  for (const id of activeTimeouts) {
+    originalClearTimeout(id);
+  }
+  activeTimeouts.clear();
+  for (const id of activeIntervals) {
+    originalClearInterval(id);
+  }
+  activeIntervals.clear();
+  jest.clearAllTimers();
+  jest.useRealTimers();
+});
+
+afterAll(() => {
+  global.setTimeout = originalSetTimeout;
+  global.clearTimeout = originalClearTimeout;
+  global.setInterval = originalSetInterval;
+  global.clearInterval = originalClearInterval;
+});
+
 // Mock expo-splash-screen
 jest.mock(
   'expo-splash-screen',
@@ -35,17 +103,60 @@ jest.mock(
   { virtual: true },
 );
 
-// Mock TurboModuleRegistry to avoid DevMenu errors in tests
-jest.mock(
-  'react-native/Libraries/TurboModule/TurboModuleRegistry',
-  () => ({
-    getEnforcing: jest.fn(() => ({
-      addListener: jest.fn(),
-      removeListeners: jest.fn(),
-    })),
+// Patch TurboModuleRegistry for RN 0.81+ to avoid hard native dependencies in Jest.
+const TurboModuleRegistry = require('react-native/Libraries/TurboModule/TurboModuleRegistry');
+const platformConstantsModule = {
+  getConstants: () => ({
+    isTesting: true,
+    reactNativeVersion: { major: 0, minor: 81, patch: 4, prerelease: null },
+    forceTouchAvailable: false,
+    osVersion: 'test',
+    systemName: 'iOS',
+    interfaceIdiom: 'phone',
   }),
-  { virtual: true },
-);
+};
+const appearanceModule = {
+  getColorScheme: jest.fn(() => 'light'),
+  setColorScheme: jest.fn(),
+  addListener: jest.fn(),
+  removeListeners: jest.fn(),
+};
+const fallbackTurboModule = {
+  addListener: jest.fn(),
+  removeListeners: jest.fn(),
+  getConstants: () => ({}),
+};
+
+const originalTurboModuleGet = TurboModuleRegistry.get?.bind(TurboModuleRegistry);
+const originalTurboModuleGetEnforcing = TurboModuleRegistry.getEnforcing?.bind(TurboModuleRegistry);
+
+TurboModuleRegistry.get = jest.fn((name) => {
+  const existingModule = originalTurboModuleGet ? originalTurboModuleGet(name) : null;
+  if (existingModule) {
+    return existingModule;
+  }
+
+  if (name === 'PlatformConstants') {
+    return platformConstantsModule;
+  }
+  if (name === 'Appearance') {
+    return appearanceModule;
+  }
+  return fallbackTurboModule;
+});
+TurboModuleRegistry.getEnforcing = jest.fn((name) => {
+  try {
+    if (originalTurboModuleGetEnforcing) {
+      const existingModule = originalTurboModuleGetEnforcing(name);
+      if (existingModule) {
+        return existingModule;
+      }
+    }
+  } catch {
+    // Fall back to local test stub modules.
+  }
+  return TurboModuleRegistry.get(name);
+});
 
 // Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -109,6 +220,19 @@ jest.mock(
   { virtual: true },
 );
 
+// Mock expo-font
+jest.mock(
+  'expo-font',
+  () => ({
+    __esModule: true,
+    loadAsync: jest.fn(() => Promise.resolve()),
+    default: {
+      loadAsync: jest.fn(() => Promise.resolve()),
+    },
+  }),
+  { virtual: true },
+);
+
 // Mock expo-secure-store
 jest.mock(
   'expo-secure-store',
@@ -141,6 +265,18 @@ jest.mock(
   }),
   { virtual: true },
 );
+
+// Mock Expo vector icons globally to avoid loading native font modules in Jest.
+jest.mock('@expo/vector-icons', () => {
+  const Icon = () => null;
+
+  return new Proxy(
+    { Ionicons: Icon },
+    {
+      get: (target, prop) => target[prop] || Icon,
+    },
+  );
+});
 
 // Mock @react-native-community/datetimepicker
 jest.mock(

@@ -387,7 +387,30 @@ export default function MainNavigator() {
           <Stack.Screen name="CreateReminder" component={CreateReminderScreen} />
           <Stack.Screen name="MantraAlgorithm" component={MantraAlgorithmScreen} />
           <Stack.Screen name="Themes" component={ThemesScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Search" component={SearchScreen} options={{ headerShown: false }} />
+          <Stack.Screen
+            name="Search"
+            component={SearchScreen}
+            options={{
+              headerShown: false,
+              gestureDirection: 'vertical',
+              cardStyleInterpolator: ({ current, layouts }) => ({
+                cardStyle: {
+                  transform: [
+                    {
+                      translateY: current.progress.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [layouts.screen.height, 0],
+                      }),
+                    },
+                  ],
+                },
+              }),
+              transitionSpec: {
+                open: { animation: 'timing', config: { duration: 320 } },
+                close: { animation: 'timing', config: { duration: 260 } },
+              },
+            }}
+          />
         </Stack.Navigator>
       </SavedProvider>
     </ThemeProvider>

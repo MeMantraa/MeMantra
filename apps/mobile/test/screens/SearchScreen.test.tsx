@@ -2,6 +2,19 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import SearchScreen from '../../screens/SearchScreen';
 
+jest.mock('@react-navigation/native', () => {
+  const ReactLib = jest.requireActual('react');
+  return {
+    ...jest.requireActual('@react-navigation/native'),
+    useFocusEffect: (callback: () => void) => {
+      ReactLib.useEffect(() => {
+        const cleanup = callback();
+        return cleanup;
+      }, [callback]);
+    },
+  };
+});
+
 const mockNavigate = jest.fn();
 const mockGoBack = jest.fn();
 
@@ -52,7 +65,7 @@ describe('SearchScreen', () => {
   it('renders the search input and placeholder state', () => {
     const { getByPlaceholderText, getByText } = setup();
     expect(getByPlaceholderText('Search mantras...')).toBeTruthy();
-    expect(getByText('Type a keyword to search across all mantra content')).toBeTruthy();
+    expect(getByText('Type a keyword to find matching titles and content instantly.')).toBeTruthy();
   });
 
   it('shows results when a keyword matches a mantra title', async () => {
@@ -167,7 +180,9 @@ describe('SearchScreen', () => {
     fireEvent.changeText(input, '');
 
     await waitFor(() => {
-      expect(getByText(/Type a keyword to search across all mantra content/)).toBeTruthy();
+      expect(
+        getByText(/Type a keyword to find matching titles and content instantly/),
+      ).toBeTruthy();
     });
   });
 
