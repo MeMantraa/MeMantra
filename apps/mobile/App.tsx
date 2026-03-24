@@ -18,6 +18,9 @@ export default function App() {
   const [isSplashVisible, setIsSplashVisible] = useState(true);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const navigationRef = useRef<any>(null);
+  const appBootStartRef = useRef<number>(Date.now());
+  const routeChangeStartRef = useRef<number>(Date.now());
+  const previousRouteRef = useRef<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -54,6 +57,17 @@ export default function App() {
   useEffect(() => {
     if (!appIsReady) return;
 
+    engagementService.trackPerformanceEvent({
+      kind: 'mobile_screen',
+      name: 'app_startup',
+      duration_ms: Date.now() - appBootStartRef.current,
+      status: 'success',
+      screen: 'AppStartup',
+      metadata: {
+        splash_visible: isSplashVisible,
+      },
+    });
+
     let isMounted = true;
     const animation = Animated.timing(fadeAnim, {
       toValue: 0,
@@ -71,7 +85,7 @@ export default function App() {
       isMounted = false;
       animation.stop();
     };
-  }, [appIsReady, fadeAnim]);
+  }, [appIsReady, fadeAnim, isSplashVisible]);
 
   return (
     <GestureHandlerRootView style={styles.container}>
@@ -79,6 +93,30 @@ export default function App() {
         ref={navigationRef}
         onReady={() => {
           setNavigationRef(navigationRef.current);
+          const initialRoute = navigationRef.current?.getCurrentRoute?.()?.name || null;
+          previousRouteRef.current = initialRoute;
+          routeChangeStartRef.current = Date.now();
+        }}
+        onStateChange={() => {
+          const currentRoute = navigationRef.current?.getCurrentRoute?.()?.name || null;
+          if (!currentRoute) return;
+
+          if (previousRouteRef.current !== currentRoute) {
+            const now = Date.now();
+            engagementService.trackPerformanceEvent({
+              kind: 'mobile_screen',
+              name: currentRoute,
+              duration_ms: now - routeChangeStartRef.current,
+              status: 'success',
+              screen: currentRoute,
+              metadata: {
+                from_screen: previousRouteRef.current,
+              },
+            });
+
+            previousRouteRef.current = currentRoute;
+            routeChangeStartRef.current = now;
+          }
         }}
       >
         <MainNavigator />

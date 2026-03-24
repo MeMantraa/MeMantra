@@ -8,6 +8,7 @@ import { RecommendationModel } from '../models/recommendation.model';
 import { MantraModel } from '../models/mantra.model';
 import { UserCategoryScoreModel } from '../models/user-category-score.model';
 import { Mantra } from '../types/database.types';
+import { PerformanceMonitor } from './performance-monitor.service';
 
 export interface RecommendationOptions {
   limit?: number;
@@ -68,10 +69,19 @@ export const RecommendationEngine = {
     userId: number,
     options: RecommendationOptions = {},
   ): Promise<ScoredMantra[]> {
+    const startedAt = process.hrtime.bigint();
     const { limit = 10, mood, excludeIds = [] } = options;
 
     // 1. Build user profile from persisted category scores
-    const profile = await this.buildUserProfile(userId);
+    const profile = await PerformanceMonitor.measureAsync(
+      'recommendation.build_user_profile',
+      () => this.buildUserProfile(userId),
+      {
+        kind: 'service_operation',
+        source: 'backend',
+        metadata: { user_id: userId },
+      },
+    );
 
     // 2. Cold-start path for new users
     if (profile.totalInteractions < COLD_START_THRESHOLD) {
@@ -118,7 +128,31 @@ export const RecommendationEngine = {
     const diversified = this.applyDiversityPass(scored, limit);
 
     // 9. Log recommendations
-    await this.logRecommendations(userId, diversified);
+    await PerformanceMonitor.measureAsync(
+      'recommendation.log_results',
+      () => this.logRecommendations(userId, diversified),
+      {
+        kind: 'service_operation',
+        source: 'backend',
+        metadata: {
+          user_id: userId,
+          recommendation_count: diversified.length,
+        },
+      },
+    );
+
+    const totalDurationMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+    PerformanceMonitor.trackEvent({
+      kind: 'service_operation',
+      name: 'recommendation.generate_total',
+      duration_ms: totalDurationMs,
+      status: 'success',
+      source: 'backend',
+      metadata: {
+        user_id: userId,
+        recommendation_count: diversified.length,
+      },
+    });
 
     return diversified;
   },

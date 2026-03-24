@@ -3,6 +3,19 @@ import { Platform } from 'react-native';
 import { storage } from '../utils/storage';
 import Constants from 'expo-constants';
 
+interface RequestMetadata {
+  startTime?: number;
+  skipPerformanceMonitoring?: boolean;
+}
+
+interface ExtendedRequestConfig {
+  headers?: any;
+  method?: string;
+  url?: string;
+  metadata?: RequestMetadata;
+  skipPerformanceMonitoring?: boolean;
+}
+
 // Try to import local config (gitignored) - copy api.config.local.example.ts to api.config.local.ts
 let LOCAL_DEV_IP: string | null = null;
 // eslint-disable-next-line no-undef
@@ -97,6 +110,47 @@ export const apiClient = axios.create({
   timeout: 30000,
 });
 
+const buildRouteName = (url?: string): string | undefined => {
+  if (!url) return undefined;
+  return url.split('?')[0];
+};
+
+const emitApiPerformanceEvent = async (params: {
+  config?: ExtendedRequestConfig;
+  durationMs: number;
+  status: 'success' | 'error';
+  statusCode?: number;
+  errorMessage?: string;
+}) => {
+  const config = params.config;
+  const skip = config?.metadata?.skipPerformanceMonitoring || config?.skipPerformanceMonitoring;
+  if (skip) return;
+  if (typeof (apiClient as any).post !== 'function') return;
+
+  await apiClient.post(
+    '/performance/event',
+    {
+      kind: 'mobile_api',
+      name: `${(config?.method || 'get').toUpperCase()} ${buildRouteName(config?.url) || '/'}`,
+      duration_ms: Math.round(params.durationMs * 100) / 100,
+      status: params.status,
+      source: 'mobile',
+      route: buildRouteName(config?.url),
+      method: (config?.method || 'get').toUpperCase(),
+      platform: Platform.OS,
+      app_version: String(Constants.expoConfig?.version || 'unknown'),
+      metadata: {
+        status_code: params.statusCode,
+        error: params.errorMessage,
+      },
+    },
+    {
+      skipPerformanceMonitoring: true,
+      timeout: 3000,
+    } as any,
+  );
+};
+
 // Navigation ref to handle logout navigation and deep linking
 let navigationRef: {
   navigate: (name: string, params?: object) => void;
@@ -131,10 +185,18 @@ export const isNavigationReady = (): boolean => {
 // Attach the stored JWT token to every outgoing request.
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
+    const extendedConfig = config as ExtendedRequestConfig;
+    extendedConfig.metadata = extendedConfig.metadata || {};
+    extendedConfig.metadata.startTime = Date.now();
+    extendedConfig.metadata.skipPerformanceMonitoring =
+      extendedConfig.metadata.skipPerformanceMonitoring ||
+      extendedConfig.skipPerformanceMonitoring ||
+      false;
+
     const token = await storage.getToken();
     if (token) {
-      config.headers = config.headers || {};
-      config.headers.Authorization = `Bearer ${token}`;
+      extendedConfig.headers = extendedConfig.headers || {};
+      extendedConfig.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -145,8 +207,29 @@ apiClient.interceptors.request.use(
 
 // Global response error handler — clears auth on 401.
 apiClient.interceptors.response.use(
-  (response: AxiosResponse) => response,
-  async (error: { response: { status: number } }) => {
+  (response: AxiosResponse) => {
+    const config: ExtendedRequestConfig | undefined = response?.config;
+    const startedAt = config?.metadata?.startTime || Date.now();
+    void emitApiPerformanceEvent({
+      config,
+      durationMs: Date.now() - startedAt,
+      status: 'success',
+      statusCode: response?.status,
+    });
+    return response;
+  },
+  async (error: any) => {
+    const config: ExtendedRequestConfig | undefined = error?.config;
+    const startedAt = config?.metadata?.startTime || Date.now();
+
+    await emitApiPerformanceEvent({
+      config,
+      durationMs: Date.now() - startedAt,
+      status: 'error',
+      statusCode: error?.response?.status,
+      errorMessage: error?.message,
+    });
+
     if (error.response?.status === 401) {
       console.log('Unauthorized access - token expired or invalid');
 

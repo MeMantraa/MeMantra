@@ -29,6 +29,20 @@ type EngagementEventType =
   | 'notification_tap_reminder'
   | 'notification_tap_collection_reminder';
 
+export interface PerformanceEventPayload {
+  kind: 'mobile_api' | 'mobile_screen';
+  name: string;
+  duration_ms: number;
+  status: 'success' | 'error';
+  route?: string;
+  method?: string;
+  screen?: string;
+  request_id?: string;
+  platform?: string;
+  app_version?: string;
+  metadata?: Record<string, unknown>;
+}
+
 export const engagementService = {
   /** Fire-and-forget — never throws, never blocks the caller. */
   async trackEvent(eventType: EngagementEventType): Promise<void> {
@@ -41,6 +55,24 @@ export const engagementService = {
 
   async trackAppOpen(): Promise<void> {
     return this.trackEvent('app_open');
+  },
+
+  async trackPerformanceEvent(payload: PerformanceEventPayload): Promise<void> {
+    try {
+      await apiClient.post(
+        '/performance/event',
+        {
+          ...payload,
+          source: 'mobile',
+        },
+        {
+          skipPerformanceMonitoring: true,
+          timeout: 3000,
+        } as any,
+      );
+    } catch {
+      // non-critical; swallow silently
+    }
   },
 
   async getAnalytics(
