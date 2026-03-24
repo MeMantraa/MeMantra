@@ -4,7 +4,7 @@ import { Database } from '../types/database.types';
 import dotenv from 'dotenv';
 import { PerformanceMonitor } from '../services/performance-monitor.service';
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 // OID 1114 = TIMESTAMP WITHOUT TIME ZONE
 // By default pg interprets these in the server's local timezone, causing

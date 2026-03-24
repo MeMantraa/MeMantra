@@ -68,6 +68,7 @@ export default function FocusScreen({ route, navigation }: any) {
         onLike={onLike}
         onSave={onSave}
         onJournal={handleJournal}
+        onPress={() => navigation.goBack()}
         showButtons={false}
         isFocusMode={true}
       />

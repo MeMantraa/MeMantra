@@ -31,8 +31,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Test and coverage
-        run: pnpm -w test -- --coverage
+      - name: Backend Test and coverage
+        run: pnpm --filter backend test -- --coverage --runInBand --watchman=false --forceExit
+
+      - name: Mobile Test and coverage
+        timeout-minutes: 25
+        run: pnpm --filter mobile test -- --coverage --watchman=false --maxWorkers=50% --forceExit --testTimeout=30000
 
       - name: SonarQube Scan
         uses: SonarSource/sonarqube-scan-action@v6
