@@ -24,6 +24,7 @@ import CategoryList from '../components/admin/CategoryList';
 import AppText from '../components/UI/textWrapper';
 import { EngagementAnalytics, engagementService } from '../services/engagement.service';
 import FeatureFlagsPanel from '../components/admin/FeatureFlagsPanel';
+import { PerformanceSummary, performanceService } from '../services/performance.service';
 
 type AdminMode = 'mantras' | 'users' | 'categories' | 'analytics' | 'features';
 type ActionMode = 'add' | 'manage';
@@ -90,6 +91,16 @@ const AdminScreen: React.FC = () => {
   const [analytics, setAnalytics] = useState<EngagementAnalytics | null>(null);
   const [analyticsDays, setAnalyticsDays] = useState<7 | 30 | 90>(30);
   const [analyticsLoading, setAnalyticsLoading] = useState(false);
+  const [performanceSummary, setPerformanceSummary] = useState<PerformanceSummary | null>(null);
+  const [performanceLoading, setPerformanceLoading] = useState(false);
+  const [performanceSnapshots, setPerformanceSnapshots] = useState<
+    Array<{
+      at: string;
+      p95: number;
+      errorRate: number;
+      slowEvents: number;
+    }>
+  >([]);
 
   useEffect(() => {
     if (mode === 'analytics') {
@@ -107,6 +118,18 @@ const AdminScreen: React.FC = () => {
     if (mode === 'analytics') loadAnalytics();
   }, [analyticsDays]);
 
+  useEffect(() => {
+    if (mode !== 'analytics') return;
+
+    void loadPerformanceSummary(true);
+
+    const interval = setInterval(() => {
+      void loadPerformanceSummary(false);
+    }, 30000);
+
+    return () => clearInterval(interval);
+  }, [mode]);
+
   const loadAnalytics = async () => {
     setAnalyticsLoading(true);
     try {
@@ -118,6 +141,41 @@ const AdminScreen: React.FC = () => {
       Alert.alert('Error', 'Failed to load analytics');
     } finally {
       setAnalyticsLoading(false);
+    }
+  };
+
+  const loadPerformanceSummary = async (showLoading = false) => {
+    if (showLoading) setPerformanceLoading(true);
+
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      const response = await performanceService.getSummary(token);
+      if (response.status !== 'success') return;
+
+      setPerformanceSummary(response.data);
+
+      const totalCount = response.data.by_metric.reduce((sum, metric) => sum + metric.count, 0);
+      const totalErrors = response.data.by_metric.reduce(
+        (sum, metric) => sum + metric.error_count,
+        0,
+      );
+      const totalSlow = response.data.by_metric.reduce((sum, metric) => sum + metric.slow_count, 0);
+
+      const snapshot = {
+        at: new Date().toISOString(),
+        p95: response.data.recent_stats.p95_ms,
+        errorRate: totalCount > 0 ? (totalErrors / totalCount) * 100 : 0,
+        slowEvents: totalSlow,
+      };
+
+      setPerformanceSnapshots((prev) => [...prev, snapshot].slice(-20));
+    } catch (error) {
+      console.error('Failed to load performance summary:', error);
+      if (showLoading) {
+        Alert.alert('Error', 'Failed to load performance summary');
+      }
+    } finally {
+      if (showLoading) setPerformanceLoading(false);
     }
   };
 
@@ -710,6 +768,15 @@ const AdminScreen: React.FC = () => {
   const formatPercentage = (value: number | null) =>
     typeof value === 'number' ? `${value.toFixed(1)}%` : 'N/A';
 
+  const formatRate = (value: number) => `${value.toFixed(1)}%`;
+
+  const formatMs = (value: number) => `${value.toFixed(1)} ms`;
+
+  const formatTime = (iso: string) => {
+    const date = new Date(iso);
+    return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+  };
+
   const getEditModalTitle = () => {
     if (mode === 'mantras') return 'Mantra';
     if (mode === 'categories') return 'Category';
@@ -1164,6 +1231,233 @@ const AdminScreen: React.FC = () => {
                         ))
                     )}
                   </View>
+
+                  {/* Performance Monitoring */}
+                  <View className="flex-row items-center justify-between mb-3">
+                    <AppText className="text-white text-lg font-bold">
+                      Performance Monitoring
+                    </AppText>
+                    <TouchableOpacity
+                      className="px-3 py-2 rounded-full"
+                      onPress={() => {
+                        void loadPerformanceSummary(true);
+                      }}
+                      style={{ backgroundColor: `${colors.secondary}cc` }}
+                    >
+                      <AppText
+                        className="text-xs font-semibold"
+                        style={{ color: colors.primaryDark }}
+                      >
+                        Refresh
+                      </AppText>
+                    </TouchableOpacity>
+                  </View>
+
+                  {performanceLoading && (
+                    <ActivityIndicator
+                      size="small"
+                      color={colors.secondary}
+                      style={{ marginBottom: 16 }}
+                    />
+                  )}
+
+                  {!performanceLoading && !performanceSummary && (
+                    <View
+                      className="rounded-2xl p-4 mb-6"
+                      style={{ backgroundColor: `${colors.primaryDark}55` }}
+                    >
+                      <AppText style={{ color: colors.text }}>
+                        No performance summary available yet.
+                      </AppText>
+                    </View>
+                  )}
+
+                  {performanceSummary && (
+                    <>
+                      <View className="flex-row flex-wrap gap-3 mb-6">
+                        {(() => {
+                          const totalCount = performanceSummary.by_metric.reduce(
+                            (sum, metric) => sum + metric.count,
+                            0,
+                          );
+                          const totalErrors = performanceSummary.by_metric.reduce(
+                            (sum, metric) => sum + metric.error_count,
+                            0,
+                          );
+                          const totalSlow = performanceSummary.by_metric.reduce(
+                            (sum, metric) => sum + metric.slow_count,
+                            0,
+                          );
+                          const overallErrorRate =
+                            totalCount > 0 ? (totalErrors / totalCount) * 100 : 0;
+
+                          return [
+                            {
+                              label: 'P50',
+                              value: formatMs(performanceSummary.recent_stats.p50_ms),
+                            },
+                            {
+                              label: 'P95',
+                              value: formatMs(performanceSummary.recent_stats.p95_ms),
+                            },
+                            {
+                              label: 'P99',
+                              value: formatMs(performanceSummary.recent_stats.p99_ms),
+                            },
+                            {
+                              label: 'Error Rate',
+                              value: formatRate(overallErrorRate),
+                            },
+                            {
+                              label: 'Slow Events',
+                              value: String(totalSlow),
+                            },
+                            {
+                              label: 'Buffer',
+                              value: String(performanceSummary.buffer_size),
+                            },
+                          ].map(({ label, value }) => (
+                            <View
+                              key={label}
+                              className="rounded-2xl p-4"
+                              style={{
+                                backgroundColor: `${colors.primaryDark}55`,
+                                minWidth: '45%',
+                                flex: 1,
+                              }}
+                            >
+                              <AppText className="text-white text-xl font-bold">{value}</AppText>
+                              <AppText className="text-sm" style={{ color: colors.text }}>
+                                {label}
+                              </AppText>
+                            </View>
+                          ));
+                        })()}
+                      </View>
+
+                      <AppText className="text-white text-base font-semibold mb-3">
+                        Trend (latest snapshots)
+                      </AppText>
+                      <View
+                        className="rounded-2xl p-4 mb-6"
+                        style={{ backgroundColor: `${colors.primaryDark}55` }}
+                      >
+                        {performanceSnapshots.length <= 1 && (
+                          <AppText style={{ color: colors.text }}>
+                            Waiting for more snapshots to display trend.
+                          </AppText>
+                        )}
+
+                        {performanceSnapshots.length > 1 && (
+                          <>
+                            {[
+                              {
+                                label: 'P95 Latency',
+                                field: 'p95' as const,
+                                formatter: (v: number) => formatMs(v),
+                              },
+                              {
+                                label: 'Error Rate',
+                                field: 'errorRate' as const,
+                                formatter: (v: number) => formatRate(v),
+                              },
+                              {
+                                label: 'Slow Events',
+                                field: 'slowEvents' as const,
+                                formatter: (v: number) => String(Math.round(v)),
+                              },
+                            ].map((trend) => {
+                              const values = performanceSnapshots.map((s) => s[trend.field]);
+                              const max = Math.max(...values, 1);
+
+                              return (
+                                <View key={trend.label} className="mb-4">
+                                  <View className="flex-row justify-between mb-2">
+                                    <AppText className="text-white text-sm font-semibold">
+                                      {trend.label}
+                                    </AppText>
+                                    <AppText style={{ color: colors.text }} className="text-xs">
+                                      Latest: {trend.formatter(values[values.length - 1])}
+                                    </AppText>
+                                  </View>
+                                  <View
+                                    className="flex-row items-end"
+                                    style={{ height: 44, gap: 4 }}
+                                  >
+                                    {performanceSnapshots.map((point) => {
+                                      const rawValue = point[trend.field];
+                                      const barHeight = Math.max(4, (rawValue / max) * 40);
+                                      return (
+                                        <View
+                                          key={`${trend.label}-${point.at}`}
+                                          style={{ flex: 1, alignItems: 'center' }}
+                                        >
+                                          <View
+                                            style={{
+                                              width: '100%',
+                                              height: barHeight,
+                                              backgroundColor: colors.secondary,
+                                              borderRadius: 999,
+                                            }}
+                                          />
+                                        </View>
+                                      );
+                                    })}
+                                  </View>
+                                </View>
+                              );
+                            })}
+
+                            <View className="flex-row justify-between mt-1">
+                              <AppText className="text-xs" style={{ color: colors.text }}>
+                                {formatTime(performanceSnapshots[0].at)}
+                              </AppText>
+                              <AppText className="text-xs" style={{ color: colors.text }}>
+                                {formatTime(
+                                  performanceSnapshots[performanceSnapshots.length - 1].at,
+                                )}
+                              </AppText>
+                            </View>
+                          </>
+                        )}
+                      </View>
+
+                      <AppText className="text-white text-base font-semibold mb-3">
+                        Top Metrics by Request Volume
+                      </AppText>
+                      <View
+                        className="rounded-2xl p-4 mb-8"
+                        style={{ backgroundColor: `${colors.primaryDark}55` }}
+                      >
+                        {performanceSummary.by_metric.length === 0 ? (
+                          <AppText style={{ color: colors.text }}>
+                            No performance metrics recorded yet.
+                          </AppText>
+                        ) : (
+                          performanceSummary.by_metric
+                            .slice()
+                            .sort((a, b) => b.count - a.count)
+                            .slice(0, 8)
+                            .map((metric) => (
+                              <View key={metric.key} className="py-2 border-b border-white/10">
+                                <AppText className="text-white text-xs mb-1">{metric.key}</AppText>
+                                <View className="flex-row justify-between">
+                                  <AppText className="text-xs" style={{ color: colors.text }}>
+                                    Count: {metric.count}
+                                  </AppText>
+                                  <AppText className="text-xs" style={{ color: colors.text }}>
+                                    Avg: {formatMs(metric.avg_duration_ms)}
+                                  </AppText>
+                                  <AppText className="text-xs" style={{ color: colors.text }}>
+                                    Err: {formatRate(metric.error_rate * 100)}
+                                  </AppText>
+                                </View>
+                              </View>
+                            ))
+                        )}
+                      </View>
+                    </>
+                  )}
                 </>
               );
             })()}
