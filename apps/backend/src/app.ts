@@ -4,6 +4,7 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import apiRoutes from './routes';
 import { requestLogger, errorLogger } from './middleware/logger.middleware';
+import { requestPerformanceMonitor } from './middleware/performance.middleware';
 
 export const createApp = () => {
   const app = express();
@@ -34,6 +35,10 @@ export const createApp = () => {
 
   if (process.env.NODE_ENV === 'development') {
     app.use(requestLogger);
+  }
+
+  if ((process.env.MONITORING_ENABLED || 'true').toLowerCase() !== 'false') {
+    app.use(requestPerformanceMonitor);
   }
 
   // Health check endpoint
