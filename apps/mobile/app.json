@@ -2,7 +2,7 @@
   "expo": {
     "scheme": "memantra",
     "name": "mobile",
-    "slug": "mobile",
+    "slug": "memantra",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -56,9 +56,9 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "3b71c23f-4587-4f54-ac22-817a51121a0f"
+        "projectId": "f5eb7419-9983-4fad-8e5a-5a4177971cde"
       }
     },
-    "owner": "yo_franc"
+    "owner": "me-mantra"
   }
 }
