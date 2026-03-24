@@ -400,7 +400,9 @@ export default function CreateReminderScreen() {
             display="spinner"
             minimumDate={mode === 'date' ? new Date() : undefined}
             onChange={onChange}
-            style={{ backgroundColor: 'white' }}
+            textColor="#000000"
+            themeVariant="light"
+            style={{ backgroundColor: 'white', height: 216 }}
           />
         </View>
       </View>
@@ -425,7 +427,9 @@ export default function CreateReminderScreen() {
             mode="time"
             display="spinner"
             onChange={onRoutineTimeChange}
-            style={{ backgroundColor: 'white' }}
+            textColor="#000000"
+            themeVariant="light"
+            style={{ backgroundColor: 'white', height: 216 }}
           />
         </View>
       </View>

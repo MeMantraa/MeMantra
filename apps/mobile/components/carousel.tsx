@@ -60,7 +60,7 @@ const MantraCarousel = memo(
     const reservedRightSpace = 0;
     const deepDiveHeaderInsetLeft = showButtons ? 54 : 0;
     const deepDiveHeaderInsetTop = showButtons ? 6 : 0;
-    const firstPageMaxWidth = showButtons ? SCREEN_WIDTH - 190 : SCREEN_WIDTH - 72;
+    const firstPageMaxWidth = showButtons ? SCREEN_WIDTH - 120 : SCREEN_WIDTH - 48;
     const isDeepDivePage = currentIndex > 0;
     const deepDiveMenuExpandedWidth = onPress ? 152 : 104;
     const deepDiveHeightRatio =
@@ -229,6 +229,9 @@ const MantraCarousel = memo(
                           lineHeight: isFocusMode ? 52 : 46,
                         }}
                         className={`text-center font-normal tracking-wide ${isFocusMode ? 'text-4xl' : 'text-3xl'}`}
+                        numberOfLines={7}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.75}
                       >
                         {page.content}
                       </AppText>
