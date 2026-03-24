@@ -8,6 +8,7 @@ import { mantraService } from '../../services/mantra.service';
 import { userService } from '../../services/user.service';
 import { categoryService } from '../../services/category.service';
 import { engagementService } from '../../services/engagement.service';
+import { performanceService } from '../../services/performance.service';
 
 jest.mock('../../services/mantra.service', () => ({
   mantraService: {
@@ -55,6 +56,12 @@ jest.mock('../../utils/storage', () => ({
 jest.mock('../../services/engagement.service', () => ({
   engagementService: {
     getAnalytics: jest.fn(),
+  },
+}));
+
+jest.mock('../../services/performance.service', () => ({
+  performanceService: {
+    getSummary: jest.fn(),
   },
 }));
 
@@ -172,6 +179,44 @@ beforeEach(() => {
   (userService.setExactFeatureFlagRolloutToPercentage as jest.Mock).mockResolvedValue({
     status: 'success',
     data: { flag: 'DARK_MODE', percentage: 10, total_users: 2, selected_users: 1 },
+  });
+
+  (engagementService.getAnalytics as jest.Mock).mockResolvedValue({
+    status: 'success',
+    data: {
+      window_days: 30,
+      event_counts: { app_open: 5 },
+      notification_effectiveness: {
+        sent: 2,
+        taps: 1,
+        tap_through_rate_pct: 50,
+        post_tap_conversion_rate_pct: 100,
+      },
+      tap_by_hour: [{ hour: 9, count: 1 }],
+      adaptive_timing: { users_with_optimal_hour: 1, users_using_default: 1 },
+    },
+  });
+
+  (performanceService.getSummary as jest.Mock).mockResolvedValue({
+    status: 'success',
+    data: {
+      enabled: true,
+      sample_rate: 0.5,
+      slow_thresholds_ms: { requestMs: 750, queryMs: 200 },
+      buffer_size: 12,
+      recent_stats: { p50_ms: 21.4, p95_ms: 145.8, p99_ms: 390.3 },
+      by_metric: [
+        {
+          key: 'mobile_api|GET /mantras|GET|/mantras',
+          count: 10,
+          error_count: 1,
+          error_rate: 0.1,
+          slow_count: 2,
+          avg_duration_ms: 87.42,
+          max_duration_ms: 310.11,
+        },
+      ],
+    },
   });
 });
 
@@ -357,6 +402,30 @@ describe('AdminScreen (extended coverage)', () => {
     fireEvent.press(getByText('Users')); // trigger loadData for users
     await waitFor(() => {
       expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to load users');
+    });
+  });
+
+  it('loads and renders performance monitoring cards in analytics mode', async () => {
+    const { getByText } = render(<AdminScreen />);
+
+    fireEvent.press(getByText('Analytics'));
+
+    await waitFor(() => {
+      expect(performanceService.getSummary).toHaveBeenCalledWith('mock-token');
+      expect(getByText('Performance Monitoring')).toBeTruthy();
+      expect(getByText('Top Metrics by Request Volume')).toBeTruthy();
+      expect(getByText('145.8 ms')).toBeTruthy();
+    });
+  });
+
+  it('shows performance summary alert when summary request fails', async () => {
+    (performanceService.getSummary as jest.Mock).mockRejectedValueOnce(new Error('failed summary'));
+
+    const { getByText } = render(<AdminScreen />);
+    fireEvent.press(getByText('Analytics'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to load performance summary');
     });
   });
 
