@@ -1,14 +1,18 @@
 import nodemailer from 'nodemailer';
 import crypto from 'node:crypto';
 
-// Configure Gmail SMTP transporter
+// Configure Gmail SMTP transporter (port 587 + STARTTLS for cloud compatibility)
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  secure: true,
+  host: 'smtp.gmail.com',
+  port: 587,
+  secure: false,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
   },
+  connectionTimeout: 10000,
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
 });
 
 // Shared email template
