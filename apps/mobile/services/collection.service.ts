@@ -5,7 +5,7 @@ export type Collection = {
   collection_id: number;
   name: string;
   description?: string | null;
-  icon?: string; 
+  icon?: string;
   user_id: number;
   created_at: string;
 };
@@ -79,11 +79,11 @@ export const collectionService = {
     name: string,
     description: string | undefined,
     token: string,
-    icon?: string, 
+    icon?: string,
   ): Promise<CollectionResponse> {
     const response = await apiClient.post<CollectionResponse>(
       '/collections',
-      { name, description, icon }, 
+      { name, description, icon },
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -98,7 +98,7 @@ export const collectionService = {
    */
   async updateCollection(
     collectionId: number,
-    updates: { name?: string; description?: string; icon?: string }, 
+    updates: { name?: string; description?: string; icon?: string },
     token: string,
   ): Promise<CollectionResponse> {
     const response = await apiClient.put<CollectionResponse>(

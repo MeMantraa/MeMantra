@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, FlatList, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import {
+  View,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { ChatBubble } from '../components/chat/ChatBubble';
@@ -27,10 +34,11 @@ export default function ConversationScreen({ route, navigation }: any) {
     try {
       const userData = await storage.getUserData();
       if (userData?.user_id) {
-        setCurrentUserId(userData.user_id);
+        setCurrentUserId(Number(userData.user_id));
       }
     } catch (err) {
       console.error('Error loading current user:', err);
+      Alert.alert('Error', 'Failed to load user data.');
     }
   };
 
@@ -61,6 +69,7 @@ export default function ConversationScreen({ route, navigation }: any) {
       await chatService.markAsRead(conversation.conversation_id, token || 'mock-token');
     } catch (err) {
       console.error('Error loading messages:', err);
+      Alert.alert('Error', 'Failed to load messages. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -86,6 +95,7 @@ export default function ConversationScreen({ route, navigation }: any) {
       }, 100);
     } catch (err) {
       console.error('Error sending message:', err);
+      Alert.alert('Error', 'Failed to send message. Please try again.');
     }
   };
 
@@ -114,6 +124,7 @@ export default function ConversationScreen({ route, navigation }: any) {
       );
     } catch (err) {
       console.error('Error handling reaction:', err);
+      Alert.alert('Error', 'Failed to add reaction.');
     }
   };
 

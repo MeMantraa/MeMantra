@@ -33,11 +33,7 @@ export const EngagementModel = {
       .selectFrom('EngagementEvent')
       .where('user_id', '=', userId)
       .where('event_type', '=', eventType)
-      .where(
-        'occurred_at',
-        '>=',
-        sql<string>`date_trunc('hour', now() AT TIME ZONE 'UTC')`,
-      )
+      .where('occurred_at', '>=', sql<string>`date_trunc('hour', now() AT TIME ZONE 'UTC')`)
       .select('event_id')
       .executeTakeFirst();
 

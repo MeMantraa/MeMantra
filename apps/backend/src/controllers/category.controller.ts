@@ -54,7 +54,7 @@ export const CategoryController = {
       const { type } = req.params;
 
       const categories = await CategoryModel.findByType(
-        type as 'emotion' | 'cbt' | 'context' | 'reference'
+        type as 'emotion' | 'cbt' | 'context' | 'reference',
       );
 
       return res.status(200).json({
@@ -73,6 +73,11 @@ export const CategoryController = {
   // POST /api/categories - Create new category (admin only)
   async createCategory(req: Request, res: Response) {
     try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(401).json({ status: 'error', message: 'Authentication required' });
+      }
+
       const categoryData = req.body as CreateCategoryInput;
 
       const newCategory = await CategoryModel.create(categoryData);
@@ -94,6 +99,11 @@ export const CategoryController = {
   // PUT /api/categories/:id - Update category
   async updateCategory(req: Request, res: Response) {
     try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(401).json({ status: 'error', message: 'Authentication required' });
+      }
+
       const { id } = req.params;
       const updateData = req.body as UpdateCategoryInput;
 
@@ -125,6 +135,11 @@ export const CategoryController = {
   // DELETE /api/categories/:id - Soft delete category
   async deleteCategory(req: Request, res: Response) {
     try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(401).json({ status: 'error', message: 'Authentication required' });
+      }
+
       const { id } = req.params;
 
       const existingCategory = await CategoryModel.findById(Number(id));
@@ -154,6 +169,11 @@ export const CategoryController = {
   // POST /api/categories/:id/mantras/:mantraId - Add mantra to category
   async addMantraToCategory(req: Request, res: Response) {
     try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(401).json({ status: 'error', message: 'Authentication required' });
+      }
+
       const { id, mantraId } = req.params;
 
       await CategoryModel.addMantraToCategory(Number(mantraId), Number(id));
@@ -174,6 +194,11 @@ export const CategoryController = {
   // DELETE /api/categories/:id/mantras/:mantraId - Remove mantra from category
   async removeMantraFromCategory(req: Request, res: Response) {
     try {
+      const userId = req.user?.userId;
+      if (!userId) {
+        return res.status(401).json({ status: 'error', message: 'Authentication required' });
+      }
+
       const { id, mantraId } = req.params;
 
       await CategoryModel.removeMantraFromCategory(Number(mantraId), Number(id));

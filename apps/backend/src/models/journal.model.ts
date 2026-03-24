@@ -77,7 +77,11 @@ export const JournalModel = {
   },
 
   // Update a journal entry
-  async update(journalId: number, userId: number, updates: JournalEntryUpdate): Promise<JournalEntry | undefined> {
+  async update(
+    journalId: number,
+    userId: number,
+    updates: JournalEntryUpdate,
+  ): Promise<JournalEntry | undefined> {
     return await db
       .updateTable('JournalEntry')
       .set({
@@ -108,12 +112,7 @@ export const JournalModel = {
     return await db
       .selectFrom('JournalEntry')
       .where('user_id', '=', userId)
-      .where((eb) =>
-        eb.or([
-          eb('title', 'ilike', searchTerm),
-          eb('content', 'ilike', searchTerm),
-        ])
-      )
+      .where((eb) => eb.or([eb('title', 'ilike', searchTerm), eb('content', 'ilike', searchTerm)]))
       .selectAll()
       .orderBy('created_at', 'desc')
       .limit(limit)

@@ -12,7 +12,13 @@ const transporter = nodemailer.createTransport({
 });
 
 // Shared email template
-function buildEmailHtml(options: { heading: string; bodyText: string; code: string; expiryNote: string; disclaimer: string }): string {
+function buildEmailHtml(options: {
+  heading: string;
+  bodyText: string;
+  code: string;
+  expiryNote: string;
+  disclaimer: string;
+}): string {
   return `
     <!DOCTYPE html>
     <html>
@@ -92,17 +98,17 @@ if (process.env.NODE_ENV !== 'test' && process.env.EMAIL_USER && process.env.EMA
   console.warn('Email credentials not configured. Password reset emails will not be sent.');
 }
 
-// Generate a random 6-digit code 
+// Generate a random 6-digit code
 export const generate6DigitCode = (): string => {
   const range = 900000; // 900000 possible values (100000 to 999999)
-  const maxAcceptable = Math.floor(0xFFFFFFFF / range) * range;
-  
+  const maxAcceptable = Math.floor(0xffffffff / range) * range;
+
   let randomNumber: number;
   do {
     const randomBytes = crypto.randomBytes(4);
     randomNumber = randomBytes.readUInt32BE(0);
   } while (randomNumber >= maxAcceptable);
-  
+
   const code = (randomNumber % range) + 100000;
   return code.toString();
 };
@@ -119,10 +125,12 @@ export const send6DigitCode = async (email: string, code: string): Promise<boole
       subject: 'Password Reset Verification Code',
       html: buildEmailHtml({
         heading: 'Password Reset Request',
-        bodyText: 'We received a request to reset your password. Use the verification code below to continue:',
+        bodyText:
+          'We received a request to reset your password. Use the verification code below to continue:',
         code,
         expiryNote: 'This code will expire in 10 minutes.',
-        disclaimer: "If you didn't request a password reset, please ignore this email or contact support if you have concerns.",
+        disclaimer:
+          "If you didn't request a password reset, please ignore this email or contact support if you have concerns.",
       }),
       text: `Your MeMantra password reset verification code is: ${code}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request a password reset, please ignore this email.`,
     };
@@ -148,7 +156,8 @@ export const sendSignupVerificationCode = async (email: string, code: string): P
       subject: 'Verify your MeMantra email',
       html: buildEmailHtml({
         heading: 'Verify your email address',
-        bodyText: 'Welcome to MeMantra! Please use the verification code below to confirm your email address and complete your registration:',
+        bodyText:
+          'Welcome to MeMantra! Please use the verification code below to confirm your email address and complete your registration:',
         code,
         expiryNote: 'This code will expire in 10 minutes.',
         disclaimer: 'If you did not create a MeMantra account, please ignore this email.',

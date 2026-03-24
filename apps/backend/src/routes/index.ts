@@ -49,7 +49,7 @@ router.use('/chat', chatRoutes);
 router.use('/notifications', notificationRoutes);
 
 // Rating routes
-router.use('/ratings', ratingRoutes); 
+router.use('/ratings', ratingRoutes);
 
 // Journal routes
 router.use('/journal', journalRoutes);

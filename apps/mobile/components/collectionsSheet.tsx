@@ -12,6 +12,7 @@ import {
   PanResponder,
   Dimensions,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import { Ionicons } from '@expo/vector-icons';
@@ -144,6 +145,7 @@ export default function CollectionsSheet({
       closeSheet();
     } catch (err) {
       console.error('Error creating collection:', err);
+      Alert.alert('Error', 'Failed to create collection.');
     } finally {
       setIsProcessing(false);
     }
@@ -161,6 +163,7 @@ export default function CollectionsSheet({
       closeSheet();
     } catch (err) {
       console.error('Error selecting collection:', err);
+      Alert.alert('Error', 'Failed to add mantra to collection.');
     } finally {
       setIsProcessing(false);
     }

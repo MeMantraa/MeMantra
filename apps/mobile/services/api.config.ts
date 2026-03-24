@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { Platform } from 'react-native';
 import { storage } from '../utils/storage';
 import Constants from 'expo-constants';
@@ -46,7 +46,7 @@ const getLocalIpAddress = (): string | null => {
 };
 
 const getBaseUrl = () => {
-  const autoDetectedIP = getLocalIpAddress();
+  const autoDetectedIP = getLocalIpAddress(); //
   const PORT = '4000';
 
   // Determine if we're using Expo tunnel
@@ -67,7 +67,6 @@ const getBaseUrl = () => {
     finalIP: DEV_IP,
   });
 
-  //if android
   if (Platform.OS === 'android') {
     // Android emulator uses 10.0.2.2 to access host machine
     // For real device with tunnel, set DEV_IP above
@@ -75,7 +74,6 @@ const getBaseUrl = () => {
     return `http://${host}:${PORT}/api`;
   }
 
-  //if ios
   if (Platform.OS === 'ios') {
     // iOS simulator uses localhost
     // For physical device or tunnel, set DEV_IP above
@@ -154,9 +152,12 @@ const emitApiPerformanceEvent = async (params: {
 };
 
 // Navigation ref to handle logout navigation and deep linking
-let navigationRef: any = null;
+let navigationRef: {
+  navigate: (name: string, params?: object) => void;
+  reset: (state: { index: number; routes: { name: string }[] }) => void;
+} | null = null;
 
-export const setNavigationRef = (ref: any) => {
+export const setNavigationRef = (ref: typeof navigationRef) => {
   navigationRef = ref;
 };
 
@@ -181,9 +182,9 @@ export const isNavigationReady = (): boolean => {
   return navigationRef !== null;
 };
 
-//request to attach jwt token
+// Attach the stored JWT token to every outgoing request.
 apiClient.interceptors.request.use(
-  async (config: any) => {
+  async (config: InternalAxiosRequestConfig) => {
     const extendedConfig = config as ExtendedRequestConfig;
     extendedConfig.metadata = extendedConfig.metadata || {};
     extendedConfig.metadata.startTime = Date.now();
@@ -199,14 +200,14 @@ apiClient.interceptors.request.use(
     }
     return config;
   },
-  (error: any) => {
+  (error: AxiosError) => {
     return Promise.reject(error);
   },
 );
 
-//handle errors
+// Global response error handler — clears auth on 401.
 apiClient.interceptors.response.use(
-  (response: any) => {
+  (response: AxiosResponse) => {
     const config: ExtendedRequestConfig | undefined = response?.config;
     const startedAt = config?.metadata?.startTime || Date.now();
     void emitApiPerformanceEvent({

@@ -1,5 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, FlatList, TouchableOpacity, ActivityIndicator, TextInput } from 'react-native';
+import {
+  View,
+  FlatList,
+  TouchableOpacity,
+  ActivityIndicator,
+  TextInput,
+  Alert,
+} from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { User, userService } from '../services/user.service';
@@ -41,6 +48,7 @@ export default function NewConversationScreen({ navigation }: any) {
       }
     } catch (err) {
       console.error('Error loading users:', err);
+      Alert.alert('Error', 'Failed to load users. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -72,7 +80,7 @@ export default function NewConversationScreen({ navigation }: any) {
       navigation.replace('Conversation', { conversation });
     } catch (err) {
       console.error('Error creating conversation:', err);
-      alert('Failed to start conversation. Please try again.');
+      Alert.alert('Error', 'Failed to start conversation. Please try again.');
     } finally {
       setCreating(false);
     }

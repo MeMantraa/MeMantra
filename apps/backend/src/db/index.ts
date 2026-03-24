@@ -4,7 +4,7 @@ import { Database } from '../types/database.types';
 import dotenv from 'dotenv';
 import { PerformanceMonitor } from '../services/performance-monitor.service';
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 // OID 1114 = TIMESTAMP WITHOUT TIME ZONE
 // By default pg interprets these in the server's local timezone, causing
@@ -23,7 +23,10 @@ if (typeof (pool as any).query === 'function') {
   pool.query = (async (...args: any[]) => {
     const start = process.hrtime.bigint();
     const text = typeof args[0] === 'string' ? args[0] : args[0]?.text;
-    const queryType = typeof text === 'string' ? text.trim().split(/\s+/)[0]?.toUpperCase() || 'UNKNOWN' : 'UNKNOWN';
+    const queryType =
+      typeof text === 'string'
+        ? text.trim().split(/\s+/)[0]?.toUpperCase() || 'UNKNOWN'
+        : 'UNKNOWN';
 
     try {
       const result = await (originalQuery as any)(...args);

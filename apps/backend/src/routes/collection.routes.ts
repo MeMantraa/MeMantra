@@ -16,41 +16,29 @@ router.use(authenticate);
 
 router.get('/', CollectionController.getUserCollections);
 
-router.get(
-  '/:id',
-  validateRequest(collectionIdSchema),
-  CollectionController.getCollectionById
-);
+router.get('/:id', validateRequest(collectionIdSchema), CollectionController.getCollectionById);
 
-router.post(
-  '/',
-  validateRequest(createCollectionSchema),
-  CollectionController.createCollection
-);
+router.post('/', validateRequest(createCollectionSchema), CollectionController.createCollection);
 
 router.put(
   '/:id',
   validateRequest(collectionIdSchema),
   validateRequest(updateCollectionSchema),
-  CollectionController.updateCollection
+  CollectionController.updateCollection,
 );
 
-router.delete(
-  '/:id',
-  validateRequest(collectionIdSchema),
-  CollectionController.deleteCollection
-);
+router.delete('/:id', validateRequest(collectionIdSchema), CollectionController.deleteCollection);
 
 router.post(
   '/:id/mantras/:mantraId',
   validateRequest(collectionMantraSchema),
-  CollectionController.addMantraToCollection
+  CollectionController.addMantraToCollection,
 );
 
 router.delete(
   '/:id/mantras/:mantraId',
   validateRequest(collectionMantraSchema),
-  CollectionController.removeMantraFromCollection
+  CollectionController.removeMantraFromCollection,
 );
 
 export default router;
