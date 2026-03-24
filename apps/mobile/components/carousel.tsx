@@ -323,7 +323,7 @@ const MantraCarousel = memo(
                 pointerEvents={isMoreExpanded ? 'auto' : 'none'}
                 style={{
                   marginBottom: 10,
-                  backgroundColor: 'rgba(109, 126, 104, 0.96)',
+                  backgroundColor: colors.primaryDark + 'F5',
                   borderRadius: 999,
                   paddingHorizontal: 8,
                   height: 56,
@@ -448,7 +448,7 @@ const MantraCarousel = memo(
                         inputRange: [0, 1],
                         outputRange: [0, 12],
                       }),
-                      backgroundColor: 'rgba(109, 126, 104, 0.95)',
+                      backgroundColor: colors.primaryDark + 'F2',
                       width: 56,
                       height: moreAnim.interpolate({
                         inputRange: [0, 1],
