@@ -12,6 +12,7 @@ pnpm install                  # install dependencies (from repo root only once)
 
 **Environment file:** `apps/backend/.env`. Root-level scripts and Docker compose reuse it.
 For local validation of the immutable staging/production Compose stacks, the repo now reuses `apps/backend/.env`. Compose still overrides `NODE_ENV` per environment.
+For Render deployment, keep secrets in Render environment variables and point `DATABASE_URL` at a managed Postgres instance instead of the local Compose DB container.
 
 **Database connectivity:** ensure `DATABASE_URL` (Neon) or discrete `DB_*` variables (local) are correct before running the server.
 
@@ -33,6 +34,18 @@ curl http://localhost:3000/health
 ```
 
 You should receive `{ "status": "healthy", ... }`.
+
+## Render Deployment
+
+The repo includes [`render.yaml`](/c:/Users/Philippe/MeMantra/render.yaml) for a Docker-based Render web service backed by [`dockerfile`](/c:/Users/Philippe/MeMantra/apps/backend/dockerfile).
+
+Recommended Render settings:
+
+- `DATABASE_URL`: Render Postgres or another managed Postgres connection string
+- `JWT_SECRET`: required
+- `ALLOWED_ORIGINS`: your deployed frontend origin(s)
+- `RUN_SCHEDULERS=false`: recommended unless this exact service instance should execute cron-style background jobs
+- `PORT`: Render injects this automatically; the included `render.yaml` sets `10000`
 
 ---
 

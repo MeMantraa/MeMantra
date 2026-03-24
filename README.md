@@ -106,6 +106,7 @@ We use **GitHub Actions** to maintain quality and stability:
 - **Staging policy:** `docker-compose.staging.yml` is the production-style validation stack. It uses built images for backend and mobile, no source bind mounts, database healthchecks, and restart policies.
 - **Production policy:** `docker-compose.prod.yml` mirrors the staging shape with production-oriented image/runtime settings. For local validation it currently reuses `apps/backend/.env` and `apps/mobile/.env`; in a real deployment those should be replaced with environment-specific secrets and values.
 - **Database bootstrap policy:** the containerized database initializes from `apps/backend/database/init.sql` only. Other SQL files in `apps/backend/database/` are treated as manual migrations, not automatic bootstrap scripts.
+- **Render policy:** the backend can be deployed as a Docker-based Render web service using [`render.yaml`](/c:/Users/Philippe/MeMantra/render.yaml) and [`apps/backend/dockerfile`](/c:/Users/Philippe/MeMantra/apps/backend/dockerfile). Use a managed database there, and set `RUN_SCHEDULERS=false` unless you deliberately want the web service process running background jobs.
 
 ---
 
