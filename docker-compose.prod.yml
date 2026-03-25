@@ -15,6 +15,7 @@ services:
       DB_HOST: db
       DATABASE_URL: postgresql://postgres:postgres@db:5432/me_mantra_db
       ALLOWED_ORIGINS: http://localhost:8080
+      RUN_SCHEDULERS: 'false'
     healthcheck:
       test:
         [
