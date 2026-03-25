@@ -38,7 +38,7 @@ services:
   mobile:
     build:
       context: .
-      dockerfile: ./apps/mobile/dockerfile
+      dockerfile: ./apps/mobile/Dockerfile
       target: dev
     working_dir: /app/apps/mobile
     ports:

@@ -17,7 +17,7 @@ ENV EXPO_PUBLIC_API_BASE_URL=$EXPO_PUBLIC_API_BASE_URL
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml turbo.json ./
 COPY apps/mobile/package.json apps/mobile/package.json
 
-RUN pnpm install --frozen-lockfile
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 COPY apps/mobile apps/mobile
 
@@ -33,3 +33,5 @@ RUN chown -R nginx:nginx /usr/share/nginx/html /var/cache/nginx /var/run /etc/ng
 USER nginx
 
 EXPOSE 8080
+
+CMD ["nginx", "-g", "daemon off; pid /tmp/nginx.pid;"]

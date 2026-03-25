@@ -40,7 +40,7 @@ services:
   mobile:
     build:
       context: .
-      dockerfile: ./apps/mobile/dockerfile
+      dockerfile: ./apps/mobile/Dockerfile
       target: runtime
       args:
         EXPO_PUBLIC_API_BASE_URL: '${EXPO_PUBLIC_API_BASE_URL:-http://localhost:4000/api}'
