@@ -120,6 +120,11 @@ export const ChatController = {
     try {
       const userId = req.user?.userId;
       const conversationId = Number(req.params.id);
+      const requestedLimit = Number(req.query.limit);
+      const safeLimit =
+        Number.isFinite(requestedLimit) && requestedLimit > 0
+          ? Math.min(Math.floor(requestedLimit), 100)
+          : 50;
 
       if (!userId) {
         return res.status(401).json({
@@ -138,7 +143,7 @@ export const ChatController = {
         });
       }
 
-      const messages = await MessageModel.findByConversationId(conversationId);
+      const messages = await MessageModel.findByConversationId(conversationId, safeLimit);
 
       return res.status(200).json({
         status: 'success',

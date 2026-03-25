@@ -32,6 +32,7 @@ CREATE INDEX IF NOT EXISTS idx_conversation_user2 ON conversation(user2_id);
 CREATE INDEX IF NOT EXISTS idx_conversation_updated ON conversation(updated_at DESC);
 
 CREATE INDEX IF NOT EXISTS idx_message_conversation ON message(conversation_id);
+CREATE INDEX IF NOT EXISTS idx_message_conversation_created_at ON message(conversation_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_message_sender ON message(sender_id);
 CREATE INDEX IF NOT EXISTS idx_message_created ON message(created_at);
 CREATE INDEX IF NOT EXISTS idx_message_read ON message(read) WHERE read = FALSE;
