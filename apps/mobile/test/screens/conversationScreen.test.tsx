@@ -146,7 +146,7 @@ describe('ConversationScreen', () => {
     );
 
     await waitFor(() => {
-      expect(chatService.getMessages).toHaveBeenCalledWith(1, 'mock-token');
+      expect(chatService.getMessages).toHaveBeenCalledWith(1, 'mock-token', 50);
     });
 
     expect(await findByText('Hello!', {}, { timeout: 10000 })).toBeTruthy();
