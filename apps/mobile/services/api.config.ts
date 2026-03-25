@@ -27,7 +27,6 @@ const ENV_API_BASE_URL = runtimeProcess?.env.EXPO_PUBLIC_API_BASE_URL?.trim() ||
 
 // Try to import local config (gitignored) - copy api.config.local.example.ts to api.config.local.ts
 let LOCAL_DEV_IP: string | null = null;
-
 if (runtimeProcess?.env.NODE_ENV !== 'test') {
   try {
     // eslint-disable-next-line no-undef
@@ -51,19 +50,15 @@ const getLocalIpAddress = (): string | null => {
 };
 
 const getBaseUrl = () => {
-<<<<<<< HEAD
   if (ENV_API_BASE_URL) {
     return normalizeBaseUrl(ENV_API_BASE_URL);
   }
 
   const autoDetectedIP = getLocalIpAddress();
-=======
-  const autoDetectedIP = getLocalIpAddress(); //
->>>>>>> fbabf66 (refactor(#496): code quality cleanup (#489) (#4900 (#491))
   const PORT = '4000';
   const isUsingTunnel = Constants.expoConfig?.hostUri?.includes('exp.direct');
   const shouldUseLocalConfig = LOCAL_DEV_IP && isUsingTunnel;
-  const devIp: string | null = shouldUseLocalConfig ? LOCAL_DEV_IP : autoDetectedIP;
+  const DEV_IP: string | null = shouldUseLocalConfig ? LOCAL_DEV_IP : autoDetectedIP;
 
   console.log('🔍 IP Detection:', {
     localConfig: LOCAL_DEV_IP,
@@ -71,19 +66,22 @@ const getBaseUrl = () => {
     isUsingTunnel,
     expoHostUri: Constants.expoConfig?.hostUri,
     platform: Platform.OS,
-    finalIP: devIp,
+    finalIP: DEV_IP,
   });
 
   if (Platform.OS === 'android') {
-    return normalizeBaseUrl(`http://${devIp || '10.0.2.2'}:${PORT}`);
+    const host = DEV_IP || '10.0.2.2';
+    return normalizeBaseUrl(`http://${host}:${PORT}`);
   }
 
   if (Platform.OS === 'ios') {
-    return normalizeBaseUrl(`http://${devIp || 'localhost'}:${PORT}`);
+    const host = DEV_IP || 'localhost';
+    return normalizeBaseUrl(`http://${host}:${PORT}`);
   }
 
   if (Platform.OS === 'web') {
-    return normalizeBaseUrl(`http://${devIp || 'localhost'}:${PORT}`);
+    const webHost = DEV_IP || 'localhost';
+    return normalizeBaseUrl(`http://${webHost}:${PORT}`);
   }
 
   throw new Error(`Unsupported platform: ${Platform.OS}. Cannot determine API base URL.`);
@@ -107,7 +105,6 @@ export const apiClient = axios.create({
   timeout: 30000,
 });
 
-<<<<<<< HEAD
 const buildRouteName = (url?: string): string | undefined => {
   if (!url) return undefined;
   return url.split('?')[0];
@@ -149,14 +146,10 @@ const emitApiPerformanceEvent = async (params: {
   );
 };
 
-let navigationRef: any = null;
-=======
-// Navigation ref to handle logout navigation and deep linking
 let navigationRef: {
   navigate: (name: string, params?: object) => void;
   reset: (state: { index: number; routes: { name: string }[] }) => void;
 } | null = null;
->>>>>>> fbabf66 (refactor(#496): code quality cleanup (#489) (#4900 (#491))
 
 export const setNavigationRef = (ref: typeof navigationRef) => {
   navigationRef = ref;
@@ -176,9 +169,8 @@ export const isNavigationReady = (): boolean => {
   return navigationRef !== null;
 };
 
-<<<<<<< HEAD
 apiClient.interceptors.request.use(
-  async (config: any) => {
+  async (config: InternalAxiosRequestConfig) => {
     const extendedConfig = config as ExtendedRequestConfig;
     extendedConfig.metadata = extendedConfig.metadata || {};
     extendedConfig.metadata.startTime = Date.now();
@@ -187,11 +179,6 @@ apiClient.interceptors.request.use(
       extendedConfig.skipPerformanceMonitoring ||
       false;
 
-=======
-// Attach the stored JWT token to every outgoing request.
-apiClient.interceptors.request.use(
-  async (config: InternalAxiosRequestConfig) => {
->>>>>>> fbabf66 (refactor(#496): code quality cleanup (#489) (#4900 (#491))
     const token = await storage.getToken();
     if (token) {
       extendedConfig.headers = extendedConfig.headers || {};
@@ -204,9 +191,8 @@ apiClient.interceptors.request.use(
   },
 );
 
-<<<<<<< HEAD
 apiClient.interceptors.response.use(
-  (response: any) => {
+  (response: AxiosResponse) => {
     const config: ExtendedRequestConfig | undefined = response?.config;
     const startedAt = config?.metadata?.startTime || Date.now();
     void emitApiPerformanceEvent({
@@ -229,12 +215,6 @@ apiClient.interceptors.response.use(
       errorMessage: error?.message,
     });
 
-=======
-// Global response error handler — clears auth on 401.
-apiClient.interceptors.response.use(
-  (response: AxiosResponse) => response,
-  async (error: { response: { status: number } }) => {
->>>>>>> fbabf66 (refactor(#496): code quality cleanup (#489) (#4900 (#491))
     if (error.response?.status === 401) {
       console.log('Unauthorized access - token expired or invalid');
 
@@ -254,3 +234,5 @@ apiClient.interceptors.response.use(
     throw error instanceof Error ? error : new Error(JSON.stringify(error));
   },
 );
+
+export default apiClient;
