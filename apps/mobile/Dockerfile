@@ -28,4 +28,8 @@ FROM nginx:1.27-alpine AS runtime
 COPY apps/mobile/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/apps/mobile/dist /usr/share/nginx/html
 
-EXPOSE 80
+RUN chown -R nginx:nginx /usr/share/nginx/html /var/cache/nginx /var/run /etc/nginx/conf.d
+
+USER nginx
+
+EXPOSE 8080

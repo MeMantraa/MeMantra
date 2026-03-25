@@ -26,7 +26,9 @@ ENV NODE_ENV=production
 ENV PORT=3000
 WORKDIR /app
 
-COPY --from=build /prod/backend ./
+COPY --from=build --chown=node:node /prod/backend ./
+
+USER node
 
 EXPOSE 3000
 
