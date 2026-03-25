@@ -11,7 +11,7 @@ import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { ChatBubble } from '../components/chat/ChatBubble';
 import ChatInput from '../components/chat/ChatInput';
-import { Message, Conversation } from '../types/chat.types';
+import { Message, Conversation, MessageReaction } from '../types/chat.types';
 import { chatService } from '../services/chat.service';
 import { storage } from '../utils/storage';
 import { Ionicons } from '@expo/vector-icons';
@@ -45,6 +45,38 @@ export default function ConversationScreen({ route, navigation }: any) {
     }
   };
 
+  const fetchReactionsForMessage = async (messageId: number, token: string) => {
+    try {
+      const reactions = await chatService.getReactions(messageId, token);
+      return { messageId, reactions };
+    } catch (err) {
+      console.error('Error loading reactions for message:', messageId, err);
+      return { messageId, reactions: [] };
+    }
+  };
+
+  const mergeReactionsIntoMessages = (
+    prevMessages: Message[],
+    reactionEntries: Array<{ messageId: number; reactions: MessageReaction[] }>,
+  ) => {
+    const reactionsByMessageId = new Map(
+      reactionEntries.map((entry) => [entry.messageId, entry.reactions]),
+    );
+
+    return prevMessages.map((msg) => {
+      const reactions = reactionsByMessageId.get(msg.message_id);
+      return reactions ? { ...msg, reactions } : msg;
+    });
+  };
+
+  const hydrateReactions = async (messagesToHydrate: Message[], token: string) => {
+    const reactionEntries = await Promise.all(
+      messagesToHydrate.map((msg) => fetchReactionsForMessage(msg.message_id, token)),
+    );
+
+    setMessages((prevMessages) => mergeReactionsIntoMessages(prevMessages, reactionEntries));
+  };
+
   const loadMessages = async () => {
     try {
       setLoading(true);
@@ -60,28 +92,7 @@ export default function ConversationScreen({ route, navigation }: any) {
       setLoading(false);
 
       const messagesForReactionHydration = data.slice(-INITIAL_REACTION_HYDRATION_LIMIT);
-      void Promise.all(
-        messagesForReactionHydration.map(async (msg) => {
-          try {
-            const reactions = await chatService.getReactions(msg.message_id, token || 'mock-token');
-            return { messageId: msg.message_id, reactions };
-          } catch (err) {
-            console.error('Error loading reactions for message:', msg.message_id, err);
-            return { messageId: msg.message_id, reactions: [] };
-          }
-        }),
-      ).then((reactionEntries) => {
-        setMessages((prevMessages) => {
-          const reactionsByMessageId = new Map(
-            reactionEntries.map((entry) => [entry.messageId, entry.reactions]),
-          );
-
-          return prevMessages.map((msg) => {
-            const reactions = reactionsByMessageId.get(msg.message_id);
-            return reactions ? { ...msg, reactions } : msg;
-          });
-        });
-      });
+      void hydrateReactions(messagesForReactionHydration, token || 'mock-token');
 
       // Mark as read
       void chatService.markAsRead(conversation.conversation_id, token || 'mock-token');
