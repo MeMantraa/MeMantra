@@ -37,15 +37,22 @@ app.get('/api/users/feature-flags/users', UserController.getUsersWithFlags);
 app.post('/api/users/feature-flags/:flag/users/:id', UserController.setSingleUserFeatureFlag);
 app.post('/api/users/feature-flags/:flag/all', UserController.setFeatureFlagForAllUsers);
 app.post('/api/users/feature-flags/:flag/rollout', UserController.rolloutFeatureFlagToPercentage);
-app.post('/api/users/feature-flags/:flag/rollout/exact', UserController.setExactFeatureFlagRolloutToPercentage);
+app.post(
+  '/api/users/feature-flags/:flag/rollout/exact',
+  UserController.setExactFeatureFlagRolloutToPercentage,
+);
 app.get('/api/users/:id', UserController.getUserById);
 app.post('/api/users', UserController.createUser);
 app.put('/api/users/:id', UserController.updateUser);
 // For deleteUser, inject mock req.user
-app.delete('/api/users/:id', (req, _res, next) => {
-  req.user = req.headers['x-user'] ? JSON.parse(req.headers['x-user'] as string) : {};
-  next();
-}, UserController.deleteUser);
+app.delete(
+  '/api/users/:id',
+  (req, _res, next) => {
+    req.user = req.headers['x-user'] ? JSON.parse(req.headers['x-user'] as string) : {};
+    next();
+  },
+  UserController.deleteUser,
+);
 // Feature flag routes
 app.get('/api/users/:id/feature-flags', UserController.getUserFeatureFlags);
 app.put('/api/users/:id/feature-flags', UserController.setUserFeatureFlags);
@@ -66,7 +73,7 @@ describe('UserController', () => {
           email: 'user1@example.com',
           password_hash: 'secret',
           auth_provider: 'local',
-          created_at: 'now'
+          created_at: 'now',
         },
         {
           user_id: 2,
@@ -74,7 +81,7 @@ describe('UserController', () => {
           email: 'user2@example.com',
           password_hash: 'secret2',
           auth_provider: 'local',
-          created_at: 'now'
+          created_at: 'now',
         },
       ]);
       const res = await request(app).get('/api/users');
@@ -85,14 +92,14 @@ describe('UserController', () => {
           username: 'user1',
           email: 'user1@example.com',
           auth_provider: 'local',
-          created_at: 'now'
+          created_at: 'now',
         },
         {
           user_id: 2,
           username: 'user2',
           email: 'user2@example.com',
           auth_provider: 'local',
-          created_at: 'now'
+          created_at: 'now',
         },
       ]);
       expect(res.body.data.users.find((u: any) => u.password_hash)).toBeUndefined();
@@ -115,7 +122,7 @@ describe('UserController', () => {
         email: 'testuser@email.com',
         password_hash: 'hash',
         auth_provider: 'local',
-        created_at: 'yesterday'
+        created_at: 'yesterday',
       });
       const res = await request(app).get('/api/users/2');
       expect(res.status).toBe(200);
@@ -124,7 +131,7 @@ describe('UserController', () => {
         username: 'testuser',
         email: 'testuser@email.com',
         auth_provider: 'local',
-        created_at: 'yesterday'
+        created_at: 'yesterday',
       });
       expect(res.body.data.user.password_hash).toBeUndefined();
     });
@@ -157,13 +164,11 @@ describe('UserController', () => {
         auth_provider: 'local',
       });
 
-      const res = await request(app)
-        .post('/api/users')
-        .send({
-          username: 'newuser',
-          email: 'new@email.com',
-          password: 'pw'
-        });
+      const res = await request(app).post('/api/users').send({
+        username: 'newuser',
+        email: 'new@email.com',
+        password: 'pw',
+      });
 
       expect(res.status).toBe(201);
       expect(res.body.status).toBe('success');
@@ -178,13 +183,11 @@ describe('UserController', () => {
     it('should reject duplicate email', async () => {
       (UserModel.findByEmail as jest.Mock).mockResolvedValue({ user_id: 4 });
 
-      const res = await request(app)
-        .post('/api/users')
-        .send({
-          username: 'anyone',
-          email: 'dup@email.com',
-          password: 'pw'
-        });
+      const res = await request(app).post('/api/users').send({
+        username: 'anyone',
+        email: 'dup@email.com',
+        password: 'pw',
+      });
 
       expect(res.status).toBe(400);
       expect(res.body.message).toBe('Email already in use');
@@ -194,13 +197,11 @@ describe('UserController', () => {
       (UserModel.findByEmail as jest.Mock).mockResolvedValue(null);
       (UserModel.findByUsername as jest.Mock).mockResolvedValue({ user_id: 5 });
 
-      const res = await request(app)
-        .post('/api/users')
-        .send({
-          username: 'takenuser',
-          email: 'free@email.com',
-          password: 'pw'
-        });
+      const res = await request(app).post('/api/users').send({
+        username: 'takenuser',
+        email: 'free@email.com',
+        password: 'pw',
+      });
 
       expect(res.status).toBe(400);
       expect(res.body.message).toBe('Username already taken');
@@ -208,13 +209,11 @@ describe('UserController', () => {
 
     it('should handle errors', async () => {
       (UserModel.findByEmail as jest.Mock).mockRejectedValue(new Error('DB error'));
-      const res = await request(app)
-        .post('/api/users')
-        .send({
-          username: 'erruser',
-          email: 'err@email.com',
-          password: 'pw'
-        });
+      const res = await request(app).post('/api/users').send({
+        username: 'erruser',
+        email: 'err@email.com',
+        password: 'pw',
+      });
 
       expect(res.status).toBe(500);
       expect(res.body.message).toBe('Error creating user');
@@ -256,9 +255,7 @@ describe('UserController', () => {
     it('should return 404 if user not found', async () => {
       (UserModel.findById as jest.Mock).mockResolvedValue(null);
 
-      const res = await request(app)
-        .put('/api/users/404')
-        .send({ username: 'x', email: 'y' });
+      const res = await request(app).put('/api/users/404').send({ username: 'x', email: 'y' });
 
       expect(res.status).toBe(404);
       expect(res.body.status).toBe('error');
@@ -273,9 +270,7 @@ describe('UserController', () => {
       });
       (UserModel.findByEmail as jest.Mock).mockResolvedValue({ user_id: 999 });
 
-      const res = await request(app)
-        .put('/api/users/101')
-        .send({ email: 'taken@email.com' });
+      const res = await request(app).put('/api/users/101').send({ email: 'taken@email.com' });
 
       expect(res.status).toBe(400);
       expect(res.body.message).toBe('Email already in use');
@@ -289,9 +284,7 @@ describe('UserController', () => {
       });
       (UserModel.findByUsername as jest.Mock).mockResolvedValue({ user_id: 1000 });
 
-      const res = await request(app)
-        .put('/api/users/151')
-        .send({ username: 'takenuser' });
+      const res = await request(app).put('/api/users/151').send({ username: 'takenuser' });
 
       expect(res.status).toBe(400);
       expect(res.body.message).toBe('Username already taken');

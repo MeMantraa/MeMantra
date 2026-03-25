@@ -5,11 +5,13 @@ module.exports = {
   testMatch: ['**/test/**/*.test.ts', '**/*.test.ts'],
   setupFiles: ['<rootDir>/setupEnv.ts'],
   setupFilesAfterEnv: ['<rootDir>/test/jest.cleanup.ts'],
+
   collectCoverageFrom: [
     'src/**/*.ts',
     '!src/**/*.d.ts',
     '!src/**/test/**',
   ],
+
   coverageDirectory: 'coverage',
   coverageReporters: ['text', 'lcov', 'html'],
   verbose: true,

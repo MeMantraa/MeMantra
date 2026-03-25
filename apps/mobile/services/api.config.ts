@@ -50,6 +50,7 @@ const getLocalIpAddress = (): string | null => {
 };
 
 const getBaseUrl = () => {
+
   if (ENV_API_BASE_URL) {
     return normalizeBaseUrl(ENV_API_BASE_URL);
   }
@@ -146,6 +147,8 @@ const emitApiPerformanceEvent = async (params: {
   );
 };
 
+
+// Navigation ref to handle logout navigation and deep linking
 let navigationRef: {
   navigate: (name: string, params?: object) => void;
   reset: (state: { index: number; routes: { name: string }[] }) => void;
@@ -169,6 +172,8 @@ export const isNavigationReady = (): boolean => {
   return navigationRef !== null;
 };
 
+
+// Attach the stored JWT token to every outgoing request.
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
     const extendedConfig = config as ExtendedRequestConfig;
@@ -191,6 +196,8 @@ apiClient.interceptors.request.use(
   },
 );
 
+
+// Global response error handler — clears auth on 401.
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
     const config: ExtendedRequestConfig | undefined = response?.config;
