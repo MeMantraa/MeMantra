@@ -17,6 +17,9 @@ import { storage } from '../utils/storage';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ConversationScreen({ route, navigation }: any) {
+  const INITIAL_MESSAGE_LIMIT = 50;
+  const INITIAL_REACTION_HYDRATION_LIMIT = 20;
+
   const { conversation } = route.params as { conversation: Conversation };
   const { colors } = useTheme();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -49,24 +52,39 @@ export default function ConversationScreen({ route, navigation }: any) {
       const data = await chatService.getMessages(
         conversation.conversation_id,
         token || 'mock-token',
+        INITIAL_MESSAGE_LIMIT,
       );
 
-      const messagesWithReactions = await Promise.all(
-        data.map(async (msg) => {
+      // Render messages immediately and load reactions in the background
+      setMessages(data.map((msg) => ({ ...msg, reactions: msg.reactions ?? [] })));
+      setLoading(false);
+
+      const messagesForReactionHydration = data.slice(-INITIAL_REACTION_HYDRATION_LIMIT);
+      void Promise.all(
+        messagesForReactionHydration.map(async (msg) => {
           try {
             const reactions = await chatService.getReactions(msg.message_id, token || 'mock-token');
-            return { ...msg, reactions };
+            return { messageId: msg.message_id, reactions };
           } catch (err) {
             console.error('Error loading reactions for message:', msg.message_id, err);
-            return { ...msg, reactions: [] };
+            return { messageId: msg.message_id, reactions: [] };
           }
         }),
-      );
+      ).then((reactionEntries) => {
+        setMessages((prevMessages) => {
+          const reactionsByMessageId = new Map(
+            reactionEntries.map((entry) => [entry.messageId, entry.reactions]),
+          );
 
-      setMessages(messagesWithReactions);
+          return prevMessages.map((msg) => {
+            const reactions = reactionsByMessageId.get(msg.message_id);
+            return reactions ? { ...msg, reactions } : msg;
+          });
+        });
+      });
 
       // Mark as read
-      await chatService.markAsRead(conversation.conversation_id, token || 'mock-token');
+      void chatService.markAsRead(conversation.conversation_id, token || 'mock-token');
     } catch (err) {
       console.error('Error loading messages:', err);
       Alert.alert('Error', 'Failed to load messages. Please try again.');
