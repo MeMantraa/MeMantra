@@ -50,7 +50,7 @@ const PRODUCTION_API_URL = 'https://memantra.onrender.com/api';
 
 const getBaseUrl = () => {
   // In production/preview builds, always use the hosted backend
-  // eslint-disable-next-line no-undef
+
   if (!__DEV__) {
     return PRODUCTION_API_URL;
   }

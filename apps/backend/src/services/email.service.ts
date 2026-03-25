@@ -1,20 +1,41 @@
-import nodemailer from 'nodemailer';
+import axios from 'axios';
 import crypto from 'node:crypto';
 
-// Configure Gmail SMTP transporter (port 587 + STARTTLS for cloud compatibility)
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 587,
-  secure: false,
-  requireTLS: true,
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  connectionTimeout: 30000,
-  greetingTimeout: 30000,
-  socketTimeout: 30000,
-});
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
+
+// Send email via Brevo HTTP API
+async function sendEmail(options: {
+  to: string;
+  subject: string;
+  html: string;
+  text: string;
+}): Promise<{ error: string | null }> {
+  const apiKey = process.env.BREVO_API_KEY || '';
+  const fromEmail = process.env.EMAIL_FROM || 'adminmemantra@gmail.com';
+
+  const response = await axios.post(
+    BREVO_API_URL,
+    {
+      sender: { name: 'MeMantra', email: fromEmail },
+      to: [{ email: options.to }],
+      subject: options.subject,
+      htmlContent: options.html,
+      textContent: options.text,
+    },
+    {
+      headers: {
+        'api-key': apiKey,
+        'Content-Type': 'application/json',
+      },
+      timeout: 10000,
+    },
+  );
+
+  if (response.status >= 200 && response.status < 300) {
+    return { error: null };
+  }
+  return { error: response.data?.message || 'Failed to send email' };
+}
 
 // Shared email template
 function buildEmailHtml(options: {
@@ -90,17 +111,11 @@ function buildEmailHtml(options: {
   `;
 }
 
-// Verify transporter configuration
-if (process.env.NODE_ENV !== 'test' && process.env.EMAIL_USER && process.env.EMAIL_PASS) {
-  transporter.verify((error: Error | null) => {
-    if (error) {
-      console.error('Email service configuration error:', error);
-    } else {
-      console.log('Email service is ready to send messages');
-    }
-  });
+// Verify Brevo configuration
+if (process.env.NODE_ENV !== 'test' && process.env.BREVO_API_KEY) {
+  console.log('Email service is ready to send messages');
 } else if (process.env.NODE_ENV !== 'test') {
-  console.warn('Email credentials not configured. Password reset emails will not be sent.');
+  console.warn('BREVO_API_KEY not configured. Emails will not be sent.');
 }
 
 // Generate a random 6-digit code
@@ -121,11 +136,7 @@ export const generate6DigitCode = (): string => {
 // Send a 6-digit verification code to the user's email
 export const send6DigitCode = async (email: string, code: string): Promise<boolean> => {
   try {
-    const mailOptions = {
-      from: {
-        name: 'MeMantra',
-        address: process.env.EMAIL_USER || '',
-      },
+    const { error } = await sendEmail({
       to: email,
       subject: 'Password Reset Verification Code',
       html: buildEmailHtml({
@@ -138,9 +149,13 @@ export const send6DigitCode = async (email: string, code: string): Promise<boole
           "If you didn't request a password reset, please ignore this email or contact support if you have concerns.",
       }),
       text: `Your MeMantra password reset verification code is: ${code}\n\nThis code will expire in 10 minutes.\n\nIf you didn't request a password reset, please ignore this email.`,
-    };
+    });
 
-    await transporter.sendMail(mailOptions);
+    if (error) {
+      console.error('Error sending verification email:', error);
+      return false;
+    }
+
     console.log(`Verification code sent successfully to ${email}`);
     return true;
   } catch (error) {
@@ -152,11 +167,7 @@ export const send6DigitCode = async (email: string, code: string): Promise<boole
 // Send a 6-digit signup verification code to the user's email
 export const sendSignupVerificationCode = async (email: string, code: string): Promise<boolean> => {
   try {
-    const mailOptions = {
-      from: {
-        name: 'MeMantra',
-        address: process.env.EMAIL_USER || '',
-      },
+    const { error } = await sendEmail({
       to: email,
       subject: 'Verify your MeMantra email',
       html: buildEmailHtml({
@@ -168,9 +179,13 @@ export const sendSignupVerificationCode = async (email: string, code: string): P
         disclaimer: 'If you did not create a MeMantra account, please ignore this email.',
       }),
       text: `Your MeMantra email verification code is: ${code}\n\nThis code will expire in 10 minutes.\n\nIf you did not create a MeMantra account, please ignore this email.`,
-    };
+    });
 
-    await transporter.sendMail(mailOptions);
+    if (error) {
+      console.error('Error sending signup verification email:', error);
+      return false;
+    }
+
     const safeEmail = email.replace(/[\r\n]/g, '');
     console.log(`Signup verification code sent successfully to ${safeEmail}`);
     return true;
