@@ -2,7 +2,7 @@
   "expo": {
     "scheme": "memantra",
     "name": "mobile",
-    "slug": "mobile",
+    "slug": "memantra",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -10,7 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.memantra.mobile"
+      "bundleIdentifier": "com.memantra.mobile",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +22,8 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.memantra.mobile"
+      "package": "com.memantra.mobile",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -46,12 +50,15 @@
           "color": "#8E9A86",
           "sound": "default"
         }
-      ]
+      ],
+      "expo-asset",
+      "expo-font"
     ],
     "extra": {
       "eas": {
-        "projectId": "072863e5-efd5-4b9c-8f68-7edfca4409d0"
+        "projectId": "f5eb7419-9983-4fad-8e5a-5a4177971cde"
       }
-    }
+    },
+    "owner": "me-mantra"
   }
 }

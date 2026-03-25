@@ -1,6 +1,4 @@
 package-lock.json
-package.json
-pnpm-lock.yaml
 lock.yaml
 
 .expo/
@@ -156,7 +154,6 @@ node_modules/
 
 # Ignore the entire Turborepo cache directory
 .turbo/
-pnpm-lock.yaml
 **/node_modules/
 .pnpm-store/
 **/.pnpm-store/

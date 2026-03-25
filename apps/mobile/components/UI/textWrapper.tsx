@@ -34,6 +34,5 @@ export const styles = StyleSheet.create({
   androidTextFix: {
     includeFontPadding: false,
     textAlignVertical: 'center',
-    lineHeight: 22,
   },
 });
