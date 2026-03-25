@@ -146,6 +146,32 @@ export default function ConversationScreen({ route, navigation }: any) {
     }
   };
 
+  const getDayKey = (isoString: string) => {
+    const date = new Date(isoString);
+    return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+  };
+
+  const formatDayHeader = (isoString: string) => {
+    const messageDate = new Date(isoString);
+    const today = new Date();
+
+    if (getDayKey(isoString) === getDayKey(today.toISOString())) {
+      return 'Today';
+    }
+
+    return messageDate.toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const shouldShowDayHeader = (index: number) => {
+    if (index === 0) return true;
+    return getDayKey(messages[index].created_at) !== getDayKey(messages[index - 1].created_at);
+  };
+
   const renderContent = () => {
     if (loading) {
       return (
@@ -171,15 +197,30 @@ export default function ConversationScreen({ route, navigation }: any) {
         data={messages}
         keyExtractor={(item) => item.message_id.toString()}
         contentContainerStyle={{ paddingVertical: 16 }}
-        renderItem={({ item }) => (
-          <ChatBubble
-            message={item}
-            isOwnMessage={item.sender_id === currentUserId}
-            onSwipeReply={handleSwipeReply}
-            replyToMessage={getReplyToMessage(item.reply_to_message_id)}
-            onReaction={handleReaction}
-            currentUserId={currentUserId}
-          />
+        renderItem={({ item, index }) => (
+          <>
+            {shouldShowDayHeader(index) && (
+              <View className="items-center my-2">
+                <View
+                  className="px-3 py-1 rounded-full"
+                  style={{ backgroundColor: `${colors.white}40` }}
+                >
+                  <AppText className="text-[12px] font-semibold" style={{ color: colors.white }}>
+                    {formatDayHeader(item.created_at)}
+                  </AppText>
+                </View>
+              </View>
+            )}
+
+            <ChatBubble
+              message={item}
+              isOwnMessage={item.sender_id === currentUserId}
+              onSwipeReply={handleSwipeReply}
+              replyToMessage={getReplyToMessage(item.reply_to_message_id)}
+              onReaction={handleReaction}
+              currentUserId={currentUserId}
+            />
+          </>
         )}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
         onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}
