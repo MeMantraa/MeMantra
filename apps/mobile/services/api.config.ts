@@ -67,8 +67,6 @@ const getBaseUrl = () => {
     return normalizeBaseUrl(ENV_API_BASE_URL);
   }
 
-  const isUsingTunnel = Constants.expoConfig?.hostUri?.includes('exp.direct');
-  const shouldUseLocalConfig = LOCAL_DEV_IP && isUsingTunnel;
   const DEV_IP: string | null = shouldUseLocalConfig ? LOCAL_DEV_IP : autoDetectedIP;
 
   console.log('🔍 IP Detection:', {
