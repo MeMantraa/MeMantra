@@ -53,13 +53,13 @@ export default function SettingsScreen() {
       {
         text: 'OK',
         onPress: () => {
-          logoutUser(navigation);
+          logoutUser(navigation as any);
         },
       },
     ]);
   };
 
-  const handleLogout = () => logoutUser(navigation);
+  const handleLogout = () => logoutUser(navigation as any);
 
   return (
     <View className="flex-1 pt-16 px-10" style={{ backgroundColor: colors.white }}>

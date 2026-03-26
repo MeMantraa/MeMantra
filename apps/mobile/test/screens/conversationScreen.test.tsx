@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import ConversationScreen from '../../screens/conversationScreen';
+import ConversationScreen from '../../screens/ConversationScreen';
 import { chatService } from '../../services/chat.service';
 import { storage } from '../../utils/storage';
 import { Message } from '../../types/chat.types';

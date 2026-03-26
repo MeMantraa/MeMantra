@@ -59,7 +59,10 @@ export const RecommendationModel = {
   },
 
   // Get recommendations with mantra details (JOIN)
-  async findByUserIdWithMantras(userId: number, limit = 20): Promise<Array<RecommendationLog & { mantra_title: string }>> {
+  async findByUserIdWithMantras(
+    userId: number,
+    limit = 20,
+  ): Promise<Array<RecommendationLog & { mantra_title: string }>> {
     const results = await db
       .selectFrom('RecommendationLog')
       .innerJoin('Mantra', 'RecommendationLog.mantra_id', 'Mantra.mantra_id')

@@ -45,7 +45,7 @@ export const CollectionMantraModel = {
       .select('mantra_id')
       .execute();
 
-    return results.map(r => r.mantra_id);
+    return results.map((r) => r.mantra_id);
   },
 
   // Get all collection IDs containing a mantra
@@ -56,7 +56,7 @@ export const CollectionMantraModel = {
       .select('collection_id')
       .execute();
 
-    return results.map(r => r.collection_id);
+    return results.map((r) => r.collection_id);
   },
 
   // Count mantras in a collection
@@ -100,4 +100,3 @@ export const CollectionMantraModel = {
     return Number(result.numDeletedRows);
   },
 };
-

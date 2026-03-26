@@ -54,8 +54,9 @@ export function stopScheduler(state: CronSchedulerState, name: string): void {
   console.log(`🛑 ${name} stopped`);
 }
 
-export function getSchedulerStatus(
-  state: CronSchedulerState,
-): { isRunning: boolean; hasCronTask: boolean } {
+export function getSchedulerStatus(state: CronSchedulerState): {
+  isRunning: boolean;
+  hasCronTask: boolean;
+} {
   return { isRunning: state.isRunning, hasCronTask: state.cronTask !== null };
 }

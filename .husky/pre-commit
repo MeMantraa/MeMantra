@@ -1,6 +1,3 @@
-#!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
-
 set -eu
 
 # Ensure local binaries take precedence regardless of shell setup

@@ -1,7 +1,7 @@
 import jwt, { Algorithm, SignOptions, Secret } from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 const JWT_SECRET = process.env.JWT_SECRET || '';
 const NODE_ENV = process.env.NODE_ENV || 'development';
@@ -25,7 +25,7 @@ export const generateToken = (payload: TokenPayload): string => {
   const algorithm: Algorithm = 'HS256';
 
   const envExpires = process.env.JWT_EXPIRES_IN;
-  
+
   // Compute expiresIn in a separate statement to avoid nested ternary (SonarQube)
   let resolvedExpires: SignOptions['expiresIn'];
 

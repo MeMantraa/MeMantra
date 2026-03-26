@@ -10,23 +10,27 @@ type SearchBarProps = {
   onSearch: (query: string) => void;
   placeholder?: string;
   onIconPress?: () => void;
+  compact?: boolean;
 };
 
 const SearchBar: React.FC<SearchBarProps> = ({
   onSearch,
   placeholder = 'Search...',
   onIconPress,
+  compact = false,
 }) => {
   const { colors } = useTheme();
   const [isExpanded, setIsExpanded] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const animatedWidth = useRef(new Animated.Value(48)).current;
+  const collapsedSize = compact ? 54 : 48;
+  const collapsedIconSize = 28;
+  const animatedWidth = useRef(new Animated.Value(collapsedSize)).current;
   const inputRef = useRef<TextInput>(null);
 
   //expand/collapse animation
   useEffect(() => {
     Animated.timing(animatedWidth, {
-      toValue: isExpanded ? SCREEN_WIDTH - 95 : 48,
+      toValue: isExpanded ? SCREEN_WIDTH - 95 : collapsedSize,
       duration: 200,
       useNativeDriver: false,
     }).start(() => {
@@ -34,7 +38,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
         inputRef.current?.focus();
       }
     });
-  }, [isExpanded, animatedWidth]);
+  }, [isExpanded, animatedWidth, collapsedSize]);
 
   useEffect(() => {
     if (!searchQuery.trim()) return;
@@ -63,20 +67,27 @@ const SearchBar: React.FC<SearchBarProps> = ({
     <Animated.View
       style={{
         width: animatedWidth,
-        height: 48,
+        height: collapsedSize,
         backgroundColor: colors.secondary,
-        borderRadius: 24,
+        borderRadius: collapsedSize / 2,
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 12,
+        paddingHorizontal: isExpanded ? 12 : (collapsedSize - collapsedIconSize) / 2,
         overflow: 'hidden',
+        borderWidth: compact ? 1 : 0,
+        borderColor: compact ? colors.secondary + 'cc' : 'transparent',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 5 },
+        shadowOpacity: compact ? 0.12 : 0.08,
+        shadowRadius: 8,
+        elevation: compact ? 3 : 2,
       }}
     >
       <TouchableOpacity
         testID="search-toggle-button"
         onPress={onIconPress ?? (isExpanded ? handleSubmit : handleToggle)}
         className="items-center justify-center"
-        style={{ width: 24, height: 24 }}
+        style={{ width: collapsedIconSize, height: collapsedIconSize }}
       >
         <Ionicons name="search-outline" size={24} color={colors.primaryDark} />
       </TouchableOpacity>
@@ -95,8 +106,10 @@ const SearchBar: React.FC<SearchBarProps> = ({
               backgroundColor: 'transparent',
               paddingVertical: 12,
               paddingHorizontal: 0,
-              height: 48,
+              height: collapsedSize,
               lineHeight: 20,
+              borderWidth: 0,
+              borderRadius: 0,
             }}
             className="flex-1 ml-2 text-base"
             returnKeyType="search"

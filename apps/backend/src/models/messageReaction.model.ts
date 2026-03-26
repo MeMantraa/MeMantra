@@ -38,10 +38,10 @@ export const MessageReactionModel = {
       .execute();
   },
 
-  // Get reactions for multiple messages 
+  // Get reactions for multiple messages
   async findByMessageIds(messageIds: number[]): Promise<MessageReaction[]> {
     if (messageIds.length === 0) return [];
-    
+
     return await db
       .selectFrom('MessageReaction')
       .where('message_id', 'in', messageIds)
@@ -64,24 +64,26 @@ export const MessageReactionModel = {
     return !!reaction;
   },
 
- 
-  async getReactionCounts(messageId: number): Promise<{ emoji: string; count: number; users: number[] }[]> {
+  async getReactionCounts(
+    messageId: number,
+  ): Promise<{ emoji: string; count: number; users: number[] }[]> {
     const reactions = await db
       .selectFrom('MessageReaction')
       .where('message_id', '=', messageId)
       .select(['emoji', 'user_id'])
       .execute();
 
-    
-    const groupedReactions = reactions.reduce((acc, reaction) => {
-      if (!acc[reaction.emoji]) {
-        acc[reaction.emoji] = [];
-      }
-      acc[reaction.emoji].push(reaction.user_id);
-      return acc;
-    }, {} as Record<string, number[]>);
+    const groupedReactions = reactions.reduce(
+      (acc, reaction) => {
+        if (!acc[reaction.emoji]) {
+          acc[reaction.emoji] = [];
+        }
+        acc[reaction.emoji].push(reaction.user_id);
+        return acc;
+      },
+      {} as Record<string, number[]>,
+    );
 
-    
     return Object.entries(groupedReactions).map(([emoji, users]) => ({
       emoji,
       count: users.length,

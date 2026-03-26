@@ -19,41 +19,58 @@ export default function ProfileScreen() {
   const { colors } = useTheme();
   const navigation = useNavigation<ProfileNavProp>();
   type UserState = {
-    username: string;           // username is always a string
-    profile_photo?: string;     // photo is optional
+    username: string; // username is always a string
+    profile_photo?: string; // photo is optional
   };
   const [user, setUser] = useState<UserState | null>(null);
 
-const loadUserFromServer = async () => {
-  try {
-    const token = await storage.getToken();
-    const userId = await storage.getUserId();
-    if (!token || !userId) return;
+  const validFlags = ['EXPERIMENTAL_FEATURE', 'DARK_MODE', 'ADVANCED_ANALYTICS'] as const;
 
-    const res = await userService.getUserById(userId, token); // call API to get current user
-    if (res.status === 'success') {
-      setUser({
-        username: res.data.user.username || '',
-        profile_photo: res.data.user.profile_photo || undefined,
-      });
-      await storage.saveUserData(res.data.user);
-    }
-  } catch (err) {
-    console.error('Error fetching user from server', err);
-  }
-};
+  type FeatureFlag = (typeof validFlags)[number];
 
-useEffect(() => {
-  const init = async () => {
-    // Load from storage first
-    const storedUser = await storage.getUserData();
-    if (storedUser) setUser(storedUser);
-
-    // Then call the reusable function to fetch from server
-    await loadUserFromServer();
+  const filterFeatureFlags = (flags?: string[]): FeatureFlag[] | undefined => {
+    return flags?.filter((flag): flag is FeatureFlag => validFlags.includes(flag as FeatureFlag));
   };
-  init();
-}, []);
+
+  const loadUserFromServer = async () => {
+    try {
+      const token = await storage.getToken();
+      const userId = await storage.getUserId();
+      if (!token || !userId) return;
+
+      const res = await userService.getUserById(userId, token); // call API to get current user
+      if (res.status === 'success') {
+        setUser({
+          username: res.data.user.username || '',
+          profile_photo: res.data.user.profile_photo || undefined,
+        });
+        await storage.saveUserData({
+          ...res.data.user,
+          feature_flags: filterFeatureFlags(res.data.user.feature_flags),
+        });
+      }
+    } catch (err) {
+      console.error('Error fetching user from server', err);
+    }
+  };
+
+  useEffect(() => {
+    const init = async () => {
+      // Load from storage first
+      const storedUser = await storage.getUserData();
+      if (storedUser) {
+        setUser({
+          username: storedUser.username || '',
+          profile_photo:
+            typeof storedUser.profile_photo === 'string' ? storedUser.profile_photo : undefined,
+        });
+      }
+
+      // Then call the reusable function to fetch from server
+      await loadUserFromServer();
+    };
+    init();
+  }, []);
 
   const uploadPickedPhoto = async (uri: string) => {
     try {
@@ -77,14 +94,16 @@ useEffect(() => {
       const res = await userService.updateProfilePhoto(base64WithPrefix, token);
 
       if (res.status === 'success') {
-
         const updatedUser = res.data.user;
         // update local state if you have user profile in context or state
         setUser({
-          username: updatedUser.username || '',          // never null
+          username: updatedUser.username || '', // never null
           profile_photo: updatedUser.profile_photo || undefined,
         });
-        await storage.saveUserData(res.data.user);
+        await storage.saveUserData({
+          ...res.data.user,
+          feature_flags: filterFeatureFlags(res.data.user.feature_flags),
+        });
       } else {
         console.error('Failed to update photo:', res.message);
       }
@@ -155,9 +174,7 @@ useEffect(() => {
       <View style={{ alignSelf: 'center', alignItems: 'center', marginBottom: 5 }}>
         <Image
           source={
-            user?.profile_photo
-            ? { uri: user.profile_photo }
-            : DefaultProfile // default profile image
+            user?.profile_photo ? { uri: user.profile_photo } : DefaultProfile // default profile image
           }
           style={{
             width: 150,

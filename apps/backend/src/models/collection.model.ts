@@ -4,7 +4,12 @@ import { CollectionMantraModel } from './collectionMantra.model';
 
 export const CollectionModel = {
   // Create a new collection
-  async create(userId: number, name: string, description?: string, icon?: string): Promise<Collection> {
+  async create(
+    userId: number,
+    name: string,
+    description?: string,
+    icon?: string,
+  ): Promise<Collection> {
     const result = await db
       .insertInto('Collection')
       .values({
@@ -131,9 +136,6 @@ export const CollectionModel = {
       query = query.where('Collection.user_id', '=', userId);
     }
 
-    return await query
-      .selectAll('Collection')
-      .execute();
+    return await query.selectAll('Collection').execute();
   },
 };
-
