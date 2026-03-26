@@ -167,8 +167,13 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View className="flex-1 pt-16 px-10" style={{ backgroundColor: colors.primary }}>
-      <AppText className="text-[30px] text-left mb-5 mt-2" style={{ color: colors.text }}>
+    <View
+      style={{ flex: 1, paddingTop: 64, paddingHorizontal: 40, backgroundColor: colors.primary }}
+    >
+      <AppText
+        className="text-[30px] font-bold text-left mb-10 mt-2"
+        style={{ color: colors.text }}
+      >
         {user?.username || ''}
       </AppText>
       <View style={{ alignSelf: 'center', alignItems: 'center', marginBottom: 5 }}>
@@ -196,10 +201,13 @@ export default function ProfileScreen() {
           <AppText style={{ color: colors.white, fontSize: 14 }}>Edit</AppText>
         </TouchableOpacity>
       </View>
-      <View className="mt-10 mb-10 gap-2.5">
+      <View style={{ marginTop: 40, marginBottom: 40 }}>
         <TouchableOpacity
-          className="flex-row justify-between"
-          style={[styles.button, { backgroundColor: colors.primaryDark }]}
+          style={[
+            { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
+            styles.button,
+            { backgroundColor: colors.primaryDark },
+          ]}
           onPress={() => navigation.navigate('Reminders')}
         >
           <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
@@ -208,8 +216,11 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={24} color={colors.white} />
         </TouchableOpacity>
         <TouchableOpacity
-          className="flex-row justify-between"
-          style={[styles.button, { backgroundColor: colors.primaryDark }]}
+          style={[
+            { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
+            styles.button,
+            { backgroundColor: colors.primaryDark },
+          ]}
           onPress={() => navigation.navigate('NotificationSettings')}
         >
           <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
@@ -218,8 +229,11 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={24} color={colors.white} />
         </TouchableOpacity>
         <TouchableOpacity
-          className="flex-row justify-between"
-          style={[styles.button, { backgroundColor: colors.primaryDark }]}
+          style={[
+            { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
+            styles.button,
+            { backgroundColor: colors.primaryDark },
+          ]}
           onPress={() => navigation.navigate('Liked')}
         >
           <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
@@ -228,8 +242,11 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={24} color={colors.white} />
         </TouchableOpacity>
         <TouchableOpacity
-          className="flex-row justify-between"
-          style={[styles.button, { backgroundColor: colors.primaryDark }]}
+          style={[
+            { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
+            styles.button,
+            { backgroundColor: colors.primaryDark },
+          ]}
           onPress={() => navigation.navigate('MantraAlgorithm')}
         >
           <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
@@ -238,8 +255,11 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={24} color={colors.white} />
         </TouchableOpacity>
         <TouchableOpacity
-          className="flex-row justify-between"
-          style={[styles.button, { backgroundColor: colors.primaryDark }]}
+          style={[
+            { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
+            styles.button,
+            { backgroundColor: colors.primaryDark },
+          ]}
           onPress={() => navigation.navigate('Themes')}
         >
           <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
@@ -248,8 +268,11 @@ export default function ProfileScreen() {
           <Ionicons name="chevron-forward" size={24} color={colors.white} />
         </TouchableOpacity>
         <TouchableOpacity
-          className="flex-row justify-between"
-          style={[styles.button, { backgroundColor: colors.primaryDark }]}
+          style={[
+            { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
+            styles.button,
+            { backgroundColor: colors.primaryDark },
+          ]}
           onPress={() => navigation.navigate('Settings')}
         >
           <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>

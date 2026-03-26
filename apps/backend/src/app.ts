@@ -42,14 +42,16 @@ export const createApp = () => {
     app.use(requestPerformanceMonitor);
   }
 
-  // Health check endpoint
-  app.get('/health', (_req, res) => {
+  // Health check endpoint (Render checks "/" by default)
+  const healthResponse: RequestHandler = (_req, res) => {
     res.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
     });
-  });
+  };
+  app.get('/', healthResponse);
+  app.get('/health', healthResponse);
 
   // API routes
   app.use('/api', apiRoutes);

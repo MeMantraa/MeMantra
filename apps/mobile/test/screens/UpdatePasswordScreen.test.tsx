@@ -30,6 +30,8 @@ jest.mock('../../context/ThemeContext', () => ({
       black: '#000000',
       primary: '#9AA793',
       primaryDark: '#6D7E68',
+      text: '#ffffff',
+      placeholderText: '#aaa',
       settings: '#D9D9D9',
     },
   }),

@@ -116,9 +116,12 @@ const mockChatService = {
     });
   },
 
-  async getMessages(conversationId: number, token: string): Promise<Message[]> {
+  async getMessages(conversationId: number, token: string, limit?: number): Promise<Message[]> {
     return new Promise((resolve) => {
-      setTimeout(() => resolve(mockMessages[conversationId] || []), 500);
+      setTimeout(() => {
+        const messages = mockMessages[conversationId] || [];
+        resolve(typeof limit === 'number' && limit > 0 ? messages.slice(-limit) : messages);
+      }, 500);
     });
   },
 
@@ -191,10 +194,22 @@ const realChatService = {
     return response.data.data.conversations;
   },
 
-  async getMessages(conversationId: number, token: string): Promise<Message[]> {
-    const response = await apiClient.get(`/chat/conversations/${conversationId}/messages`, {
+  async getMessages(conversationId: number, token: string, limit?: number): Promise<Message[]> {
+    const requestConfig: {
+      headers: { Authorization: string };
+      params?: { limit: number };
+    } = {
       headers: { Authorization: `Bearer ${token}` },
-    });
+    };
+
+    if (typeof limit === 'number' && limit > 0) {
+      requestConfig.params = { limit };
+    }
+
+    const response = await apiClient.get(
+      `/chat/conversations/${conversationId}/messages`,
+      requestConfig,
+    );
     return response.data.data.messages;
   },
 

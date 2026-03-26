@@ -229,7 +229,7 @@ describe('AdminScreen', () => {
 
     const { getByText, findByText } = render(<AdminScreen />);
 
-    expect(await findByText('Admin Controls')).toBeTruthy();
+    expect(await findByText('Admin')).toBeTruthy();
     expect(await findByText(/Add a new mantra/i)).toBeTruthy();
 
     fireEvent.press(getByText('Manage'));
@@ -265,7 +265,7 @@ describe('AdminScreen', () => {
     // Wait for initial data load to complete
     await waitFor(
       () => {
-        expect(getByText('Admin Controls')).toBeTruthy();
+        expect(getByText('Admin')).toBeTruthy();
       },
       { timeout: 10000 },
     );

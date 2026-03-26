@@ -25,7 +25,7 @@ const TextButton: React.FC<TextButtonProps> = ({
   return (
     <TouchableOpacity
       activeOpacity={0.7}
-      className={`rounded-full items-center justify-center ${className}`}
+      className={`items-center justify-center ${className}`}
       onPress={onPress}
       style={style}
       disabled={disabled}
