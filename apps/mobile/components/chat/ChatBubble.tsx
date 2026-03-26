@@ -1,5 +1,13 @@
 import React, { useState, useRef } from 'react';
-import { View, TouchableOpacity, Modal, Pressable, Animated, PanResponder } from 'react-native';
+import {
+  View,
+  TouchableOpacity,
+  Modal,
+  Pressable,
+  Animated,
+  PanResponder,
+  Text,
+} from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import AppText from '../UI/textWrapper';
 import { useNavigation } from '@react-navigation/native';
@@ -152,15 +160,15 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
           >
             React with an emoji
           </AppText>
-          <View className="flex-row flex-wrap justify-around gap-3">
+          <View className="flex-row flex-wrap justify-center gap-3">
             {EMOJI_OPTIONS.map((emoji) => (
               <TouchableOpacity
                 key={emoji}
-                className="w-[50px] h-[50px] justify-center items-center rounded-full"
+                className="w-[44px] h-[44px] justify-center items-center rounded-full"
                 onPress={() => handleEmojiSelect(emoji)}
                 activeOpacity={0.7}
               >
-                <AppText className="text-[33px]">{emoji}</AppText>
+                <Text style={{ fontSize: 28, textAlign: 'center' }}>{emoji}</Text>
               </TouchableOpacity>
             ))}
           </View>

@@ -32,6 +32,14 @@ function isValid6DigitCode(code: string): boolean {
   return code.length === 6 && /^\d{6}$/.test(code);
 }
 
+// Microsoft email domains where delivery is unreliable without a custom domain
+const UNSUPPORTED_EMAIL_DOMAINS = ['outlook.com', 'hotmail.com', 'live.com', 'msn.com'];
+
+function isUnsupportedEmailDomain(email: string): boolean {
+  const domain = email.split('@')[1]?.toLowerCase();
+  return UNSUPPORTED_EMAIL_DOMAINS.includes(domain);
+}
+
 // Check rate-limit: returns waitTime (seconds) if too soon, else null
 async function checkRateLimit(
   getLastTokenTime: (key: string | number) => Promise<Date | null>,
@@ -343,6 +351,14 @@ export const AuthController = {
         return errorResponse(res, 400, 'Email is required');
       }
 
+      if (isUnsupportedEmailDomain(email)) {
+        return errorResponse(
+          res,
+          400,
+          'Microsoft email addresses (Outlook, Hotmail, Live) are not currently supported. Please use a Gmail or other email provider.',
+        );
+      }
+
       // Find user by email
       const user = await UserModel.findByEmail(email.toLowerCase().trim());
 
@@ -475,6 +491,14 @@ export const AuthController = {
       }
 
       const trimmedEmail = email.toLowerCase().trim();
+
+      if (isUnsupportedEmailDomain(trimmedEmail)) {
+        return errorResponse(
+          res,
+          400,
+          'Microsoft email addresses (Outlook, Hotmail, Live) are not currently supported. Please use a Gmail or other email provider.',
+        );
+      }
 
       // Check if email is already registered
       const existingUser = await UserModel.findByEmail(trimmedEmail);

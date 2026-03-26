@@ -1,0 +1,25 @@
+# EAS Build ignore file
+# Only exclude things that aren't needed for the mobile build
+
+.git/
+.turbo/
+.expo/
+coverage/
+node_modules/
+.pnpm-store/
+
+# Native directories - EAS will run expo prebuild to generate fresh
+apps/mobile/ios/
+apps/mobile/android/
+
+# Backend (not needed for mobile build)
+apps/backend/dist/
+apps/backend/node_modules/
+
+# Prevent EAS from using npm instead of pnpm
+package-lock.json
+
+# IDE and OS files
+.DS_Store
+*.swp
+.vscode/

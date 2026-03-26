@@ -49,7 +49,19 @@ const getLocalIpAddress = (): string | null => {
   return debuggerHost || null;
 };
 
+// Production API URL (Render-hosted backend)
+const PRODUCTION_API_URL = 'https://memantra.onrender.com/api';
+
 const getBaseUrl = () => {
+ // In production/preview builds, always use the hosted backend
+
+  if (!__DEV__) {
+    return PRODUCTION_API_URL;
+  }
+
+  // --- Development mode: use local backend ---
+  const autoDetectedIP = getLocalIpAddress();
+  const PORT = '4000';
 
   if (ENV_API_BASE_URL) {
     return normalizeBaseUrl(ENV_API_BASE_URL);

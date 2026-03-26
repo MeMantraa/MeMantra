@@ -39,9 +39,27 @@ describe('ChatController', () => {
   describe('getChatUsers', () => {
     it('should return all users except current user', async () => {
       const mockUsers = [
-        { user_id: 1, username: 'user1', email: 'user1@example.com', auth_provider: 'local', created_at: '2024-01-01' },
-        { user_id: 2, username: 'user2', email: 'user2@example.com', auth_provider: 'local', created_at: '2024-01-02' },
-        { user_id: 3, username: 'user3', email: 'user3@example.com', auth_provider: 'local', created_at: '2024-01-03' },
+        {
+          user_id: 1,
+          username: 'user1',
+          email: 'user1@example.com',
+          auth_provider: 'local',
+          created_at: '2024-01-01',
+        },
+        {
+          user_id: 2,
+          username: 'user2',
+          email: 'user2@example.com',
+          auth_provider: 'local',
+          created_at: '2024-01-02',
+        },
+        {
+          user_id: 3,
+          username: 'user3',
+          email: 'user3@example.com',
+          auth_provider: 'local',
+          created_at: '2024-01-03',
+        },
       ];
       (UserModel.findAll as jest.Mock).mockResolvedValue(mockUsers);
 
@@ -166,6 +184,17 @@ describe('ChatController', () => {
       expect(res.status).toBe(200);
       expect(res.body.status).toBe('success');
       expect(res.body.data.messages).toEqual(mockMessages);
+      expect(MessageModel.findByConversationId).toHaveBeenCalledWith(1, 50);
+    });
+
+    it('should respect limit query param for messages', async () => {
+      (ConversationModel.isParticipant as jest.Mock).mockResolvedValue(true);
+      (MessageModel.findByConversationId as jest.Mock).mockResolvedValue([]);
+
+      const res = await request(app).get('/api/chat/conversations/1/messages?limit=20');
+
+      expect(res.status).toBe(200);
+      expect(MessageModel.findByConversationId).toHaveBeenCalledWith(1, 20);
     });
 
     it('should return 403 if user is not participant', async () => {

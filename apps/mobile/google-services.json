@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "595568834796",
+    "project_id": "memantra-d6990",
+    "storage_bucket": "memantra-d6990.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:595568834796:android:73a6e2e074683a47244dc9",
+        "android_client_info": {
+          "package_name": "com.memantra.mobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBmQ8DwfdUJOFdCd0TGlLqFbBkVeJFtILk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -56,9 +56,7 @@
   },
   "private": "true",
   "packageManager": "pnpm@9.15.9",
-  "dependencies": {
-    "react-native-worklets": "^0.6.0"
-  },
+  "dependencies": {},
   "optionalDependencies": {
     "esbuild-windows-64": "0.15.18"
   }
