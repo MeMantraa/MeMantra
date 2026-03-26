@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   FlatList,
@@ -53,11 +53,26 @@ export default function HomeScreen({ navigation, route }: any) {
   const listRef = useRef<FlatList<Mantra>>(null);
   const { setSavedMantras } = useSavedMantras();
 
+  // FIX: wrapped in useCallback so the reference is stable across renders.
+  const loadCollections = useCallback(async () => {
+    try {
+      const token = (await storage.getToken()) || 'mock-token';
+      const response = await collectionService.getUserCollections(token);
+
+      if (response.status === 'success' && response.data) {
+        setCollections(response.data.collections);
+      }
+    } catch (err) {
+      console.error('Error fetching collections:', err);
+      Alert.alert('Error', 'Failed to load collections.');
+    }
+  }, []); // no deps — storage and collectionService are stable module-level references
+
   useEffect(() => {
     loadMantras();
     loadCollections();
     loadCategories();
-  }, []);
+  }, [loadCollections]);
 
   const loadMantras = async () => {
     try {
@@ -143,20 +158,6 @@ export default function HomeScreen({ navigation, route }: any) {
       mantra.categories?.some((c) => selectedCategoryIds.includes(c.category_id)),
     );
   }, [feedData, selectedCategoryIds]);
-
-  const loadCollections = async () => {
-    try {
-      const token = (await storage.getToken()) || 'mock-token';
-      const response = await collectionService.getUserCollections(token);
-
-      if (response.status === 'success' && response.data) {
-        setCollections(response.data.collections);
-      }
-    } catch (err) {
-      console.error('Error fetching collections:', err);
-      Alert.alert('Error', 'Failed to load collections.');
-    }
-  };
 
   const handleLike = async (mantraId: number) => {
     try {
