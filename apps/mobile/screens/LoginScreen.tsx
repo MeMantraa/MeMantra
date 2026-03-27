@@ -34,9 +34,13 @@ export default function LoginScreen({ navigation }: any) {
         await storage.saveUserData(response.data.user);
 
         // Register for push notifications now that we're authenticated
-        notificationService
-          .setupNotifications()
-          .catch((err) => console.error('Failed to set up push notifications after login:', err));
+        notificationService.setupNotifications().catch((err) => {
+          console.error('Failed to set up push notifications after login:', err);
+          Alert.alert(
+            'Notifications',
+            'Could not enable push notifications. You can enable them later in Settings.',
+          );
+        });
 
         navigation.reset({
           index: 0,
@@ -91,8 +95,8 @@ export default function LoginScreen({ navigation }: any) {
 
             <TextButton
               onPress={handleLogin}
-              className="rounded-[30px] p-[14px] items-center mt-[8px]"
-              textClassName="text-[#fff] text-[18px]"
+              className="rounded-[30px] p-[14px] min-h-[52px] items-center justify-center mt-[8px]"
+              textClassName="text-[#fff] text-[18px] leading-[24px]"
               style={{ backgroundColor: colors.secondary }}
               disabled={loading}
             >
@@ -100,21 +104,21 @@ export default function LoginScreen({ navigation }: any) {
             </TextButton>
 
             <TextButton
-              className="mt-[16px] items-center"
+              className="mt-[16px] min-h-[24px] items-center justify-center"
               onPress={() => navigation.navigate('ForgotPassword')}
-              textClassName="text-[#ffffff] text-[14px] underline"
+              textClassName="text-[#ffffff] text-[14px] leading-[20px] underline"
               disabled={loading}
             >
               Forgot Password?
             </TextButton>
 
             <TextButton
-              className="mt-[16px] items-center mb-[30px]"
+              className="mt-[16px] min-h-[24px] items-center justify-center mb-[30px]"
               onPress={handleSignUp}
-              textClassName="text-[#fff] text-[14px]"
+              textClassName="text-[#fff] text-[14px] leading-[20px]"
               disabled={loading}
             >
-              New to us? <AppText className="text-white font-black">Sign Up</AppText>
+              New to us? <AppText className="text-white font-black leading-[20px]">Sign Up</AppText>
             </TextButton>
           </View>
         </View>

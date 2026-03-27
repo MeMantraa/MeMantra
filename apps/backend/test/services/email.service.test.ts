@@ -2,16 +2,12 @@ jest.mock('dotenv', () => ({
   config: jest.fn(),
 }));
 
-const mockSendMail = jest.fn();
-const mockVerify = jest.fn((callback) => {
-  if (callback) callback(null);
-});
+const mockAxiosPost = jest.fn();
 
-jest.mock('nodemailer', () => ({
-  createTransport: jest.fn(() => ({
-    sendMail: mockSendMail,
-    verify: mockVerify,
-  })),
+jest.mock('axios', () => ({
+  post: mockAxiosPost,
+  default: { post: mockAxiosPost },
+  __esModule: true,
 }));
 
 const mockRandomBytes = jest.fn();
@@ -34,19 +30,24 @@ afterAll(() => {
   console.error = originalConsoleError;
 });
 
-import { emailService, generate6DigitCode, send6DigitCode, sendSignupVerificationCode } from '../../src/services/email.service';
+import {
+  emailService,
+  generate6DigitCode,
+  send6DigitCode,
+  sendSignupVerificationCode,
+} from '../../src/services/email.service';
 
 describe('Email Service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockSendMail.mockReset();
+    mockAxiosPost.mockReset();
     mockRandomBytes.mockReset();
   });
 
   describe('generate6DigitCode', () => {
     it('should generate a 6-digit code', () => {
       // Mock crypto.randomBytes to return predictable value
-      const mockBuffer = Buffer.from([0x00, 0x01, 0x86, 0xA0]); // 100000 in hex
+      const mockBuffer = Buffer.from([0x00, 0x01, 0x86, 0xa0]); // 100000 in hex
       mockRandomBytes.mockReturnValueOnce(mockBuffer);
 
       const code = generate6DigitCode();
@@ -65,7 +66,7 @@ describe('Email Service', () => {
       expect(parseInt(minCode)).toBeLessThanOrEqual(999999);
 
       // Test with maximum value that's within acceptable range
-      const maxBuffer = Buffer.from([0x00, 0xDB, 0xBA, 0x00]); // 14400000 which is < maxAcceptable
+      const maxBuffer = Buffer.from([0x00, 0xdb, 0xba, 0x00]); // 14400000 which is < maxAcceptable
       mockRandomBytes.mockReturnValueOnce(maxBuffer);
       const maxCode = generate6DigitCode();
       expect(parseInt(maxCode)).toBeGreaterThanOrEqual(100000);
@@ -73,7 +74,7 @@ describe('Email Service', () => {
     });
 
     it('should return code as string', () => {
-      const mockBuffer = Buffer.from([0x00, 0x01, 0x86, 0xA0]);
+      const mockBuffer = Buffer.from([0x00, 0x01, 0x86, 0xa0]);
       mockRandomBytes.mockReturnValueOnce(mockBuffer);
 
       const code = generate6DigitCode();
@@ -84,11 +85,11 @@ describe('Email Service', () => {
     it('should generate different codes with different random values', () => {
       // Use two significantly different values
       const buffer1 = Buffer.from([0x00, 0x00, 0x00, 0x64]); // 100 -> (100 % 900000) + 100000 = 100100
-      const buffer2 = Buffer.from([0x00, 0x0D, 0xB6, 0xE4]); // 898788 -> (898788 % 900000) + 100000 = 998788
-      
+      const buffer2 = Buffer.from([0x00, 0x0d, 0xb6, 0xe4]); // 898788 -> (898788 % 900000) + 100000 = 998788
+
       mockRandomBytes.mockReturnValueOnce(buffer1);
       const code1 = generate6DigitCode();
-      
+
       mockRandomBytes.mockReturnValueOnce(buffer2);
       const code2 = generate6DigitCode();
 
@@ -100,8 +101,8 @@ describe('Email Service', () => {
     it('should retry when random value exceeds maxAcceptable', () => {
       // maxAcceptable = Math.floor(0xFFFFFFFF / 900000) * 900000 = 4294800000
       // 0xFFFFFFFF = 4294967295, so values >= 4294800000 should be rejected
-      const tooHighBuffer = Buffer.from([0xFF, 0xFD, 0x8E, 0x40]); // 4294803008 >= maxAcceptable
-      const validBuffer = Buffer.from([0x00, 0x01, 0x86, 0xA0]); // 100000
+      const tooHighBuffer = Buffer.from([0xff, 0xfd, 0x8e, 0x40]); // 4294803008 >= maxAcceptable
+      const validBuffer = Buffer.from([0x00, 0x01, 0x86, 0xa0]); // 100000
       mockRandomBytes.mockReturnValueOnce(tooHighBuffer).mockReturnValueOnce(validBuffer);
 
       const code = generate6DigitCode();
@@ -111,7 +112,7 @@ describe('Email Service', () => {
     });
 
     it('should handle edge case with value exactly at 100000', () => {
-      const buffer = Buffer.from([0x00, 0x01, 0x86, 0xA0]); // 100000
+      const buffer = Buffer.from([0x00, 0x01, 0x86, 0xa0]); // 100000
       mockRandomBytes.mockReturnValueOnce(buffer);
 
       const code = generate6DigitCode();
@@ -120,7 +121,7 @@ describe('Email Service', () => {
     });
 
     it('should handle modulo operation correctly', () => {
-      const buffer = Buffer.from([0x00, 0xDB, 0xBA, 0x00]); // Use a safe value within range
+      const buffer = Buffer.from([0x00, 0xdb, 0xba, 0x00]); // Use a safe value within range
       mockRandomBytes.mockReturnValueOnce(buffer);
 
       const code = generate6DigitCode();
@@ -136,117 +137,127 @@ describe('Email Service', () => {
     const testCode = '123456';
 
     beforeEach(() => {
-      process.env.EMAIL_USER = 'noreply@memantra.com';
+      process.env.EMAIL_FROM = 'adminmemantra@gmail.com';
     });
 
     it('should send email successfully and return true', async () => {
-      mockSendMail.mockResolvedValue({ messageId: 'test-message-id' });
+      mockAxiosPost.mockResolvedValue({ status: 200, data: { messageId: 'test-message-id' } });
 
       const result = await send6DigitCode(testEmail, testCode);
 
       expect(result).toBe(true);
-      expect(mockSendMail).toHaveBeenCalledTimes(1);
+      expect(mockAxiosPost).toHaveBeenCalledTimes(1);
       expect(console.log).toHaveBeenCalledWith(
-        `Verification code sent successfully to ${testEmail}`
+        `Verification code sent successfully to ${testEmail}`,
       );
     });
 
     it('should return false if email sending fails', async () => {
-      mockSendMail.mockRejectedValue(new Error('SMTP error'));
+      mockAxiosPost.mockRejectedValue(new Error('API error'));
 
       const result = await send6DigitCode(testEmail, testCode);
 
       expect(result).toBe(false);
       expect(console.error).toHaveBeenCalledWith(
         'Error sending verification email:',
-        expect.any(Error)
+        expect.any(Error),
+      );
+    });
+
+    it('should return false if Brevo returns a non-2xx response', async () => {
+      mockAxiosPost.mockResolvedValue({ status: 400, data: { message: 'Invalid API key' } });
+
+      const result = await send6DigitCode(testEmail, testCode);
+
+      expect(result).toBe(false);
+      expect(console.error).toHaveBeenCalledWith(
+        'Error sending verification email:',
+        'Invalid API key',
       );
     });
 
     it('should include correct email metadata', async () => {
-      mockSendMail.mockResolvedValue({ messageId: 'test-message-id' });
+      mockAxiosPost.mockResolvedValue({ status: 200, data: {} });
 
       await send6DigitCode(testEmail, testCode);
 
-      const callArgs = mockSendMail.mock.calls[0][0];
-      expect(callArgs.from).toEqual({
-        name: 'MeMantra',
-        address: 'noreply@memantra.com',
-      });
-      expect(callArgs.to).toBe(testEmail);
-      expect(callArgs.subject).toBe('Password Reset Verification Code');
+      const payload = mockAxiosPost.mock.calls[0][1];
+      expect(payload.sender.name).toBe('MeMantra');
+      expect(payload.sender.email).toBe('adminmemantra@gmail.com');
+      expect(payload.to[0].email).toBe(testEmail);
+      expect(payload.subject).toBe('Password Reset Verification Code');
     });
 
     it('should include code in HTML content', async () => {
-      mockSendMail.mockResolvedValue({ messageId: 'test-message-id' });
+      mockAxiosPost.mockResolvedValue({ status: 200, data: {} });
 
       await send6DigitCode(testEmail, testCode);
 
-      const callArgs = mockSendMail.mock.calls[0][0];
-      expect(callArgs.html).toContain(testCode);
-      expect(callArgs.html).toContain('Password Reset Request');
-      expect(callArgs.html).toContain('This code will expire in 10 minutes');
+      const payload = mockAxiosPost.mock.calls[0][1];
+      expect(payload.htmlContent).toContain(testCode);
+      expect(payload.htmlContent).toContain('Password Reset Request');
+      expect(payload.htmlContent).toContain('This code will expire in 10 minutes');
     });
 
     it('should include code in plain text content', async () => {
-      mockSendMail.mockResolvedValue({ messageId: 'test-message-id' });
+      mockAxiosPost.mockResolvedValue({ status: 200, data: {} });
 
       await send6DigitCode(testEmail, testCode);
 
-      const callArgs = mockSendMail.mock.calls[0][0];
-      expect(callArgs.text).toContain(testCode);
-      expect(callArgs.text).toContain('Your MeMantra password reset verification code is:');
-      expect(callArgs.text).toContain('This code will expire in 10 minutes');
+      const payload = mockAxiosPost.mock.calls[0][1];
+      expect(payload.textContent).toContain(testCode);
+      expect(payload.textContent).toContain('Your MeMantra password reset verification code is:');
+      expect(payload.textContent).toContain('This code will expire in 10 minutes');
     });
 
     it('should include current year in HTML footer', async () => {
-      mockSendMail.mockResolvedValue({ messageId: 'test-message-id' });
+      mockAxiosPost.mockResolvedValue({ status: 200, data: {} });
 
       await send6DigitCode(testEmail, testCode);
 
-      const callArgs = mockSendMail.mock.calls[0][0];
+      const payload = mockAxiosPost.mock.calls[0][1];
       const currentYear = new Date().getFullYear();
-      expect(callArgs.html).toContain(`© ${currentYear} MeMantra`);
+      expect(payload.htmlContent).toContain(`© ${currentYear} MeMantra`);
     });
 
-    it('should handle empty EMAIL_USER environment variable', async () => {
-      delete process.env.EMAIL_USER;
-      mockSendMail.mockResolvedValue({ messageId: 'test-message-id' });
+    it('should use default from address when EMAIL_FROM is not set', async () => {
+      delete process.env.EMAIL_FROM;
+      mockAxiosPost.mockResolvedValue({ status: 200, data: {} });
 
       await send6DigitCode(testEmail, testCode);
 
-      const callArgs = mockSendMail.mock.calls[0][0];
-      expect(callArgs.from.address).toBe('');
+      const payload = mockAxiosPost.mock.calls[0][1];
+      expect(payload.sender.email).toBe('adminmemantra@gmail.com');
     });
 
     it('should include security message in email', async () => {
-      mockSendMail.mockResolvedValue({ messageId: 'test-message-id' });
+      mockAxiosPost.mockResolvedValue({ status: 200, data: {} });
 
       await send6DigitCode(testEmail, testCode);
 
-      const callArgs = mockSendMail.mock.calls[0][0];
-      expect(callArgs.html).toContain(
-        "If you didn't request a password reset, please ignore this email"
+      const payload = mockAxiosPost.mock.calls[0][1];
+      expect(payload.htmlContent).toContain(
+        "If you didn't request a password reset, please ignore this email",
       );
-      expect(callArgs.text).toContain(
-        "If you didn't request a password reset, please ignore this email"
+      expect(payload.textContent).toContain(
+        "If you didn't request a password reset, please ignore this email",
       );
     });
 
     it('should handle network errors gracefully', async () => {
-      mockSendMail.mockRejectedValue(new Error('Network timeout'));
+      mockAxiosPost.mockRejectedValue(new Error('Network timeout'));
 
       const result = await send6DigitCode(testEmail, testCode);
 
       expect(result).toBe(false);
       expect(console.error).toHaveBeenCalledWith(
         'Error sending verification email:',
-        expect.objectContaining({ message: 'Network timeout' })
+        expect.objectContaining({ message: 'Network timeout' }),
       );
     });
 
     it('should handle authentication errors gracefully', async () => {
-      mockSendMail.mockRejectedValue(new Error('Invalid credentials'));
+      mockAxiosPost.mockRejectedValue(new Error('Invalid credentials'));
 
       const result = await send6DigitCode(testEmail, testCode);
 
@@ -254,7 +265,7 @@ describe('Email Service', () => {
     });
 
     it('should handle invalid email address errors gracefully', async () => {
-      mockSendMail.mockRejectedValue(new Error('Invalid email address'));
+      mockAxiosPost.mockRejectedValue(new Error('Invalid email address'));
 
       const result = await send6DigitCode('invalid-email', testCode);
 
@@ -262,25 +273,25 @@ describe('Email Service', () => {
     });
 
     it('should include responsive email design elements', async () => {
-      mockSendMail.mockResolvedValue({ messageId: 'test-message-id' });
+      mockAxiosPost.mockResolvedValue({ status: 200, data: {} });
 
       await send6DigitCode(testEmail, testCode);
 
-      const callArgs = mockSendMail.mock.calls[0][0];
-      expect(callArgs.html).toContain('meta name="viewport"');
-      expect(callArgs.html).toContain('width: 600px');
-      expect(callArgs.html).toContain('border-radius');
+      const payload = mockAxiosPost.mock.calls[0][1];
+      expect(payload.htmlContent).toContain('meta name="viewport"');
+      expect(payload.htmlContent).toContain('width: 600px');
+      expect(payload.htmlContent).toContain('border-radius');
     });
 
     it('should style verification code prominently', async () => {
-      mockSendMail.mockResolvedValue({ messageId: 'test-message-id' });
+      mockAxiosPost.mockResolvedValue({ status: 200, data: {} });
 
       await send6DigitCode(testEmail, testCode);
 
-      const callArgs = mockSendMail.mock.calls[0][0];
-      expect(callArgs.html).toContain('font-size: 36px');
-      expect(callArgs.html).toContain('font-weight: bold');
-      expect(callArgs.html).toContain('letter-spacing: 8px');
+      const payload = mockAxiosPost.mock.calls[0][1];
+      expect(payload.htmlContent).toContain('font-size: 36px');
+      expect(payload.htmlContent).toContain('font-weight: bold');
+      expect(payload.htmlContent).toContain('letter-spacing: 8px');
     });
   });
 
@@ -289,143 +300,153 @@ describe('Email Service', () => {
     const testCode = '654321';
 
     beforeEach(() => {
-      process.env.EMAIL_USER = 'noreply@memantra.com';
+      process.env.EMAIL_FROM = 'adminmemantra@gmail.com';
     });
 
     it('should send signup verification email successfully and return true', async () => {
-      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+      mockAxiosPost.mockResolvedValue({ status: 200, data: { messageId: 'signup-msg-id' } });
 
       const result = await sendSignupVerificationCode(testEmail, testCode);
 
       expect(result).toBe(true);
-      expect(mockSendMail).toHaveBeenCalledTimes(1);
+      expect(mockAxiosPost).toHaveBeenCalledTimes(1);
       expect(console.log).toHaveBeenCalledWith(
-        `Signup verification code sent successfully to ${testEmail}`
+        `Signup verification code sent successfully to ${testEmail}`,
       );
     });
 
     it('should return false if email sending fails', async () => {
-      mockSendMail.mockRejectedValue(new Error('SMTP error'));
+      mockAxiosPost.mockRejectedValue(new Error('API error'));
 
       const result = await sendSignupVerificationCode(testEmail, testCode);
 
       expect(result).toBe(false);
       expect(console.error).toHaveBeenCalledWith(
         'Error sending signup verification email:',
-        expect.any(Error)
+        expect.any(Error),
+      );
+    });
+
+    it('should return false if Brevo returns a non-2xx response', async () => {
+      mockAxiosPost.mockResolvedValue({ status: 400, data: { message: 'Invalid API key' } });
+
+      const result = await sendSignupVerificationCode(testEmail, testCode);
+
+      expect(result).toBe(false);
+      expect(console.error).toHaveBeenCalledWith(
+        'Error sending signup verification email:',
+        'Invalid API key',
       );
     });
 
     it('should include correct email metadata', async () => {
-      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+      mockAxiosPost.mockResolvedValue({ status: 200, data: {} });
 
       await sendSignupVerificationCode(testEmail, testCode);
 
-      const callArgs = mockSendMail.mock.calls[0][0];
-      expect(callArgs.from).toEqual({
-        name: 'MeMantra',
-        address: 'noreply@memantra.com',
-      });
-      expect(callArgs.to).toBe(testEmail);
-      expect(callArgs.subject).toBe('Verify your MeMantra email');
+      const payload = mockAxiosPost.mock.calls[0][1];
+      expect(payload.sender.name).toBe('MeMantra');
+      expect(payload.sender.email).toBe('adminmemantra@gmail.com');
+      expect(payload.to[0].email).toBe(testEmail);
+      expect(payload.subject).toBe('Verify your MeMantra email');
     });
 
     it('should include code in HTML content', async () => {
-      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+      mockAxiosPost.mockResolvedValue({ status: 200, data: {} });
 
       await sendSignupVerificationCode(testEmail, testCode);
 
-      const callArgs = mockSendMail.mock.calls[0][0];
-      expect(callArgs.html).toContain(testCode);
-      expect(callArgs.html).toContain('Verify your email address');
-      expect(callArgs.html).toContain('Welcome to MeMantra');
-      expect(callArgs.html).toContain('This code will expire in 10 minutes');
+      const payload = mockAxiosPost.mock.calls[0][1];
+      expect(payload.htmlContent).toContain(testCode);
+      expect(payload.htmlContent).toContain('Verify your email address');
+      expect(payload.htmlContent).toContain('Welcome to MeMantra');
+      expect(payload.htmlContent).toContain('This code will expire in 10 minutes');
     });
 
     it('should include code in plain text content', async () => {
-      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+      mockAxiosPost.mockResolvedValue({ status: 200, data: {} });
 
       await sendSignupVerificationCode(testEmail, testCode);
 
-      const callArgs = mockSendMail.mock.calls[0][0];
-      expect(callArgs.text).toContain(testCode);
-      expect(callArgs.text).toContain('Your MeMantra email verification code is:');
-      expect(callArgs.text).toContain('This code will expire in 10 minutes');
+      const payload = mockAxiosPost.mock.calls[0][1];
+      expect(payload.textContent).toContain(testCode);
+      expect(payload.textContent).toContain('Your MeMantra email verification code is:');
+      expect(payload.textContent).toContain('This code will expire in 10 minutes');
     });
 
     it('should include current year in HTML footer', async () => {
-      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+      mockAxiosPost.mockResolvedValue({ status: 200, data: {} });
 
       await sendSignupVerificationCode(testEmail, testCode);
 
-      const callArgs = mockSendMail.mock.calls[0][0];
+      const payload = mockAxiosPost.mock.calls[0][1];
       const currentYear = new Date().getFullYear();
-      expect(callArgs.html).toContain(`© ${currentYear} MeMantra`);
+      expect(payload.htmlContent).toContain(`© ${currentYear} MeMantra`);
     });
 
-    it('should handle empty EMAIL_USER environment variable', async () => {
-      delete process.env.EMAIL_USER;
-      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+    it('should use default from address when EMAIL_FROM is not set', async () => {
+      delete process.env.EMAIL_FROM;
+      mockAxiosPost.mockResolvedValue({ status: 200, data: {} });
 
       await sendSignupVerificationCode(testEmail, testCode);
 
-      const callArgs = mockSendMail.mock.calls[0][0];
-      expect(callArgs.from.address).toBe('');
+      const payload = mockAxiosPost.mock.calls[0][1];
+      expect(payload.sender.email).toBe('adminmemantra@gmail.com');
     });
 
     it('should include signup-specific messaging', async () => {
-      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+      mockAxiosPost.mockResolvedValue({ status: 200, data: {} });
 
       await sendSignupVerificationCode(testEmail, testCode);
 
-      const callArgs = mockSendMail.mock.calls[0][0];
-      expect(callArgs.html).toContain('complete your registration');
-      expect(callArgs.html).toContain('If you did not create a MeMantra account');
-      expect(callArgs.text).toContain('If you did not create a MeMantra account');
+      const payload = mockAxiosPost.mock.calls[0][1];
+      expect(payload.htmlContent).toContain('complete your registration');
+      expect(payload.htmlContent).toContain('If you did not create a MeMantra account');
+      expect(payload.textContent).toContain('If you did not create a MeMantra account');
     });
 
     it('should handle network errors gracefully', async () => {
-      mockSendMail.mockRejectedValue(new Error('Network timeout'));
+      mockAxiosPost.mockRejectedValue(new Error('Network timeout'));
 
       const result = await sendSignupVerificationCode(testEmail, testCode);
 
       expect(result).toBe(false);
       expect(console.error).toHaveBeenCalledWith(
         'Error sending signup verification email:',
-        expect.objectContaining({ message: 'Network timeout' })
+        expect.objectContaining({ message: 'Network timeout' }),
       );
     });
 
     it('should sanitize email in log output', async () => {
-      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+      mockAxiosPost.mockResolvedValue({ status: 200, data: { messageId: 'signup-msg-id' } });
 
       await sendSignupVerificationCode('user@example.com', testCode);
 
       expect(console.log).toHaveBeenCalledWith(
-        'Signup verification code sent successfully to user@example.com'
+        'Signup verification code sent successfully to user@example.com',
       );
     });
 
     it('should include responsive email design elements', async () => {
-      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+      mockAxiosPost.mockResolvedValue({ status: 200, data: {} });
 
       await sendSignupVerificationCode(testEmail, testCode);
 
-      const callArgs = mockSendMail.mock.calls[0][0];
-      expect(callArgs.html).toContain('meta name="viewport"');
-      expect(callArgs.html).toContain('width: 600px');
-      expect(callArgs.html).toContain('border-radius');
+      const payload = mockAxiosPost.mock.calls[0][1];
+      expect(payload.htmlContent).toContain('meta name="viewport"');
+      expect(payload.htmlContent).toContain('width: 600px');
+      expect(payload.htmlContent).toContain('border-radius');
     });
 
     it('should style verification code prominently', async () => {
-      mockSendMail.mockResolvedValue({ messageId: 'signup-msg-id' });
+      mockAxiosPost.mockResolvedValue({ status: 200, data: {} });
 
       await sendSignupVerificationCode(testEmail, testCode);
 
-      const callArgs = mockSendMail.mock.calls[0][0];
-      expect(callArgs.html).toContain('font-size: 36px');
-      expect(callArgs.html).toContain('font-weight: bold');
-      expect(callArgs.html).toContain('letter-spacing: 8px');
+      const payload = mockAxiosPost.mock.calls[0][1];
+      expect(payload.htmlContent).toContain('font-size: 36px');
+      expect(payload.htmlContent).toContain('font-weight: bold');
+      expect(payload.htmlContent).toContain('letter-spacing: 8px');
     });
   });
 

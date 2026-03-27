@@ -1,4 +1,5 @@
 {
   "apps/mobile/**/*.{ts,tsx,js,jsx}": ["eslint --fix", "prettier --write"],
+  "apps/backend/**/*.{ts,js}": ["eslint --fix", "prettier --write"],
   "*.{json,md,yml,yaml}": ["prettier --write"]
 }

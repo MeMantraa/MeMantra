@@ -18,11 +18,11 @@ export const ChatController = {
       }
 
       const users = await UserModel.findAll();
-      
+
       // Remove sensitive data and exclude current user
       const sanitizedUsers = users
-        .filter(user => user.user_id !== userId)
-        .map(user => ({
+        .filter((user) => user.user_id !== userId)
+        .map((user) => ({
           user_id: user.user_id,
           username: user.username,
           email: user.email,
@@ -120,6 +120,11 @@ export const ChatController = {
     try {
       const userId = req.user?.userId;
       const conversationId = Number(req.params.id);
+      const requestedLimit = Number(req.query.limit);
+      const safeLimit =
+        Number.isFinite(requestedLimit) && requestedLimit > 0
+          ? Math.min(Math.floor(requestedLimit), 100)
+          : 50;
 
       if (!userId) {
         return res.status(401).json({
@@ -138,7 +143,7 @@ export const ChatController = {
         });
       }
 
-      const messages = await MessageModel.findByConversationId(conversationId);
+      const messages = await MessageModel.findByConversationId(conversationId, safeLimit);
 
       return res.status(200).json({
         status: 'success',
@@ -186,7 +191,7 @@ export const ChatController = {
       // If replying to a message, verify it exists and belongs to the same conversation
       if (reply_to_message_id) {
         const replyToMessage = await MessageModel.findById(reply_to_message_id);
-        
+
         if (!replyToMessage) {
           return res.status(404).json({
             status: 'error',
@@ -398,7 +403,6 @@ export const ChatController = {
         });
       }
 
-      
       const isParticipant = await ConversationModel.isParticipant(message.conversation_id, userId);
 
       if (!isParticipant) {
@@ -408,11 +412,9 @@ export const ChatController = {
         });
       }
 
-      
       const exists = await MessageReactionModel.exists(messageId, userId, emoji);
 
       if (exists) {
-        
         await MessageReactionModel.delete(messageId, userId, emoji);
         return res.status(200).json({
           status: 'success',
@@ -420,7 +422,6 @@ export const ChatController = {
         });
       }
 
-     
       const reaction = await MessageReactionModel.create({
         message_id: messageId,
         user_id: userId,

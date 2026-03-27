@@ -3,7 +3,10 @@ import { z } from 'zod';
 // Create mantra schema
 export const createMantraSchema = z.object({
   body: z.object({
-    title: z.string().min(1, 'Title is required').max(255, 'Title must be less than 255 characters'),
+    title: z
+      .string()
+      .min(1, 'Title is required')
+      .max(255, 'Title must be less than 255 characters'),
     key_takeaway: z.string().min(1, 'Key takeaway is required'),
     background_author: z.string().optional(),
     background_description: z.string().optional(),

@@ -4,7 +4,7 @@ import { UserCategoryScoreModel } from '../models/user-category-score.model';
 export const AlgorithmController = {
   /**
    * GET /api/algorithm/scores
-   * Get the authenticated user's category scores 
+   * Get the authenticated user's category scores
    */
   async getMyScores(req: Request, res: Response) {
     try {

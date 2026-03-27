@@ -20,11 +20,7 @@ export const RecommendationController = {
       const limitNum = limit ? Number(limit) : 50;
       const offsetNum = offset ? Number(offset) : 0;
 
-      const recommendations = await RecommendationModel.findByUserId(
-        userId,
-        limitNum,
-        offsetNum
-      );
+      const recommendations = await RecommendationModel.findByUserId(userId, limitNum, offsetNum);
 
       return res.status(200).json({
         status: 'success',
@@ -61,7 +57,7 @@ export const RecommendationController = {
 
       const recommendations = await RecommendationModel.findByUserIdWithMantras(
         userId,
-        Number(limit)
+        Number(limit),
       );
 
       return res.status(200).json({

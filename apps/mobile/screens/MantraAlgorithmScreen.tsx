@@ -122,6 +122,7 @@ export default function MantraAlgorithmScreen() {
       }
     } catch (err) {
       console.error('Failed to load algorithm scores', err);
+      Alert.alert('Error', 'Failed to load algorithm scores.');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -166,6 +167,7 @@ export default function MantraAlgorithmScreen() {
       setScores((prev) => prev.filter((s) => s.category_id !== categoryId));
     } catch (err) {
       console.error('Error resetting score', err);
+      Alert.alert('Error', 'Could not reset score.');
     }
   };
 
@@ -177,6 +179,7 @@ export default function MantraAlgorithmScreen() {
       setScores([]);
     } catch (err) {
       console.error('Error resetting all scores', err);
+      Alert.alert('Error', 'Could not reset all scores.');
     }
   };
 

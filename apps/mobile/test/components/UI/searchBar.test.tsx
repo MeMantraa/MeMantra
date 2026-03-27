@@ -17,8 +17,6 @@ jest.mock('../../../context/ThemeContext', () => ({
   useTheme: jest.fn(),
 }));
 
-jest.useFakeTimers();
-
 describe('SearchBar Component', () => {
   const mockOnSearch = jest.fn();
 
@@ -28,6 +26,7 @@ describe('SearchBar Component', () => {
   };
 
   beforeEach(() => {
+    jest.useFakeTimers();
     jest.clearAllMocks();
 
     (useTheme as jest.Mock).mockReturnValue({ colors: mockColors });

@@ -18,47 +18,41 @@ router.use(authenticate);
 router.get(
   '/',
   validateRequest(recommendationQuerySchema),
-  RecommendationController.getUserRecommendations
+  RecommendationController.getUserRecommendations,
 );
 
-router.get(
-  '/detailed',
-  RecommendationController.getDetailedRecommendations
-);
+router.get('/detailed', RecommendationController.getDetailedRecommendations);
 
 router.get(
   '/recent',
   validateRequest(recentQuerySchema),
-  RecommendationController.getRecentRecommendations
+  RecommendationController.getRecentRecommendations,
 );
 
 router.get(
   '/suggest',
   validateRequest(suggestQuerySchema),
-  RecommendationController.suggestRecommendations
+  RecommendationController.suggestRecommendations,
 );
 
-router.get(
-  '/stats',
-  RecommendationController.getRecommendationStats
-);
+router.get('/stats', RecommendationController.getRecommendationStats);
 
 router.get(
   '/:id',
   validateRequest(recommendationIdSchema),
-  RecommendationController.getRecommendationById
+  RecommendationController.getRecommendationById,
 );
 
 router.post(
   '/',
   validateRequest(createRecommendationSchema),
-  RecommendationController.createRecommendation
+  RecommendationController.createRecommendation,
 );
 
 router.delete(
   '/:id',
   validateRequest(recommendationIdSchema),
-  RecommendationController.deleteRecommendation
+  RecommendationController.deleteRecommendation,
 );
 
 export default router;

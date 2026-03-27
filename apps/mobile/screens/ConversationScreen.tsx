@@ -1,15 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, FlatList, KeyboardAvoidingView, Platform, TouchableOpacity } from 'react-native';
+import {
+  View,
+  FlatList,
+  KeyboardAvoidingView,
+  Platform,
+  TouchableOpacity,
+  Alert,
+} from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { ChatBubble } from '../components/chat/ChatBubble';
 import ChatInput from '../components/chat/ChatInput';
-import { Message, Conversation } from '../types/chat.types';
+import { Message, Conversation, MessageReaction } from '../types/chat.types';
 import { chatService } from '../services/chat.service';
 import { storage } from '../utils/storage';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ConversationScreen({ route, navigation }: any) {
+  const INITIAL_MESSAGE_LIMIT = 50;
+  const INITIAL_REACTION_HYDRATION_LIMIT = 20;
+
   const { conversation } = route.params as { conversation: Conversation };
   const { colors } = useTheme();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -27,11 +37,44 @@ export default function ConversationScreen({ route, navigation }: any) {
     try {
       const userData = await storage.getUserData();
       if (userData?.user_id) {
-        setCurrentUserId(userData.user_id);
+        setCurrentUserId(Number(userData.user_id));
       }
     } catch (err) {
       console.error('Error loading current user:', err);
+      Alert.alert('Error', 'Failed to load user data.');
     }
+  };
+
+  const fetchReactionsForMessage = async (messageId: number, token: string) => {
+    try {
+      const reactions = await chatService.getReactions(messageId, token);
+      return { messageId, reactions };
+    } catch (err) {
+      console.error('Error loading reactions for message:', messageId, err);
+      return { messageId, reactions: [] };
+    }
+  };
+
+  const mergeReactionsIntoMessages = (
+    prevMessages: Message[],
+    reactionEntries: Array<{ messageId: number; reactions: MessageReaction[] }>,
+  ) => {
+    const reactionsByMessageId = new Map(
+      reactionEntries.map((entry) => [entry.messageId, entry.reactions]),
+    );
+
+    return prevMessages.map((msg) => {
+      const reactions = reactionsByMessageId.get(msg.message_id);
+      return reactions ? { ...msg, reactions } : msg;
+    });
+  };
+
+  const hydrateReactions = async (messagesToHydrate: Message[], token: string) => {
+    const reactionEntries = await Promise.all(
+      messagesToHydrate.map((msg) => fetchReactionsForMessage(msg.message_id, token)),
+    );
+
+    setMessages((prevMessages) => mergeReactionsIntoMessages(prevMessages, reactionEntries));
   };
 
   const loadMessages = async () => {
@@ -41,26 +84,21 @@ export default function ConversationScreen({ route, navigation }: any) {
       const data = await chatService.getMessages(
         conversation.conversation_id,
         token || 'mock-token',
+        INITIAL_MESSAGE_LIMIT,
       );
 
-      const messagesWithReactions = await Promise.all(
-        data.map(async (msg) => {
-          try {
-            const reactions = await chatService.getReactions(msg.message_id, token || 'mock-token');
-            return { ...msg, reactions };
-          } catch (err) {
-            console.error('Error loading reactions for message:', msg.message_id, err);
-            return { ...msg, reactions: [] };
-          }
-        }),
-      );
+      // Render messages immediately and load reactions in the background
+      setMessages(data.map((msg) => ({ ...msg, reactions: msg.reactions ?? [] })));
+      setLoading(false);
 
-      setMessages(messagesWithReactions);
+      const messagesForReactionHydration = data.slice(-INITIAL_REACTION_HYDRATION_LIMIT);
+      void hydrateReactions(messagesForReactionHydration, token || 'mock-token');
 
       // Mark as read
-      await chatService.markAsRead(conversation.conversation_id, token || 'mock-token');
+      void chatService.markAsRead(conversation.conversation_id, token || 'mock-token');
     } catch (err) {
       console.error('Error loading messages:', err);
+      Alert.alert('Error', 'Failed to load messages. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -86,6 +124,7 @@ export default function ConversationScreen({ route, navigation }: any) {
       }, 100);
     } catch (err) {
       console.error('Error sending message:', err);
+      Alert.alert('Error', 'Failed to send message. Please try again.');
     }
   };
 
@@ -114,7 +153,34 @@ export default function ConversationScreen({ route, navigation }: any) {
       );
     } catch (err) {
       console.error('Error handling reaction:', err);
+      Alert.alert('Error', 'Failed to add reaction.');
     }
+  };
+
+  const getDayKey = (isoString: string) => {
+    const date = new Date(isoString);
+    return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+  };
+
+  const formatDayHeader = (isoString: string) => {
+    const messageDate = new Date(isoString);
+    const today = new Date();
+
+    if (getDayKey(isoString) === getDayKey(today.toISOString())) {
+      return 'Today';
+    }
+
+    return messageDate.toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  };
+
+  const shouldShowDayHeader = (index: number) => {
+    if (index === 0) return true;
+    return getDayKey(messages[index].created_at) !== getDayKey(messages[index - 1].created_at);
   };
 
   const renderContent = () => {
@@ -142,15 +208,30 @@ export default function ConversationScreen({ route, navigation }: any) {
         data={messages}
         keyExtractor={(item) => item.message_id.toString()}
         contentContainerStyle={{ paddingVertical: 16 }}
-        renderItem={({ item }) => (
-          <ChatBubble
-            message={item}
-            isOwnMessage={item.sender_id === currentUserId}
-            onSwipeReply={handleSwipeReply}
-            replyToMessage={getReplyToMessage(item.reply_to_message_id)}
-            onReaction={handleReaction}
-            currentUserId={currentUserId}
-          />
+        renderItem={({ item, index }) => (
+          <>
+            {shouldShowDayHeader(index) && (
+              <View className="items-center my-2">
+                <View
+                  className="px-3 py-1 rounded-full"
+                  style={{ backgroundColor: `${colors.white}40` }}
+                >
+                  <AppText className="text-[12px] font-semibold" style={{ color: colors.white }}>
+                    {formatDayHeader(item.created_at)}
+                  </AppText>
+                </View>
+              </View>
+            )}
+
+            <ChatBubble
+              message={item}
+              isOwnMessage={item.sender_id === currentUserId}
+              onSwipeReply={handleSwipeReply}
+              replyToMessage={getReplyToMessage(item.reply_to_message_id)}
+              onReaction={handleReaction}
+              currentUserId={currentUserId}
+            />
+          </>
         )}
         onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: false })}
         onLayout={() => flatListRef.current?.scrollToEnd({ animated: false })}

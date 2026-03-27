@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
-import SignUpScreen from '../../screens/SignUp';
+import SignUpScreen from '../../screens/SignUpScreen';
 import { authService } from '../../services/auth.service';
 import { storage } from '../../utils/storage';
 

@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useMemo, useEffect } from 'react';
+import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { themes, ThemeName } from '../styles/theme';
 import { storage } from '../utils/storage';
@@ -36,6 +37,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Check immediately
     checkToken();
 
+    // Avoid leaking polling timers during Jest runs; tests don't need
+    // auth-token polling to re-run every 50ms.
+    if (globalThis?.process?.env?.NODE_ENV === 'test') {
+      return;
+    }
+
     const interval = setInterval(checkToken, 50);
     return () => clearInterval(interval);
   }, []);
@@ -58,6 +65,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }
       } catch (error) {
         console.error('Failed to fetch theme:', error);
+        Alert.alert('Error', 'Failed to load your theme. Using cached theme.');
         // Fallback to cached theme
         const cached = await AsyncStorage.getItem(THEME_STORAGE_KEY);
         if (cached && cached in themes) setThemeState(cached as ThemeName);
@@ -77,6 +85,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         await userService.updateTheme(themeName, token);
       } catch (error) {
         console.error('Failed to save theme to server:', error);
+        Alert.alert('Error', 'Failed to save theme. Your selection will be applied locally.');
       }
     }
   };

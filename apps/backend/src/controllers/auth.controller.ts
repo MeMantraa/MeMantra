@@ -8,18 +8,36 @@ import { LoginInput } from '../validators/auth.validator';
 import { emailService } from '../services/email.service';
 
 // Standard JSON error response
-function errorResponse(res: Response, status: number, message: string, extra?: Record<string, unknown>) {
+function errorResponse(
+  res: Response,
+  status: number,
+  message: string,
+  extra?: Record<string, unknown>,
+) {
   return res.status(status).json({ status: 'error', message, ...extra });
 }
 
 // Standard JSON success response
-function successResponse(res: Response, message: string, data?: Record<string, unknown>, status = 200) {
+function successResponse(
+  res: Response,
+  message: string,
+  data?: Record<string, unknown>,
+  status = 200,
+) {
   return res.status(status).json({ status: 'success', message, ...(data ? { data } : {}) });
 }
 
 // Validate that a trimmed 6-digit code string is well-formed
 function isValid6DigitCode(code: string): boolean {
   return code.length === 6 && /^\d{6}$/.test(code);
+}
+
+// Microsoft email domains where delivery is unreliable without a custom domain
+const UNSUPPORTED_EMAIL_DOMAINS = ['outlook.com', 'hotmail.com', 'live.com', 'msn.com'];
+
+function isUnsupportedEmailDomain(email: string): boolean {
+  const domain = email.split('@')[1]?.toLowerCase();
+  return UNSUPPORTED_EMAIL_DOMAINS.includes(domain);
 }
 
 // Check rate-limit: returns waitTime (seconds) if too soon, else null
@@ -50,7 +68,10 @@ async function generateAndSendCode(
 
   const emailSent = await sendEmail(email, code);
   if (!emailSent) {
-    return { sent: false, res: errorResponse(res, 500, 'Failed to send verification email. Please try again later.') };
+    return {
+      sent: false,
+      res: errorResponse(res, 500, 'Failed to send verification email. Please try again later.'),
+    };
   }
   return { sent: true };
 }
@@ -75,7 +96,10 @@ export const AuthController = {
       const trimmedCode = code.trim();
 
       // Verify the email verification code before creating the account
-      const validToken = await EmailVerificationTokenModel.findValidToken(trimmedEmail, trimmedCode);
+      const validToken = await EmailVerificationTokenModel.findValidToken(
+        trimmedEmail,
+        trimmedCode,
+      );
       if (!validToken) {
         return res.status(400).json({
           status: 'error',
@@ -102,7 +126,12 @@ export const AuthController = {
       }
 
       //create new user
-      const newUser = await UserModel.create({ username, email: trimmedEmail, password, device_token });
+      const newUser = await UserModel.create({
+        username,
+        email: trimmedEmail,
+        password,
+        device_token,
+      });
 
       // Clean up the verification token
       await EmailVerificationTokenModel.deleteByEmail(trimmedEmail);
@@ -134,38 +163,34 @@ export const AuthController = {
       });
     }
   },
-  
+
   async login(req: Request, res: Response) {
     try {
       const { email, password } = req.body as LoginInput;
-      
-      //find by email
+
       const user = await UserModel.findByEmail(email);
-      
-      //check if user exists
+
       if (!user?.password_hash) {
         return res.status(401).json({
           status: 'error',
           message: 'Invalid credentials',
         });
       }
-      
-      //check pass
+
       const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-      
+
       if (!isPasswordValid) {
         return res.status(401).json({
           status: 'error',
           message: 'Invalid credentials',
         });
       }
-      
-      //generate JWT
+
       const token = generateToken({
         userId: user.user_id,
         email: user.email || '',
       });
-      
+
       return res.status(200).json({
         status: 'success',
         message: 'Login successful',
@@ -187,27 +212,27 @@ export const AuthController = {
       });
     }
   },
-  
+
   async getMe(req: Request, res: Response) {
     try {
       const userId = req.user?.userId;
-      
+
       if (!userId) {
         return res.status(401).json({
           status: 'error',
           message: 'Not authenticated',
         });
       }
-      
+
       const user = await UserModel.findById(userId);
-      
+
       if (!user) {
         return res.status(404).json({
           status: 'error',
           message: 'User not found',
         });
       }
-      
+
       return res.status(200).json({
         status: 'success',
         data: {
@@ -228,89 +253,94 @@ export const AuthController = {
     }
   },
 
-async updatePassword(req: Request, res: Response) {
-  try {
-    const userId = req.user?.userId;
-    const { password } = req.body;
+  async updatePassword(req: Request, res: Response) {
+    try {
+      const userId = req.user?.userId;
 
-    if (!password) {
-      return res
-        .status(400)
-        .json({ status: "error", message: "Password required" });
+      if (!userId) {
+        return res.status(401).json({ status: 'error', message: 'Not authenticated' });
+      }
+
+      const { password } = req.body;
+
+      if (!password) {
+        return res.status(400).json({ status: 'error', message: 'Password required' });
+      }
+
+      const hashed = await bcrypt.hash(password, 10);
+      await UserModel.update(userId, { password_hash: hashed });
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Password updated',
+      });
+    } catch (err) {
+      console.error('Update password error:', err);
+      return res.status(500).json({ status: 'error', message: 'Failed to update password' });
     }
+  },
 
-    const hashed = await bcrypt.hash(password, 10);
-    await UserModel.update(userId!, { password_hash: hashed });
+  async deleteAccount(req: Request, res: Response) {
+    try {
+      const userId = req.user?.userId;
 
-    return res.json({
-      status: "success",
-      message: "Password updated",
-    });
+      if (!userId) {
+        return res.status(401).json({ status: 'error', message: 'Not authenticated' });
+      }
 
-  } catch (err) {
-    return res
-      .status(500)
-      .json({ status: "error", message: "Failed to update password" });
-  }
-},
+      await UserModel.delete(userId);
 
+      return res.status(200).json({ status: 'success', message: 'Account deleted' });
+    } catch (err) {
+      console.error('Delete account error:', err);
+      return res.status(500).json({ status: 'error', message: 'Failed to delete account' });
+    }
+  },
 
-async deleteAccount(req: Request, res: Response) {
-  try {
-    const userId = req.user?.userId;
-    await UserModel.delete(userId!);
+  async updateEmail(req: Request, res: Response) {
+    try {
+      const userId = req.user?.userId;
+      const { email } = req.body;
 
-    res.json({ status: "success", message: "Account deleted" });
-  } catch (err) {
-    res.status(500).json({ status: "error", message: "Failed to delete account" });
-  }
-}, 
+      if (!userId) {
+        return res.status(401).json({
+          status: 'error',
+          message: 'Not authenticated',
+        });
+      }
 
-async updateEmail(req: Request, res: Response) {
-  try {
-    const userId = req.user?.userId;
-    const { email } = req.body;
+      if (!email || typeof email !== 'string') {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Invalid email',
+        });
+      }
 
-    if (!userId) {
-      return res.status(401).json({
+      // Check if email already exists
+      const existing = await UserModel.findByEmail(email);
+      if (existing && existing.user_id !== userId) {
+        return res.status(400).json({
+          status: 'error',
+          message: 'Email already in use',
+        });
+      }
+
+      // Update email in database
+      await UserModel.updateEmail(userId, email);
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Email updated successfully',
+        data: { email },
+      });
+    } catch (error) {
+      console.error('Update email error:', error);
+      return res.status(500).json({
         status: 'error',
-        message: 'Not authenticated',
+        message: 'Error updating email',
       });
     }
-
-    if (!email || typeof email !== 'string') {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Invalid email',
-      });
-    }
-
-    // Check if email already exists
-    const existing = await UserModel.findByEmail(email);
-    if (existing && existing.user_id !== userId) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Email already in use',
-      });
-    }
-
-    // Update email in database
-    await UserModel.updateEmail(userId, email);
-
-    return res.status(200).json({
-      status: 'success',
-      message: 'Email updated successfully',
-      data: { email },
-    });
-
-  } catch (error) {
-    console.error('Update email error:', error);
-    return res.status(500).json({
-      status: 'error',
-      message: 'Error updating email',
-    });
-  }
-},
+  },
 
   // Initiate password reset by sending 6-digit code to email
   async forgotPassword(req: Request, res: Response) {
@@ -321,11 +351,22 @@ async updateEmail(req: Request, res: Response) {
         return errorResponse(res, 400, 'Email is required');
       }
 
+      if (isUnsupportedEmailDomain(email)) {
+        return errorResponse(
+          res,
+          400,
+          'Microsoft email addresses (Outlook, Hotmail, Live) are not currently supported. Please use a Gmail or other email provider.',
+        );
+      }
+
       // Find user by email
       const user = await UserModel.findByEmail(email.toLowerCase().trim());
 
       if (!user) {
-        return successResponse(res, 'If an account exists with this email, a verification code has been sent');
+        return successResponse(
+          res,
+          'If an account exists with this email, a verification code has been sent',
+        );
       }
 
       // Rate-limit
@@ -334,7 +375,12 @@ async updateEmail(req: Request, res: Response) {
         user.user_id,
       );
       if (waitTime) {
-        return errorResponse(res, 429, `Please wait ${waitTime} seconds before requesting another code`, { waitTime });
+        return errorResponse(
+          res,
+          429,
+          `Please wait ${waitTime} seconds before requesting another code`,
+          { waitTime },
+        );
       }
 
       // Generate, persist, and send code
@@ -446,6 +492,14 @@ async updateEmail(req: Request, res: Response) {
 
       const trimmedEmail = email.toLowerCase().trim();
 
+      if (isUnsupportedEmailDomain(trimmedEmail)) {
+        return errorResponse(
+          res,
+          400,
+          'Microsoft email addresses (Outlook, Hotmail, Live) are not currently supported. Please use a Gmail or other email provider.',
+        );
+      }
+
       // Check if email is already registered
       const existingUser = await UserModel.findByEmail(trimmedEmail);
       if (existingUser) {
@@ -458,7 +512,12 @@ async updateEmail(req: Request, res: Response) {
         trimmedEmail,
       );
       if (waitTime) {
-        return errorResponse(res, 429, `Please wait ${waitTime} seconds before requesting another code`, { waitTime });
+        return errorResponse(
+          res,
+          429,
+          `Please wait ${waitTime} seconds before requesting another code`,
+          { waitTime },
+        );
       }
 
       // Generate, persist, and send code
@@ -494,7 +553,10 @@ async updateEmail(req: Request, res: Response) {
 
       const trimmedEmail = email.toLowerCase().trim();
 
-      const validToken = await EmailVerificationTokenModel.findValidToken(trimmedEmail, trimmedCode);
+      const validToken = await EmailVerificationTokenModel.findValidToken(
+        trimmedEmail,
+        trimmedCode,
+      );
       if (!validToken) {
         return errorResponse(res, 400, 'Invalid or expired verification code');
       }
@@ -505,6 +567,4 @@ async updateEmail(req: Request, res: Response) {
       return errorResponse(res, 500, 'Error verifying code');
     }
   },
-
-
 };

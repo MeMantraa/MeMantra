@@ -104,6 +104,23 @@ describe('chatService', () => {
 
       await expect(chatService.getMessages(1, mockToken)).rejects.toThrow('Not found');
     });
+
+    it('passes limit query param when provided', async () => {
+      (apiClient.get as jest.Mock).mockResolvedValue({
+        data: {
+          data: {
+            messages: [],
+          },
+        },
+      });
+
+      await chatService.getMessages(1, mockToken, 50);
+
+      expect(apiClient.get).toHaveBeenCalledWith('/chat/conversations/1/messages', {
+        headers: { Authorization: `Bearer ${mockToken}` },
+        params: { limit: 50 },
+      });
+    });
   });
 
   describe('sendMessage', () => {

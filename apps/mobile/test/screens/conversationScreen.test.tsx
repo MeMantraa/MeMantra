@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
-import ConversationScreen from '../../screens/conversationScreen';
+import ConversationScreen from '../../screens/ConversationScreen';
 import { chatService } from '../../services/chat.service';
 import { storage } from '../../utils/storage';
 import { Message } from '../../types/chat.types';
@@ -146,7 +146,7 @@ describe('ConversationScreen', () => {
     );
 
     await waitFor(() => {
-      expect(chatService.getMessages).toHaveBeenCalledWith(1, 'mock-token');
+      expect(chatService.getMessages).toHaveBeenCalledWith(1, 'mock-token', 50);
     });
 
     expect(await findByText('Hello!', {}, { timeout: 10000 })).toBeTruthy();
@@ -416,5 +416,45 @@ describe('ConversationScreen', () => {
     await waitFor(() => {
       expect(queryByText('Hello!')).toBeNull();
     });
+  });
+
+  it('shows Today and date headers like messenger style', async () => {
+    const oneDayAgo = new Date();
+    oneDayAgo.setDate(oneDayAgo.getDate() - 1);
+
+    const mixedDayMessages: Message[] = [
+      {
+        message_id: 101,
+        conversation_id: 1,
+        sender_id: 2,
+        content: 'Yesterday message',
+        created_at: oneDayAgo.toISOString(),
+        read: true,
+      },
+      {
+        message_id: 102,
+        conversation_id: 1,
+        sender_id: 1,
+        content: 'Today message',
+        created_at: new Date().toISOString(),
+        read: true,
+      },
+    ];
+
+    (chatService.getMessages as jest.Mock).mockResolvedValue(mixedDayMessages);
+
+    const { findByText, queryByText } = render(
+      <ConversationScreen route={mockRoute} navigation={mockNavigation} />,
+    );
+
+    const olderDayHeader = oneDayAgo.toLocaleDateString(undefined, {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+
+    expect(await findByText('Today')).toBeTruthy();
+    expect(queryByText(olderDayHeader)).toBeTruthy();
   });
 });

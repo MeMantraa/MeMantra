@@ -37,7 +37,12 @@ export const suggestQuerySchema = z.object({
     mood: z.string().min(1).max(50).optional(),
     excludeIds: z
       .string()
-      .transform((val) => val.split(',').map(Number).filter((n) => !isNaN(n) && n > 0))
+      .transform((val) =>
+        val
+          .split(',')
+          .map(Number)
+          .filter((n) => !isNaN(n) && n > 0),
+      )
       .optional(),
   }),
 });

@@ -3,6 +3,8 @@ module.exports = {
   testEnvironment: 'node',
   setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   moduleNameMapper: {
+    '^react-native$': '<rootDir>/node_modules/react-native',
+    '^react-native/(.*)$': '<rootDir>/node_modules/react-native/$1',
     '^expo/src/winter/ImportMetaRegistry$': '<rootDir>/test/mocks/expoImportMetaRegistry.ts',
     '^expo/src/winter$': '<rootDir>/test/mocks/expoWinter.ts',
   },

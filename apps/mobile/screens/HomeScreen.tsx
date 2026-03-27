@@ -16,8 +16,6 @@ import { categoryService, Category } from '../services/category.service';
 import { ratingService } from '../services/rating.service';
 import { storage } from '../utils/storage';
 import SearchBar from '../components/UI/searchBar';
-import IconButton from '../components/UI/iconButton';
-import { logoutUser } from '../utils/auth';
 import AppText from '../components/UI/textWrapper';
 import { useTheme } from '../context/ThemeContext';
 import { useSavedMantras } from '../context/SavedContext';
@@ -31,6 +29,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 export default function HomeScreen({ navigation, route }: any) {
   const [feedData, setFeedData] = useState<Mantra[]>([]);
+  const [originalMantras, setOriginalMantras] = useState<Mantra[]>([]);
   const [loading, setLoading] = useState(true);
   const [showSavedPopup, setShowSavedPopup] = useState(false);
   const [showCollectionsSheet, setShowCollectionsSheet] = useState(false);
@@ -68,12 +67,16 @@ export default function HomeScreen({ navigation, route }: any) {
       const response = await mantraService.getFeedMantras(token);
 
       if (response.status === 'success') {
-        setFeedData(response.data);
+        setOriginalMantras(response.data);
+        setFeedData([...response.data]);
       } else {
+        setOriginalMantras([]);
         setFeedData([]);
       }
     } catch (err) {
       console.error('Error fetching mantras:', err);
+      setOriginalMantras([]);
+      Alert.alert('Error', 'Failed to load mantras. Please try again.');
       setFeedData([]);
     } finally {
       setLoading(false);
@@ -127,6 +130,7 @@ export default function HomeScreen({ navigation, route }: any) {
       }
     } catch (err) {
       console.error('Error fetching categories:', err);
+      Alert.alert('Error', 'Failed to load categories.');
     } finally {
       setCategoriesLoading(false);
     }
@@ -150,6 +154,7 @@ export default function HomeScreen({ navigation, route }: any) {
       }
     } catch (err) {
       console.error('Error fetching collections:', err);
+      Alert.alert('Error', 'Failed to load collections.');
     }
   };
 
@@ -304,30 +309,16 @@ export default function HomeScreen({ navigation, route }: any) {
     }
   };
 
-  const handleLogout = () => logoutUser(navigation);
+  const handleSearch = () => navigation.navigate('Search', { mantras: originalMantras });
 
-  const handleSearch = () => navigation.navigate('Search', { mantras: feedData });
+  const handleEndReached = () => {
+    if (originalMantras.length > 0) {
+      setFeedData((prev) => [...prev, ...originalMantras]);
+    }
+  };
 
   const handleApplyCategoryFilter = (selected: number[]) => {
     setSelectedCategoryIds(selected);
-  };
-
-  const handleUserPress = () => {
-    Alert.alert(
-      'Account',
-      'Are you sure you want to log out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Log out',
-          style: 'destructive',
-          onPress: () => {
-            void handleLogout();
-          },
-        },
-      ],
-      { cancelable: true },
-    );
   };
 
   let content;
@@ -391,10 +382,11 @@ export default function HomeScreen({ navigation, route }: any) {
   } else {
     content = (
       <FlatList
+        testID="feed-list"
         key={`feed-${initialIndex}-${selectedCategoryIds.join(',')}`}
         ref={listRef}
         data={filteredFeedData}
-        initialScrollIndex={initialIndex} // ✅ no flash to first item
+        initialScrollIndex={initialIndex}
         renderItem={({ item }) => (
           <MantraCarousel
             item={item}
@@ -413,12 +405,14 @@ export default function HomeScreen({ navigation, route }: any) {
             }
           />
         )}
-        keyExtractor={(item) => item.mantra_id.toString()}
+        keyExtractor={(item, index) => `${item.mantra_id}-${index}`}
         pagingEnabled
         showsVerticalScrollIndicator={false}
         snapToAlignment="start"
         decelerationRate="fast"
         snapToInterval={SCREEN_HEIGHT}
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={2.0}
         getItemLayout={(_, index) => ({
           length: SCREEN_HEIGHT,
           offset: SCREEN_HEIGHT * index,
@@ -435,50 +429,56 @@ export default function HomeScreen({ navigation, route }: any) {
 
   return (
     <View className="flex-1" style={{ backgroundColor: colors.primary }}>
-      <View className="absolute top-5 left-0 right-0 z-10 flex-row justify-between items-center px-6 pt-14 pb-4">
-        <View className="flex-row items-center" style={{ gap: 8 }}>
-          <SearchBar
-            onSearch={handleSearch}
-            onIconPress={handleSearch}
-            placeholder="Search mantras..."
-          />
-          <TouchableOpacity
-            testID="category-filter-btn"
-            activeOpacity={0.7}
-            onPress={() => setShowCategoryFilter(true)}
-            className="items-center justify-center"
+      <View className="absolute top-5 left-0 right-0 z-10 flex-row items-center justify-between px-6 pt-14 pb-4">
+        <TouchableOpacity
+          testID="category-filter-btn"
+          activeOpacity={0.7}
+          onPress={() => setShowCategoryFilter(true)}
+          className="items-center justify-center"
+        >
+          <View
+            className="rounded-full items-center justify-center"
+            style={{
+              width: 54,
+              height: 54,
+              backgroundColor: colors.secondary,
+              borderWidth: 1,
+              borderColor: colors.secondary + 'dd',
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.12,
+              shadowRadius: 6,
+              elevation: 3,
+            }}
           >
+            <Ionicons
+              name={selectedCategoryIds.length > 0 ? 'funnel' : 'funnel-outline'}
+              size={25}
+              color={colors.primaryDark}
+            />
+          </View>
+          {selectedCategoryIds.length > 0 && (
             <View
-              className="rounded-full items-center justify-center"
+              className="absolute -top-1 -right-1 rounded-full items-center justify-center"
               style={{
-                width: 48,
-                height: 48,
-                backgroundColor: colors.secondary,
+                width: 20,
+                height: 20,
+                backgroundColor: colors.primaryDark,
               }}
             >
-              <Ionicons
-                name={selectedCategoryIds.length > 0 ? 'funnel' : 'funnel-outline'}
-                size={24}
-                color={colors.primaryDark}
-              />
+              <AppText className="text-xs font-bold" style={{ color: colors.secondary }}>
+                {selectedCategoryIds.length}
+              </AppText>
             </View>
-            {selectedCategoryIds.length > 0 && (
-              <View
-                className="absolute -top-1 -right-1 rounded-full items-center justify-center"
-                style={{
-                  width: 20,
-                  height: 20,
-                  backgroundColor: colors.primaryDark,
-                }}
-              >
-                <AppText className="text-xs font-bold" style={{ color: colors.secondary }}>
-                  {selectedCategoryIds.length}
-                </AppText>
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-        <IconButton type="profile" onPress={handleUserPress} testID="profile-btn" />
+          )}
+        </TouchableOpacity>
+
+        <SearchBar
+          compact
+          onSearch={handleSearch}
+          onIconPress={handleSearch}
+          placeholder="Search mantras..."
+        />
       </View>
 
       {content}

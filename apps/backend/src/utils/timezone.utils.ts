@@ -1,14 +1,22 @@
 const DAY_MAP: Record<string, number> = {
-  Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+  Sun: 0,
+  Mon: 1,
+  Tue: 2,
+  Wed: 3,
+  Thu: 4,
+  Fri: 5,
+  Sat: 6,
 };
 
 /**
  * Return the current hour, minute, and day-of-week in a given IANA timezone.
  * Uses Intl.DateTimeFormat — no external dependencies.
  */
-export function getCurrentTimeInTimezone(
-  timezone: string,
-): { hour: number; minute: number; dayOfWeek: number } {
+export function getCurrentTimeInTimezone(timezone: string): {
+  hour: number;
+  minute: number;
+  dayOfWeek: number;
+} {
   return getTimeInTimezone(new Date(), timezone);
 }
 
@@ -68,12 +76,24 @@ export function getDayOfWeekInTimezone(date: Date, timezone: string): number {
  * Check if two dates fall in the same week (week starts on Sunday) in the given timezone.
  */
 export function isSameWeekInTimezone(date1: Date, date2: Date, timezone: string): boolean {
+  // Get the local date string for each date in the target timezone,
+  // then compute start-of-week from the local date to avoid DST issues
+  // with raw millisecond arithmetic.
+  const localDate1 = formatDateInTimezone(date1, timezone);
+  const localDate2 = formatDateInTimezone(date2, timezone);
   const dow1 = getDayOfWeekInTimezone(date1, timezone);
   const dow2 = getDayOfWeekInTimezone(date2, timezone);
 
-  const startOfWeek1 = new Date(date1.getTime() - dow1 * 86400000);
-  const startOfWeek2 = new Date(date2.getTime() - dow2 * 86400000);
+  // Parse the local date and subtract day-of-week to get Sunday's date
+  const [y1, m1, d1] = localDate1.split('-').map(Number);
+  const [y2, m2, d2] = localDate2.split('-').map(Number);
 
-  return formatDateInTimezone(startOfWeek1, timezone) ===
-    formatDateInTimezone(startOfWeek2, timezone);
+  // Use UTC dates to avoid any local timezone interference in the arithmetic
+  const utcDate1 = Date.UTC(y1, m1 - 1, d1);
+  const utcDate2 = Date.UTC(y2, m2 - 1, d2);
+
+  const startOfWeek1 = utcDate1 - dow1 * 86400000;
+  const startOfWeek2 = utcDate2 - dow2 * 86400000;
+
+  return startOfWeek1 === startOfWeek2;
 }

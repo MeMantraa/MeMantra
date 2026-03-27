@@ -39,7 +39,7 @@ const makeUser = (id: number, timezone = 'UTC') => ({
 
 describe('EngagementOptimizerService', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     EngagementOptimizerService.cronTask = null;
     EngagementOptimizerService.isRunning = false;
     mockedUserModel.update.mockResolvedValue(makeUser(1));
@@ -123,7 +123,7 @@ describe('EngagementOptimizerService', () => {
 
   describe('triggerProcessing', () => {
     it('delegates to processAllUsers and returns its result', async () => {
-      mockedUserModel.findAllWithDeviceTokens.mockResolvedValue([makeUser(1)]);
+      mockedUserModel.findAllWithDeviceTokensPaginated.mockResolvedValueOnce([makeUser(1)]);
       mockedEngagementModel.getOptimalHour.mockResolvedValue(10);
       jest.spyOn(console, 'log').mockImplementation();
 
@@ -163,7 +163,7 @@ describe('EngagementOptimizerService', () => {
 
   describe('processAllUsers', () => {
     it('calls getOptimalHour and update for each user with correct args', async () => {
-      mockedUserModel.findAllWithDeviceTokens.mockResolvedValue([
+      mockedUserModel.findAllWithDeviceTokensPaginated.mockResolvedValueOnce([
         makeUser(1, 'America/New_York'),
         makeUser(2, 'Europe/London'),
       ]);
@@ -180,7 +180,7 @@ describe('EngagementOptimizerService', () => {
     });
 
     it('writes null for insufficient-data users', async () => {
-      mockedUserModel.findAllWithDeviceTokens.mockResolvedValue([makeUser(1)]);
+      mockedUserModel.findAllWithDeviceTokensPaginated.mockResolvedValueOnce([makeUser(1)]);
       mockedEngagementModel.getOptimalHour.mockResolvedValue(null);
 
       jest.spyOn(console, 'log').mockImplementation();
@@ -192,7 +192,7 @@ describe('EngagementOptimizerService', () => {
     });
 
     it('returns empty array when no users have device tokens', async () => {
-      mockedUserModel.findAllWithDeviceTokens.mockResolvedValue([]);
+      mockedUserModel.findAllWithDeviceTokensPaginated.mockResolvedValueOnce([]);
       jest.spyOn(console, 'log').mockImplementation();
 
       const results = await EngagementOptimizerService.processAllUsers();
@@ -201,8 +201,8 @@ describe('EngagementOptimizerService', () => {
       expect(mockedEngagementModel.getOptimalHour).not.toHaveBeenCalled();
     });
 
-    it('returns empty array and logs error when findAllWithDeviceTokens throws', async () => {
-      mockedUserModel.findAllWithDeviceTokens.mockRejectedValue(new Error('DB down'));
+    it('returns empty array and logs error when findAllWithDeviceTokensPaginated throws', async () => {
+      mockedUserModel.findAllWithDeviceTokensPaginated.mockRejectedValue(new Error('DB down'));
       jest.spyOn(console, 'log').mockImplementation();
       jest.spyOn(console, 'error').mockImplementation();
 
@@ -212,7 +212,10 @@ describe('EngagementOptimizerService', () => {
     });
 
     it('marks a user as skipped on error and continues', async () => {
-      mockedUserModel.findAllWithDeviceTokens.mockResolvedValue([makeUser(1), makeUser(2)]);
+      mockedUserModel.findAllWithDeviceTokensPaginated.mockResolvedValueOnce([
+        makeUser(1),
+        makeUser(2),
+      ]);
       mockedEngagementModel.getOptimalHour
         .mockRejectedValueOnce(new Error('DB error'))
         .mockResolvedValueOnce(7);
