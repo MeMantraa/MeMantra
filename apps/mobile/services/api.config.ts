@@ -53,7 +53,7 @@ const getLocalIpAddress = (): string | null => {
 const PRODUCTION_API_URL = 'https://memantra.onrender.com/api';
 
 const getBaseUrl = () => {
- // In production/preview builds, always use the hosted backend
+  // In production/preview builds, always use the hosted backend.
 
   if (!__DEV__) {
     return PRODUCTION_API_URL;
@@ -62,6 +62,8 @@ const getBaseUrl = () => {
   // --- Development mode: use local backend ---
   const autoDetectedIP = getLocalIpAddress();
   const PORT = '4000';
+  const isUsingTunnel = Boolean(Constants.expoConfig?.hostUri?.includes('exp.direct'));
+  const shouldUseLocalConfig = Boolean(LOCAL_DEV_IP) && isUsingTunnel;
 
   if (ENV_API_BASE_URL) {
     return normalizeBaseUrl(ENV_API_BASE_URL);
@@ -155,7 +157,6 @@ const emitApiPerformanceEvent = async (params: {
   );
 };
 
-
 // Navigation ref to handle logout navigation and deep linking
 let navigationRef: {
   navigate: (name: string, params?: object) => void;
@@ -180,7 +181,6 @@ export const isNavigationReady = (): boolean => {
   return navigationRef !== null;
 };
 
-
 // Attach the stored JWT token to every outgoing request.
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
@@ -203,7 +203,6 @@ apiClient.interceptors.request.use(
     return Promise.reject(error);
   },
 );
-
 
 // Global response error handler — clears auth on 401.
 apiClient.interceptors.response.use(
