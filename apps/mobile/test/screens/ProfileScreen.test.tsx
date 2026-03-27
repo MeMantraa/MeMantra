@@ -2,6 +2,10 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import ProfileScreen from '../../screens/ProfileScreen';
 import { storage } from '../../utils/storage';
+import { userService } from '../../services/user.service';
+import * as ImagePicker from 'expo-image-picker';
+import * as ImageManipulator from 'expo-image-manipulator';
+import { Alert, ActionSheetIOS, Platform } from 'react-native';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   default: {
@@ -17,6 +21,7 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
 }));
 
 jest.mock('../../utils/storage');
+jest.mock('../../services/user.service');
 jest.mock('../../context/ThemeContext', () => ({
   useTheme: () => ({
     colors: {
@@ -39,6 +44,12 @@ describe('ProfileScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     (storage.getUserData as jest.Mock).mockResolvedValue({ username: 'memantrauser' });
+    (storage.getToken as jest.Mock).mockResolvedValue('test-token');
+    (storage.getUserId as jest.Mock).mockResolvedValue(1);
+    (userService.getUserById as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { user: { user_id: 1, username: 'memantrauser', profile_photo: null } },
+    });
   });
 
   afterEach(() => {
@@ -69,6 +80,10 @@ describe('ProfileScreen', () => {
 
   it('handles missing username in userData by setting empty string', async () => {
     (storage.getUserData as jest.Mock).mockResolvedValue({ username: null });
+    (userService.getUserById as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { user: { user_id: 1, username: null, profile_photo: null } },
+    });
 
     const { queryByText } = render(<ProfileScreen />);
 
@@ -130,5 +145,37 @@ describe('ProfileScreen', () => {
     fireEvent.press(settingsButton);
 
     expect(mockNavigate).toHaveBeenCalledWith('Settings');
+  });
+
+  it('calls getUserById on mount to fetch profile data', async () => {
+    render(<ProfileScreen />);
+
+    await waitFor(() => {
+      expect(userService.getUserById).toHaveBeenCalledWith(1, 'test-token');
+    });
+  });
+
+  it('loads user data from storage and server', async () => {
+    const { getByText } = render(<ProfileScreen />);
+
+    await waitFor(() => {
+      expect(storage.getUserData).toHaveBeenCalled();
+      expect(userService.getUserById).toHaveBeenCalledWith(1, 'test-token');
+    });
+
+    expect(getByText('memantrauser')).toBeTruthy();
+  });
+
+  it('loads user profile photo from server on mount', async () => {
+    (userService.getUserById as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { user: { user_id: 1, username: 'testuser', profile_photo: 'data:image/jpeg;base64,abc123' } },
+    });
+
+    render(<ProfileScreen />);
+
+    await waitFor(() => {
+      expect(userService.getUserById).toHaveBeenCalledWith(1, 'test-token');
+    });
   });
 });
