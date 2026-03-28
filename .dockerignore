@@ -38,6 +38,8 @@ coverage
 .env
 .env.*
 !.env.example
+!apps/backend/.env.example
+!apps/mobile/.env.example
 
 # System files
 .DS_Store
@@ -61,15 +63,6 @@ test/
 .eslintcache
 .stylelintcache
 
-# Docker
-docker-compose.yml
-Dockerfile
-*.Dockerfile
-
 # Optional: OS-level cruft
 *.swp
 *.bak
-
-
-apps/mobile/src
-!apps/mobile/dist

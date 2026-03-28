@@ -131,7 +131,7 @@ describe('Server (index.ts)', () => {
       expect(sigtermCall).toBeDefined();
       (sigtermCall![1] as () => void)();
 
-      expect(consoleSpy).toHaveBeenCalledWith('🛑 SIGTERM received, shutting down gracefully');
+      expect(consoleSpy).toHaveBeenCalledWith('SIGTERM received, shutting down gracefully');
       expect(exitSpy).toHaveBeenCalledWith(0);
 
       processOnSpy.mockRestore();
@@ -153,7 +153,7 @@ describe('Server (index.ts)', () => {
       expect(sigintCall).toBeDefined();
       (sigintCall![1] as () => void)();
 
-      expect(consoleSpy).toHaveBeenCalledWith('🛑 SIGINT received, shutting down gracefully');
+      expect(consoleSpy).toHaveBeenCalledWith('SIGINT received, shutting down gracefully');
       expect(exitSpy).toHaveBeenCalledWith(0);
 
       processOnSpy.mockRestore();

@@ -7,7 +7,7 @@
 ```bash
 cd ../../   # repo root
 pnpm install
-# optional: copy env template if needed
+# copy env template if needed
 cp apps/mobile/.env.example apps/mobile/.env
 ```
 
@@ -70,3 +70,12 @@ Refer to `docs/designs` and `docs/prototypes` for visual guidance when adding ne
 | `pnpm --filter mobile test`                    | Jest + Testing Library suites with coverage.              |
 
 These can also be invoked through root scripts defined in `package.json`.
+
+## Docker
+
+The repo now includes a dedicated [`dockerfile`](/c:/Users/Philippe/MeMantra/apps/mobile/dockerfile) for the mobile app:
+
+- `docker-compose.yaml` runs the mobile workspace in its own development container with Expo web.
+- `docker-compose.staging.yml` and `docker-compose.prod.yml` build a static web artifact and serve it from its own runtime container.
+
+Set `EXPO_PUBLIC_API_BASE_URL` in `apps/mobile/.env`. The staging and production Compose files reuse that file for local validation.

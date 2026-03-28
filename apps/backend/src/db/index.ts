@@ -23,6 +23,7 @@ if (typeof (pool as any).query === 'function') {
   pool.query = (async (...args: any[]) => {
     const start = process.hrtime.bigint();
     const text = typeof args[0] === 'string' ? args[0] : args[0]?.text;
+
     const queryType =
       typeof text === 'string'
         ? text.trim().split(/\s+/)[0]?.toUpperCase() || 'UNKNOWN'
