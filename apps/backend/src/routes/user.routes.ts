@@ -3,7 +3,14 @@ import { UserController } from '../controllers/user.controller';
 import { authenticate } from '../middleware/auth.middleware';
 import { requireAdmin } from '../middleware/admin.middleware';
 import { validateRequest } from '../middleware/validate.middleware';
-import { createUserSchema, updateUserSchema, userIdSchema,featureFlagRolloutSchema, featureFlagAssignUserSchema, featureFlagToggleAllSchema } from '../validators/user.validator';
+import {
+  createUserSchema,
+  updateUserSchema,
+  userIdSchema,
+  featureFlagRolloutSchema,
+  featureFlagAssignUserSchema,
+  featureFlagToggleAllSchema,
+} from '../validators/user.validator';
 
 const router = Router();
 
@@ -41,35 +48,19 @@ router.post(
 
 router.get('/', UserController.getAllUsers);
 
-router.get(
-  '/:id',
-  validateRequest(userIdSchema),
-  UserController.getUserById
-);
+router.get('/:id', validateRequest(userIdSchema), UserController.getUserById);
 
-router.post(
-  '/',
-  validateRequest(createUserSchema),
-  UserController.createUser
-);
+router.post('/', validateRequest(createUserSchema), UserController.createUser);
 
 router.put(
   '/:id',
   validateRequest(userIdSchema),
   validateRequest(updateUserSchema),
-  UserController.updateUser
+  UserController.updateUser,
 );
 
-router.delete(
-  '/:id',
-  validateRequest(userIdSchema),
-  UserController.deleteUser
-);
+router.delete('/:id', validateRequest(userIdSchema), UserController.deleteUser);
 
-router.get(
-  '/:id/feature-flags',
-  validateRequest(userIdSchema),
-  UserController.getUserFeatureFlags
-);
+router.get('/:id/feature-flags', validateRequest(userIdSchema), UserController.getUserFeatureFlags);
 
 export default router;

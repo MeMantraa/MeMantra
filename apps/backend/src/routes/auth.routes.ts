@@ -16,8 +16,16 @@ import { authenticate } from '../middleware/auth.middleware';
 const router = Router();
 
 // Signup email verification routes
-router.post('/signup/send-code', validateRequest(sendSignupCodeSchema), AuthController.sendSignupCode);
-router.post('/signup/verify-code', validateRequest(verifySignupCodeSchema), AuthController.verifySignupCode);
+router.post(
+  '/signup/send-code',
+  validateRequest(sendSignupCodeSchema),
+  AuthController.sendSignupCode,
+);
+router.post(
+  '/signup/verify-code',
+  validateRequest(verifySignupCodeSchema),
+  AuthController.verifySignupCode,
+);
 
 //api route to register (requires verified email code)
 router.post('/register', validateRequest(registerSchema), AuthController.register);
@@ -32,13 +40,22 @@ router.get('/me', authenticate, AuthController.getMe);
 router.patch('/email', authenticate, AuthController.updateEmail);
 
 //api route for user updating password
-router.patch('/password', authenticate, validateRequest(updatePasswordSchema), AuthController.updatePassword);
+router.patch(
+  '/password',
+  authenticate,
+  validateRequest(updatePasswordSchema),
+  AuthController.updatePassword,
+);
 
 //api route for deleting account
 router.delete('/account', authenticate, AuthController.deleteAccount);
 
 // Password reset routes
-router.post('/forgot-password', validateRequest(forgotPasswordSchema), AuthController.forgotPassword);
+router.post(
+  '/forgot-password',
+  validateRequest(forgotPasswordSchema),
+  AuthController.forgotPassword,
+);
 router.post('/verify-code', validateRequest(verifyResetCodeSchema), AuthController.verifyResetCode);
 router.post('/reset-password', validateRequest(resetPasswordSchema), AuthController.resetPassword);
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
-import LoginScreen from '../../screens/login';
+import LoginScreen from '../../screens/LoginScreen';
 import { authService } from '../../services/auth.service';
 
 jest.mock('../../services/auth.service', () => ({

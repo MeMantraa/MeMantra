@@ -123,7 +123,9 @@ export const ReminderSchedulerService = {
         return results;
       }
 
-      console.log(`📬 Processing ${totalDue} due reminder(s) (${dueReminders.length} mantra, ${dueCollectionReminders.length} collection)`);
+      console.log(
+        `📬 Processing ${totalDue} due reminder(s) (${dueReminders.length} mantra, ${dueCollectionReminders.length} collection)`,
+      );
 
       // Process mantra-based reminders
       for (const reminder of dueReminders) {
@@ -141,9 +143,7 @@ export const ReminderSchedulerService = {
       const failCount = results.filter((r) => !r.success).length;
 
       if (successCount > 0 || failCount > 0) {
-        console.log(
-          `📊 Processed reminders: ${successCount} sent, ${failCount} failed`
-        );
+        console.log(`📊 Processed reminders: ${successCount} sent, ${failCount} failed`);
       }
     } catch (error) {
       console.error('❌ Error processing reminders:', error);
@@ -158,11 +158,11 @@ export const ReminderSchedulerService = {
    */
   validateReminderBase(
     reminder: BaseReminderDetails,
-    reminderType: 'Reminder' | 'Collection Reminder'
+    reminderType: 'Reminder' | 'Collection Reminder',
   ): string | null {
     if (!reminder.user_device_token) {
       console.warn(
-        `⚠️  ${reminderType} ${reminder.reminder_id}: User has no device token, skipping`
+        `⚠️  ${reminderType} ${reminder.reminder_id}: User has no device token, skipping`,
       );
       return 'No device token';
     }
@@ -196,12 +196,14 @@ export const ReminderSchedulerService = {
     try {
       // Check if reminder should be sent based on frequency
       if (frequency === 'routine') {
-        if (!this.shouldSendRoutineReminder(
-          reminder.schedule_times,
-          reminder.schedule_days,
-          reminder.timezone,
-          last_sent_at
-        )) {
+        if (
+          !this.shouldSendRoutineReminder(
+            reminder.schedule_times,
+            reminder.schedule_days,
+            reminder.timezone,
+            last_sent_at,
+          )
+        ) {
           return { reminderId: reminder_id, success: true };
         }
       } else if (!this.shouldSendReminder(frequency, last_sent_at, reminder.timezone)) {
@@ -246,9 +248,7 @@ export const ReminderSchedulerService = {
       'Reminder',
       (r) => {
         if (!r.mantra_key_takeaway) {
-          console.warn(
-            `⚠️  Reminder ${r.reminder_id}: Mantra has no key takeaway, skipping`
-          );
+          console.warn(`⚠️  Reminder ${r.reminder_id}: Mantra has no key takeaway, skipping`);
           return 'No mantra content';
         }
         return null;
@@ -266,7 +266,7 @@ export const ReminderSchedulerService = {
   shouldSendReminder(
     frequency: string | null,
     lastSentAt: string | null,
-    timezone: string | null
+    timezone: string | null,
   ): boolean {
     // One-time reminders: send if never sent
     if (frequency === 'once') {
@@ -324,7 +324,7 @@ export const ReminderSchedulerService = {
     scheduleTimes: string[] | null,
     scheduleDays: number[] | null,
     timezone: string | null,
-    lastSentAt: string | null
+    lastSentAt: string | null,
   ): boolean {
     if (!scheduleTimes || scheduleTimes.length === 0) return false;
 
@@ -344,12 +344,13 @@ export const ReminderSchedulerService = {
       return false;
     }
 
-    // Guard against double-sends: skip if last sent within 2 minutes
+    // Guard against double-sends: skip if last sent within 3 minutes
+    // (wider than the 1-minute cron interval to account for slow processing)
     if (lastSentAt) {
       const lastSent = new Date(lastSentAt);
       const now = new Date();
       const diffMs = now.getTime() - lastSent.getTime();
-      if (diffMs < 2 * 60 * 1000) {
+      if (diffMs < 3 * 60 * 1000) {
         return false;
       }
     }
@@ -361,8 +362,7 @@ export const ReminderSchedulerService = {
    * Send the actual notification for a reminder
    */
   async sendReminderNotification(reminder: ReminderWithDetails): Promise<void> {
-    const { reminder_id, mantra_id, user_device_token, mantra_key_takeaway } =
-      reminder;
+    const { reminder_id, mantra_id, user_device_token, mantra_key_takeaway } = reminder;
 
     if (!user_device_token || !mantra_key_takeaway) {
       throw new Error('Missing required notification data');
@@ -373,7 +373,7 @@ export const ReminderSchedulerService = {
       user_device_token,
       mantra_key_takeaway,
       reminder_id,
-      mantra_id ?? undefined
+      mantra_id ?? undefined,
     );
   },
 
@@ -388,7 +388,7 @@ export const ReminderSchedulerService = {
       (r) => {
         if (!r.collection_name) {
           console.warn(
-            `⚠️  Collection Reminder ${r.reminder_id}: Collection has no name, skipping`
+            `⚠️  Collection Reminder ${r.reminder_id}: Collection has no name, skipping`,
           );
           return 'No collection name';
         }
@@ -402,8 +402,7 @@ export const ReminderSchedulerService = {
    * Send the actual notification for a collection reminder
    */
   async sendCollectionReminderNotification(reminder: CollectionReminderWithDetails): Promise<void> {
-    const { reminder_id, collection_id, user_device_token, collection_name } =
-      reminder;
+    const { reminder_id, collection_id, user_device_token, collection_name } = reminder;
 
     if (!user_device_token || !collection_name || !collection_id) {
       throw new Error('Missing required notification data');
@@ -414,7 +413,7 @@ export const ReminderSchedulerService = {
       user_device_token,
       collection_name,
       reminder_id,
-      collection_id
+      collection_id,
     );
   },
 

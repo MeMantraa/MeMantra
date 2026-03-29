@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, ActivityIndicator, Alert } from 'react-native';
 import { createStackNavigator } from '@react-navigation/stack';
 import * as Notifications from 'expo-notifications';
 import { ThemeProvider } from '../context/ThemeContext';
@@ -11,7 +11,7 @@ import { mantraService, Mantra } from '../services/mantra.service';
 import { navigateFromOutside, isNavigationReady } from '../services/api.config';
 
 // Import screens
-import Login from '../screens/login';
+import Login from '../screens/LoginScreen';
 import SignUpEmailScreen from '../screens/SignUpEmailScreen';
 import CompleteSignUpScreen from '../screens/CompleteSignUpScreen';
 import ProfileScreen from '../screens/ProfileScreen';
@@ -19,14 +19,14 @@ import BottomTabNavigator from '../components/bottomTabNavigator';
 import UpdateEmailScreen from '../screens/UpdateEmailScreen';
 import UpdatePasswordScreen from '../screens/UpdatePasswordScreen';
 import NotificationSettingsScreen from '../screens/NotificationSettingsScreen';
-import FocusScreen from '../screens/focusScreen';
+import FocusScreen from '../screens/FocusScreen';
 import ForgotPasswordScreen from '../screens/ForgotPasswordScreen';
 import VerifyCodeScreen from '../screens/VerifyCodeScreen';
 import ResetPasswordScreen from '../screens/ResetPasswordScreen';
-import ConversationScreen from '../screens/conversationScreen';
+import ConversationScreen from '../screens/ConversationScreen';
 import NewConversationScreen from '../screens/NewConversationScreen';
 import ShareMantraScreen from '../screens/ShareMantraScreen';
-import BookmarkScreen from '../screens/bookmarkScreen';
+import BookmarkScreen from '../screens/BookmarkScreen';
 import LikedScreen from '../screens/LikedScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import JournalEditorScreen from '../screens/JournalEditorScreen';
@@ -69,6 +69,10 @@ export default function MainNavigator() {
           }
         } catch (error) {
           console.error('Failed to set up push notifications:', error);
+          Alert.alert(
+            'Notifications',
+            'Could not enable push notifications. You can enable them later in Settings.',
+          );
         }
       };
 
@@ -116,6 +120,7 @@ export default function MainNavigator() {
             }
           } catch (error) {
             console.error('Error toggling like:', error);
+            Alert.alert('Error', 'Failed to update like status.');
           }
         };
 
@@ -131,6 +136,7 @@ export default function MainNavigator() {
             }
           } catch (error) {
             console.error('Error toggling save:', error);
+            Alert.alert('Error', 'Failed to update save status.');
           }
         };
 
@@ -145,6 +151,7 @@ export default function MainNavigator() {
       }
     } catch (error) {
       console.error('Error navigating to mantra from notification:', error);
+      Alert.alert('Error', 'Failed to open mantra. Please try again.');
     }
   }, []);
 
@@ -177,6 +184,7 @@ export default function MainNavigator() {
         });
       } catch (error) {
         console.error('Error navigating to collection from notification:', error);
+        Alert.alert('Error', 'Failed to open collection. Please try again.');
       }
     },
     [],
@@ -379,7 +387,30 @@ export default function MainNavigator() {
           <Stack.Screen name="CreateReminder" component={CreateReminderScreen} />
           <Stack.Screen name="MantraAlgorithm" component={MantraAlgorithmScreen} />
           <Stack.Screen name="Themes" component={ThemesScreen} options={{ headerShown: false }} />
-          <Stack.Screen name="Search" component={SearchScreen} options={{ headerShown: false }} />
+          <Stack.Screen
+            name="Search"
+            component={SearchScreen}
+            options={{
+              headerShown: false,
+              gestureDirection: 'vertical',
+              cardStyleInterpolator: ({ current, layouts }) => ({
+                cardStyle: {
+                  transform: [
+                    {
+                      translateY: current.progress.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [layouts.screen.height, 0],
+                      }),
+                    },
+                  ],
+                },
+              }),
+              transitionSpec: {
+                open: { animation: 'timing', config: { duration: 320 } },
+                close: { animation: 'timing', config: { duration: 260 } },
+              },
+            }}
+          />
         </Stack.Navigator>
       </SavedProvider>
     </ThemeProvider>

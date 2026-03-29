@@ -5,40 +5,39 @@ import { RecommendationNotificationService } from './services/recommendation-not
 import { EngagementOptimizerService } from './services/engagement-optimizer.service';
 
 const PORT = process.env.PORT || 3000;
+const shouldRunSchedulers =
+  process.env.NODE_ENV !== 'test' && process.env.RUN_SCHEDULERS !== 'false';
 
 const app = createApp();
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Health check: http://localhost:${PORT}/health`);
+  console.log(`Schedulers enabled: ${shouldRunSchedulers}`);
 
-  // Start the reminder scheduler (checks every minute for due reminders)
-  // Disabled in test environment
-  if (process.env.NODE_ENV !== 'test') {
+  // Disable background schedulers in test or hosted web-service processes when requested.
+  if (shouldRunSchedulers) {
     ReminderSchedulerService.start({
-      cronExpression: '* * * * *', // Every minute
+      cronExpression: '* * * * *',
     });
 
-    // Start the recommendation notification scheduler.
-    // Fires at the top of every hour; delivers to users whose local time matches
-    // their optimal_send_hour (defaulting to 9 AM).
     RecommendationNotificationService.start({
       cronExpression: '0 * * * *',
     });
 
-    // Start the engagement optimizer (nightly at 3 AM UTC).
-    // Computes each user's optimal notification hour from EngagementEvent data.
     EngagementOptimizerService.start({
       cronExpression: '0 3 * * *',
     });
+  } else {
+    console.log('Background schedulers are disabled for this process');
   }
 });
 
 // Graceful shutdown
 process.on('SIGTERM', () => {
-  console.log('🛑 SIGTERM received, shutting down gracefully');
+  console.log('SIGTERM received, shutting down gracefully');
   ReminderSchedulerService.stop();
   RecommendationNotificationService.stop();
   EngagementOptimizerService.stop();
@@ -46,7 +45,7 @@ process.on('SIGTERM', () => {
 });
 
 process.on('SIGINT', () => {
-  console.log('🛑 SIGINT received, shutting down gracefully');
+  console.log('SIGINT received, shutting down gracefully');
   ReminderSchedulerService.stop();
   RecommendationNotificationService.stop();
   EngagementOptimizerService.stop();

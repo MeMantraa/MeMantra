@@ -22,43 +22,31 @@ router.get('/stats', JournalController.getJournalStats);
 router.get(
   '/mantra/:mantraId',
   validateRequest(mantraIdParamSchema),
-  JournalController.getJournalEntriesByMantra
+  JournalController.getJournalEntriesByMantra,
 );
 
 // GET /api/journal - Get all journal entries with filtering
-router.get(
-  '/',
-  validateRequest(journalQuerySchema),
-  JournalController.getAllJournalEntries
-);
+router.get('/', validateRequest(journalQuerySchema), JournalController.getAllJournalEntries);
 
 // GET /api/journal/:journalId - Get a single journal entry
-router.get(
-  '/:journalId',
-  validateRequest(journalIdSchema),
-  JournalController.getJournalEntryById
-);
+router.get('/:journalId', validateRequest(journalIdSchema), JournalController.getJournalEntryById);
 
 // POST /api/journal - Create a new journal entry
-router.post(
-  '/',
-  validateRequest(createJournalSchema),
-  JournalController.createJournalEntry
-);
+router.post('/', validateRequest(createJournalSchema), JournalController.createJournalEntry);
 
 // PUT /api/journal/:journalId - Update a journal entry
 router.put(
   '/:journalId',
   validateRequest(journalIdSchema),
   validateRequest(updateJournalSchema),
-  JournalController.updateJournalEntry
+  JournalController.updateJournalEntry,
 );
 
 // DELETE /api/journal/:journalId - Delete a journal entry
 router.delete(
   '/:journalId',
   validateRequest(journalIdSchema),
-  JournalController.deleteJournalEntry
+  JournalController.deleteJournalEntry,
 );
 
 export default router;

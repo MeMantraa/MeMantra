@@ -107,11 +107,7 @@ export const LikeModel = {
 
   // Get like by ID
   async findById(likeId: number): Promise<Like | undefined> {
-    return await db
-      .selectFrom('Like')
-      .where('like_id', '=', likeId)
-      .selectAll()
-      .executeTakeFirst();
+    return await db.selectFrom('Like').where('like_id', '=', likeId).selectAll().executeTakeFirst();
   },
 
   // Get most liked mantras (popular mantras)
@@ -147,4 +143,3 @@ export const LikeModel = {
     })) as Array<Mantra & { like_count: number }>;
   },
 };
-

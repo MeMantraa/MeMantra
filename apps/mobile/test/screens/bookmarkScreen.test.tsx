@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import { Alert } from 'react-native';
-import BookmarkScreen from '../../screens/bookmarkScreen';
+import BookmarkScreen from '../../screens/BookmarkScreen';
 import { storage } from '../../utils/storage';
 import { SavedProvider } from '../../context/SavedContext';
 import { collectionService } from '../../services/collection.service';

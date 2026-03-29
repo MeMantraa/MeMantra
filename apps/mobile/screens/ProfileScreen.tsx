@@ -19,14 +19,17 @@ export default function ProfileScreen() {
   useEffect(() => {
     const load = async () => {
       const user = await storage.getUserData();
-      setUsername(user?.username || '');
+      setUsername(user?.username ?? '');
     };
     load();
   }, []);
 
   return (
     <View className="flex-1 pt-16 px-10" style={{ backgroundColor: colors.primary }}>
-      <AppText className="text-[30px] text-left mb-10 mt-2" style={{ color: colors.text }}>
+      <AppText
+        className="text-[30px] font-bold text-left mb-10 mt-2"
+        style={{ color: colors.text }}
+      >
         {username}
       </AppText>
       <AppText className="text-[16px] text-center pt-16" style={{ color: colors.text }}>

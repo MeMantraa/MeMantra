@@ -2,6 +2,8 @@
 -- WARNING: This will delete all data! Coordinate with team before running!
 
 DROP TABLE IF EXISTS "RecommendationLog" CASCADE;
+DROP TABLE IF EXISTS "PerformanceEvent" CASCADE;
+DROP TABLE IF EXISTS "EngagementEvent" CASCADE;
 DROP TABLE IF EXISTS "Reminder" CASCADE;
 DROP TABLE IF EXISTS "CollectionMantra" CASCADE;
 DROP TABLE IF EXISTS "Collection" CASCADE;

@@ -1,11 +1,19 @@
 /* global require */
 
 describe('api.config', () => {
+  const runtimeProcess = globalThis.process;
+
   const loadModule = (
     platform: 'android' | 'ios' | 'web' = 'web',
     hostUri: string | null = null,
+    envApiBaseUrl?: string,
   ) => {
     jest.resetModules();
+    if (envApiBaseUrl === undefined) {
+      delete runtimeProcess.env.EXPO_PUBLIC_API_BASE_URL;
+    } else {
+      runtimeProcess.env.EXPO_PUBLIC_API_BASE_URL = envApiBaseUrl;
+    }
 
     const requestHandlers: Array<{
       fulfilled: (config: any) => any;
@@ -106,6 +114,14 @@ describe('api.config', () => {
     const { mockCreate, consoleSpy } = loadModule('ios');
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({ baseURL: 'http://localhost:4000/api' }),
+    );
+    consoleSpy.mockRestore();
+  });
+
+  it('prefers EXPO_PUBLIC_API_BASE_URL when provided', () => {
+    const { mockCreate, consoleSpy } = loadModule('web', null, 'https://staging.example.com');
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ baseURL: 'https://staging.example.com/api' }),
     );
     consoleSpy.mockRestore();
   });

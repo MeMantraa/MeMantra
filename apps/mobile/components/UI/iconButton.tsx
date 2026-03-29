@@ -1,15 +1,16 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { TouchableOpacity, View, ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 
 type IconButtonProps = {
-  type: 'like' | 'save' | 'share' | 'profile' | 'journal' | 'reminder';
+  type: 'like' | 'save' | 'share' | 'profile' | 'journal' | 'reminder' | 'share-2';
   active?: boolean;
   onPress: () => void;
   testID?: string;
   className?: string;
   style?: ViewStyle;
+  size?: 'small' | 'normal';
 };
 
 const IconButton: React.FC<IconButtonProps> = ({
@@ -19,8 +20,11 @@ const IconButton: React.FC<IconButtonProps> = ({
   testID,
   className = '',
   style,
+  size = 'normal',
 }) => {
   const { colors } = useTheme();
+
+  const sizeMultiplier = size === 'small' ? 0.8 : 1;
 
   const getIconConfig = () => {
     switch (type) {
@@ -78,6 +82,15 @@ const IconButton: React.FC<IconButtonProps> = ({
           iconSize: 35,
           buttonSize: 55,
         };
+      case 'share-2':
+        return {
+          iconName: 'share-outline',
+          iconColor: 'white',
+          defaultTestID: 'share-button',
+          backgroundColor: colors.primaryDark,
+          iconSize: 35,
+          buttonSize: 55,
+        };
       default:
         return {
           iconName: 'help-outline',
@@ -103,14 +116,14 @@ const IconButton: React.FC<IconButtonProps> = ({
       <View
         className="rounded-full items-center justify-center"
         style={{
-          width: config.buttonSize,
-          height: config.buttonSize,
+          width: config.buttonSize * sizeMultiplier,
+          height: config.buttonSize * sizeMultiplier,
           backgroundColor: config.backgroundColor,
         }}
       >
         <Ionicons
           name={config.iconName as any}
-          size={config.iconSize}
+          size={config.iconSize * sizeMultiplier}
           color={config.iconColor}
           style={{ marginTop: 2 }}
         />
@@ -119,4 +132,4 @@ const IconButton: React.FC<IconButtonProps> = ({
   );
 };
 
-export default IconButton;
+export default memo(IconButton);

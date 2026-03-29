@@ -53,23 +53,23 @@ export default function SettingsScreen() {
       {
         text: 'OK',
         onPress: () => {
-          logoutUser(navigation);
+          logoutUser(navigation as any);
         },
       },
     ]);
   };
 
-  const handleLogout = () => logoutUser(navigation);
+  const handleLogout = () => logoutUser(navigation as any);
 
   return (
-    <View className="flex-1 pt-16 px-10" style={{ backgroundColor: colors.white }}>
+    <View className="flex-1 pt-16 px-10" style={{ backgroundColor: colors.primary }}>
       <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <AppText style={[styles.backText, { color: colors.black }]}>Back</AppText>
+        <AppText style={[styles.backText, { color: colors.text }]}>Back</AppText>
       </TouchableOpacity>
-      <AppText className="text-center text-[30px] pt-5" style={{ color: colors.black }}>
+      <AppText className="text-center text-[30px] pt-5" style={{ color: colors.text }}>
         Settings
       </AppText>
-      <View className="mt-20 mb-10 gap-2.5">
+      <View className="mt-40 mb-10 gap-2.5">
         <SettingsOption label="Update Email" onPress={() => navigation.navigate('UpdateEmail')} />
         <SettingsOption
           label="Update Password"
@@ -94,12 +94,12 @@ function SettingsOption({ label, onPress, destructive = false }: Readonly<Settin
   return (
     <TouchableOpacity
       className="px-5 py-5 rounded-[18px]"
-      style={{ backgroundColor: colors.settings }}
+      style={{ backgroundColor: colors.primaryDark }}
       onPress={onPress}
     >
       <AppText
         className="text-[16px] text-center"
-        style={{ color: destructive ? colors.error : colors.black }}
+        style={{ color: destructive ? colors.error : colors.text }}
       >
         {label}
       </AppText>

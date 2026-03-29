@@ -1,9 +1,5 @@
 // Add new flag types here.
-export const FEATURE_FLAGS = [
-  'EXPERIMENTAL_FEATURE',
-  'DARK_MODE',
-  'ADVANCED_ANALYTICS',
-] as const;
+export const FEATURE_FLAGS = ['EXPERIMENTAL_FEATURE', 'DARK_MODE', 'ADVANCED_ANALYTICS'] as const;
 
 export type FeatureFlagName = (typeof FEATURE_FLAGS)[number];
 export type FeatureFlagArray = FeatureFlagName[] | undefined | null;

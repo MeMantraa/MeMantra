@@ -26,8 +26,21 @@ export const MessageModel = {
       .executeTakeFirst();
   },
 
-  // Get all messages in a conversation
-  async findByConversationId(conversationId: number): Promise<Message[]> {
+  // Get messages in a conversation
+  async findByConversationId(conversationId: number, limit?: number): Promise<Message[]> {
+    if (typeof limit === 'number' && limit > 0) {
+      // Fetch latest N first, then return ascending so chat renders oldest to newest.
+      const latestMessages = await db
+        .selectFrom('Message')
+        .where('conversation_id', '=', conversationId)
+        .selectAll()
+        .orderBy('created_at', 'desc')
+        .limit(limit)
+        .execute();
+
+      return latestMessages.reverse();
+    }
+
     return await db
       .selectFrom('Message')
       .where('conversation_id', '=', conversationId)

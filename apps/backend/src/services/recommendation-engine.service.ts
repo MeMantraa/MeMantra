@@ -8,6 +8,7 @@ import { RecommendationModel } from '../models/recommendation.model';
 import { MantraModel } from '../models/mantra.model';
 import { UserCategoryScoreModel } from '../models/user-category-score.model';
 import { Mantra } from '../types/database.types';
+import { PerformanceMonitor } from './performance-monitor.service';
 
 export interface RecommendationOptions {
   limit?: number;
@@ -68,10 +69,19 @@ export const RecommendationEngine = {
     userId: number,
     options: RecommendationOptions = {},
   ): Promise<ScoredMantra[]> {
+    const startedAt = process.hrtime.bigint();
     const { limit = 10, mood, excludeIds = [] } = options;
 
     // 1. Build user profile from persisted category scores
-    const profile = await this.buildUserProfile(userId);
+    const profile = await PerformanceMonitor.measureAsync(
+      'recommendation.build_user_profile',
+      () => this.buildUserProfile(userId),
+      {
+        kind: 'service_operation',
+        source: 'backend',
+        metadata: { user_id: userId },
+      },
+    );
 
     // 2. Cold-start path for new users
     if (profile.totalInteractions < COLD_START_THRESHOLD) {
@@ -91,15 +101,16 @@ export const RecommendationEngine = {
     );
 
     // Use new candidates first; if not enough, backfill with interacted mantras
-    const candidates = newCandidates.length >= limit
-      ? newCandidates
-      : [...newCandidates, ...interactedCandidates];
+    const candidates =
+      newCandidates.length >= limit ? newCandidates : [...newCandidates, ...interactedCandidates];
 
     // 5. Determine active mood
     const activeMood = mood || (profile.moods.length > 0 ? profile.moods[0] : undefined);
 
     // 6. Get recently recommended mantra IDs (14-day window)
-    const recentRecs = await RecommendationModel.findRecent(userId, RECENCY_PENALTY_DAYS).catch(() => []);
+    const recentRecs = await RecommendationModel.findRecent(userId, RECENCY_PENALTY_DAYS).catch(
+      () => [],
+    );
     const recentlyRecommendedIds = recentRecs
       .filter((r) => r.mantra_id != null)
       .map((r) => r.mantra_id as number);
@@ -117,7 +128,31 @@ export const RecommendationEngine = {
     const diversified = this.applyDiversityPass(scored, limit);
 
     // 9. Log recommendations
-    await this.logRecommendations(userId, diversified);
+    await PerformanceMonitor.measureAsync(
+      'recommendation.log_results',
+      () => this.logRecommendations(userId, diversified),
+      {
+        kind: 'service_operation',
+        source: 'backend',
+        metadata: {
+          user_id: userId,
+          recommendation_count: diversified.length,
+        },
+      },
+    );
+
+    const totalDurationMs = Number(process.hrtime.bigint() - startedAt) / 1_000_000;
+    PerformanceMonitor.trackEvent({
+      kind: 'service_operation',
+      name: 'recommendation.generate_total',
+      duration_ms: totalDurationMs,
+      status: 'success',
+      source: 'backend',
+      metadata: {
+        user_id: userId,
+        recommendation_count: diversified.length,
+      },
+    });
 
     return diversified;
   },
@@ -135,22 +170,15 @@ export const RecommendationEngine = {
 
     // 2. Build normalised weights map
     const categoryWeights = new Map<string, number>();
-    const maxScore = categoryScores.length > 0
-      ? Math.max(...categoryScores.map((s) => s.score), 1)
-      : 1;
+    const maxScore =
+      categoryScores.length > 0 ? Math.max(...categoryScores.map((s) => s.score), 1) : 1;
 
     for (const entry of categoryScores) {
       categoryWeights.set(entry.name, entry.score / maxScore);
     }
 
     // 3. Get interacted mantra IDs (union of all signal sources)
-    const [
-      activeReminders,
-      ratings,
-      likes,
-      collections,
-      journals,
-    ] = await Promise.all([
+    const [activeReminders, ratings, likes, collections, journals] = await Promise.all([
       ReminderModel.findActiveByUserId(userId).catch(() => []),
       RatingModel.findByUserId(userId).catch(() => []),
       LikeModel.findByUserId(userId).catch(() => []),
@@ -159,9 +187,13 @@ export const RecommendationEngine = {
     ]);
 
     const savedMantraIds: number[] = [];
-    for (const collection of collections) {
-      const mantras = await CollectionModel.getMantrasInCollection(collection.collection_id);
-      savedMantraIds.push(...mantras.map((m) => m.mantra_id));
+    if (collections.length > 0) {
+      const collectionMantraResults = await Promise.all(
+        collections.map((c) => CollectionModel.getMantrasInCollection(c.collection_id)),
+      );
+      for (const mantras of collectionMantraResults) {
+        savedMantraIds.push(...mantras.map((m) => m.mantra_id));
+      }
     }
 
     const allMantraIds = [
@@ -181,9 +213,7 @@ export const RecommendationEngine = {
         moodCounts.set(j.mood, (moodCounts.get(j.mood) || 0) + 1);
       }
     }
-    const moods = [...moodCounts.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .map(([m]) => m);
+    const moods = [...moodCounts.entries()].sort((a, b) => b[1] - a[1]).map(([m]) => m);
 
     return {
       categoryWeights,
@@ -236,7 +266,8 @@ export const RecommendationEngine = {
         const popularityScore =
           cats.length > 0
             ? Math.min(
-                cats.reduce((sum, c) => sum + (allCategories.get(c.name) || 0), 0) / totalCategorized,
+                cats.reduce((sum, c) => sum + (allCategories.get(c.name) || 0), 0) /
+                  totalCategorized,
                 1,
               )
             : 0;
@@ -246,17 +277,13 @@ export const RecommendationEngine = {
         if (mood && MOOD_CATEGORY_MAP[mood.toLowerCase()]) {
           const moodCategories = MOOD_CATEGORY_MAP[mood.toLowerCase()];
           const matchCount = cats.filter((c) =>
-            moodCategories.some((mc) =>
-              c.name.toLowerCase().includes(mc.toLowerCase()),
-            ),
+            moodCategories.some((mc) => c.name.toLowerCase().includes(mc.toLowerCase())),
           ).length;
           moodScore = cats.length > 0 ? matchCount / cats.length : 0;
         }
 
         // 4. Freshness score (0-1): 90-day decay
-        const createdAt = mantra.created_at
-          ? new Date(mantra.created_at).getTime()
-          : 0;
+        const createdAt = mantra.created_at ? new Date(mantra.created_at).getTime() : 0;
         const ageDays = (now - createdAt) / (1000 * 60 * 60 * 24);
         const freshnessScore = Math.max(0, 1 - ageDays / FRESHNESS_DECAY_DAYS);
 
@@ -288,8 +315,7 @@ export const RecommendationEngine = {
         if (moodScore > 0) reasons.push(`relevant to your ${mood} mood`);
         if (freshnessScore > 0.5) reasons.push('newly added');
         if (diversityBonus > 0.7) reasons.push('explore a new topic');
-        const reason =
-          reasons.length > 0 ? reasons.join(', ') : 'personalized suggestion';
+        const reason = reasons.length > 0 ? reasons.join(', ') : 'personalized suggestion';
 
         return { mantra, score: finalScore, categories: cats, reason };
       })
@@ -306,10 +332,7 @@ export const RecommendationEngine = {
     return this.enforceCategoryBalance(selected, remaining);
   },
 
-  enforceCategoryBalance(
-    selected: ScoredMantra[],
-    overflow: ScoredMantra[] = [],
-  ): ScoredMantra[] {
+  enforceCategoryBalance(selected: ScoredMantra[], overflow: ScoredMantra[] = []): ScoredMantra[] {
     const limit = selected.length;
     if (limit === 0) return selected;
 
@@ -317,7 +340,11 @@ export const RecommendationEngine = {
     const overRepresented = this._findOverRepresentedCategories(selected, maxPerCategory);
     if (overRepresented.size === 0) return selected;
 
-    const { result, toReplace } = this._partitionSelected(selected, overRepresented, maxPerCategory);
+    const { result, toReplace } = this._partitionSelected(
+      selected,
+      overRepresented,
+      maxPerCategory,
+    );
     this._fillFromOverflow(result, toReplace, overflow, overRepresented);
 
     for (const idx of toReplace) {
@@ -328,10 +355,7 @@ export const RecommendationEngine = {
   },
 
   /** Count categories and return those exceeding the cap. */
-  _findOverRepresentedCategories(
-    items: ScoredMantra[],
-    maxPerCategory: number,
-  ): Set<string> {
+  _findOverRepresentedCategories(items: ScoredMantra[], maxPerCategory: number): Set<string> {
     const counts = new Map<string, number>();
     for (const item of items) {
       const cat = item.categories[0]?.name || 'uncategorized';
@@ -368,7 +392,6 @@ export const RecommendationEngine = {
     return { result, toReplace };
   },
 
-
   _fillFromOverflow(
     result: ScoredMantra[],
     toReplace: number[],
@@ -400,9 +423,7 @@ export const RecommendationEngine = {
       const moodFiltered = candidates.filter((m) => {
         const cats = categoryMap.get(m.mantra_id) || [];
         return cats.some((c) =>
-          moodCategories.some((mc) =>
-            c.name.toLowerCase().includes(mc.toLowerCase()),
-          ),
+          moodCategories.some((mc) => c.name.toLowerCase().includes(mc.toLowerCase())),
         );
       });
       if (moodFiltered.length >= limit) {
@@ -416,16 +437,13 @@ export const RecommendationEngine = {
       const cats = categoryMap.get(mantra.mantra_id) || [];
       const popularityScore = cats.length > 0 ? Math.min(cats.length / 5, 1) : 0;
 
-      const createdAt = mantra.created_at
-        ? new Date(mantra.created_at).getTime()
-        : 0;
+      const createdAt = mantra.created_at ? new Date(mantra.created_at).getTime() : 0;
       const ageDays = (now - createdAt) / (1000 * 60 * 60 * 24);
       const freshnessScore = Math.max(0, 1 - ageDays / FRESHNESS_DECAY_DAYS);
 
       const randomScore = randomInt(0, 1000000) / 1000000;
 
-      const score =
-        0.6 * popularityScore + 0.2 * freshnessScore + 0.2 * randomScore;
+      const score = 0.6 * popularityScore + 0.2 * freshnessScore + 0.2 * randomScore;
 
       return {
         mantra,
@@ -440,10 +458,7 @@ export const RecommendationEngine = {
   },
 
   // Logging
-  async logRecommendations(
-    userId: number,
-    recommendations: ScoredMantra[],
-  ): Promise<void> {
+  async logRecommendations(userId: number, recommendations: ScoredMantra[]): Promise<void> {
     for (const rec of recommendations) {
       await RecommendationModel.create({
         user_id: userId,

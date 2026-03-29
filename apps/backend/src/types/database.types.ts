@@ -1,6 +1,6 @@
 import { Generated, Insertable, Selectable, Updateable } from 'kysely';
 
-//db interface
+// Kysely database schema — maps table names to their row interfaces.
 export interface Database {
   User: UserTable;
   Admin: AdminTable;
@@ -20,10 +20,10 @@ export interface Database {
   JournalEntry: JournalEntryTable;
   UserCategoryScore: UserCategoryScoreTable;
   EngagementEvent: EngagementEventTable;
+  PerformanceEvent: PerformanceEventTable;
   EmailVerificationToken: EmailVerificationTokenTable;
 }
 
-//table interfaces
 export interface UserTable {
   user_id: Generated<number>;
   first_name: string | null;
@@ -186,7 +186,7 @@ export interface UserCategoryScoreTable {
   updated_at: string;
 }
 
-//types for type safe operations (typescript ting)
+// Type-safe row aliases for SELECT / INSERT / UPDATE operations.
 export type User = Selectable<UserTable>;
 export type NewUser = Insertable<UserTable>;
 export type UserUpdate = Updateable<UserTable>;
@@ -266,9 +266,30 @@ export interface EngagementEventTable {
   occurred_at: Generated<string>;
 }
 
+export interface PerformanceEventTable {
+  event_id: Generated<number>;
+  kind: string;
+  name: string;
+  duration_ms: number;
+  status: string;
+  source: string;
+  route: string | null;
+  method: string | null;
+  screen: string | null;
+  request_id: string | null;
+  platform: string | null;
+  app_version: string | null;
+  metadata: Record<string, unknown> | null;
+  occurred_at: Generated<string>;
+}
+
 export type EngagementEvent = Selectable<EngagementEventTable>;
 export type NewEngagementEvent = Insertable<EngagementEventTable>;
 export type EngagementEventUpdate = Updateable<EngagementEventTable>;
+
+export type PerformanceEvent = Selectable<PerformanceEventTable>;
+export type NewPerformanceEvent = Insertable<PerformanceEventTable>;
+export type PerformanceEventUpdate = Updateable<PerformanceEventTable>;
 
 export type EmailVerificationToken = Selectable<EmailVerificationTokenTable>;
 export type NewEmailVerificationToken = Insertable<EmailVerificationTokenTable>;

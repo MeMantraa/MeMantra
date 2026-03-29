@@ -4,6 +4,7 @@ import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import apiRoutes from './routes';
 import { requestLogger, errorLogger } from './middleware/logger.middleware';
+import { requestPerformanceMonitor } from './middleware/performance.middleware';
 
 export const createApp = () => {
   const app = express();
@@ -12,10 +13,12 @@ export const createApp = () => {
   app.use(helmet());
 
   // CORS configuration
-  app.use(cors({
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:19006'],
-    credentials: true,
-  }));
+  app.use(
+    cors({
+      origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:19006'],
+      credentials: true,
+    }),
+  );
 
   // Rate limiting
   const limiter = rateLimit({
@@ -31,19 +34,24 @@ export const createApp = () => {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-
   if (process.env.NODE_ENV === 'development') {
     app.use(requestLogger);
   }
 
-  // Health check endpoint
-  app.get('/health', (_req, res) => {
-    res.json({ 
+  if ((process.env.MONITORING_ENABLED || 'true').toLowerCase() !== 'false') {
+    app.use(requestPerformanceMonitor);
+  }
+
+  // Health check endpoint (Render checks "/" by default)
+  const healthResponse: RequestHandler = (_req, res) => {
+    res.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
     });
-  });
+  };
+  app.get('/', healthResponse);
+  app.get('/health', healthResponse);
 
   // API routes
   app.use('/api', apiRoutes);
@@ -53,7 +61,7 @@ export const createApp = () => {
 
   // 404 handler
   const notFoundHandler: RequestHandler = (req, res) => {
-    res.status(404).json({ 
+    res.status(404).json({
       error: 'Not Found',
       message: `Cannot ${req.method} ${req.path}`,
     });
@@ -66,7 +74,7 @@ export const createApp = () => {
   // Error handler
   const errorHandler: ErrorRequestHandler = (err, _req, res, _next) => {
     console.error(err.stack);
-    res.status(500).json({ 
+    res.status(500).json({
       error: 'Internal Server Error',
       message: process.env.NODE_ENV === 'development' ? err.message : 'Something went wrong',
     });

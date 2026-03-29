@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { RatingModel } from '../models/rating.model';
 import { UserCategoryScoreModel } from '../models/user-category-score.model';
+import { sanitizeForLog } from '../utils/sanitize.utils';
 
 export const RatingController = {
   /**
@@ -33,24 +34,37 @@ export const RatingController = {
         });
       }
 
-      // Check for existing rating to handle score 
+      // Check for existing rating to handle score
       const existing = await RatingModel.findByUserAndMantra(userId, mantra_id);
       const oldPoints = existing && existing.rating >= 4 ? existing.rating : 0;
       const newPoints = rating >= 4 ? rating : 0;
 
-      const result = await RatingModel.upsert(
-        userId,
-        mantra_id,
-        rating,
-        review_text
-      );
+      const result = await RatingModel.upsert(userId, mantra_id, rating, review_text);
 
       // Update algorithm: add  (new - old) points for all categories
       const delta = newPoints - oldPoints;
       if (delta > 0) {
-        await UserCategoryScoreModel.addScoreForMantra(userId, mantra_id, delta).catch(() => {});
+        await UserCategoryScoreModel.addScoreForMantra(userId, mantra_id, delta).catch((err) => {
+          console.error(
+            'Failed to update category score for user:',
+            sanitizeForLog(userId),
+            'mantra:',
+            sanitizeForLog(mantra_id),
+            err,
+          );
+        });
       } else if (delta < 0) {
-        await UserCategoryScoreModel.removeScoreForMantra(userId, mantra_id, Math.abs(delta)).catch(() => {});
+        await UserCategoryScoreModel.removeScoreForMantra(userId, mantra_id, Math.abs(delta)).catch(
+          (err) => {
+            console.error(
+              'Failed to remove category score for user:',
+              sanitizeForLog(userId),
+              'mantra:',
+              sanitizeForLog(mantra_id),
+              err,
+            );
+          },
+        );
       }
 
       return res.status(200).json({
@@ -83,10 +97,7 @@ export const RatingController = {
         });
       }
 
-      const rating = await RatingModel.findByUserAndMantra(
-        userId,
-        Number(mantraId)
-      );
+      const rating = await RatingModel.findByUserAndMantra(userId, Number(mantraId));
 
       return res.status(200).json({
         status: 'success',
@@ -140,13 +151,20 @@ export const RatingController = {
         });
       }
 
-      // Verify the rating belongs to the user
-      const rating = await RatingModel.findByUserAndMantra(userId, Number(ratingId));
-      
+      // Verify the rating exists and belongs to the user
+      const rating = await RatingModel.findById(Number(ratingId));
+
       if (!rating) {
         return res.status(404).json({
           status: 'error',
           message: 'Rating not found',
+        });
+      }
+
+      if (rating.user_id !== userId) {
+        return res.status(403).json({
+          status: 'error',
+          message: 'Access denied',
         });
       }
 

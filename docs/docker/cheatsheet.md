@@ -7,6 +7,9 @@ Handy commands for daily workflows.
 - Up (detached): `docker compose up -d`
 - Down: `docker compose down`
 - Reset DB and reinit: `docker compose down -v && docker compose up -d`
+- Note: containerized Postgres bootstraps from `apps/backend/database/init.sql` only; other SQL files remain manual migrations.
+- Staging stack: `docker compose -f docker-compose.staging.yml up -d --build`
+- Production stack: `docker compose -f docker-compose.prod.yml up -d --build`
 
 ## Logs and exec
 
@@ -17,6 +20,7 @@ Handy commands for daily workflows.
 ## Images and build
 
 - Rebuild backend image: `docker compose build backend && docker compose up -d`
+- Rebuild mobile image: `docker compose build mobile && docker compose up -d`
 - List images: `docker images | head`
 
 ## Volumes and pruning

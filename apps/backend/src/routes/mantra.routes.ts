@@ -13,66 +13,38 @@ import {
 
 const router = Router();
 
-
-
 // Feed route
-router.get(
-  '/feed',
-  authenticate,
-  MantraController.getFeedMantras
-);
+router.get('/feed', authenticate, MantraController.getFeedMantras);
 
 // Popular mantras
-router.get(
-  '/popular',
-  MantraController.getPopularMantras
-);
+router.get('/popular', MantraController.getPopularMantras);
 
 // Save/Unsave mantra (bookmark functionality)
-router.post(
-  '/:mantraId/save',
-  authenticate,
-  MantraController.saveMantra
-);
+router.post('/:mantraId/save', authenticate, MantraController.saveMantra);
 
-router.delete(
-  '/:mantraId/save',
-  authenticate,
-  MantraController.unsaveMantra
-);
+router.delete('/:mantraId/save', authenticate, MantraController.unsaveMantra);
 
 // Category filter
 router.get(
   '/category/:categoryId',
   validateRequest(categoryIdSchema),
-  MantraController.getMantrasByCategory
+  MantraController.getMantrasByCategory,
 );
 
 // Get categories for a specific mantra
 router.get(
   '/:id/categories',
   validateRequest(mantraIdSchema),
-  MantraController.getCategoriesForMantra
+  MantraController.getCategoriesForMantra,
 );
 
-router.get(
-  '/saved', 
-  authenticate, 
-  MantraController.getSavedMantras);
+router.get('/saved', authenticate, MantraController.getSavedMantras);
 
 // List all mantras (public)
-router.get(
-  '/',
-  validateRequest(mantraQuerySchema),
-  MantraController.getAllMantras
-);
+router.get('/', validateRequest(mantraQuerySchema), MantraController.getAllMantras);
 
-// Get single mantra by ID 
-router.get(
-  '/:id',
-  validateRequest(mantraIdSchema),
-  MantraController.getMantraById
-);
+// Get single mantra by ID
+router.get('/:id', validateRequest(mantraIdSchema), MantraController.getMantraById);
 
 // Protected routes (require authentication + admin)
 router.post(
@@ -80,7 +52,7 @@ router.post(
   authenticate,
   requireAdmin,
   validateRequest(createMantraSchema),
-  MantraController.createMantra
+  MantraController.createMantra,
 );
 
 router.put(
@@ -89,7 +61,7 @@ router.put(
   requireAdmin,
   validateRequest(mantraIdSchema),
   validateRequest(updateMantraSchema),
-  MantraController.updateMantra
+  MantraController.updateMantra,
 );
 
 router.delete(
@@ -97,7 +69,7 @@ router.delete(
   authenticate,
   requireAdmin,
   validateRequest(mantraIdSchema),
-  MantraController.deleteMantra
+  MantraController.deleteMantra,
 );
 
 export default router;

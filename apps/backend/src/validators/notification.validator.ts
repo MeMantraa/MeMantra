@@ -6,7 +6,7 @@ const expoPushTokenSchema = z
   .min(1, 'Token is required')
   .refine(
     (token) => token.startsWith('ExponentPushToken[') || token.startsWith('ExpoPushToken['),
-    'Invalid Expo push token format'
+    'Invalid Expo push token format',
   );
 
 // Platform enum
