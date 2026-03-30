@@ -24,6 +24,7 @@ describe('ChatList', () => {
       last_message: 'Hey! How are you?',
       last_message_time: new Date(Date.now() - 3600000).toISOString(),
       unread_count: 2,
+      profile_photo: null,
     },
     {
       conversation_id: 2,
@@ -33,6 +34,7 @@ describe('ChatList', () => {
       last_message: 'Thanks!',
       last_message_time: new Date(Date.now() - 7200000).toISOString(),
       unread_count: 0,
+      profile_photo: null,
     },
   ];
 

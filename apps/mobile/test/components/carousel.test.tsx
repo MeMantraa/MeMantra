@@ -98,7 +98,9 @@ describe('MantraCarousel', () => {
     const { UNSAFE_getByType } = render(<MantraCarousel item={mockItem} />);
     const flatList = UNSAFE_getByType(FlatList);
 
-    flatList.props.onViewableItemsChanged({ viewableItems: [{ index: 3 }] });
+    expect(() => {
+      flatList.props.onViewableItemsChanged({ viewableItems: [{ index: 3 }] });
+    }).not.toThrow();
   });
 
   it('does not crash if viewableItems is empty', () => {

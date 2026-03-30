@@ -23,6 +23,7 @@ const mockConversations: Conversation[] = [
     last_message: 'Hey! How are you doing?',
     last_message_time: new Date(Date.now() - 3600000).toISOString(),
     unread_count: 2,
+    profile_photo: null,
   },
   {
     conversation_id: 2,
@@ -32,6 +33,7 @@ const mockConversations: Conversation[] = [
     last_message: 'Thanks for sharing that mantra!',
     last_message_time: new Date(Date.now() - 7200000).toISOString(),
     unread_count: 0,
+    profile_photo: null,
   },
   {
     conversation_id: 3,
@@ -41,6 +43,7 @@ const mockConversations: Conversation[] = [
     last_message: 'See you tomorrow!',
     last_message_time: new Date(Date.now() - 86400000).toISOString(),
     unread_count: 1,
+    profile_photo: null,
   },
 ];
 
@@ -159,6 +162,7 @@ const mockChatService = {
         last_message: '',
         last_message_time: new Date().toISOString(),
         unread_count: 0,
+        profile_photo: null,
       };
       setTimeout(() => resolve(newConversation), 500);
     });

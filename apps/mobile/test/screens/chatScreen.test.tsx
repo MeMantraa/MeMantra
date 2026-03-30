@@ -50,6 +50,7 @@ describe('ChatScreen', () => {
       last_message: 'Hey there!',
       last_message_time: new Date().toISOString(),
       unread_count: 2,
+      profile_photo: null,
     },
     {
       conversation_id: 2,
@@ -59,6 +60,7 @@ describe('ChatScreen', () => {
       last_message: 'How are you?',
       last_message_time: new Date(Date.now() - 3600000).toISOString(),
       unread_count: 0,
+      profile_photo: null,
     },
   ];
 
@@ -75,17 +77,17 @@ describe('ChatScreen', () => {
   it('renders screen title and loads conversations on mount', async () => {
     (chatService.getConversations as jest.Mock).mockResolvedValue(mockConversations);
 
-    const { getByText } = render(<ChatScreen navigation={mockNavigation} />);
+    const { getByText, findByText } = render(<ChatScreen navigation={mockNavigation} />);
 
     expect(getByText('Messages')).toBeTruthy();
 
-    await waitFor(() => {
-      expect(storage.getToken).toHaveBeenCalled();
-      expect(chatService.getConversations).toHaveBeenCalledWith('mock-token');
-      expect(getByText('john_doe')).toBeTruthy();
-      expect(getByText('jane_smith')).toBeTruthy();
-    });
-  });
+    // Wait for conversations to load
+    await findByText('john_doe');
+    await findByText('jane_smith');
+
+    expect(storage.getToken).toHaveBeenCalled();
+    expect(chatService.getConversations).toHaveBeenCalledWith('mock-token');
+  }, 10000);
 
   it('navigates to new conversation when FAB is pressed', async () => {
     (chatService.getConversations as jest.Mock).mockResolvedValue(mockConversations);

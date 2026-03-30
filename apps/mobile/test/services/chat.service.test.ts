@@ -43,6 +43,7 @@ describe('chatService', () => {
           last_message: 'Hey!',
           last_message_time: new Date().toISOString(),
           unread_count: 1,
+          profile_photo: null,
         },
       ];
 
@@ -211,6 +212,7 @@ describe('chatService', () => {
         last_message: '',
         last_message_time: new Date().toISOString(),
         unread_count: 0,
+        profile_photo: null,
       };
 
       (apiClient.post as jest.Mock).mockResolvedValue({
