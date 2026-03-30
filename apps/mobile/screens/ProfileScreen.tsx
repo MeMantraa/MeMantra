@@ -8,10 +8,9 @@ import { View, TouchableOpacity, Image, ActionSheetIOS, Platform, Alert } from '
 import AppText from '../components/UI/textWrapper';
 import { profileSettingsStyles as styles } from '../styles/profileSettings.styles';
 import { Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
 import DefaultProfile from '../assets/Profile-default.png';
 import { userService } from '../services/user.service';
-import * as ImageManipulator from 'expo-image-manipulator';
+import { photoUploadUtils } from '../utils/photoUpload';
 
 type ProfileNavProp = StackNavigationProp<RootStackParamList>;
 
@@ -74,14 +73,7 @@ export default function ProfileScreen() {
 
   const uploadPickedPhoto = async (uri: string) => {
     try {
-      const resized = await ImageManipulator.manipulateAsync(uri, [{ resize: { width: 800 } }], {
-        compress: 0.8,
-        format: ImageManipulator.SaveFormat.JPEG,
-        base64: true,
-      });
-
-      const base64WithPrefix = `data:image/jpeg;base64,${resized.base64}`;
-
+      const base64WithPrefix = await photoUploadUtils.resizeAndConvertToBase64(uri);
       await uploadPhoto(base64WithPrefix);
     } catch (err) {
       console.error('Error converting/uploading photo:', err);
@@ -113,34 +105,21 @@ export default function ProfileScreen() {
   };
 
   const pickImageFromLibrary = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') return alert('Permission denied!');
+    const hasPermission = await photoUploadUtils.requestLibraryPermission();
+    if (!hasPermission) return alert('Permission denied!');
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.4,
-    });
-
-    if (!result.canceled) {
-      const uri = result.assets[0].uri;
+    const uri = await photoUploadUtils.pickImageFromLibrary();
+    if (uri) {
       await uploadPickedPhoto(uri);
     }
   };
 
   const takePhotoWithCamera = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') return alert('Permission denied!');
+    const hasPermission = await photoUploadUtils.requestCameraPermission();
+    if (!hasPermission) return alert('Permission denied!');
 
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
-
-    if (!result.canceled) {
-      const uri = result.assets[0].uri;
+    const uri = await photoUploadUtils.takePhotoWithCamera();
+    if (uri) {
       await uploadPickedPhoto(uri);
     }
   };
@@ -190,6 +169,7 @@ export default function ProfileScreen() {
 
         <TouchableOpacity
           onPress={onEditPress}
+          testID="edit-photo-button"
           style={{
             marginTop: 8,
             paddingVertical: 4,

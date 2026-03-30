@@ -328,6 +328,7 @@ jest.mock(
         uri: 'file://manipulated-image.jpg',
         width: 800,
         height: 800,
+        base64: 'mockbase64string',
       }),
     ),
     SaveFormat: {
@@ -348,3 +349,5 @@ jest.mock(
   }),
   { virtual: true },
 );
+
+global.alert = jest.fn();

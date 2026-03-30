@@ -170,8 +170,10 @@ describe('ReminderSchedulerService', () => {
     });
 
     it('should return true for monthly reminder sent last month', () => {
-      const lastMonth = new Date();
-      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      jest.useFakeTimers();
+      jest.setSystemTime(new Date('2026-02-04T12:00:00Z'));
+
+      const lastMonth = new Date('2026-01-04T12:00:00Z');
 
       const result = ReminderSchedulerService.shouldSendReminder(
         'monthly',
@@ -179,6 +181,8 @@ describe('ReminderSchedulerService', () => {
         'UTC'
       );
       expect(result).toBe(true);
+
+      jest.useRealTimers();
     });
 
     it('should return false for monthly reminder sent this month', () => {
