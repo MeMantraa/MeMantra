@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { View, Image, Alert } from 'react-native';
+import { View, Image, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import logo from '../assets/logo.png';
 import { authService } from '../services/auth.service';
 import { storage } from '../utils/storage';
@@ -64,65 +64,76 @@ export default function LoginScreen({ navigation }: any) {
 
   return (
     <>
-      <View className="flex-1" style={{ backgroundColor: colors.primary }}>
-        <View className="flex-1 justify-center items-center p-[24px]">
-          <View className="mb-[30px] -mt-[35px] items-center">
-            <Image source={logo} className="w-[250px] h-[250px]" resizeMode="contain" />
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ backgroundColor: colors.primary }}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="flex-1 justify-center items-center p-[24px]">
+            <View className="mb-[30px] -mt-[35px] items-center">
+              <Image source={logo} className="w-[250px] h-[250px]" resizeMode="contain" />
+            </View>
+
+            <View className="w-full max-w-[400px]">
+              <AppTextInput
+                className="bg-[#ffffff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
+                placeholder="Email"
+                placeholderTextColor={colors.placeholderText}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                editable={!loading}
+              />
+
+              <AppTextInput
+                className="bg-[#ffffff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
+                placeholder="Password"
+                placeholderTextColor={colors.placeholderText}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                autoCapitalize="none"
+                editable={!loading}
+              />
+
+              <TextButton
+                onPress={handleLogin}
+                className="rounded-[30px] p-[14px] min-h-[52px] items-center justify-center mt-[8px]"
+                textClassName="text-[#fff] text-[18px] leading-[24px]"
+                style={{ backgroundColor: colors.secondary }}
+                disabled={loading}
+              >
+                Login
+              </TextButton>
+
+              <TextButton
+                className="mt-[16px] min-h-[24px] items-center justify-center"
+                onPress={() => navigation.navigate('ForgotPassword')}
+                textClassName="text-[#ffffff] text-[14px] leading-[20px] underline"
+                disabled={loading}
+              >
+                Forgot Password?
+              </TextButton>
+
+              <TextButton
+                className="mt-[16px] min-h-[24px] items-center justify-center mb-[30px]"
+                onPress={handleSignUp}
+                textClassName="text-[#fff] text-[14px] leading-[20px]"
+                disabled={loading}
+              >
+                New to us?{' '}
+                <AppText className="text-white font-black leading-[20px]">Sign Up</AppText>
+              </TextButton>
+            </View>
           </View>
-
-          <View className="w-full max-w-[400px]">
-            <AppTextInput
-              className="bg-[#ffffff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
-              placeholder="Email"
-              placeholderTextColor={colors.placeholderText}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              editable={!loading}
-            />
-
-            <AppTextInput
-              className="bg-[#ffffff] rounded-[12px] p-[16px] text-[16px] mb-[16px] border border-[#e0e0e0]"
-              placeholder="Password"
-              placeholderTextColor={colors.placeholderText}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              editable={!loading}
-            />
-
-            <TextButton
-              onPress={handleLogin}
-              className="rounded-[30px] p-[14px] min-h-[52px] items-center justify-center mt-[8px]"
-              textClassName="text-[#fff] text-[18px] leading-[24px]"
-              style={{ backgroundColor: colors.secondary }}
-              disabled={loading}
-            >
-              Login
-            </TextButton>
-
-            <TextButton
-              className="mt-[16px] min-h-[24px] items-center justify-center"
-              onPress={() => navigation.navigate('ForgotPassword')}
-              textClassName="text-[#ffffff] text-[14px] leading-[20px] underline"
-              disabled={loading}
-            >
-              Forgot Password?
-            </TextButton>
-
-            <TextButton
-              className="mt-[16px] min-h-[24px] items-center justify-center mb-[30px]"
-              onPress={handleSignUp}
-              textClassName="text-[#fff] text-[14px] leading-[20px]"
-              disabled={loading}
-            >
-              New to us? <AppText className="text-white font-black leading-[20px]">Sign Up</AppText>
-            </TextButton>
-          </View>
-        </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
       <StatusBar style="auto" />
     </>
   );
