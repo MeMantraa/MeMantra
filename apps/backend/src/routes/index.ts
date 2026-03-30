@@ -62,7 +62,6 @@ router.use('/algorithm', algorithmRoutes);
 router.use('/theme', themeRoutes);
 // Engagement routes (app-open tracking for adaptive notification timing)
 router.use('/engagement', engagementRoutes);
-
 // Performance monitoring routes
 router.use('/performance', performanceRoutes);
 // Profile routes

@@ -16,9 +16,7 @@ jest.mock('node-cron', () => {
 });
 
 const mockedReminderModel = ReminderModel as jest.Mocked<typeof ReminderModel>;
-const mockedNotificationService = NotificationService as jest.Mocked<
-  typeof NotificationService
->;
+const mockedNotificationService = NotificationService as jest.Mocked<typeof NotificationService>;
 
 describe('ReminderSchedulerService', () => {
   beforeEach(() => {
@@ -41,9 +39,7 @@ describe('ReminderSchedulerService', () => {
       ReminderSchedulerService.start({ testMode: true });
 
       expect(ReminderSchedulerService.isRunning).toBe(true);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '🧪 Reminder scheduler started in test mode'
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('🧪 Reminder scheduler started in test mode');
 
       consoleSpy.mockRestore();
     });
@@ -54,9 +50,7 @@ describe('ReminderSchedulerService', () => {
       ReminderSchedulerService.start({ testMode: true });
       ReminderSchedulerService.start({ testMode: true });
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '⚠️  Reminder scheduler is already running'
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('⚠️  Reminder scheduler is already running');
 
       consoleSpy.mockRestore();
     });
@@ -70,9 +64,7 @@ describe('ReminderSchedulerService', () => {
       ReminderSchedulerService.start({ cronExpression: 'invalid' });
 
       expect(ReminderSchedulerService.isRunning).toBe(false);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '❌ Invalid cron expression: invalid'
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('❌ Invalid cron expression: invalid');
 
       consoleSpy.mockRestore();
     });
@@ -124,7 +116,7 @@ describe('ReminderSchedulerService', () => {
       const result = ReminderSchedulerService.shouldSendReminder(
         'once',
         '2024-01-01T10:00:00.000Z',
-        null
+        null,
       );
       expect(result).toBe(false);
     });
@@ -141,7 +133,7 @@ describe('ReminderSchedulerService', () => {
       const result = ReminderSchedulerService.shouldSendReminder(
         'daily',
         yesterday.toISOString(),
-        'UTC'
+        'UTC',
       );
       expect(result).toBe(true);
     });
@@ -152,7 +144,7 @@ describe('ReminderSchedulerService', () => {
       const result = ReminderSchedulerService.shouldSendReminder(
         'daily',
         today.toISOString(),
-        'UTC'
+        'UTC',
       );
       expect(result).toBe(false);
     });
@@ -164,7 +156,7 @@ describe('ReminderSchedulerService', () => {
       const result = ReminderSchedulerService.shouldSendReminder(
         'weekly',
         lastWeek.toISOString(),
-        'UTC'
+        'UTC',
       );
       expect(result).toBe(true);
     });
@@ -178,7 +170,7 @@ describe('ReminderSchedulerService', () => {
       const result = ReminderSchedulerService.shouldSendReminder(
         'monthly',
         lastMonth.toISOString(),
-        'UTC'
+        'UTC',
       );
       expect(result).toBe(true);
 
@@ -191,7 +183,7 @@ describe('ReminderSchedulerService', () => {
       const result = ReminderSchedulerService.shouldSendReminder(
         'monthly',
         thisMonth.toISOString(),
-        'UTC'
+        'UTC',
       );
       expect(result).toBe(false);
     });
@@ -202,16 +194,18 @@ describe('ReminderSchedulerService', () => {
       const date1 = new Date('2024-06-15T10:00:00Z');
       const date2 = new Date('2024-06-15T23:59:59Z');
 
-      expect(ReminderSchedulerService.formatDateInTimezone(date1, 'UTC'))
-        .toBe(ReminderSchedulerService.formatDateInTimezone(date2, 'UTC'));
+      expect(ReminderSchedulerService.formatDateInTimezone(date1, 'UTC')).toBe(
+        ReminderSchedulerService.formatDateInTimezone(date2, 'UTC'),
+      );
     });
 
     it('should return different dates for different UTC days', () => {
       const date1 = new Date('2024-06-15T10:00:00Z');
       const date2 = new Date('2024-06-16T10:00:00Z');
 
-      expect(ReminderSchedulerService.formatDateInTimezone(date1, 'UTC'))
-        .not.toBe(ReminderSchedulerService.formatDateInTimezone(date2, 'UTC'));
+      expect(ReminderSchedulerService.formatDateInTimezone(date1, 'UTC')).not.toBe(
+        ReminderSchedulerService.formatDateInTimezone(date2, 'UTC'),
+      );
     });
 
     it('should respect timezone when comparing dates', () => {
@@ -219,7 +213,9 @@ describe('ReminderSchedulerService', () => {
       const date = new Date('2024-06-15T23:00:00Z');
 
       expect(ReminderSchedulerService.formatDateInTimezone(date, 'UTC')).toBe('2024-06-15');
-      expect(ReminderSchedulerService.formatDateInTimezone(date, 'Europe/Helsinki')).toBe('2024-06-16');
+      expect(ReminderSchedulerService.formatDateInTimezone(date, 'Europe/Helsinki')).toBe(
+        '2024-06-16',
+      );
     });
   });
 
@@ -245,16 +241,18 @@ describe('ReminderSchedulerService', () => {
       const date1 = new Date('2024-06-01T10:00:00Z');
       const date2 = new Date('2024-06-30T10:00:00Z');
 
-      expect(ReminderSchedulerService.formatMonthInTimezone(date1, 'UTC'))
-        .toBe(ReminderSchedulerService.formatMonthInTimezone(date2, 'UTC'));
+      expect(ReminderSchedulerService.formatMonthInTimezone(date1, 'UTC')).toBe(
+        ReminderSchedulerService.formatMonthInTimezone(date2, 'UTC'),
+      );
     });
 
     it('should return different months for dates in different months', () => {
       const date1 = new Date('2024-06-15T10:00:00Z');
       const date2 = new Date('2024-07-15T10:00:00Z');
 
-      expect(ReminderSchedulerService.formatMonthInTimezone(date1, 'UTC'))
-        .not.toBe(ReminderSchedulerService.formatMonthInTimezone(date2, 'UTC'));
+      expect(ReminderSchedulerService.formatMonthInTimezone(date1, 'UTC')).not.toBe(
+        ReminderSchedulerService.formatMonthInTimezone(date2, 'UTC'),
+      );
     });
   });
 
@@ -265,9 +263,7 @@ describe('ReminderSchedulerService', () => {
       const results = await ReminderSchedulerService.processReminders();
 
       expect(results).toEqual([]);
-      expect(
-        mockedReminderModel.findDueRemindersWithDetails
-      ).toHaveBeenCalled();
+      expect(mockedReminderModel.findDueRemindersWithDetails).toHaveBeenCalled();
     });
 
     it('should process due reminders and send notifications', async () => {
@@ -292,13 +288,11 @@ describe('ReminderSchedulerService', () => {
         },
       ];
 
-      mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue(
-        mockReminders
-      );
+      mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue(mockReminders);
       mockedReminderModel.updateLastSentAt.mockResolvedValue(undefined);
-      mockedNotificationService.sendEnhancedReminderNotification.mockResolvedValue(
-        { data: [{ status: 'ok' }] }
-      );
+      mockedNotificationService.sendEnhancedReminderNotification.mockResolvedValue({
+        data: [{ status: 'ok' }],
+      });
 
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
@@ -306,13 +300,11 @@ describe('ReminderSchedulerService', () => {
 
       expect(results).toHaveLength(1);
       expect(results[0].success).toBe(true);
-      expect(
-        mockedNotificationService.sendEnhancedReminderNotification
-      ).toHaveBeenCalledWith(
+      expect(mockedNotificationService.sendEnhancedReminderNotification).toHaveBeenCalledWith(
         'ExponentPushToken[xxx]',
         'Test takeaway',
         1,
-        1
+        1,
       );
 
       consoleSpy.mockRestore();
@@ -337,9 +329,7 @@ describe('ReminderSchedulerService', () => {
         },
       ];
 
-      mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue(
-        mockReminders
-      );
+      mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue(mockReminders);
 
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
       jest.spyOn(console, 'log').mockImplementation();
@@ -349,9 +339,7 @@ describe('ReminderSchedulerService', () => {
       expect(results).toHaveLength(1);
       expect(results[0].success).toBe(false);
       expect(results[0].error).toBe('No device token');
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '⚠️  Reminder 1: User has no device token, skipping'
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('⚠️  Reminder 1: User has no device token, skipping');
 
       consoleSpy.mockRestore();
     });
@@ -375,13 +363,11 @@ describe('ReminderSchedulerService', () => {
         },
       ];
 
-      mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue(
-        mockReminders
-      );
+      mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue(mockReminders);
       mockedReminderModel.markAsCompleted.mockResolvedValue(undefined);
-      mockedNotificationService.sendEnhancedReminderNotification.mockResolvedValue(
-        { data: [{ status: 'ok' }] }
-      );
+      mockedNotificationService.sendEnhancedReminderNotification.mockResolvedValue({
+        data: [{ status: 'ok' }],
+      });
 
       jest.spyOn(console, 'log').mockImplementation();
 
@@ -413,13 +399,11 @@ describe('ReminderSchedulerService', () => {
         },
       ];
 
-      mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue(
-        mockReminders
-      );
+      mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue(mockReminders);
       mockedReminderModel.updateLastSentAt.mockResolvedValue(undefined);
-      mockedNotificationService.sendEnhancedReminderNotification.mockResolvedValue(
-        { data: [{ status: 'ok' }] }
-      );
+      mockedNotificationService.sendEnhancedReminderNotification.mockResolvedValue({
+        data: [{ status: 'ok' }],
+      });
 
       jest.spyOn(console, 'log').mockImplementation();
 
@@ -439,9 +423,7 @@ describe('ReminderSchedulerService', () => {
       const results = await ReminderSchedulerService.triggerProcessing();
 
       expect(results).toEqual([]);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '🔄 Manually triggered reminder processing'
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('🔄 Manually triggered reminder processing');
 
       consoleSpy.mockRestore();
     });
@@ -472,12 +454,12 @@ describe('ReminderSchedulerService', () => {
 
       mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue([]);
       mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue(
-        mockCollectionReminders
+        mockCollectionReminders,
       );
       mockedReminderModel.updateLastSentAt.mockResolvedValue(undefined);
-      mockedNotificationService.sendCollectionReminderNotification.mockResolvedValue(
-        { data: [{ status: 'ok' }] }
-      );
+      mockedNotificationService.sendCollectionReminderNotification.mockResolvedValue({
+        data: [{ status: 'ok' }],
+      });
 
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
@@ -485,13 +467,11 @@ describe('ReminderSchedulerService', () => {
 
       expect(results).toHaveLength(1);
       expect(results[0].success).toBe(true);
-      expect(
-        mockedNotificationService.sendCollectionReminderNotification
-      ).toHaveBeenCalledWith(
+      expect(mockedNotificationService.sendCollectionReminderNotification).toHaveBeenCalledWith(
         'ExponentPushToken[yyy]',
         'My Collection',
         2,
-        1
+        1,
       );
 
       consoleSpy.mockRestore();
@@ -518,7 +498,7 @@ describe('ReminderSchedulerService', () => {
 
       mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue([]);
       mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue(
-        mockCollectionReminders
+        mockCollectionReminders,
       );
 
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
@@ -530,7 +510,7 @@ describe('ReminderSchedulerService', () => {
       expect(results[0].success).toBe(false);
       expect(results[0].error).toBe('No device token');
       expect(consoleSpy).toHaveBeenCalledWith(
-        '⚠️  Collection Reminder 2: User has no device token, skipping'
+        '⚠️  Collection Reminder 2: User has no device token, skipping',
       );
 
       consoleSpy.mockRestore();
@@ -557,12 +537,12 @@ describe('ReminderSchedulerService', () => {
 
       mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue([]);
       mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue(
-        mockCollectionReminders
+        mockCollectionReminders,
       );
       mockedReminderModel.markAsCompleted.mockResolvedValue(undefined);
-      mockedNotificationService.sendCollectionReminderNotification.mockResolvedValue(
-        { data: [{ status: 'ok' }] }
-      );
+      mockedNotificationService.sendCollectionReminderNotification.mockResolvedValue({
+        data: [{ status: 'ok' }],
+      });
 
       jest.spyOn(console, 'log').mockImplementation();
 
@@ -614,15 +594,15 @@ describe('ReminderSchedulerService', () => {
 
       mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue(mockMantraReminders);
       mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue(
-        mockCollectionReminders
+        mockCollectionReminders,
       );
       mockedReminderModel.updateLastSentAt.mockResolvedValue(undefined);
-      mockedNotificationService.sendEnhancedReminderNotification.mockResolvedValue(
-        { data: [{ status: 'ok' }] }
-      );
-      mockedNotificationService.sendCollectionReminderNotification.mockResolvedValue(
-        { data: [{ status: 'ok' }] }
-      );
+      mockedNotificationService.sendEnhancedReminderNotification.mockResolvedValue({
+        data: [{ status: 'ok' }],
+      });
+      mockedNotificationService.sendCollectionReminderNotification.mockResolvedValue({
+        data: [{ status: 'ok' }],
+      });
 
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
 
@@ -631,12 +611,8 @@ describe('ReminderSchedulerService', () => {
       expect(results).toHaveLength(2);
       expect(results[0].success).toBe(true);
       expect(results[1].success).toBe(true);
-      expect(
-        mockedNotificationService.sendEnhancedReminderNotification
-      ).toHaveBeenCalledTimes(1);
-      expect(
-        mockedNotificationService.sendCollectionReminderNotification
-      ).toHaveBeenCalledTimes(1);
+      expect(mockedNotificationService.sendEnhancedReminderNotification).toHaveBeenCalledTimes(1);
+      expect(mockedNotificationService.sendCollectionReminderNotification).toHaveBeenCalledTimes(1);
 
       consoleSpy.mockRestore();
     });
@@ -662,7 +638,7 @@ describe('ReminderSchedulerService', () => {
 
       mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue([]);
       mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue(
-        mockCollectionReminders
+        mockCollectionReminders,
       );
 
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
@@ -674,7 +650,7 @@ describe('ReminderSchedulerService', () => {
       expect(results[0].success).toBe(false);
       expect(results[0].error).toBe('No collection name');
       expect(consoleSpy).toHaveBeenCalledWith(
-        '⚠️  Collection Reminder 2: Collection has no name, skipping'
+        '⚠️  Collection Reminder 2: Collection has no name, skipping',
       );
 
       consoleSpy.mockRestore();
@@ -736,7 +712,7 @@ describe('ReminderSchedulerService', () => {
       mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue(mockReminders);
       mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue([]);
       mockedNotificationService.sendEnhancedReminderNotification.mockRejectedValue(
-        new Error('Network error')
+        new Error('Network error'),
       );
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
@@ -772,10 +748,10 @@ describe('ReminderSchedulerService', () => {
 
       mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue([]);
       mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue(
-        mockCollectionReminders
+        mockCollectionReminders,
       );
       mockedNotificationService.sendCollectionReminderNotification.mockRejectedValue(
-        new Error('API error')
+        new Error('API error'),
       );
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
@@ -814,12 +790,12 @@ describe('ReminderSchedulerService', () => {
 
       mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue([]);
       mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue(
-        mockCollectionReminders
+        mockCollectionReminders,
       );
       mockedReminderModel.updateLastSentAt.mockResolvedValue(undefined);
-      mockedNotificationService.sendCollectionReminderNotification.mockResolvedValue(
-        { data: [{ status: 'ok' }] }
-      );
+      mockedNotificationService.sendCollectionReminderNotification.mockResolvedValue({
+        data: [{ status: 'ok' }],
+      });
 
       jest.spyOn(console, 'log').mockImplementation();
 
@@ -903,11 +879,9 @@ describe('ReminderSchedulerService', () => {
       expect(ReminderSchedulerService.isRunning).toBe(true);
       expect(ReminderSchedulerService.cronTask).not.toBeNull();
       expect(consoleSpy).toHaveBeenCalledWith(
-        '🕐 Starting reminder scheduler with cron: * * * * *'
+        '🕐 Starting reminder scheduler with cron: * * * * *',
       );
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '✅ Reminder scheduler started successfully'
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('✅ Reminder scheduler started successfully');
 
       consoleSpy.mockRestore();
     });
@@ -939,7 +913,7 @@ describe('ReminderSchedulerService', () => {
   describe('processReminders top-level catch', () => {
     it('should catch and log errors when findDueRemindersWithDetails throws', async () => {
       mockedReminderModel.findDueRemindersWithDetails.mockRejectedValue(
-        new Error('Database connection failed')
+        new Error('Database connection failed'),
       );
 
       const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation();
@@ -949,7 +923,7 @@ describe('ReminderSchedulerService', () => {
       expect(results).toEqual([]);
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         '❌ Error processing reminders:',
-        expect.any(Error)
+        expect.any(Error),
       );
 
       consoleErrorSpy.mockRestore();
@@ -989,7 +963,7 @@ describe('ReminderSchedulerService', () => {
         ['09:00'],
         [1, 3, 5],
         'America/New_York',
-        null
+        null,
       );
       // When shouldSendRoutineReminder returns false, it returns success: true (skipped)
       expect(results).toHaveLength(1);
@@ -1022,9 +996,9 @@ describe('ReminderSchedulerService', () => {
       mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue([mockReminder]);
       mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue([]);
       mockedReminderModel.updateLastSentAt.mockResolvedValue(undefined);
-      mockedNotificationService.sendEnhancedReminderNotification.mockResolvedValue(
-        { data: [{ status: 'ok' }] }
-      );
+      mockedNotificationService.sendEnhancedReminderNotification.mockResolvedValue({
+        data: [{ status: 'ok' }],
+      });
 
       jest.spyOn(console, 'log').mockImplementation();
 
@@ -1033,13 +1007,11 @@ describe('ReminderSchedulerService', () => {
       expect(shouldSendRoutineSpy).toHaveBeenCalled();
       expect(results).toHaveLength(1);
       expect(results[0].success).toBe(true);
-      expect(
-        mockedNotificationService.sendEnhancedReminderNotification
-      ).toHaveBeenCalledWith(
+      expect(mockedNotificationService.sendEnhancedReminderNotification).toHaveBeenCalledWith(
         'ExponentPushToken[xxx]',
         'Test takeaway',
         11,
-        1
+        1,
       );
 
       shouldSendRoutineSpy.mockRestore();
@@ -1096,22 +1068,12 @@ describe('ReminderSchedulerService', () => {
     });
 
     it('should return false when scheduleTimes is null', () => {
-      const result = ReminderSchedulerService.shouldSendRoutineReminder(
-        null,
-        null,
-        'UTC',
-        null
-      );
+      const result = ReminderSchedulerService.shouldSendRoutineReminder(null, null, 'UTC', null);
       expect(result).toBe(false);
     });
 
     it('should return false when scheduleTimes is empty', () => {
-      const result = ReminderSchedulerService.shouldSendRoutineReminder(
-        [],
-        null,
-        'UTC',
-        null
-      );
+      const result = ReminderSchedulerService.shouldSendRoutineReminder([], null, 'UTC', null);
       expect(result).toBe(false);
     });
 
@@ -1124,7 +1086,7 @@ describe('ReminderSchedulerService', () => {
         ['09:00'],
         [1, 5], // Monday and Friday only
         'UTC',
-        null
+        null,
       );
       expect(result).toBe(false);
     });
@@ -1138,7 +1100,7 @@ describe('ReminderSchedulerService', () => {
         ['09:00', '14:00'],
         [1], // Monday
         'UTC',
-        null
+        null,
       );
       expect(result).toBe(false);
     });
@@ -1154,7 +1116,7 @@ describe('ReminderSchedulerService', () => {
         ['09:00'],
         [1], // Monday
         'UTC',
-        oneMinuteAgo
+        oneMinuteAgo,
       );
       expect(result).toBe(false);
     });
@@ -1168,7 +1130,7 @@ describe('ReminderSchedulerService', () => {
         ['09:00'],
         [1], // Monday
         'UTC',
-        null
+        null,
       );
       expect(result).toBe(true);
     });
@@ -1184,7 +1146,7 @@ describe('ReminderSchedulerService', () => {
         ['09:00'],
         [1], // Monday
         'UTC',
-        threeMinutesAgo
+        threeMinutesAgo,
       );
       expect(result).toBe(true);
     });
@@ -1198,7 +1160,7 @@ describe('ReminderSchedulerService', () => {
         ['14:00'],
         null, // every day
         'America/Chicago',
-        null
+        null,
       );
       expect(result).toBe(true);
     });
@@ -1212,7 +1174,7 @@ describe('ReminderSchedulerService', () => {
         ['14:00'],
         [], // empty = every day
         'UTC',
-        null
+        null,
       );
       expect(result).toBe(true);
     });
@@ -1222,12 +1184,7 @@ describe('ReminderSchedulerService', () => {
         .spyOn(ReminderSchedulerService, 'getCurrentTimeInTimezone')
         .mockReturnValue({ hour: 8, minute: 0, dayOfWeek: 0 }); // Sunday 08:00
 
-      ReminderSchedulerService.shouldSendRoutineReminder(
-        ['08:00'],
-        null,
-        null,
-        null
-      );
+      ReminderSchedulerService.shouldSendRoutineReminder(['08:00'], null, null, null);
 
       expect(getCurrentTimeSpy).toHaveBeenCalledWith('UTC');
     });
@@ -1251,9 +1208,9 @@ describe('ReminderSchedulerService', () => {
         timezone: null,
       };
 
-      await expect(
-        ReminderSchedulerService.sendReminderNotification(reminder)
-      ).rejects.toThrow('Missing required notification data');
+      await expect(ReminderSchedulerService.sendReminderNotification(reminder)).rejects.toThrow(
+        'Missing required notification data',
+      );
     });
 
     it('should throw when mantra_key_takeaway is missing', async () => {
@@ -1273,9 +1230,9 @@ describe('ReminderSchedulerService', () => {
         timezone: null,
       };
 
-      await expect(
-        ReminderSchedulerService.sendReminderNotification(reminder)
-      ).rejects.toThrow('Missing required notification data');
+      await expect(ReminderSchedulerService.sendReminderNotification(reminder)).rejects.toThrow(
+        'Missing required notification data',
+      );
     });
   });
 
@@ -1298,7 +1255,7 @@ describe('ReminderSchedulerService', () => {
       };
 
       await expect(
-        ReminderSchedulerService.sendCollectionReminderNotification(reminder)
+        ReminderSchedulerService.sendCollectionReminderNotification(reminder),
       ).rejects.toThrow('Missing required notification data');
     });
 
@@ -1320,7 +1277,7 @@ describe('ReminderSchedulerService', () => {
       };
 
       await expect(
-        ReminderSchedulerService.sendCollectionReminderNotification(reminder)
+        ReminderSchedulerService.sendCollectionReminderNotification(reminder),
       ).rejects.toThrow('Missing required notification data');
     });
 
@@ -1342,7 +1299,7 @@ describe('ReminderSchedulerService', () => {
       };
 
       await expect(
-        ReminderSchedulerService.sendCollectionReminderNotification(reminder)
+        ReminderSchedulerService.sendCollectionReminderNotification(reminder),
       ).rejects.toThrow('Missing required notification data');
     });
   });
@@ -1358,7 +1315,7 @@ describe('ReminderSchedulerService', () => {
       const result = ReminderSchedulerService.shouldSendReminder(
         'custom',
         today.toISOString(),
-        'UTC'
+        'UTC',
       );
       expect(result).toBe(false);
     });
@@ -1369,7 +1326,7 @@ describe('ReminderSchedulerService', () => {
       const result = ReminderSchedulerService.shouldSendReminder(
         'custom',
         yesterday.toISOString(),
-        'UTC'
+        'UTC',
       );
       expect(result).toBe(true);
     });

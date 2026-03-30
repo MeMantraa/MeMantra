@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: memantra-backend
+    runtime: docker
+    plan: free
+    dockerContext: .
+    dockerfilePath: ./apps/backend/dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: RUN_SCHEDULERS
+        value: false

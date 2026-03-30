@@ -16,10 +16,18 @@ interface ExtendedRequestConfig {
   skipPerformanceMonitoring?: boolean;
 }
 
+const runtimeProcess = globalThis.process;
+
+const normalizeBaseUrl = (value: string): string => {
+  const trimmedValue = value.trim().replace(/\/$/, '');
+  return trimmedValue.endsWith('/api') ? trimmedValue : `${trimmedValue}/api`;
+};
+
+const ENV_API_BASE_URL = runtimeProcess?.env.EXPO_PUBLIC_API_BASE_URL?.trim() || null;
+
 // Try to import local config (gitignored) - copy api.config.local.example.ts to api.config.local.ts
 let LOCAL_DEV_IP: string | null = null;
-// eslint-disable-next-line no-undef
-if (process.env.NODE_ENV !== 'test') {
+if (runtimeProcess?.env.NODE_ENV !== 'test') {
   try {
     // eslint-disable-next-line no-undef
     const localConfig = require('./api.config.local');
@@ -31,12 +39,8 @@ if (process.env.NODE_ENV !== 'test') {
 
 // Auto-detect local IP address from Expo's debugger host
 const getLocalIpAddress = (): string | null => {
-  // In development, Expo provides the host IP through debuggerHost
   const debuggerHost = Constants.expoConfig?.hostUri?.split(':')[0];
 
-  // If using Expo tunnel (exp.direct domain), we can't auto-detect the local IP
-  // because the backend isn't tunneled - it only runs locally
-  // In this case, you MUST set LOCAL_DEV_IP in api.config.local.ts
   if (debuggerHost?.includes('exp.direct')) {
     console.warn('⚠️  Expo tunnel detected. Backend requires local IP in api.config.local.ts');
     return null;
@@ -49,7 +53,7 @@ const getLocalIpAddress = (): string | null => {
 const PRODUCTION_API_URL = 'https://memantra.onrender.com/api';
 
 const getBaseUrl = () => {
-  // In production/preview builds, always use the hosted backend
+  // In production/preview builds, always use the hosted backend.
 
   if (!__DEV__) {
     return PRODUCTION_API_URL;
@@ -58,14 +62,13 @@ const getBaseUrl = () => {
   // --- Development mode: use local backend ---
   const autoDetectedIP = getLocalIpAddress();
   const PORT = '4000';
+  const isUsingTunnel = Boolean(Constants.expoConfig?.hostUri?.includes('exp.direct'));
+  const shouldUseLocalConfig = Boolean(LOCAL_DEV_IP) && isUsingTunnel;
 
-  // Determine if we're using Expo tunnel
-  const isUsingTunnel = Constants.expoConfig?.hostUri?.includes('exp.direct');
+  if (ENV_API_BASE_URL) {
+    return normalizeBaseUrl(ENV_API_BASE_URL);
+  }
 
-  // Use local config IP if:
-  // 1. It's explicitly set AND
-  // 2. We're using tunnel (because backend needs local IP when mobile app is tunneled)
-  const shouldUseLocalConfig = LOCAL_DEV_IP && isUsingTunnel;
   const DEV_IP: string | null = shouldUseLocalConfig ? LOCAL_DEV_IP : autoDetectedIP;
 
   console.log('🔍 IP Detection:', {
@@ -78,27 +81,20 @@ const getBaseUrl = () => {
   });
 
   if (Platform.OS === 'android') {
-    // Android emulator uses 10.0.2.2 to access host machine
-    // For real device with tunnel, set DEV_IP above
     const host = DEV_IP || '10.0.2.2';
-    return `http://${host}:${PORT}/api`;
+    return normalizeBaseUrl(`http://${host}:${PORT}`);
   }
 
   if (Platform.OS === 'ios') {
-    // iOS simulator uses localhost
-    // For physical device or tunnel, set DEV_IP above
     const host = DEV_IP || 'localhost';
-    return `http://${host}:${PORT}/api`;
+    return normalizeBaseUrl(`http://${host}:${PORT}`);
   }
 
-  // Web or unknown platform fallback
   if (Platform.OS === 'web') {
-    // Web uses same-origin or configured URL
     const webHost = DEV_IP || 'localhost';
-    return `http://${webHost}:${PORT}/api`;
+    return normalizeBaseUrl(`http://${webHost}:${PORT}`);
   }
 
-  // Unknown platform - throw clear error
   throw new Error(`Unsupported platform: ${Platform.OS}. Cannot determine API base URL.`);
 };
 
@@ -173,10 +169,6 @@ export const setNavigationRef = (ref: typeof navigationRef) => {
 
 export const getNavigationRef = () => navigationRef;
 
-/**
- * Navigate to a screen from outside React component context
- * Used for deep linking from notifications
- */
 export const navigateFromOutside = (screenName: string, params?: object) => {
   if (navigationRef) {
     navigationRef.navigate(screenName, params);
@@ -185,9 +177,6 @@ export const navigateFromOutside = (screenName: string, params?: object) => {
   }
 };
 
-/**
- * Check if navigation is ready
- */
 export const isNavigationReady = (): boolean => {
   return navigationRef !== null;
 };
@@ -243,14 +232,12 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401) {
       console.log('Unauthorized access - token expired or invalid');
 
-      // Clear stored authentication data
       try {
         await storage.clearAll();
       } catch (storageError) {
         console.error('Failed to clear storage:', storageError);
       }
 
-      // Navigate to login screen if navigation ref is available
       if (navigationRef) {
         navigationRef.reset({
           index: 0,
@@ -261,3 +248,5 @@ apiClient.interceptors.response.use(
     throw error instanceof Error ? error : new Error(JSON.stringify(error));
   },
 );
+
+export default apiClient;
