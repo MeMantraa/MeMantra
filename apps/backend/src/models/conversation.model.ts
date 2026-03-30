@@ -49,6 +49,7 @@ export const ConversationModel = {
       participant_id: number;
       participant_username: string | null;
       participant_email: string | null;
+      profile_photo: string | null;
       last_message: string;
       last_message_time: string;
       unread_count: number;
@@ -73,7 +74,7 @@ export const ConversationModel = {
         const participant = await db
           .selectFrom('User')
           .where('user_id', '=', participantId)
-          .select(['username', 'email'])
+          .select(['username', 'email', 'profile_photo'])
           .executeTakeFirst();
 
         // Get latest message
@@ -87,6 +88,7 @@ export const ConversationModel = {
           participant_id: participantId,
           participant_username: participant?.username || null,
           participant_email: participant?.email || null,
+          profile_photo: participant?.profile_photo || null,
           last_message: latestMessage?.content || '',
           last_message_time: latestMessage?.created_at || conv.created_at,
           unread_count: unreadCount,
