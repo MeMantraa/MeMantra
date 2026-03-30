@@ -74,14 +74,12 @@ describe('AuthController', () => {
       });
       (jwtUtils.generateToken as jest.Mock).mockReturnValue('jwt-token');
 
-      const res = await request(app)
-        .post('/register')
-        .send({
-          username: 'testuser',
-          email: 'test@example.com',
-          password: 'pass1234',
-          code: '123456',
-        });
+      const res = await request(app).post('/register').send({
+        username: 'testuser',
+        email: 'test@example.com',
+        password: 'pass1234',
+        code: '123456',
+      });
 
       expect(res.status).toBe(201);
       expect(res.body).toMatchObject({
@@ -101,14 +99,12 @@ describe('AuthController', () => {
     it('should return error if verification code is invalid or expired', async () => {
       (EmailVerificationTokenModel.findValidToken as jest.Mock).mockResolvedValue(null);
 
-      const res = await request(app)
-        .post('/register')
-        .send({
-          username: 'testuser',
-          email: 'test@example.com',
-          password: 'pass1234',
-          code: '999999',
-        });
+      const res = await request(app).post('/register').send({
+        username: 'testuser',
+        email: 'test@example.com',
+        password: 'pass1234',
+        code: '999999',
+      });
 
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({
@@ -145,14 +141,12 @@ describe('AuthController', () => {
       (UserModel.findByEmail as jest.Mock).mockResolvedValue(null);
       (UserModel.findByUsername as jest.Mock).mockResolvedValue({ user_id: 3 });
 
-      const res = await request(app)
-        .post('/register')
-        .send({
-          username: 'existinguser',
-          email: 'new@email.com',
-          password: 'pass',
-          code: '123456',
-        });
+      const res = await request(app).post('/register').send({
+        username: 'existinguser',
+        email: 'new@email.com',
+        password: 'pass',
+        code: '123456',
+      });
 
       expect(res.status).toBe(400);
       expect(res.body).toMatchObject({

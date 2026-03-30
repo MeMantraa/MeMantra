@@ -82,11 +82,7 @@ const trimMetadata = (metadata?: Record<string, unknown>): Record<string, unknow
       continue;
     }
 
-    if (
-      typeof value === 'string' ||
-      typeof value === 'number' ||
-      typeof value === 'boolean'
-    ) {
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
       result[key] = value;
       continue;
     }

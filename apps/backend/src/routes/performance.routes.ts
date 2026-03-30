@@ -7,7 +7,11 @@ import { PerformanceController } from '../controllers/performance.controller';
 
 const router = Router();
 
-router.post('/event', validateRequest(trackPerformanceEventSchema), PerformanceController.trackEvent);
+router.post(
+  '/event',
+  validateRequest(trackPerformanceEventSchema),
+  PerformanceController.trackEvent,
+);
 router.get('/summary', authenticate, requireAdmin, PerformanceController.getSummary);
 
 export default router;
