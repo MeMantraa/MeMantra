@@ -63,10 +63,11 @@ describe('ProfileScreen', () => {
     await waitFor(() => {
       expect(getByText('memantrauser')).toBeTruthy();
       expect(getByText('Edit')).toBeTruthy();
-      expect(getByText('Notifications')).toBeTruthy();
-      expect(getByText('Profile Photo Goes Here')).toBeTruthy();
+      expect(getByText('Reminders')).toBeTruthy();
       expect(getByText('Notifications Settings')).toBeTruthy();
       expect(getByText('Liked')).toBeTruthy();
+      expect(getByText('Mantra Algorithm')).toBeTruthy();
+      expect(getByText('Themes')).toBeTruthy();
       expect(getByText('Settings')).toBeTruthy();
     });
   });
@@ -172,7 +173,9 @@ describe('ProfileScreen', () => {
   it('loads user profile photo from server on mount', async () => {
     (userService.getUserById as jest.Mock).mockResolvedValue({
       status: 'success',
-      data: { user: { user_id: 1, username: 'testuser', profile_photo: 'data:image/jpeg;base64,abc123' } },
+      data: {
+        user: { user_id: 1, username: 'testuser', profile_photo: 'data:image/jpeg;base64,abc123' },
+      },
     });
 
     render(<ProfileScreen />);

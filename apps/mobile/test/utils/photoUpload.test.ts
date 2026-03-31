@@ -64,7 +64,7 @@ describe('photoUploadUtils', () => {
 
       expect(result).toBe('file://test-image.jpg');
       expect(ImagePicker.launchImageLibraryAsync).toHaveBeenCalledWith({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        mediaTypes: ['images'],
         allowsEditing: true,
         aspect: [1, 1],
         quality: 0.4,
