@@ -98,7 +98,12 @@ export default [
   {
     files: ['**/*.{test,spec}.{js,jsx,ts,tsx}', '**/__tests__/**/*.{js,jsx,ts,tsx}'],
     languageOptions: {
-      globals: { ...globals.jest, global: 'readonly' }, // Added global for Jest tests
+      globals: { ...globals.jest, global: 'readonly' }, // Jest globals
+      parser: tsParser,
+      parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+    rules: {
+      'no-undef': 'off', // turn off no-undef for test files
     },
   },
 ];

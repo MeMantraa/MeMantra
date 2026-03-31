@@ -314,4 +314,13 @@ export const UserModel = {
 
     return { totalUsers, selectedUsers: selectedUserIds.length };
   },
+
+  async updateProfilePhoto(userId: number, photoBase64: string): Promise<User | undefined> {
+    return await db
+      .updateTable('User')
+      .set({ profile_photo: photoBase64 })
+      .where('user_id', '=', userId)
+      .returningAll()
+      .executeTakeFirst();
+  },
 };

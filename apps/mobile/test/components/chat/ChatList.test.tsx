@@ -24,6 +24,7 @@ describe('ChatList', () => {
       last_message: 'Hey! How are you?',
       last_message_time: new Date(Date.now() - 3600000).toISOString(),
       unread_count: 2,
+      profile_photo: null,
     },
     {
       conversation_id: 2,
@@ -33,6 +34,7 @@ describe('ChatList', () => {
       last_message: 'Thanks!',
       last_message_time: new Date(Date.now() - 7200000).toISOString(),
       unread_count: 0,
+      profile_photo: null,
     },
   ];
 
@@ -256,8 +258,8 @@ describe('ChatList', () => {
   });
 
   describe('Avatar', () => {
-    it('displays first letter of username', () => {
-      const { getAllByText } = render(
+    it('displays default profile image when no profile_photo', () => {
+      const { UNSAFE_getAllByType } = render(
         <ChatList
           conversations={mockConversations}
           loading={false}
@@ -265,22 +267,25 @@ describe('ChatList', () => {
         />,
       );
 
-      expect(getAllByText('J').length).toBeGreaterThan(0); // john_doe avatar
+      const images = UNSAFE_getAllByType(require('react-native').Image);
+      expect(images.length).toBeGreaterThan(0);
     });
 
-    it('displays uppercase letter', () => {
+    it('displays profile photo when available', () => {
       const conversations: Conversation[] = [
         {
           ...mockConversations[0],
           participant_username: 'alice',
+          profile_photo: 'data:image/jpeg;base64,test',
         },
       ];
 
-      const { getByText } = render(
+      const { UNSAFE_getAllByType } = render(
         <ChatList conversations={conversations} loading={false} onConversationPress={jest.fn()} />,
       );
 
-      expect(getByText('A')).toBeTruthy();
+      const images = UNSAFE_getAllByType(require('react-native').Image);
+      expect(images.length).toBeGreaterThan(0);
     });
   });
 });

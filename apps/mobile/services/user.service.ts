@@ -7,6 +7,7 @@ export interface User {
   auth_provider?: string;
   created_at: string;
   feature_flags?: string[];
+  profile_photo?: string;
 }
 
 export interface CreateUserPayload {
@@ -194,6 +195,15 @@ export const userService = {
     const response = await apiClient.post<FeatureFlagBulkResponse>(
       `/users/feature-flags/${flag}/rollout/exact`,
       { percentage },
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    return response.data;
+  },
+
+  async updateProfilePhoto(photoBase64: string, token: string): Promise<UserDetailResponse> {
+    const response = await apiClient.put<UserDetailResponse>(
+      '/profile/photo',
+      { photo: photoBase64 },
       { headers: { Authorization: `Bearer ${token}` } },
     );
     return response.data;

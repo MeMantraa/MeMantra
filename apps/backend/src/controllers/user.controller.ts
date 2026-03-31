@@ -11,6 +11,7 @@ function sanitizeUser(user: User) {
     email: user.email,
     auth_provider: user.auth_provider,
     created_at: user.created_at,
+    profile_photo: user.profile_photo,
   };
 }
 
@@ -465,6 +466,52 @@ export const UserController = {
     } catch (error) {
       console.error('Exact feature flag rollout error:', error);
       return sendError(res, 500, 'Error applying exact feature flag rollout');
+    }
+  },
+
+  async updateProfilePhoto(req: Request, res: Response) {
+    try {
+      const userId = req.user?.userId;
+
+      if (!userId) {
+        return sendError(res, 401, 'Unauthorized');
+      }
+
+      const { photo } = req.body;
+      if (!photo || typeof photo !== 'string') {
+        return sendError(res, 400, 'Photo data is required');
+      }
+
+      const base64Regex = /^data:image\/(jpeg|jpg|png|webp);base64,/;
+      if (!base64Regex.test(photo)) {
+        return sendError(
+          res,
+          400,
+          'Invalid photo format. Must be base64 encoded image (jpeg, jpg, png, or webp)',
+        );
+      }
+
+      const base64Data = photo.split(',')[1];
+      const sizeInBytes = (base64Data.length * 3) / 4;
+      const sizeInMB = sizeInBytes / (1024 * 1024);
+
+      if (sizeInMB > 5) {
+        return sendError(res, 400, 'Photo size must be less than 5MB');
+      }
+
+      const updated = await UserModel.updateProfilePhoto(userId, photo);
+      if (!updated) {
+        return sendError(res, 404, 'User not found');
+      }
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Profile photo updated successfully',
+        data: { user: sanitizeUser(updated) },
+      });
+    } catch (error) {
+      console.error('Update profile photo error:', error);
+      return sendError(res, 500, 'Error updating profile photo');
     }
   },
 };

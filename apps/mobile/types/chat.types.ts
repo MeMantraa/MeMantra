@@ -23,6 +23,7 @@ export interface Conversation {
   last_message: string;
   last_message_time: string;
   unread_count: number;
+  profile_photo: string | null;
 }
 
 export interface CreateMessagePayload {

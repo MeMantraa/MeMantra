@@ -15,6 +15,7 @@ import algorithmRoutes from './algorithm.routes';
 import themeRoutes from './theme.routes';
 import engagementRoutes from './engagement.routes';
 import performanceRoutes from './performance.routes';
+import profileRoutes from './profile.routes';
 
 const router = Router();
 
@@ -63,5 +64,7 @@ router.use('/theme', themeRoutes);
 router.use('/engagement', engagementRoutes);
 // Performance monitoring routes
 router.use('/performance', performanceRoutes);
+// Profile routes
+router.use('/profile', profileRoutes);
 
 export default router;

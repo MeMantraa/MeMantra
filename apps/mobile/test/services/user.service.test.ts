@@ -121,4 +121,20 @@ describe('userService', () => {
       { headers: { Authorization: 'Bearer t' } },
     );
   });
+
+  it('updates profile photo', async () => {
+    const photoBase64 = 'data:image/jpeg;base64,test123';
+    (apiClient.put as jest.Mock).mockResolvedValue({
+      data: { status: 'success', data: { user: { user_id: 1, profile_photo: photoBase64 } } },
+    });
+
+    const result = await userService.updateProfilePhoto(photoBase64, 'token');
+
+    expect(apiClient.put).toHaveBeenCalledWith(
+      '/profile/photo',
+      { photo: photoBase64 },
+      { headers: { Authorization: 'Bearer token' } },
+    );
+    expect(result.status).toBe('success');
+  });
 });

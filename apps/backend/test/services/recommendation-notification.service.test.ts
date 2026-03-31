@@ -64,6 +64,7 @@ const mockUser = (
   optimal_send_hour: null,
   theme: null,
   feature_flags: [],
+  profile_photo: null,
   ...overrides,
 });
 

@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, FlatList, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import AppText from '../UI/textWrapper';
 import { Conversation } from '../../types/chat.types';
+import DefaultProfile from '../../assets/Profile-default.png';
 
 interface ChatListProps {
   conversations: Conversation[];
@@ -80,21 +81,18 @@ const ChatList: React.FC<ChatListProps> = ({ conversations, loading, onConversat
           onPress={() => onConversationPress(item)}
         >
           <View className="mr-3">
-            <View
-              className="w-[50px] h-[50px] rounded-full items-center justify-center"
+            <Image
+              source={
+                item.profile_photo
+                  ? { uri: item.profile_photo } // Use actual uploaded photo
+                  : DefaultProfile // fallback default
+              }
               style={{
-                backgroundColor: colors.primaryDark,
+                width: 60,
+                height: 60,
+                borderRadius: 30, // circular
               }}
-            >
-              <AppText
-                className="text-[20px] font-bold"
-                style={{
-                  color: colors.text,
-                }}
-              >
-                {item.participant_username.charAt(0).toUpperCase()}
-              </AppText>
-            </View>
+            />
           </View>
 
           <View className="flex-1 justify-center">
