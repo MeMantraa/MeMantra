@@ -39,10 +39,10 @@ export default function ProfileScreen() {
 
       const res = await userService.getUserById(userId, token); // call API to get current user
       if (res.status === 'success') {
-        setUser({
-          username: res.data.user.username || '',
-          profile_photo: res.data.user.profile_photo || undefined,
-        });
+        setUser((prev) => ({
+          username: res.data.user.username ?? prev?.username ?? '',
+          profile_photo: res.data.user.profile_photo || prev?.profile_photo,
+        }));
         await storage.saveUserData({
           ...res.data.user,
           feature_flags: filterFeatureFlags(res.data.user.feature_flags),
@@ -58,11 +58,13 @@ export default function ProfileScreen() {
       // Load from storage first
       const storedUser = await storage.getUserData();
       if (storedUser) {
-        setUser({
-          username: storedUser.username || '',
+        setUser((prev) => ({
+          username: storedUser.username ?? prev?.username ?? '',
           profile_photo:
-            typeof storedUser.profile_photo === 'string' ? storedUser.profile_photo : undefined,
-        });
+            typeof storedUser.profile_photo === 'string'
+              ? storedUser.profile_photo
+              : prev?.profile_photo,
+        }));
       }
 
       // Then call the reusable function to fetch from server
@@ -181,7 +183,7 @@ export default function ProfileScreen() {
           <AppText style={{ color: colors.white, fontSize: 14 }}>Edit</AppText>
         </TouchableOpacity>
       </View>
-      <View style={{ marginTop: 40, marginBottom: 40 }}>
+      <View style={{ marginTop: 22, marginBottom: 40 }}>
         <TouchableOpacity
           style={[
             { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
