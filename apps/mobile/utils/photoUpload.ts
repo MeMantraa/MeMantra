@@ -36,7 +36,10 @@ export const photoUploadUtils = {
   },
 
   async resizeAndConvertToBase64(uri: string): Promise<string> {
-    const resized = await ImageManipulator.manipulateAsync(uri, [{ resize: { width: 800 } }], {
+    const image = ImageManipulator.ImageManipulator.manipulate(uri).resize({ width: 800 });
+
+    const rendered = await image.renderAsync();
+    const resized = await rendered.saveAsync({
       compress: 0.8,
       format: ImageManipulator.SaveFormat.JPEG,
       base64: true,

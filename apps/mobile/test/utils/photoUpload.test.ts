@@ -112,29 +112,39 @@ describe('photoUploadUtils', () => {
 
   describe('resizeAndConvertToBase64', () => {
     it('resizes image and returns base64 string with prefix', async () => {
-      (ImageManipulator.manipulateAsync as jest.Mock).mockResolvedValue({
+      const saveAsyncMock = jest.fn().mockResolvedValue({
         uri: 'file://resized.jpg',
         base64: 'testbase64string',
+      });
+      const renderAsyncMock = jest.fn().mockResolvedValue({ saveAsync: saveAsyncMock });
+      const resizeMock = jest.fn().mockReturnValue({ renderAsync: renderAsyncMock });
+
+      (ImageManipulator.ImageManipulator.manipulate as jest.Mock).mockReturnValue({
+        resize: resizeMock,
       });
 
       const result = await photoUploadUtils.resizeAndConvertToBase64('file://original.jpg');
 
       expect(result).toBe('data:image/jpeg;base64,testbase64string');
-      expect(ImageManipulator.manipulateAsync).toHaveBeenCalledWith(
+      expect(ImageManipulator.ImageManipulator.manipulate).toHaveBeenCalledWith(
         'file://original.jpg',
-        [{ resize: { width: 800 } }],
-        {
-          compress: 0.8,
-          format: ImageManipulator.SaveFormat.JPEG,
-          base64: true,
-        },
       );
+      expect(resizeMock).toHaveBeenCalledWith({ width: 800 });
+      expect(saveAsyncMock).toHaveBeenCalledWith({
+        compress: 0.8,
+        format: ImageManipulator.SaveFormat.JPEG,
+        base64: true,
+      });
     });
 
     it('throws error when manipulation fails', async () => {
-      (ImageManipulator.manipulateAsync as jest.Mock).mockRejectedValue(
-        new Error('Manipulation failed'),
-      );
+      const saveAsyncMock = jest.fn().mockRejectedValue(new Error('Manipulation failed'));
+      const renderAsyncMock = jest.fn().mockResolvedValue({ saveAsync: saveAsyncMock });
+      const resizeMock = jest.fn().mockReturnValue({ renderAsync: renderAsyncMock });
+
+      (ImageManipulator.ImageManipulator.manipulate as jest.Mock).mockReturnValue({
+        resize: resizeMock,
+      });
 
       await expect(
         photoUploadUtils.resizeAndConvertToBase64('file://original.jpg'),

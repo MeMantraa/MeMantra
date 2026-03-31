@@ -321,32 +321,49 @@ jest.mock(
 // Mock expo-image-manipulator
 jest.mock(
   'expo-image-manipulator',
-  () => ({
-    __esModule: true,
-    manipulateAsync: jest.fn((uri, actions, options) =>
+  () => {
+    const saveAsync = jest.fn(() =>
       Promise.resolve({
         uri: 'file://manipulated-image.jpg',
         width: 800,
         height: 800,
         base64: 'mockbase64string',
       }),
-    ),
-    SaveFormat: {
-      JPEG: 'jpeg',
-      PNG: 'png',
-      WEBP: 'webp',
-    },
-    FlipType: {
-      Horizontal: 'horizontal',
-      Vertical: 'vertical',
-    },
-    Action: {
-      Resize: 'resize',
-      Rotate: 'rotate',
-      Flip: 'flip',
-      Crop: 'crop',
-    },
-  }),
+    );
+
+    const renderAsync = jest.fn(() => Promise.resolve({ saveAsync }));
+    const resize = jest.fn(() => ({ renderAsync }));
+
+    return {
+      __esModule: true,
+      manipulateAsync: jest.fn((uri, actions, options) =>
+        Promise.resolve({
+          uri: 'file://manipulated-image.jpg',
+          width: 800,
+          height: 800,
+          base64: 'mockbase64string',
+        }),
+      ),
+      ImageManipulator: {
+        manipulate: jest.fn(() => ({ resize })),
+      },
+      SaveFormat: {
+        JPEG: 'jpeg',
+        PNG: 'png',
+        WEBP: 'webp',
+      },
+      FlipType: {
+        Horizontal: 'horizontal',
+        Vertical: 'vertical',
+      },
+      Action: {
+        Resize: 'resize',
+        Rotate: 'rotate',
+        Flip: 'flip',
+        Crop: 'crop',
+      },
+    };
+  },
   { virtual: true },
 );
 
