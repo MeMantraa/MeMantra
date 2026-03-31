@@ -18,8 +18,8 @@ type DeepDiveReaderProps = {
 
 type SectionData = {
   summary: string;
-  explanation: string;
-  example: string;
+  explanation?: string;
+  example?: string;
 };
 
 function splitParagraphs(content: string): string[] {
@@ -50,19 +50,26 @@ function splitParagraphs(content: string): string[] {
 function buildSections(content: string): SectionData {
   const paragraphs = splitParagraphs(content);
   const summary = paragraphs[0] ?? content;
-  const explanation = paragraphs.slice(1, 3).join('\n\n') || summary;
+  const explanationCandidate = paragraphs.slice(1, 3).join('\n\n').trim();
+  const explanation =
+    explanationCandidate && explanationCandidate !== summary ? explanationCandidate : undefined;
 
-  const exampleSource =
-    paragraphs.find((segment) =>
-      /(e\.g\.|for example|when you|try this|next time|imagine|for instance)/i.test(segment),
-    ) ||
-    paragraphs[paragraphs.length - 1] ||
-    summary;
+  const exampleCandidate =
+    paragraphs
+      .slice(1)
+      .find((segment) =>
+        /(e\.g\.|for example|when you|try this|next time|imagine|for instance)/i.test(segment),
+      ) || (paragraphs.length > 2 ? paragraphs[paragraphs.length - 1] : undefined);
+
+  const example =
+    exampleCandidate && exampleCandidate !== summary && exampleCandidate !== explanation
+      ? exampleCandidate
+      : undefined;
 
   return {
     summary,
     explanation,
-    example: exampleSource,
+    example,
   };
 }
 
@@ -183,36 +190,40 @@ export default function DeepDiveReader({
                 </View>
               </DeepDiveCard>
 
-              <DeepDiveCard
-                label="Explanation"
-                accentColor={colors.secondary}
-                textColor={colors.text}
-                backgroundColor={colors.primaryDark + '22'}
-                borderColor={colors.text + '26'}
-              >
-                <View style={{ width: '100%' }}>
-                  <AppText style={{ color: colors.text, fontSize: 15, lineHeight: 24 }}>
-                    {sections.explanation}
-                  </AppText>
-                </View>
-              </DeepDiveCard>
+              {sections.explanation ? (
+                <DeepDiveCard
+                  label="Explanation"
+                  accentColor={colors.secondary}
+                  textColor={colors.text}
+                  backgroundColor={colors.primaryDark + '22'}
+                  borderColor={colors.text + '26'}
+                >
+                  <View style={{ width: '100%' }}>
+                    <AppText style={{ color: colors.text, fontSize: 15, lineHeight: 24 }}>
+                      {sections.explanation}
+                    </AppText>
+                  </View>
+                </DeepDiveCard>
+              ) : null}
 
-              <DeepDiveCard
-                label="Example"
-                accentColor={colors.secondary}
-                textColor={colors.text}
-                backgroundColor={colors.primaryDark + '22'}
-                borderColor={colors.text + '26'}
-                muted
-              >
-                <View style={{ width: '100%' }}>
-                  <AppText
-                    style={{ color: colors.text, opacity: 0.92, fontSize: 14, lineHeight: 23 }}
-                  >
-                    {sections.example}
-                  </AppText>
-                </View>
-              </DeepDiveCard>
+              {sections.example ? (
+                <DeepDiveCard
+                  label="Example"
+                  accentColor={colors.secondary}
+                  textColor={colors.text}
+                  backgroundColor={colors.primaryDark + '22'}
+                  borderColor={colors.text + '26'}
+                  muted
+                >
+                  <View style={{ width: '100%' }}>
+                    <AppText
+                      style={{ color: colors.text, opacity: 0.92, fontSize: 14, lineHeight: 23 }}
+                    >
+                      {sections.example}
+                    </AppText>
+                  </View>
+                </DeepDiveCard>
+              ) : null}
             </>
           )}
         </View>

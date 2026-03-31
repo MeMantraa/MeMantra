@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
+import { View, StyleSheet, Alert, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import ChatList from '../components/chat/ChatList';
@@ -7,6 +7,7 @@ import { Conversation } from '../types/chat.types';
 import { chatService } from '../services/chat.service';
 import { storage } from '../utils/storage';
 import { Mantra } from '../services/mantra.service';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function ShareMantraScreen({ route, navigation }: any) {
   const { mantra } = route.params as { mantra: Mantra };
@@ -62,6 +63,16 @@ export default function ShareMantraScreen({ route, navigation }: any) {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.primary }]}>
+      <View style={styles.headerRow}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </TouchableOpacity>
+      </View>
+
       <AppText style={{ color: colors.text, paddingHorizontal: 16, paddingVertical: 12 }}>
         Select a conversation to share:
       </AppText>
@@ -77,4 +88,14 @@ export default function ShareMantraScreen({ route, navigation }: any) {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
+  headerRow: {
+    paddingTop: 8,
+    paddingHorizontal: 8,
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });
