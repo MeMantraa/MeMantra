@@ -206,7 +206,7 @@ export default function ProfileScreen() {
           onPress={() => navigation.navigate('NotificationSettings')}
         >
           <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
-            Notifications
+            Notifications Settings
           </AppText>
           <Ionicons name="chevron-forward" size={24} color={colors.white} />
         </TouchableOpacity>

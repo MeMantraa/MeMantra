@@ -12,6 +12,23 @@ import AppText from '../components/UI/textWrapper';
 
 type RemindersNavProp = StackNavigationProp<RootStackParamList>;
 
+function sortRemindersByStatus(reminders: Reminder[]): Reminder[] {
+  const getStatusPriority = (status: Reminder['status']): number => {
+    switch (status) {
+      case 'active':
+        return 0;
+      case 'paused':
+        return 1;
+      case 'completed':
+        return 2;
+      default:
+        return 99;
+    }
+  };
+
+  return [...reminders].sort((a, b) => getStatusPriority(a.status) - getStatusPriority(b.status));
+}
+
 function formatFrequency(frequency: string | null): string {
   if (!frequency) return 'Unknown';
   return frequency.charAt(0).toUpperCase() + frequency.slice(1);
@@ -47,7 +64,7 @@ export default function RemindersScreen() {
 
       const response = await reminderService.getReminders(token);
       if (response.status === 'success') {
-        setReminders(response.data.reminders);
+        setReminders(sortRemindersByStatus(response.data.reminders));
       }
     } catch (error) {
       console.error('Error loading reminders:', error);

@@ -64,6 +64,8 @@ describe('ProfileScreen', () => {
       expect(getByText('memantrauser')).toBeTruthy();
       expect(getByText('Edit')).toBeTruthy();
       expect(getByText('Notifications')).toBeTruthy();
+      expect(getByText('Profile Photo Goes Here')).toBeTruthy();
+      expect(getByText('Notifications Settings')).toBeTruthy();
       expect(getByText('Liked')).toBeTruthy();
       expect(getByText('Settings')).toBeTruthy();
     });
@@ -109,14 +111,14 @@ describe('ProfileScreen', () => {
     expect(mockNavigate).toHaveBeenCalledWith('Reminders');
   });
 
-  it('navigates to NotificationSettings screen when Notifications is pressed', async () => {
+  it('navigates to NotificationSettings screen when Notifications Settings is pressed', async () => {
     const { getByText } = render(<ProfileScreen />);
 
     await waitFor(() => {
-      expect(getByText('Notifications')).toBeTruthy();
+      expect(getByText('Notifications Settings')).toBeTruthy();
     });
 
-    const notificationsButton = getByText('Notifications');
+    const notificationsButton = getByText('Notifications Settings');
     fireEvent.press(notificationsButton);
 
     expect(mockNavigate).toHaveBeenCalledWith('NotificationSettings');
