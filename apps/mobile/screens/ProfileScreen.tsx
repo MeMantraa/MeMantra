@@ -4,7 +4,15 @@ import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../src/navigation/types';
 import { useTheme } from '../context/ThemeContext';
 import React, { useEffect, useState } from 'react';
-import { View, TouchableOpacity, Image, ActionSheetIOS, Platform, Alert } from 'react-native';
+import {
+  View,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  ActionSheetIOS,
+  Platform,
+  Alert,
+} from 'react-native';
 import AppText from '../components/UI/textWrapper';
 import { profileSettingsStyles as styles } from '../styles/profileSettings.styles';
 import { Ionicons } from '@expo/vector-icons';
@@ -148,121 +156,124 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View
-      style={{ flex: 1, paddingTop: 64, paddingHorizontal: 40, backgroundColor: colors.primary }}
-    >
-      <AppText
-        className="text-[30px] font-bold text-left mb-10 mt-2"
-        style={{ color: colors.text }}
+    <View style={{ flex: 1, backgroundColor: colors.primary }}>
+      <ScrollView
+        contentContainerStyle={{ paddingTop: 64, paddingHorizontal: 40, paddingBottom: 40 }}
+        showsVerticalScrollIndicator={false}
       >
-        {user?.username || ''}
-      </AppText>
-      <View style={{ alignSelf: 'center', alignItems: 'center', marginBottom: 5 }}>
-        <Image
-          source={
-            user?.profile_photo ? { uri: user.profile_photo } : DefaultProfile // default profile image
-          }
-          style={{
-            width: 150,
-            height: 150,
-            borderRadius: 75, // circular
-          }}
-        />
+        <AppText
+          className="text-[30px] font-bold text-left mb-10 mt-2"
+          style={{ color: colors.text }}
+        >
+          {user?.username || ''}
+        </AppText>
+        <View style={{ alignSelf: 'center', alignItems: 'center', marginBottom: 5 }}>
+          <Image
+            source={
+              user?.profile_photo ? { uri: user.profile_photo } : DefaultProfile // default profile image
+            }
+            style={{
+              width: 150,
+              height: 150,
+              borderRadius: 75, // circular
+            }}
+          />
 
-        <TouchableOpacity
-          onPress={onEditPress}
-          testID="edit-photo-button"
-          style={{
-            marginTop: 8,
-            paddingVertical: 4,
-            paddingHorizontal: 12,
-            borderRadius: 12,
-            backgroundColor: colors.secondary,
-          }}
-        >
-          <AppText style={{ color: colors.white, fontSize: 14 }}>Edit</AppText>
-        </TouchableOpacity>
-      </View>
-      <View style={{ marginTop: 22, marginBottom: 40 }}>
-        <TouchableOpacity
-          style={[
-            { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
-            styles.button,
-            { backgroundColor: colors.primaryDark },
-          ]}
-          onPress={() => navigation.navigate('Reminders')}
-        >
-          <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
-            Reminders
-          </AppText>
-          <Ionicons name="chevron-forward" size={24} color={colors.white} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
-            styles.button,
-            { backgroundColor: colors.primaryDark },
-          ]}
-          onPress={() => navigation.navigate('NotificationSettings')}
-        >
-          <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
-            Notifications Settings
-          </AppText>
-          <Ionicons name="chevron-forward" size={24} color={colors.white} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
-            styles.button,
-            { backgroundColor: colors.primaryDark },
-          ]}
-          onPress={() => navigation.navigate('Liked')}
-        >
-          <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
-            Liked
-          </AppText>
-          <Ionicons name="chevron-forward" size={24} color={colors.white} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
-            styles.button,
-            { backgroundColor: colors.primaryDark },
-          ]}
-          onPress={() => navigation.navigate('MantraAlgorithm')}
-        >
-          <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
-            Mantra Algorithm
-          </AppText>
-          <Ionicons name="chevron-forward" size={24} color={colors.white} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
-            styles.button,
-            { backgroundColor: colors.primaryDark },
-          ]}
-          onPress={() => navigation.navigate('Themes')}
-        >
-          <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
-            Themes
-          </AppText>
-          <Ionicons name="chevron-forward" size={24} color={colors.white} />
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
-            styles.button,
-            { backgroundColor: colors.primaryDark },
-          ]}
-          onPress={() => navigation.navigate('Settings')}
-        >
-          <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
-            Settings
-          </AppText>
-          <Ionicons name="chevron-forward" size={24} color={colors.white} />
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity
+            onPress={onEditPress}
+            testID="edit-photo-button"
+            style={{
+              marginTop: 8,
+              paddingVertical: 4,
+              paddingHorizontal: 12,
+              borderRadius: 12,
+              backgroundColor: colors.secondary,
+            }}
+          >
+            <AppText style={{ color: colors.white, fontSize: 14 }}>Edit</AppText>
+          </TouchableOpacity>
+        </View>
+        <View style={{ marginTop: 22, marginBottom: 40 }}>
+          <TouchableOpacity
+            style={[
+              { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
+              styles.button,
+              { backgroundColor: colors.primaryDark },
+            ]}
+            onPress={() => navigation.navigate('Reminders')}
+          >
+            <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
+              Reminders
+            </AppText>
+            <Ionicons name="chevron-forward" size={24} color={colors.white} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
+              styles.button,
+              { backgroundColor: colors.primaryDark },
+            ]}
+            onPress={() => navigation.navigate('NotificationSettings')}
+          >
+            <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
+              Notifications Settings
+            </AppText>
+            <Ionicons name="chevron-forward" size={24} color={colors.white} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
+              styles.button,
+              { backgroundColor: colors.primaryDark },
+            ]}
+            onPress={() => navigation.navigate('Liked')}
+          >
+            <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
+              Liked
+            </AppText>
+            <Ionicons name="chevron-forward" size={24} color={colors.white} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
+              styles.button,
+              { backgroundColor: colors.primaryDark },
+            ]}
+            onPress={() => navigation.navigate('MantraAlgorithm')}
+          >
+            <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
+              Mantra Algorithm
+            </AppText>
+            <Ionicons name="chevron-forward" size={24} color={colors.white} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
+              styles.button,
+              { backgroundColor: colors.primaryDark },
+            ]}
+            onPress={() => navigation.navigate('Themes')}
+          >
+            <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
+              Themes
+            </AppText>
+            <Ionicons name="chevron-forward" size={24} color={colors.white} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
+              styles.button,
+              { backgroundColor: colors.primaryDark },
+            ]}
+            onPress={() => navigation.navigate('Settings')}
+          >
+            <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
+              Settings
+            </AppText>
+            <Ionicons name="chevron-forward" size={24} color={colors.white} />
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </View>
   );
 }
