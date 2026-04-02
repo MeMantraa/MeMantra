@@ -119,7 +119,7 @@ export default function App() {
           }
         }}
       >
-        <MainNavigator />
+        {appIsReady && <MainNavigator />}
       </NavigationContainer>
       {isSplashVisible && (
         <Animated.View style={[styles.splashOverlay, { opacity: fadeAnim }]} pointerEvents="none">

@@ -89,7 +89,7 @@ export default function ShareMantraScreen({ route, navigation }: any) {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   headerRow: {
-    paddingTop: 8,
+    paddingTop: 48,
     paddingHorizontal: 8,
   },
   backButton: {

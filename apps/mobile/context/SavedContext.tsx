@@ -22,7 +22,10 @@ export const SavedProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     try {
       const token = await storage.getToken();
-      const res = await mantraService.getSavedMantras(token || 'mock-token');
+      if (!token) {
+        return;
+      }
+      const res = await mantraService.getSavedMantras(token);
       setSavedMantras(res);
     } catch (err) {
       if (!isTestEnv) {
