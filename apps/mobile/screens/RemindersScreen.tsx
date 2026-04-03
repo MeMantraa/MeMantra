@@ -119,8 +119,14 @@ export default function RemindersScreen() {
 
   const renderReminder = ({ item }: { item: Reminder }) => {
     const isMantra = item.mantra_id !== null;
-    const typeLabel = isMantra ? 'Mantra' : 'Collection';
-    const linkedName = isMantra ? item.mantra_title : item.collection_name;
+    const isJournal = item.journal_id !== null;
+    const typeLabel = isJournal ? 'Journal' : isMantra ? 'Mantra' : 'Collection';
+    const typeIcon = isJournal ? 'book-outline' : isMantra ? 'leaf-outline' : 'folder-outline';
+    const linkedName = isJournal
+      ? item.journal_title || 'Journal Entry'
+      : isMantra
+        ? item.mantra_title
+        : item.collection_name;
     const isActive = item.status === 'active';
     const isCompleted = item.status === 'completed';
     const isRoutine = item.frequency === 'routine';
@@ -136,11 +142,7 @@ export default function RemindersScreen() {
             className="flex-row items-center gap-1 px-2.5 py-1 rounded-xl"
             style={{ backgroundColor: colors.primaryDark + '22' }}
           >
-            <Ionicons
-              name={isMantra ? 'leaf-outline' : 'folder-outline'}
-              size={14}
-              color={colors.primaryDark}
-            />
+            <Ionicons name={typeIcon as any} size={14} color={colors.primaryDark} />
             <AppText className="text-xs" style={{ color: colors.primaryDark }}>
               {typeLabel}
             </AppText>
@@ -282,7 +284,8 @@ export default function RemindersScreen() {
             className="text-[15px] text-center leading-[22px] mb-6 opacity-80"
             style={{ color: colors.text }}
           >
-            Create a reminder to get notified about your favourite mantras or collections.
+            Create a reminder to get notified about your favourite mantras, collections, or journal
+            entries.
           </AppText>
           <TouchableOpacity
             className="py-3.5 px-8 rounded-xl"

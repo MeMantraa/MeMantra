@@ -15,16 +15,16 @@ type ThemeContextType = {
 };
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: 'default',
-  colors: themes.default,
+  theme: 'ocean',
+  colors: themes.ocean,
   setTheme: () => {},
-  resetToDefault: () => {}, // Add this
+  resetToDefault: () => {},
 });
 
 const THEME_STORAGE_KEY = '@app_theme';
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<ThemeName>('default');
+  const [theme, setThemeState] = useState<ThemeName>('ocean');
   const [authToken, setAuthToken] = useState<string | null>(null);
 
   // Watch for auth token changes
@@ -50,7 +50,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     const loadTheme = async () => {
       if (!authToken) {
-        setThemeState('default');
+        setThemeState('ocean');
         await AsyncStorage.removeItem(THEME_STORAGE_KEY);
         return;
       }
@@ -91,7 +91,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const resetToDefault = () => {
-    setThemeState('default');
+    setThemeState('ocean');
     AsyncStorage.removeItem(THEME_STORAGE_KEY);
   };
 

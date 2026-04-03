@@ -18,6 +18,7 @@ import { reminderService } from '../services/reminder.service';
 import { mantraService, Mantra } from '../services/mantra.service';
 import { engagementService } from '../services/engagement.service';
 import { collectionService, Collection } from '../services/collection.service';
+import { journalService, JournalEntry } from '../services/journal.service';
 import {
   scheduleSuggestionsService,
   compareTimeSlots,
@@ -50,7 +51,7 @@ const DAYS_OF_WEEK = [
   { key: 'sat', label: 'S', day: 6 },
 ];
 
-type ReminderType = 'mantra' | 'collection';
+type ReminderType = 'mantra' | 'collection' | 'journal';
 
 const TEMPLATES = scheduleSuggestionsService.getTemplates();
 const DAY_PRESETS = scheduleSuggestionsService.getDayPresets();
@@ -62,17 +63,22 @@ export default function CreateReminderScreen() {
 
   const preselectedMantraId = (route.params as any)?.mantraId as number | undefined;
   const preselectedCollectionId = (route.params as any)?.collectionId as number | undefined;
+  const preselectedJournalId = (route.params as any)?.journalId as number | undefined;
 
   const [reminderType, setReminderType] = useState<ReminderType>(
-    preselectedCollectionId ? 'collection' : 'mantra',
+    preselectedJournalId ? 'journal' : preselectedCollectionId ? 'collection' : 'mantra',
   );
   const [selectedMantraId, setSelectedMantraId] = useState<number | undefined>(preselectedMantraId);
   const [selectedCollectionId, setSelectedCollectionId] = useState<number | undefined>(
     preselectedCollectionId,
   );
+  const [selectedJournalId, setSelectedJournalId] = useState<number | undefined>(
+    preselectedJournalId,
+  );
   const [submitting, setSubmitting] = useState(false);
   const [mantras, setMantras] = useState<Mantra[]>([]);
   const [collections, setCollections] = useState<Collection[]>([]);
+  const [journals, setJournals] = useState<JournalEntry[]>([]);
   const [loadingItems, setLoadingItems] = useState(true);
 
   const [scheduleMode, setScheduleMode] = useState<ScheduleMode>('routine');
@@ -106,9 +112,10 @@ export default function CreateReminderScreen() {
       const token = await storage.getToken();
       if (!token) return;
 
-      const [savedMantras, collectionRes] = await Promise.all([
+      const [savedMantras, collectionRes, journalRes] = await Promise.all([
         mantraService.getSavedMantras(token),
         collectionService.getUserCollections(token),
+        journalService.getJournalEntries(token),
       ]);
 
       let mantraList = Array.isArray(savedMantras) ? savedMantras : [];
@@ -127,6 +134,9 @@ export default function CreateReminderScreen() {
       setMantras(mantraList);
       if (collectionRes.data?.collections) {
         setCollections(collectionRes.data.collections);
+      }
+      if (journalRes.data?.entries) {
+        setJournals(journalRes.data.entries);
       }
     } catch (error) {
       console.error('Error loading items:', error);
@@ -322,6 +332,10 @@ export default function CreateReminderScreen() {
       Alert.alert('Select a Collection', 'Please select a collection for this reminder.');
       return;
     }
+    if (reminderType === 'journal' && !selectedJournalId) {
+      Alert.alert('Select a Journal Entry', 'Please select a journal entry for this reminder.');
+      return;
+    }
     if (scheduleMode === 'simple' && time <= new Date()) {
       Alert.alert('Invalid Time', 'Reminder time must be in the future.');
       return;
@@ -337,7 +351,9 @@ export default function CreateReminderScreen() {
       const target =
         reminderType === 'mantra'
           ? { mantra_id: selectedMantraId }
-          : { collection_id: selectedCollectionId };
+          : reminderType === 'collection'
+            ? { collection_id: selectedCollectionId }
+            : { journal_id: selectedJournalId };
 
       if (scheduleMode === 'routine') {
         await reminderService.createReminder(
@@ -372,6 +388,7 @@ export default function CreateReminderScreen() {
 
   const selectedMantra = mantras.find((m) => m.mantra_id === selectedMantraId);
   const selectedCollection = collections.find((c) => c.collection_id === selectedCollectionId);
+  const selectedJournal = journals.find((j) => j.journal_id === selectedJournalId);
 
   // ── iOS modal helpers ──────────────────────────────────────────────────────
 
@@ -506,6 +523,7 @@ export default function CreateReminderScreen() {
               onPress={() => {
                 setReminderType('mantra');
                 setSelectedCollectionId(undefined);
+                setSelectedJournalId(undefined);
               }}
             />
             <TypeToggleButton
@@ -515,15 +533,30 @@ export default function CreateReminderScreen() {
               onPress={() => {
                 setReminderType('collection');
                 setSelectedMantraId(undefined);
+                setSelectedJournalId(undefined);
+              }}
+            />
+            <TypeToggleButton
+              active={reminderType === 'journal'}
+              iconName="book-outline"
+              label="Journal"
+              onPress={() => {
+                setReminderType('journal');
+                setSelectedMantraId(undefined);
+                setSelectedCollectionId(undefined);
               }}
             />
           </View>
         </Section>
 
-        {/* ── Select item ── */}
+        {/* ─��� Select item ── */}
         <Section>
           <SectionTitle>
-            {reminderType === 'mantra' ? 'Select Mantra' : 'Select Collection'}
+            {reminderType === 'mantra'
+              ? 'Select Mantra'
+              : reminderType === 'collection'
+                ? 'Select Collection'
+                : 'Select Journal Entry'}
           </SectionTitle>
 
           {loadingItems ? (
@@ -562,33 +595,67 @@ export default function CreateReminderScreen() {
                 ))}
               </ScrollView>
             )
-          ) : collections.length === 0 ? (
+          ) : reminderType === 'collection' ? (
+            collections.length === 0 ? (
+              <AppText className="text-sm text-[#6B7280] italic text-center py-3">
+                No collections yet. Create a collection first.
+              </AppText>
+            ) : (
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                className="max-h-[50px]"
+              >
+                {collections.map((collection) => (
+                  <TouchableOpacity
+                    key={collection.collection_id}
+                    className="px-4 py-2 rounded-full mr-2"
+                    style={{
+                      backgroundColor:
+                        selectedCollectionId === collection.collection_id
+                          ? colors.primaryDark
+                          : '#F3F4F6',
+                    }}
+                    onPress={() => setSelectedCollectionId(collection.collection_id)}
+                  >
+                    <AppText
+                      className="text-sm max-w-[150px]"
+                      style={{
+                        color:
+                          selectedCollectionId === collection.collection_id ? colors.text : '#333',
+                      }}
+                      numberOfLines={1}
+                    >
+                      {collection.name}
+                    </AppText>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            )
+          ) : journals.length === 0 ? (
             <AppText className="text-sm text-[#6B7280] italic text-center py-3">
-              No collections yet. Create a collection first.
+              No journal entries yet. Write a journal entry first.
             </AppText>
           ) : (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="max-h-[50px]">
-              {collections.map((collection) => (
+              {journals.map((journal) => (
                 <TouchableOpacity
-                  key={collection.collection_id}
+                  key={journal.journal_id}
                   className="px-4 py-2 rounded-full mr-2"
                   style={{
                     backgroundColor:
-                      selectedCollectionId === collection.collection_id
-                        ? colors.primaryDark
-                        : '#F3F4F6',
+                      selectedJournalId === journal.journal_id ? colors.primaryDark : '#F3F4F6',
                   }}
-                  onPress={() => setSelectedCollectionId(collection.collection_id)}
+                  onPress={() => setSelectedJournalId(journal.journal_id)}
                 >
                   <AppText
                     className="text-sm max-w-[150px]"
                     style={{
-                      color:
-                        selectedCollectionId === collection.collection_id ? colors.text : '#333',
+                      color: selectedJournalId === journal.journal_id ? colors.text : '#333',
                     }}
                     numberOfLines={1}
                   >
-                    {collection.name}
+                    {journal.title || journal.content.slice(0, 30)}
                   </AppText>
                 </TouchableOpacity>
               ))}
@@ -614,6 +681,17 @@ export default function CreateReminderScreen() {
               <Ionicons name="checkmark-circle" size={16} color={colors.primaryDark} />
               <AppText className="text-sm text-[#333] flex-1" numberOfLines={1}>
                 {selectedCollection.name}
+              </AppText>
+            </View>
+          )}
+          {selectedJournal && (
+            <View
+              className="flex-row items-center gap-2 mt-3 pt-3 border-t border-[#F3F4F6]"
+              testID="selected-item-preview"
+            >
+              <Ionicons name="checkmark-circle" size={16} color={colors.primaryDark} />
+              <AppText className="text-sm text-[#333] flex-1" numberOfLines={2}>
+                {selectedJournal.title || selectedJournal.content.slice(0, 50)}
               </AppText>
             </View>
           )}

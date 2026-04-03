@@ -51,20 +51,28 @@ export const ReminderModel = {
       .execute();
   },
 
-  // Get all reminders for a user with linked mantra/collection names
-  async findByUserIdWithNames(
-    userId: number,
-  ): Promise<Array<Reminder & { mantra_title: string | null; collection_name: string | null }>> {
+  // Get all reminders for a user with linked mantra/collection/journal names
+  async findByUserIdWithNames(userId: number): Promise<
+    Array<
+      Reminder & {
+        mantra_title: string | null;
+        collection_name: string | null;
+        journal_title: string | null;
+      }
+    >
+  > {
     return await db
       .selectFrom('Reminder')
       .leftJoin('Mantra', 'Mantra.mantra_id', 'Reminder.mantra_id')
       .leftJoin('Collection', 'Collection.collection_id', 'Reminder.collection_id')
+      .leftJoin('JournalEntry', 'JournalEntry.journal_id', 'Reminder.journal_id')
       .where('Reminder.user_id', '=', userId)
       .select([
         'Reminder.reminder_id',
         'Reminder.user_id',
         'Reminder.mantra_id',
         'Reminder.collection_id',
+        'Reminder.journal_id',
         'Reminder.time',
         'Reminder.frequency',
         'Reminder.status',
@@ -74,6 +82,7 @@ export const ReminderModel = {
         'Reminder.timezone',
         'Mantra.title as mantra_title',
         'Collection.name as collection_name',
+        'JournalEntry.title as journal_title',
       ])
       .orderBy('Reminder.time', 'asc')
       .execute();

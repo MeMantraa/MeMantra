@@ -5,6 +5,7 @@ import CreateReminderScreen from '../../screens/CreateReminderScreen';
 import { reminderService } from '../../services/reminder.service';
 import { mantraService } from '../../services/mantra.service';
 import { collectionService } from '../../services/collection.service';
+import { journalService } from '../../services/journal.service';
 import { storage } from '../../utils/storage';
 
 jest.mock('@expo/vector-icons', () => ({
@@ -59,6 +60,12 @@ jest.mock('../../services/collection.service', () => ({
   },
 }));
 
+jest.mock('../../services/journal.service', () => ({
+  journalService: {
+    getJournalEntries: jest.fn(),
+  },
+}));
+
 jest.mock('../../utils/storage', () => ({
   storage: {
     getToken: jest.fn(),
@@ -96,6 +103,10 @@ describe('CreateReminderScreen', () => {
     (collectionService.getUserCollections as jest.Mock).mockResolvedValue({
       status: 'success',
       data: { collections: mockCollections },
+    });
+    (journalService.getJournalEntries as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { entries: [] },
     });
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 

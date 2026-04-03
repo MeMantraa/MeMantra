@@ -30,9 +30,9 @@ describe('DeepDiveReader', () => {
 
     expect(getByText('DEEP DIVE')).toBeTruthy();
     expect(getByText('Key Takeaway')).toBeTruthy();
-    expect(getByText('SUMMARY')).toBeTruthy();
-    expect(getByText('EXPLANATION')).toBeTruthy();
-    expect(getByText('EXAMPLE')).toBeTruthy();
+    expect(queryByText('SUMMARY')).toBeNull();
+    expect(queryByText('EXPLANATION')).toBeNull();
+    expect(queryByText('EXAMPLE')).toBeNull();
 
     expect(getByText('This is the summary paragraph.')).toBeTruthy();
     expect(

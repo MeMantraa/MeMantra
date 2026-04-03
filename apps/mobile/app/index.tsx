@@ -217,6 +217,11 @@ export default function MainNavigator() {
       } else if (data.type === 'reminder' && data.mantraId) {
         engagementService.trackEvent('notification_tap_reminder');
         handleNotificationNavigation(data.mantraId as number);
+      } else if (data.type === 'journal_reminder' && data.journalId) {
+        engagementService.trackEvent('notification_tap_journal_reminder');
+        if (isNavigationReady()) {
+          navigateFromOutside('JournalDetail', { journalId: data.journalId as number });
+        }
       } else if (data.type === 'reminder' && data.reminderId) {
         // Legacy support: if only reminderId is provided, log it
         console.log('Reminder notification without mantraId:', data.reminderId);

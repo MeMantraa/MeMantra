@@ -24,7 +24,7 @@ const uniqueScheduleTimesSchema = z
     message: 'Duplicate times are not allowed',
   });
 
-// Create reminder schema - requires either mantra_id or collection_id (not both)
+// Create reminder schema - requires exactly one of mantra_id, collection_id, or journal_id
 export const createReminderSchema = z.object({
   body: z
     .object({
@@ -34,6 +34,7 @@ export const createReminderSchema = z.object({
         .int()
         .positive('Collection ID must be a positive integer')
         .optional(),
+      journal_id: z.number().int().positive('Journal ID must be a positive integer').optional(),
       time: z.iso.datetime({ message: 'Must be a valid ISO 8601 datetime' }).optional(),
       frequency: reminderFrequencyEnum,
       status: reminderStatusEnum.optional().default('active'),
@@ -41,9 +42,17 @@ export const createReminderSchema = z.object({
       schedule_days: z.array(dayOfWeekSchema).min(1).max(7).optional(),
       timezone: timezoneSchema.optional(),
     })
-    .refine((data) => (data.mantra_id !== undefined) !== (data.collection_id !== undefined), {
-      message: 'Exactly one of mantra_id or collection_id must be provided',
-    })
+    .refine(
+      (data) => {
+        const provided = [data.mantra_id, data.collection_id, data.journal_id].filter(
+          (id) => id !== undefined,
+        );
+        return provided.length === 1;
+      },
+      {
+        message: 'Exactly one of mantra_id, collection_id, or journal_id must be provided',
+      },
+    )
     .refine(
       (data) => {
         if (data.frequency === 'routine') {
@@ -67,6 +76,7 @@ export const updateReminderSchema = z.object({
   body: z.object({
     mantra_id: z.number().int().positive().optional(),
     collection_id: z.number().int().positive().optional(),
+    journal_id: z.number().int().positive().optional(),
     time: z.iso.datetime().optional(),
     frequency: reminderFrequencyEnum.optional(),
     status: reminderStatusEnum.optional(),
