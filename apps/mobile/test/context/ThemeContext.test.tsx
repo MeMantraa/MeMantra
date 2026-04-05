@@ -46,8 +46,8 @@ describe('ThemeContext', () => {
       </ThemeProvider>,
     );
 
-    expect(screen.getByText('default')).toBeTruthy();
-    expect(screen.getByText(themes.default.primary)).toBeTruthy();
+    expect(screen.getByText('ocean')).toBeTruthy();
+    expect(screen.getByText(themes.ocean.primary)).toBeTruthy();
   });
 
   it('calls setTheme when button is pressed', () => {
@@ -59,6 +59,7 @@ describe('ThemeContext', () => {
 
     fireEvent.press(screen.getByText('toggle'));
 
+    // Button calls setTheme('default'), so theme changes to 'default'
     expect(screen.getByText('default')).toBeTruthy();
   });
 
