@@ -58,7 +58,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Login fetch user theme
       try {
         const response = await userService.getTheme(authToken);
-        const serverTheme = response.data.theme as ThemeName;
+        const rawTheme = response.data.theme as ThemeName;
+        // Migrate users still on the old 'default' (Sage Green) to Ocean Blue
+        const serverTheme = rawTheme === 'default' ? 'ocean' : rawTheme;
         if (serverTheme in themes) {
           setThemeState(serverTheme);
           await AsyncStorage.setItem(THEME_STORAGE_KEY, serverTheme);
