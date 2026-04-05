@@ -4,12 +4,19 @@ import { ReminderSchedulerService } from './services/reminder-scheduler.service'
 import { RecommendationNotificationService } from './services/recommendation-notification.service';
 import { EngagementOptimizerService } from './services/engagement-optimizer.service';
 import { connectRedis, disconnectRedis } from './config/redis.config';
+import {
+  createReminderWorker,
+  createRecommendationWorker,
+  createEngagementOptimizerWorker,
+} from './workers';
+import type { Worker } from 'bullmq';
 
 const PORT = process.env.PORT || 3000;
 const shouldRunSchedulers =
   process.env.NODE_ENV !== 'test' && process.env.RUN_SCHEDULERS !== 'false';
 
 const app = createApp();
+const workers: Worker[] = [];
 
 // Start server
 app.listen(PORT, async () => {
@@ -25,6 +32,15 @@ app.listen(PORT, async () => {
 
   // Disable background schedulers in test or hosted web-service processes when requested.
   if (shouldRunSchedulers) {
+    // Start BullMQ workers to process background jobs
+    workers.push(
+      createReminderWorker(),
+      createRecommendationWorker(),
+      createEngagementOptimizerWorker(),
+    );
+    console.log('BullMQ workers started');
+
+    // Start cron schedulers to enqueue jobs on schedule
     ReminderSchedulerService.start({
       cronExpression: '* * * * *',
     });
@@ -42,20 +58,15 @@ app.listen(PORT, async () => {
 });
 
 // Graceful shutdown
-process.on('SIGTERM', async () => {
-  console.log('SIGTERM received, shutting down gracefully');
+async function gracefulShutdown(signal: string) {
+  console.log(`${signal} received, shutting down gracefully`);
   ReminderSchedulerService.stop();
   RecommendationNotificationService.stop();
   EngagementOptimizerService.stop();
+  await Promise.all(workers.map((w) => w.close()));
   await disconnectRedis();
   process.exit(0);
-});
+}
 
-process.on('SIGINT', async () => {
-  console.log('SIGINT received, shutting down gracefully');
-  ReminderSchedulerService.stop();
-  RecommendationNotificationService.stop();
-  EngagementOptimizerService.stop();
-  await disconnectRedis();
-  process.exit(0);
-});
+process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.on('SIGINT', () => gracefulShutdown('SIGINT'));

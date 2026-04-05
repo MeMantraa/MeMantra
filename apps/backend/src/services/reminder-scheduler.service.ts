@@ -1,6 +1,7 @@
 import * as cron from 'node-cron';
 import { ReminderModel } from '../models/reminder.model';
 import { NotificationService } from './notification.service';
+import { reminderQueue } from '../config/queue.config';
 import {
   getCurrentTimeInTimezone as _getCurrentTimeInTimezone,
   formatDateInTimezone as _formatDateInTimezone,
@@ -85,7 +86,7 @@ export const ReminderSchedulerService = {
     console.log(`🕐 Starting reminder scheduler with cron: ${cronExpression}`);
 
     this.cronTask = cron.schedule(cronExpression, async () => {
-      await this.processReminders();
+      await reminderQueue.add('process-reminders', { triggeredAt: new Date().toISOString() });
     });
 
     this.isRunning = true;

@@ -12,6 +12,7 @@ import {
   stopScheduler,
   getSchedulerStatus,
 } from '../utils/cron-scheduler';
+import { recommendationQueue } from '../config/queue.config';
 import * as cron from 'node-cron';
 
 /** Fallback hour (in the user's local timezone) when no optimal hour is computed */
@@ -39,7 +40,7 @@ export const RecommendationNotificationService = {
    */
   start(config: SchedulerConfig = {}): void {
     startScheduler(this, config, '0 * * * *', 'Recommendation notification scheduler', () =>
-      this.processAllUsers(),
+      recommendationQueue.add('process-recommendations', { triggeredAt: new Date().toISOString() }),
     );
   },
 
