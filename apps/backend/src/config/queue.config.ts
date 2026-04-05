@@ -1,0 +1,43 @@
+import { Queue, QueueOptions } from 'bullmq';
+
+const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+
+function parseRedisUrl(url: string) {
+  const parsed = new URL(url);
+  return {
+    host: parsed.hostname,
+    port: Number(parsed.port) || 6379,
+  };
+}
+
+export const connection = parseRedisUrl(REDIS_URL);
+
+const defaultOpts: Omit<QueueOptions, 'connection'> = {
+  defaultJobOptions: {
+    attempts: 3,
+    backoff: { type: 'exponential', delay: 1000 },
+    removeOnComplete: { count: 200 },
+    removeOnFail: { count: 500 },
+  },
+};
+
+export const QUEUE_NAMES = {
+  REMINDERS: 'reminders',
+  RECOMMENDATIONS: 'recommendations',
+  ENGAGEMENT_OPTIMIZER: 'engagement-optimizer',
+} as const;
+
+export const reminderQueue = new Queue(QUEUE_NAMES.REMINDERS, {
+  connection,
+  ...defaultOpts,
+});
+
+export const recommendationQueue = new Queue(QUEUE_NAMES.RECOMMENDATIONS, {
+  connection,
+  ...defaultOpts,
+});
+
+export const engagementOptimizerQueue = new Queue(QUEUE_NAMES.ENGAGEMENT_OPTIMIZER, {
+  connection,
+  ...defaultOpts,
+});
