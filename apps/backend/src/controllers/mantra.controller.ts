@@ -11,6 +11,7 @@ import { db } from '../db';
 import { UserCategoryScoreModel } from '../models/user-category-score.model';
 import { LikeModel } from '../models/like.model';
 import { sanitizeForLog } from '../utils/sanitize.utils';
+import { cacheDelete } from '../services/cache.service';
 
 export const MantraController = {
   // GET /api/mantras - List all mantras with optional search and pagination
@@ -93,6 +94,8 @@ export const MantraController = {
         created_by: userId,
       });
 
+      await cacheDelete('cache:/api/mantras*');
+
       return res.status(201).json({
         status: 'success',
         message: 'Mantra created successfully',
@@ -124,6 +127,8 @@ export const MantraController = {
 
       const updatedMantra = await MantraModel.update(Number(id), updateData);
 
+      await cacheDelete('cache:/api/mantras*');
+
       return res.status(200).json({
         status: 'success',
         message: 'Mantra updated successfully',
@@ -153,6 +158,8 @@ export const MantraController = {
       }
 
       await MantraModel.softDelete(Number(id));
+
+      await cacheDelete('cache:/api/mantras*');
 
       return res.status(200).json({
         status: 'success',
@@ -388,6 +395,13 @@ export const MantraController = {
         );
       });
 
+      // Invalidate caches for this user's feed, saved, and collections
+      await cacheDelete(
+        `cache:/api/mantras/feed:user:${userId}*`,
+        `cache:/api/mantras/saved*user:${userId}*`,
+        `cache:/api/collections*user:${userId}*`,
+      );
+
       return res.status(200).json({
         status: 'success',
         message: 'Mantra saved successfully',
@@ -455,6 +469,12 @@ export const MantraController = {
           message: 'Mantra not found in any collection',
         });
       }
+
+      await cacheDelete(
+        `cache:/api/mantras/feed:user:${userId}*`,
+        `cache:/api/mantras/saved*user:${userId}*`,
+        `cache:/api/collections*user:${userId}*`,
+      );
 
       return res.status(200).json({
         status: 'success',

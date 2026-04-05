@@ -8,6 +8,7 @@ import {
 import { UserCategoryScoreModel } from '../models/user-category-score.model';
 import type { Reminder } from '../types/database.types';
 import { sanitizeForLog } from '../utils/sanitize.utils';
+import { cacheDelete } from '../services/cache.service';
 
 // --- Utility helpers ---
 const handleError = (res: Response, message: string, error?: unknown, status = 500) => {
@@ -159,6 +160,8 @@ export const ReminderController = {
         });
       }
 
+      await cacheDelete(`cache:/api/reminders*user:${userId}*`);
+
       return res.status(201).json({
         status: 'success',
         message: 'Reminder created successfully',
@@ -184,6 +187,8 @@ export const ReminderController = {
 
       const updatedReminder = await ReminderModel.update(Number(id), updateData);
 
+      await cacheDelete(`cache:/api/reminders*user:${userId}*`);
+
       return res.status(200).json({
         status: 'success',
         message: 'Reminder updated successfully',
@@ -204,6 +209,8 @@ export const ReminderController = {
       if (!verifyOwnership(res, reminder, userId)) return;
 
       await ReminderModel.delete(Number(req.params.id));
+
+      await cacheDelete(`cache:/api/reminders*user:${userId}*`);
 
       return res.status(200).json({
         status: 'success',

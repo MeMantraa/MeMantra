@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { LikeModel } from '../models/like.model';
 import { UserCategoryScoreModel } from '../models/user-category-score.model';
 import { sanitizeForLog } from '../utils/sanitize.utils';
+import { cacheDelete } from '../services/cache.service';
 
 export const LikeController = {
   // POST /api/likes/:mantraId - Like a mantra
@@ -39,6 +40,13 @@ export const LikeController = {
           err,
         );
       });
+
+      await cacheDelete(
+        `cache:/api/mantras/feed:user:${userId}*`,
+        `cache:/api/likes/mantras:user:${userId}*`,
+        'cache:/api/likes/popular*',
+        'cache:/api/mantras/popular*',
+      );
 
       return res.status(201).json({
         status: 'success',
@@ -89,6 +97,13 @@ export const LikeController = {
             err,
           );
         },
+      );
+
+      await cacheDelete(
+        `cache:/api/mantras/feed:user:${userId}*`,
+        `cache:/api/likes/mantras:user:${userId}*`,
+        'cache:/api/likes/popular*',
+        'cache:/api/mantras/popular*',
       );
 
       return res.status(200).json({
