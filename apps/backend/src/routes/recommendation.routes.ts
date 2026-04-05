@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { RecommendationController } from '../controllers/recommendation.controller';
 import { validateRequest } from '../middleware/validate.middleware';
 import { authenticate } from '../middleware/auth.middleware';
+import { cacheResponse } from '../middleware/cache.middleware';
 import {
   createRecommendationSchema,
   recommendationIdSchema,
@@ -18,24 +19,35 @@ router.use(authenticate);
 router.get(
   '/',
   validateRequest(recommendationQuerySchema),
+  cacheResponse({ ttl: 300, perUser: true, keyPrefix: '/api/recommendations' }),
   RecommendationController.getUserRecommendations,
 );
 
-router.get('/detailed', RecommendationController.getDetailedRecommendations);
+router.get(
+  '/detailed',
+  cacheResponse({ ttl: 300, perUser: true, keyPrefix: '/api/recommendations/detailed' }),
+  RecommendationController.getDetailedRecommendations,
+);
 
 router.get(
   '/recent',
   validateRequest(recentQuerySchema),
+  cacheResponse({ ttl: 120, perUser: true, keyPrefix: '/api/recommendations/recent' }),
   RecommendationController.getRecentRecommendations,
 );
 
 router.get(
   '/suggest',
   validateRequest(suggestQuerySchema),
+  cacheResponse({ ttl: 600, perUser: true }),
   RecommendationController.suggestRecommendations,
 );
 
-router.get('/stats', RecommendationController.getRecommendationStats);
+router.get(
+  '/stats',
+  cacheResponse({ ttl: 300, perUser: true, keyPrefix: '/api/recommendations/stats' }),
+  RecommendationController.getRecommendationStats,
+);
 
 router.get(
   '/:id',
