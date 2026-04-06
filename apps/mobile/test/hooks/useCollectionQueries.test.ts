@@ -4,11 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   useUserCollections,
   useCollectionById,
-  useCreateCollection,
-  useUpdateCollection,
   useDeleteCollection,
-  useAddMantraToCollection,
-  useRemoveMantraFromCollection,
 } from '../../hooks/useCollectionQueries';
 import { collectionService } from '../../services/collection.service';
 import { storage } from '../../utils/storage';
@@ -17,11 +13,7 @@ jest.mock('../../services/collection.service', () => ({
   collectionService: {
     getUserCollections: jest.fn(),
     getCollectionById: jest.fn(),
-    createCollection: jest.fn(),
-    updateCollection: jest.fn(),
     deleteCollection: jest.fn(),
-    addMantraToCollection: jest.fn(),
-    removeMantraFromCollection: jest.fn(),
   },
 }));
 
@@ -82,78 +74,6 @@ describe('useCollectionById', () => {
   });
 });
 
-describe('useCreateCollection', () => {
-  it('calls createCollection with the right args and token', async () => {
-    (collectionService.createCollection as jest.Mock).mockResolvedValue({ status: 'success' });
-    const { wrapper } = createWrapper();
-
-    const { result } = renderHook(() => useCreateCollection(), { wrapper });
-
-    await act(async () => {
-      result.current.mutate({ name: 'Morning', description: 'AM mantras', icon: '🌅' });
-    });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(collectionService.createCollection).toHaveBeenCalledWith(
-      'Morning',
-      'AM mantras',
-      'test-token',
-      '🌅',
-    );
-  });
-
-  it('invalidates collections.all on success', async () => {
-    (collectionService.createCollection as jest.Mock).mockResolvedValue({ status: 'success' });
-    const { wrapper, queryClient } = createWrapper();
-    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
-
-    const { result } = renderHook(() => useCreateCollection(), { wrapper });
-
-    await act(async () => {
-      result.current.mutate({ name: 'Evening' });
-    });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['collections'] });
-  });
-});
-
-describe('useUpdateCollection', () => {
-  it('calls updateCollection with the right args and token', async () => {
-    (collectionService.updateCollection as jest.Mock).mockResolvedValue({ status: 'success' });
-    const { wrapper } = createWrapper();
-
-    const { result } = renderHook(() => useUpdateCollection(), { wrapper });
-
-    await act(async () => {
-      result.current.mutate({ collectionId: 2, updates: { name: 'Updated' } });
-    });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(collectionService.updateCollection).toHaveBeenCalledWith(
-      2,
-      { name: 'Updated' },
-      'test-token',
-    );
-  });
-
-  it('invalidates collections.all and collections.detail on success', async () => {
-    (collectionService.updateCollection as jest.Mock).mockResolvedValue({ status: 'success' });
-    const { wrapper, queryClient } = createWrapper();
-    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
-
-    const { result } = renderHook(() => useUpdateCollection(), { wrapper });
-
-    await act(async () => {
-      result.current.mutate({ collectionId: 2, updates: { name: 'Updated' } });
-    });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['collections'] });
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['collections', 2] });
-  });
-});
-
 describe('useDeleteCollection', () => {
   it('calls deleteCollection with the id and token', async () => {
     (collectionService.deleteCollection as jest.Mock).mockResolvedValue({ status: 'success' });
@@ -182,77 +102,5 @@ describe('useDeleteCollection', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['collections'] });
-  });
-});
-
-describe('useAddMantraToCollection', () => {
-  it('calls addMantraToCollection with the right args and token', async () => {
-    (collectionService.addMantraToCollection as jest.Mock).mockResolvedValue({
-      status: 'success',
-    });
-    const { wrapper } = createWrapper();
-
-    const { result } = renderHook(() => useAddMantraToCollection(), { wrapper });
-
-    await act(async () => {
-      result.current.mutate({ collectionId: 4, mantraId: 10 });
-    });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(collectionService.addMantraToCollection).toHaveBeenCalledWith(4, 10, 'test-token');
-  });
-
-  it('invalidates collections.all and collections.detail on success', async () => {
-    (collectionService.addMantraToCollection as jest.Mock).mockResolvedValue({
-      status: 'success',
-    });
-    const { wrapper, queryClient } = createWrapper();
-    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
-
-    const { result } = renderHook(() => useAddMantraToCollection(), { wrapper });
-
-    await act(async () => {
-      result.current.mutate({ collectionId: 4, mantraId: 10 });
-    });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['collections'] });
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['collections', 4] });
-  });
-});
-
-describe('useRemoveMantraFromCollection', () => {
-  it('calls removeMantraFromCollection with the right args and token', async () => {
-    (collectionService.removeMantraFromCollection as jest.Mock).mockResolvedValue({
-      status: 'success',
-    });
-    const { wrapper } = createWrapper();
-
-    const { result } = renderHook(() => useRemoveMantraFromCollection(), { wrapper });
-
-    await act(async () => {
-      result.current.mutate({ collectionId: 4, mantraId: 10 });
-    });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(collectionService.removeMantraFromCollection).toHaveBeenCalledWith(4, 10, 'test-token');
-  });
-
-  it('invalidates collections.all and collections.detail on success', async () => {
-    (collectionService.removeMantraFromCollection as jest.Mock).mockResolvedValue({
-      status: 'success',
-    });
-    const { wrapper, queryClient } = createWrapper();
-    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
-
-    const { result } = renderHook(() => useRemoveMantraFromCollection(), { wrapper });
-
-    await act(async () => {
-      result.current.mutate({ collectionId: 4, mantraId: 10 });
-    });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['collections'] });
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['collections', 4] });
   });
 });

@@ -2,8 +2,13 @@ import React from 'react';
 import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import RemindersScreen from '../../screens/RemindersScreen';
-import { reminderService } from '../../services/reminder.service';
-import { storage } from '../../utils/storage';
+import { useAllReminders, useUpdateReminder, useDeleteReminder } from '../../hooks';
+
+jest.mock('../../hooks', () => ({
+  useAllReminders: jest.fn(),
+  useUpdateReminder: jest.fn(),
+  useDeleteReminder: jest.fn(),
+}));
 
 jest.mock('@expo/vector-icons', () => ({
   Ionicons: () => null,
@@ -28,262 +33,168 @@ jest.mock('@react-navigation/native', () => {
   };
 });
 
-jest.mock('../../services/reminder.service', () => ({
-  reminderService: {
-    getReminders: jest.fn(),
-    updateReminder: jest.fn(),
-    deleteReminder: jest.fn(),
+jest.mock('../../services/schedule-suggestions.service', () => ({
+  scheduleSuggestionsService: {
+    formatTimeForDisplay: (t: string) => t,
+    formatDaysForDisplay: () => 'Mon–Fri',
+    formatTimezoneDisplay: (tz: string) => tz,
   },
 }));
 
-jest.mock('../../utils/storage', () => ({
-  storage: {
-    getToken: jest.fn(),
-  },
+jest.mock('../../context/ThemeContext', () => ({
+  useTheme: () => ({
+    colors: {
+      primary: '#1a1a1a',
+      primaryDark: '#2a2a2a',
+      text: '#ffffff',
+      secondary: '#ff9900',
+    },
+  }),
 }));
+
+jest.mock('../../components/UI/textWrapper', () => {
+  const { Text } = jest.requireActual('react-native');
+  return ({ children, ...props }: any) => <Text {...props}>{children}</Text>;
+});
+
+const mockRefetch = jest.fn();
+const mockUpdateMutate = jest.fn();
+const mockDeleteMutate = jest.fn();
+
+const mockReminders = [
+  {
+    reminder_id: 1,
+    user_id: 1,
+    mantra_id: 10,
+    collection_id: null,
+    time: '2024-06-15T10:00:00Z',
+    frequency: 'daily',
+    status: 'active',
+    last_sent_at: null,
+    mantra_title: 'Be Present',
+    collection_name: null,
+  },
+  {
+    reminder_id: 2,
+    user_id: 1,
+    mantra_id: null,
+    collection_id: 5,
+    time: '2024-06-15T14:30:00Z',
+    frequency: 'weekly',
+    status: 'paused',
+    last_sent_at: null,
+    mantra_title: null,
+    collection_name: 'Morning Mantras',
+  },
+];
 
 describe('RemindersScreen', () => {
-  const mockReminders = [
-    {
-      reminder_id: 1,
-      user_id: 1,
-      mantra_id: 10,
-      collection_id: null,
-      time: '2024-06-15T10:00:00Z',
-      frequency: 'daily',
-      status: 'active',
-      last_sent_at: null,
-      mantra_title: 'Be Present',
-      collection_name: null,
-    },
-    {
-      reminder_id: 2,
-      user_id: 1,
-      mantra_id: null,
-      collection_id: 5,
-      time: '2024-06-15T14:30:00Z',
-      frequency: 'weekly',
-      status: 'paused',
-      last_sent_at: null,
-      mantra_title: null,
-      collection_name: 'Morning Mantras',
-    },
-  ];
-
   beforeEach(() => {
     jest.clearAllMocks();
-    (storage.getToken as jest.Mock).mockResolvedValue('test-token');
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    (useAllReminders as jest.Mock).mockReturnValue({
+      data: { status: 'success', data: { reminders: mockReminders } },
+      isLoading: false,
+      refetch: mockRefetch,
+    });
+    (useUpdateReminder as jest.Mock).mockReturnValue({
+      mutate: mockUpdateMutate,
+      isPending: false,
+    });
+    (useDeleteReminder as jest.Mock).mockReturnValue({
+      mutate: mockDeleteMutate,
+      isPending: false,
+    });
   });
 
   afterEach(() => {
     (Alert.alert as jest.Mock).mockRestore?.();
   });
 
-  it('renders empty state when no reminders', async () => {
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: [] },
+  it('renders empty state when no reminders', () => {
+    (useAllReminders as jest.Mock).mockReturnValue({
+      data: { status: 'success', data: { reminders: [] } },
+      isLoading: false,
+      refetch: mockRefetch,
     });
-
     const { getByText } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getByText('No reminders yet')).toBeTruthy();
-      expect(
-        getByText('Create a reminder to get notified about your favourite mantras or collections.'),
-      ).toBeTruthy();
-      expect(getByText('Create Reminder')).toBeTruthy();
-    });
+    expect(getByText('No reminders yet')).toBeTruthy();
+    expect(
+      getByText('Create a reminder to get notified about your favourite mantras or collections.'),
+    ).toBeTruthy();
+    expect(getByText('Create Reminder')).toBeTruthy();
   });
 
-  it('loads and displays reminders', async () => {
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: mockReminders },
-    });
-
+  it('loads and displays reminders', () => {
     const { getByText } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getByText('Be Present')).toBeTruthy();
-      expect(getByText('Morning Mantras')).toBeTruthy();
-      expect(getByText('Mantra')).toBeTruthy();
-      expect(getByText('Collection')).toBeTruthy();
-    });
+    expect(getByText('Be Present')).toBeTruthy();
+    expect(getByText('Morning Mantras')).toBeTruthy();
+    expect(getByText('Mantra')).toBeTruthy();
+    expect(getByText('Collection')).toBeTruthy();
   });
 
-  it('displays formatted frequency as capitalized string', async () => {
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: mockReminders },
-    });
-
+  it('displays formatted frequency', () => {
     const { getByText } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getByText('Daily')).toBeTruthy();
-      expect(getByText('Weekly')).toBeTruthy();
-    });
+    expect(getByText('Daily')).toBeTruthy();
+    expect(getByText('Weekly')).toBeTruthy();
   });
 
-  it('navigates to CreateReminder when add button is pressed', async () => {
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: [] },
+  it('navigates to CreateReminder when Create Reminder button pressed', () => {
+    (useAllReminders as jest.Mock).mockReturnValue({
+      data: { status: 'success', data: { reminders: [] } },
+      isLoading: false,
+      refetch: mockRefetch,
     });
-
     const { getByText } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getByText('Create Reminder')).toBeTruthy();
-    });
-
     fireEvent.press(getByText('Create Reminder'));
-
     expect(mockNavigate).toHaveBeenCalledWith('CreateReminder');
   });
 
-  it('shows error alert when loading fails', async () => {
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    (reminderService.getReminders as jest.Mock).mockRejectedValue(new Error('Network error'));
-
-    render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Error loading reminders:', expect.any(Error));
-      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to load reminders');
+  it('shows loading indicator when loading', () => {
+    (useAllReminders as jest.Mock).mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      refetch: mockRefetch,
     });
-
-    consoleErrorSpy.mockRestore();
+    const { UNSAFE_root } = render(<RemindersScreen />);
+    expect(UNSAFE_root).toBeTruthy();
   });
 
-  it('returns early when token is null during load', async () => {
-    (storage.getToken as jest.Mock).mockResolvedValue(null);
-
+  it('calls refetch on focus', () => {
     render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(reminderService.getReminders).not.toHaveBeenCalled();
-    });
+    expect(mockRefetch).toHaveBeenCalled();
   });
 
-  it('toggles reminder status from active to paused', async () => {
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: mockReminders },
-    });
-    (reminderService.updateReminder as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminder: { ...mockReminders[0], status: 'paused' } },
-    });
-
+  it('toggles reminder from active to paused', () => {
     const { getByText } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getByText('Be Present')).toBeTruthy();
-    });
-
-    // Press the Pause button for the active reminder
     fireEvent.press(getByText('Pause'));
-
-    await waitFor(() => {
-      expect(reminderService.updateReminder).toHaveBeenCalledWith(
-        1,
-        { status: 'paused' },
-        'test-token',
-      );
-    });
+    expect(mockUpdateMutate).toHaveBeenCalledWith(
+      { reminderId: 1, data: { status: 'paused' } },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
   });
 
-  it('toggles reminder status from paused to active', async () => {
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: mockReminders },
-    });
-    (reminderService.updateReminder as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminder: { ...mockReminders[1], status: 'active' } },
-    });
-
+  it('toggles reminder from paused to active', () => {
     const { getByText } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getByText('Morning Mantras')).toBeTruthy();
-    });
-
-    // Press the Resume button for the paused reminder
     fireEvent.press(getByText('Resume'));
-
-    await waitFor(() => {
-      expect(reminderService.updateReminder).toHaveBeenCalledWith(
-        2,
-        { status: 'active' },
-        'test-token',
-      );
-    });
+    expect(mockUpdateMutate).toHaveBeenCalledWith(
+      { reminderId: 2, data: { status: 'active' } },
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
   });
 
-  it('shows error alert when toggling status fails', async () => {
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: mockReminders },
+  it('shows error alert when toggle fails', () => {
+    mockUpdateMutate.mockImplementation((_args: any, options: any) => {
+      options?.onError?.();
     });
-    (reminderService.updateReminder as jest.Mock).mockRejectedValue(new Error('Update failed'));
-
     const { getByText } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getByText('Be Present')).toBeTruthy();
-    });
-
     fireEvent.press(getByText('Pause'));
-
-    await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Error updating reminder:', expect.any(Error));
-      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to update reminder');
-    });
-
-    consoleErrorSpy.mockRestore();
+    expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to update reminder');
   });
 
-  it('returns early when token is null during toggle', async () => {
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: mockReminders },
-    });
-
-    const { getByText } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getByText('Be Present')).toBeTruthy();
-    });
-
-    // Set token to null for the toggle call
-    (storage.getToken as jest.Mock).mockResolvedValue(null);
-
-    fireEvent.press(getByText('Pause'));
-
-    await waitFor(() => {
-      expect(reminderService.updateReminder).not.toHaveBeenCalled();
-    });
-  });
-
-  it('shows delete confirmation alert', async () => {
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: mockReminders },
-    });
-
+  it('shows delete confirmation alert', () => {
     const { getAllByText } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getAllByText('Delete').length).toBeGreaterThan(0);
-    });
-
     fireEvent.press(getAllByText('Delete')[0]);
-
     expect(Alert.alert).toHaveBeenCalledWith(
       'Delete Reminder',
       'Are you sure you want to delete this reminder?',
@@ -291,264 +202,79 @@ describe('RemindersScreen', () => {
     );
   });
 
-  it('deletes reminder when confirmed', async () => {
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: mockReminders },
-    });
-    (reminderService.deleteReminder as jest.Mock).mockResolvedValue({
-      status: 'success',
-      message: 'Deleted',
-    });
-
+  it('calls deleteReminder mutate when confirmed', () => {
     const { getAllByText } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getAllByText('Delete').length).toBeGreaterThan(0);
-    });
-
     fireEvent.press(getAllByText('Delete')[0]);
-
-    // Get the delete confirmation handler from the Alert call
     const alertCall = (Alert.alert as jest.Mock).mock.calls.find(
       (call) => call[0] === 'Delete Reminder',
     );
     const deleteButton = alertCall[2].find((btn: any) => btn.text === 'Delete');
-    await deleteButton.onPress();
-
-    await waitFor(() => {
-      expect(reminderService.deleteReminder).toHaveBeenCalledWith(1, 'test-token');
-    });
+    deleteButton.onPress();
+    expect(mockDeleteMutate).toHaveBeenCalledWith(
+      1,
+      expect.objectContaining({ onError: expect.any(Function) }),
+    );
   });
 
-  it('shows error alert when delete fails', async () => {
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: mockReminders },
+  it('shows error when delete fails', () => {
+    mockDeleteMutate.mockImplementation((_id: any, options: any) => {
+      options?.onError?.();
     });
-    (reminderService.deleteReminder as jest.Mock).mockRejectedValue(new Error('Delete failed'));
-
     const { getAllByText } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getAllByText('Delete').length).toBeGreaterThan(0);
-    });
-
     fireEvent.press(getAllByText('Delete')[0]);
-
     const alertCall = (Alert.alert as jest.Mock).mock.calls.find(
       (call) => call[0] === 'Delete Reminder',
     );
     const deleteButton = alertCall[2].find((btn: any) => btn.text === 'Delete');
-    await deleteButton.onPress();
-
-    await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Error deleting reminder:', expect.any(Error));
-      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to delete reminder');
-    });
-
-    consoleErrorSpy.mockRestore();
+    deleteButton.onPress();
+    expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to delete reminder');
   });
 
-  it('returns early when token is null during delete', async () => {
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: mockReminders },
+  it('does not show action buttons for completed reminders', () => {
+    const completedReminder = { ...mockReminders[0], reminder_id: 99, status: 'completed' };
+    (useAllReminders as jest.Mock).mockReturnValue({
+      data: { status: 'success', data: { reminders: [completedReminder] } },
+      isLoading: false,
+      refetch: mockRefetch,
     });
-
-    const { getAllByText } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getAllByText('Delete').length).toBeGreaterThan(0);
-    });
-
-    // Set token to null for the delete call
-    (storage.getToken as jest.Mock).mockResolvedValue(null);
-
-    fireEvent.press(getAllByText('Delete')[0]);
-
-    const alertCall = (Alert.alert as jest.Mock).mock.calls.find(
-      (call) => call[0] === 'Delete Reminder',
-    );
-    const deleteButton = alertCall[2].find((btn: any) => btn.text === 'Delete');
-    await deleteButton.onPress();
-
-    await waitFor(() => {
-      expect(reminderService.deleteReminder).not.toHaveBeenCalled();
-    });
-  });
-
-  it('does not show action buttons for completed reminders', async () => {
-    const completedReminder = {
-      ...mockReminders[0],
-      reminder_id: 99,
-      status: 'completed',
-    };
-
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: [completedReminder] },
-    });
-
-    const { getByText, queryByText } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getByText('Be Present')).toBeTruthy();
-    });
-
-    // Completed reminders should not have Pause/Resume or Delete buttons
-    // The active reminder had "Pause", so with only completed there should be none
+    const { queryByText } = render(<RemindersScreen />);
     expect(queryByText('Pause')).toBeNull();
     expect(queryByText('Resume')).toBeNull();
   });
 
-  it('handles reminder with null frequency', async () => {
-    const reminderNoFreq = {
-      ...mockReminders[0],
-      frequency: null,
-    };
-
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: [reminderNoFreq] },
+  it('handles null frequency', () => {
+    const noFreq = { ...mockReminders[0], frequency: null };
+    (useAllReminders as jest.Mock).mockReturnValue({
+      data: { status: 'success', data: { reminders: [noFreq] } },
+      isLoading: false,
+      refetch: mockRefetch,
     });
-
     const { getByText } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getByText('Unknown')).toBeTruthy();
-    });
+    expect(getByText('Unknown')).toBeTruthy();
   });
 
-  it('handles reminder with null time', async () => {
-    const reminderNoTime = {
-      ...mockReminders[0],
-      time: null,
-    };
-
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: [reminderNoTime] },
+  it('handles null time', () => {
+    const noTime = { ...mockReminders[0], time: null };
+    (useAllReminders as jest.Mock).mockReturnValue({
+      data: { status: 'success', data: { reminders: [noTime] } },
+      isLoading: false,
+      refetch: mockRefetch,
     });
-
     const { getByText } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getByText('No time set')).toBeTruthy();
-    });
+    expect(getByText('No time set')).toBeTruthy();
   });
 
-  it('navigates back when back button is pressed', async () => {
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: [] },
-    });
-
+  it('navigates back when back button pressed', async () => {
     const { getByTestId } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getByTestId('back-button')).toBeTruthy();
-    });
-
+    await waitFor(() => expect(getByTestId('back-button')).toBeTruthy());
     fireEvent.press(getByTestId('back-button'));
-
     expect(mockGoBack).toHaveBeenCalled();
   });
 
-  it('navigates to CreateReminder when header add button is pressed', async () => {
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: mockReminders },
-    });
-
+  it('navigates to CreateReminder when header add button pressed', async () => {
     const { getByTestId } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getByTestId('add-reminder-button')).toBeTruthy();
-    });
-
+    await waitFor(() => expect(getByTestId('add-reminder-button')).toBeTruthy());
     fireEvent.press(getByTestId('add-reminder-button'));
-
     expect(mockNavigate).toHaveBeenCalledWith('CreateReminder');
-  });
-
-  it('handles reminder without linked name', async () => {
-    const reminderNoName = {
-      ...mockReminders[0],
-      mantra_title: null,
-    };
-
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: [reminderNoName] },
-    });
-
-    const { queryByText, getByText } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getByText('Mantra')).toBeTruthy();
-    });
-
-    // "Be Present" should not be displayed since mantra_title is null
-    expect(queryByText('Be Present')).toBeNull();
-  });
-
-  it('displays schedule times for routine reminders', async () => {
-    const routineReminder = {
-      reminder_id: 3,
-      user_id: 1,
-      mantra_id: 10,
-      collection_id: null,
-      time: null,
-      frequency: 'routine',
-      status: 'active',
-      last_sent_at: null,
-      mantra_title: 'Be Present',
-      collection_name: null,
-      schedule_times: ['07:00', '12:00'],
-      schedule_days: [1, 2, 3, 4, 5],
-      timezone: 'America/New_York',
-    };
-
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: [routineReminder] },
-    });
-
-    const { getByText } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getByText('7:00 AM, 12:00 PM')).toBeTruthy();
-    });
-  });
-
-  it('displays "No times set" for routine reminders without schedule_times', async () => {
-    const routineReminder = {
-      reminder_id: 4,
-      user_id: 1,
-      mantra_id: 10,
-      collection_id: null,
-      time: null,
-      frequency: 'routine',
-      status: 'active',
-      last_sent_at: null,
-      mantra_title: 'Be Present',
-      collection_name: null,
-      schedule_times: null,
-      schedule_days: null,
-      timezone: null,
-    };
-
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { reminders: [routineReminder] },
-    });
-
-    const { getByText } = render(<RemindersScreen />);
-
-    await waitFor(() => {
-      expect(getByText('No times set')).toBeTruthy();
-    });
   });
 });

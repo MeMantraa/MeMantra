@@ -3,9 +3,6 @@ import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   useJournalEntries,
-  useJournalEntryById,
-  useJournalEntriesByMantra,
-  useJournalStats,
   useCreateJournalEntry,
   useUpdateJournalEntry,
   useDeleteJournalEntry,
@@ -16,9 +13,6 @@ import { storage } from '../../utils/storage';
 jest.mock('../../services/journal.service', () => ({
   journalService: {
     getJournalEntries: jest.fn(),
-    getJournalEntryById: jest.fn(),
-    getJournalEntriesByMantra: jest.fn(),
-    getJournalStats: jest.fn(),
     createJournalEntry: jest.fn(),
     updateJournalEntry: jest.fn(),
     deleteJournalEntry: jest.fn(),
@@ -65,62 +59,6 @@ describe('useJournalEntries', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(journalService.getJournalEntries).toHaveBeenCalledWith('test-token', options);
-  });
-});
-
-describe('useJournalEntryById', () => {
-  it('calls getJournalEntryById with the id and token', async () => {
-    (journalService.getJournalEntryById as jest.Mock).mockResolvedValue({ data: { entry: {} } });
-    const { wrapper } = createWrapper();
-
-    const { result } = renderHook(() => useJournalEntryById(11), { wrapper });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(journalService.getJournalEntryById).toHaveBeenCalledWith(11, 'test-token');
-  });
-
-  it('does NOT call getJournalEntryById when id is 0', async () => {
-    const { wrapper } = createWrapper();
-
-    renderHook(() => useJournalEntryById(0), { wrapper });
-
-    await new Promise((r) => setTimeout(r, 50));
-    expect(journalService.getJournalEntryById).not.toHaveBeenCalled();
-  });
-});
-
-describe('useJournalEntriesByMantra', () => {
-  it('calls getJournalEntriesByMantra with the mantraId and token', async () => {
-    (journalService.getJournalEntriesByMantra as jest.Mock).mockResolvedValue({
-      data: { entries: [] },
-    });
-    const { wrapper } = createWrapper();
-
-    const { result } = renderHook(() => useJournalEntriesByMantra(5), { wrapper });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(journalService.getJournalEntriesByMantra).toHaveBeenCalledWith(5, 'test-token');
-  });
-
-  it('does NOT call getJournalEntriesByMantra when mantraId is 0', async () => {
-    const { wrapper } = createWrapper();
-
-    renderHook(() => useJournalEntriesByMantra(0), { wrapper });
-
-    await new Promise((r) => setTimeout(r, 50));
-    expect(journalService.getJournalEntriesByMantra).not.toHaveBeenCalled();
-  });
-});
-
-describe('useJournalStats', () => {
-  it('calls getJournalStats with the token from storage', async () => {
-    (journalService.getJournalStats as jest.Mock).mockResolvedValue({ data: { stats: {} } });
-    const { wrapper } = createWrapper();
-
-    const { result } = renderHook(() => useJournalStats(), { wrapper });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(journalService.getJournalStats).toHaveBeenCalledWith('test-token');
   });
 });
 

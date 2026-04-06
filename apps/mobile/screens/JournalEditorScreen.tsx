@@ -12,9 +12,9 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
-import { journalService, MoodType, MOOD_OPTIONS } from '../services/journal.service';
-import { storage } from '../utils/storage';
+import { MoodType, MOOD_OPTIONS } from '../services/journal.service';
 import { engagementService } from '../services/engagement.service';
+import { useCreateJournalEntry, useUpdateJournalEntry } from '../hooks';
 
 export default function JournalEditorScreen({ navigation, route }: any) {
   const { colors } = useTheme();
@@ -34,7 +34,9 @@ export default function JournalEditorScreen({ navigation, route }: any) {
   const [mantraTitle, setMantraTitle] = useState<string | null>(
     existingEntry?.mantra_title || preselectedMantraTitle || null,
   );
-  const [saving, setSaving] = useState(false);
+  const createEntry = useCreateJournalEntry();
+  const updateEntry = useUpdateJournalEntry();
+  const isPending = createEntry.isPending || updateEntry.isPending;
 
   const handleAddTag = () => {
     const trimmedTag = tagInput.trim().toLowerCase();
@@ -56,40 +58,26 @@ export default function JournalEditorScreen({ navigation, route }: any) {
     mantra_id: mantraId,
   });
 
-  const handleSave = async () => {
+  const handleSave = () => {
     if (!content.trim()) {
       Alert.alert('Required', 'Please write some content for your journal entry');
       return;
     }
 
-    setSaving(true);
+    const payload = buildPayload();
+    const onSuccess = () => {
+      if (!isEditing) engagementService.trackEvent('journal_create');
+      const message = isEditing ? 'Journal entry updated' : 'Journal entry saved';
+      Alert.alert('Success', message, [{ text: 'OK', onPress: () => navigation.goBack() }]);
+    };
+    const onError = () => {
+      Alert.alert('Error', isEditing ? 'Failed to update entry' : 'Failed to save entry');
+    };
 
-    try {
-      const token = (await storage.getToken()) || '';
-      if (!token) {
-        navigation.navigate('Login');
-        return;
-      }
-
-      const payload = buildPayload();
-      const response =
-        isEditing && existingEntry
-          ? await journalService.updateJournalEntry(existingEntry.journal_id, payload, token)
-          : await journalService.createJournalEntry(payload, token);
-
-      if (response.status === 'success') {
-        if (!isEditing) engagementService.trackEvent('journal_create');
-        const message = isEditing ? 'Journal entry updated' : 'Journal entry saved';
-        Alert.alert('Success', message, [{ text: 'OK', onPress: () => navigation.goBack() }]);
-      } else {
-        const errorMessage = isEditing ? 'Failed to update entry' : 'Failed to save entry';
-        Alert.alert('Error', response.message || errorMessage);
-      }
-    } catch (err) {
-      console.error('Error saving journal entry:', err);
-      Alert.alert('Error', 'Failed to save journal entry');
-    } finally {
-      setSaving(false);
+    if (isEditing && existingEntry) {
+      updateEntry.mutate({ journalId: existingEntry.journal_id, payload }, { onSuccess, onError });
+    } else {
+      createEntry.mutate(payload, { onSuccess, onError });
     }
   };
 
@@ -115,13 +103,13 @@ export default function JournalEditorScreen({ navigation, route }: any) {
         <TouchableOpacity
           testID="save-button"
           onPress={handleSave}
-          disabled={saving || !content.trim()}
+          disabled={isPending || !content.trim()}
           className="px-6 py-3 rounded-full"
           style={{
             backgroundColor: colors.primaryDark,
           }}
         >
-          {saving ? (
+          {isPending ? (
             <ActivityIndicator size="small" color={colors.primaryDark} />
           ) : (
             <AppText

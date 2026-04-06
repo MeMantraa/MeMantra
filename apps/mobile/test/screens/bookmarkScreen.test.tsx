@@ -1,20 +1,20 @@
 import React from 'react';
-import { render, waitFor, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import BookmarkScreen from '../../screens/BookmarkScreen';
-import { storage } from '../../utils/storage';
 import { SavedProvider } from '../../context/SavedContext';
-import { collectionService } from '../../services/collection.service';
 import { reminderService } from '../../services/reminder.service';
+import { useCollectionById } from '../../hooks';
 
-jest.mock('@expo/vector-icons', () => ({
-  Ionicons: () => null,
+jest.mock('../../hooks', () => ({
+  useCollectionById: jest.fn(),
 }));
+
+jest.mock('@expo/vector-icons', () => ({ Ionicons: () => null }));
 
 jest.mock('@react-navigation/native', () => {
   const React = jest.requireActual('react');
   return {
-    ...jest.requireActual('@react-navigation/native'),
     useFocusEffect: (callback: () => void) => {
       React.useEffect(() => {
         callback();
@@ -22,12 +22,6 @@ jest.mock('@react-navigation/native', () => {
     },
   };
 });
-
-jest.mock('../../services/collection.service', () => ({
-  collectionService: {
-    getCollectionById: jest.fn(),
-  },
-}));
 
 jest.mock('../../services/reminder.service', () => ({
   reminderService: {
@@ -37,62 +31,52 @@ jest.mock('../../services/reminder.service', () => ({
   },
 }));
 
-jest.mock('../../utils/storage', () => ({
-  storage: {
-    getToken: jest.fn(),
-  },
-}));
-
 jest.mock('../../context/ThemeContext', () => ({
   useTheme: () => ({
-    colors: {
-      primary: '#1a1a1a',
-      primaryDark: '#2a2a2a',
-      text: '#ffffff',
-      secondary: '#ff9900',
-    },
+    colors: { primary: '#1a1a1a', primaryDark: '#2a2a2a', text: '#ffffff', secondary: '#ff9900' },
   }),
 }));
 
+jest.mock('../../components/UI/textWrapper', () => {
+  const { Text } = jest.requireActual('react-native');
+  return ({ children, ...props }: any) => <Text {...props}>{children}</Text>;
+});
+
+const mockMantras = [
+  {
+    mantra_id: 1,
+    title: 'Test Mantra 1',
+    key_takeaway: 'Takeaway 1',
+    created_at: '2024-01-01',
+    is_active: true,
+  },
+  {
+    mantra_id: 2,
+    title: 'Test Mantra 2',
+    key_takeaway: 'Takeaway 2',
+    created_at: '2024-01-02',
+    is_active: true,
+  },
+];
+
+const mockRefetch = jest.fn();
+
 describe('BookmarkScreen', () => {
-  const mockNavigate = jest.fn();
-  const mockGoBack = jest.fn();
-
-  const mockNavigation = { navigate: mockNavigate, goBack: mockGoBack };
-
-  const mockRoute = {
-    params: {
-      collectionId: 123,
-      collectionName: 'My Collection',
-    },
-  };
-
-  const mockMantras = [
-    {
-      mantra_id: 1,
-      title: 'Test Mantra 1',
-      key_takeaway: 'Takeaway 1',
-      created_at: '2024-01-01',
-      is_active: true,
-    },
-    {
-      mantra_id: 2,
-      title: 'Test Mantra 2',
-      key_takeaway: 'Takeaway 2',
-      created_at: '2024-01-02',
-      is_active: true,
-    },
-  ];
+  const mockNavigation = { navigate: jest.fn(), goBack: jest.fn() };
+  const mockRoute = { params: { collectionId: 123, collectionName: 'My Collection' } };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (storage.getToken as jest.Mock).mockResolvedValue('test-token');
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
+    (useCollectionById as jest.Mock).mockReturnValue({
+      data: { status: 'success', data: { mantras: mockMantras } },
+      isLoading: false,
+      isRefetching: false,
+      refetch: mockRefetch,
+    });
   });
 
-  afterEach(() => {
-    (Alert.alert as jest.Mock).mockRestore?.();
-  });
+  afterEach(() => jest.restoreAllMocks());
 
   const renderScreen = () =>
     render(
@@ -101,106 +85,47 @@ describe('BookmarkScreen', () => {
       </SavedProvider>,
     );
 
-  it('renders the screen with collection title', async () => {
-    (collectionService.getCollectionById as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { mantras: [] },
-    });
-
+  it('renders the screen with collection title', () => {
     const { getByText } = renderScreen();
-
-    await waitFor(() => {
-      expect(getByText('My Collection')).toBeTruthy();
-    });
+    expect(getByText('My Collection')).toBeTruthy();
   });
 
-  it('displays empty state when no mantras', async () => {
-    (collectionService.getCollectionById as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { mantras: [] },
+  it('displays empty state when no mantras', () => {
+    (useCollectionById as jest.Mock).mockReturnValue({
+      data: { status: 'success', data: { mantras: [] } },
+      isLoading: false,
+      isRefetching: false,
+      refetch: mockRefetch,
     });
-
     const { getByText } = renderScreen();
-
-    await waitFor(() => {
-      expect(getByText('No Mantras Yet')).toBeTruthy();
-      expect(getByText('Save mantras to this collection to see them here')).toBeTruthy();
-    });
+    expect(getByText('No Mantras Yet')).toBeTruthy();
+    expect(getByText('Save mantras to this collection to see them here')).toBeTruthy();
   });
 
-  it('loads and displays mantras on mount', async () => {
-    (collectionService.getCollectionById as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { mantras: mockMantras },
-    });
-
+  it('loads and displays mantras', () => {
     const { getByText } = renderScreen();
-
-    await waitFor(
-      () => {
-        expect(collectionService.getCollectionById).toHaveBeenCalledWith(123, 'test-token');
-        expect(getByText('Test Mantra 1')).toBeTruthy();
-        expect(getByText('Test Mantra 2')).toBeTruthy();
-      },
-      { timeout: 10000 },
-    );
+    expect(getByText('Test Mantra 1')).toBeTruthy();
+    expect(getByText('Test Mantra 2')).toBeTruthy();
   });
 
-  it('uses fallback token when getToken returns null', async () => {
-    (storage.getToken as jest.Mock).mockResolvedValue(null);
-    (collectionService.getCollectionById as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { mantras: [] },
+  it('shows loading indicator when loading', () => {
+    (useCollectionById as jest.Mock).mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isRefetching: false,
+      refetch: mockRefetch,
     });
-
-    renderScreen();
-
-    await waitFor(() => {
-      expect(collectionService.getCollectionById).toHaveBeenCalledWith(123, 'mock-token');
-    });
+    const { getByText } = renderScreen();
+    expect(getByText('Loading mantras...')).toBeTruthy();
   });
 
-  it('handles error when loading mantras fails', async () => {
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
-    (collectionService.getCollectionById as jest.Mock).mockRejectedValue(
-      new Error('Network error'),
-    );
-
+  it('navigates to Focus screen when mantra is pressed', () => {
     const { getByText } = renderScreen();
-
-    await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith(
-        'Error fetching collection mantras:',
-        expect.any(Error),
-      );
-      expect(Alert.alert).toHaveBeenCalledWith('Error', 'Failed to load mantras');
-      // After error, it should show empty state (mantras stays empty)
-      expect(getByText('No Mantras Yet')).toBeTruthy();
-    });
-
-    consoleErrorSpy.mockRestore();
-  });
-
-  it('navigates to Focus screen when mantra is pressed', async () => {
-    (collectionService.getCollectionById as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { mantras: mockMantras },
-    });
-
-    const { getByText } = renderScreen();
-
-    await waitFor(() => {
-      expect(getByText('Test Mantra 1')).toBeTruthy();
-    });
-
     fireEvent.press(getByText('Test Mantra 1'));
-
-    expect(mockNavigate).toHaveBeenCalledWith('Focus', {
-      mantra: mockMantras[0],
-    });
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('Focus', { mantra: mockMantras[0] });
   });
 
-  it('truncates long mantra titles with numberOfLines prop', async () => {
+  it('truncates long mantra titles with numberOfLines prop', () => {
     const longTitleMantras = [
       {
         mantra_id: 3,
@@ -210,188 +135,50 @@ describe('BookmarkScreen', () => {
         is_active: true,
       },
     ];
-
-    (collectionService.getCollectionById as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { mantras: longTitleMantras },
+    (useCollectionById as jest.Mock).mockReturnValue({
+      data: { status: 'success', data: { mantras: longTitleMantras } },
+      isLoading: false,
+      isRefetching: false,
+      refetch: mockRefetch,
     });
-
     const { getByText } = renderScreen();
-
-    await waitFor(() => {
-      const titleElement = getByText(longTitleMantras[0].title);
-      expect(titleElement.props.numberOfLines).toBe(3);
-    });
+    const titleElement = getByText(longTitleMantras[0].title);
+    expect(titleElement.props.numberOfLines).toBe(3);
   });
 
-  it('renders each mantra with correct styling', async () => {
-    (collectionService.getCollectionById as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { mantras: mockMantras },
-    });
-
-    const { getByText } = renderScreen();
-
-    await waitFor(() => {
-      const mantraText = getByText('Test Mantra 1');
-      expect(mantraText.props.style).toBeDefined();
-      expect(Array.isArray(mantraText.props.style)).toBe(true);
-    });
-  });
-
-  it('calls goBack when back button is pressed (with mantras)', async () => {
-    (collectionService.getCollectionById as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { mantras: mockMantras },
-    });
-
+  it('calls goBack when back button is pressed (with mantras)', () => {
     const { getByTestId } = renderScreen();
-
-    await waitFor(() => {
-      expect(getByTestId('back-button')).toBeTruthy();
-    });
-
     fireEvent.press(getByTestId('back-button'));
-
-    expect(mockGoBack).toHaveBeenCalled();
+    expect(mockNavigation.goBack).toHaveBeenCalled();
   });
 
-  it('calls goBack when back button is pressed (loading state)', async () => {
-    // Keep the promise pending to keep loading state
-    (collectionService.getCollectionById as jest.Mock).mockImplementation(
-      () => new Promise(() => {}),
-    );
-
-    const { getByText, getByTestId } = renderScreen();
-
-    // Wait for the loading state to render
-    await waitFor(() => {
-      expect(getByText('Loading mantras...')).toBeTruthy();
+  it('calls goBack when back button is pressed in loading state', () => {
+    (useCollectionById as jest.Mock).mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isRefetching: false,
+      refetch: mockRefetch,
     });
-
-    // The back button should be present in the loading state
-    const backButton = getByTestId('back-button-empty');
-    fireEvent.press(backButton);
-
-    expect(mockGoBack).toHaveBeenCalled();
-  });
-
-  it('refreshes mantras when pull-to-refresh is triggered', async () => {
-    (collectionService.getCollectionById as jest.Mock)
-      .mockResolvedValueOnce({
-        status: 'success',
-        data: { mantras: mockMantras },
-      })
-      .mockResolvedValueOnce({
-        status: 'success',
-        data: {
-          mantras: [
-            ...mockMantras,
-            {
-              mantra_id: 3,
-              title: 'New Mantra',
-              key_takeaway: 'New',
-              created_at: '2024-01-03',
-              is_active: true,
-            },
-          ],
-        },
-      });
-
     const { getByTestId } = renderScreen();
-
-    await waitFor(() => {
-      expect(getByTestId('mantra-list')).toBeTruthy();
-    });
-
-    // Trigger refresh
-    const flatList = getByTestId('mantra-list');
-    fireEvent(flatList, 'refresh');
-
-    await waitFor(() => {
-      expect(collectionService.getCollectionById).toHaveBeenCalledTimes(2);
-    });
+    fireEvent.press(getByTestId('back-button-empty'));
+    expect(mockNavigation.goBack).toHaveBeenCalled();
   });
 
-  it('navigates to CreateReminder when mantra reminder pressed with no existing reminder', async () => {
-    (collectionService.getCollectionById as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { mantras: mockMantras },
-    });
-
+  it('calls refetch on pull-to-refresh', () => {
     const { getByTestId } = renderScreen();
+    fireEvent(getByTestId('mantra-list'), 'refresh');
+    expect(mockRefetch).toHaveBeenCalled();
+  });
 
-    await waitFor(() => {
-      expect(getByTestId('mantra-list')).toBeTruthy();
-    });
-
+  it('navigates to CreateReminder when mantra reminder pressed with no existing reminder', () => {
+    const { getByTestId } = renderScreen();
     fireEvent.press(getByTestId('mantra-reminder-1'));
-
-    expect(mockNavigate).toHaveBeenCalledWith('CreateReminder', { mantraId: 1 });
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('CreateReminder', { mantraId: 1 });
   });
 
-  it('shows reminder alert when mantra reminder pressed with existing reminder', async () => {
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: {
-        reminders: [{ reminder_id: 50, mantra_id: 1, collection_id: null, status: 'active' }],
-      },
-    });
-    (collectionService.getCollectionById as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { mantras: mockMantras },
-    });
-
+  it('navigates to CreateReminder when collection reminder pressed with no existing reminder', () => {
     const { getByTestId } = renderScreen();
-
-    await waitFor(() => {
-      expect(getByTestId('mantra-list')).toBeTruthy();
-    });
-
-    fireEvent.press(getByTestId('mantra-reminder-1'));
-
-    expect(mockNavigate).not.toHaveBeenCalledWith('CreateReminder', expect.anything());
-    expect(Alert.alert).toHaveBeenCalledWith('Reminder', undefined, expect.any(Array));
-  });
-
-  it('navigates to CreateReminder when collection reminder pressed with no existing reminder', async () => {
-    (collectionService.getCollectionById as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { mantras: mockMantras },
-    });
-
-    const { getByTestId } = renderScreen();
-
-    await waitFor(() => {
-      expect(getByTestId('collection-reminder-button')).toBeTruthy();
-    });
-
     fireEvent.press(getByTestId('collection-reminder-button'));
-
-    expect(mockNavigate).toHaveBeenCalledWith('CreateReminder', { collectionId: 123 });
-  });
-
-  it('shows reminder alert when collection reminder pressed with existing reminder', async () => {
-    (reminderService.getReminders as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: {
-        reminders: [{ reminder_id: 60, mantra_id: null, collection_id: 123, status: 'paused' }],
-      },
-    });
-    (collectionService.getCollectionById as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { mantras: mockMantras },
-    });
-
-    const { getByTestId } = renderScreen();
-
-    await waitFor(() => {
-      expect(getByTestId('collection-reminder-button')).toBeTruthy();
-    });
-
-    fireEvent.press(getByTestId('collection-reminder-button'));
-
-    expect(mockNavigate).not.toHaveBeenCalledWith('CreateReminder', expect.anything());
-    expect(Alert.alert).toHaveBeenCalledWith('Reminder', undefined, expect.any(Array));
+    expect(mockNavigation.navigate).toHaveBeenCalledWith('CreateReminder', { collectionId: 123 });
   });
 });

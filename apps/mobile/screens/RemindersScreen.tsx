@@ -1,14 +1,14 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, TouchableOpacity, FlatList, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../src/navigation/types';
-import { storage } from '../utils/storage';
-import { reminderService, Reminder } from '../services/reminder.service';
+import { Reminder } from '../services/reminder.service';
 import { scheduleSuggestionsService } from '../services/schedule-suggestions.service';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
+import { useAllReminders, useUpdateReminder, useDeleteReminder } from '../hooks';
 
 type RemindersNavProp = StackNavigationProp<RootStackParamList>;
 
@@ -25,7 +25,6 @@ function sortRemindersByStatus(reminders: Reminder[]): Reminder[] {
         return 99;
     }
   };
-
   return [...reminders].sort((a, b) => getStatusPriority(a.status) - getStatusPriority(b.status));
 }
 
@@ -53,45 +52,25 @@ function formatScheduleTimes(times: string[] | null): string {
 export default function RemindersScreen() {
   const navigation = useNavigation<RemindersNavProp>();
   const { colors } = useTheme();
-  const [reminders, setReminders] = useState<Reminder[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const loadReminders = useCallback(async () => {
-    try {
-      setLoading(true);
-      const token = await storage.getToken();
-      if (!token) return;
+  const { data, isLoading, refetch } = useAllReminders();
+  const updateReminder = useUpdateReminder();
+  const deleteReminder = useDeleteReminder();
 
-      const response = await reminderService.getReminders(token);
-      if (response.status === 'success') {
-        setReminders(sortRemindersByStatus(response.data.reminders));
-      }
-    } catch (error) {
-      console.error('Error loading reminders:', error);
-      Alert.alert('Error', 'Failed to load reminders');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const reminders = useMemo(() => sortRemindersByStatus(data?.data?.reminders ?? []), [data]);
 
   useFocusEffect(
     useCallback(() => {
-      loadReminders();
-    }, [loadReminders]),
+      refetch();
+    }, [refetch]),
   );
 
-  const handleToggleStatus = async (reminder: Reminder) => {
-    try {
-      const token = await storage.getToken();
-      if (!token) return;
-
-      const newStatus = reminder.status === 'active' ? 'paused' : 'active';
-      await reminderService.updateReminder(reminder.reminder_id, { status: newStatus }, token);
-      await loadReminders();
-    } catch (error) {
-      console.error('Error updating reminder:', error);
-      Alert.alert('Error', 'Failed to update reminder');
-    }
+  const handleToggleStatus = (reminder: Reminder) => {
+    const newStatus = reminder.status === 'active' ? 'paused' : 'active';
+    updateReminder.mutate(
+      { reminderId: reminder.reminder_id, data: { status: newStatus } },
+      { onError: () => Alert.alert('Error', 'Failed to update reminder') },
+    );
   };
 
   const handleDelete = (reminder: Reminder) => {
@@ -101,17 +80,9 @@ export default function RemindersScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: () => {
-          void (async () => {
-            try {
-              const token = await storage.getToken();
-              if (!token) return;
-              await reminderService.deleteReminder(reminder.reminder_id, token);
-              await loadReminders();
-            } catch (error) {
-              console.error('Error deleting reminder:', error);
-              Alert.alert('Error', 'Failed to delete reminder');
-            }
-          })();
+          deleteReminder.mutate(reminder.reminder_id, {
+            onError: () => Alert.alert('Error', 'Failed to delete reminder'),
+          });
         },
       },
     ]);
@@ -270,7 +241,7 @@ export default function RemindersScreen() {
       </View>
 
       {/* Content */}
-      {loading ? (
+      {isLoading ? (
         <ActivityIndicator size="large" color={colors.text} className="mt-10" />
       ) : reminders.length === 0 ? (
         <View className="flex-1 justify-center items-center px-10">

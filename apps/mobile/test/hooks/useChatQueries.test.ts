@@ -1,14 +1,13 @@
 import React from 'react';
 import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { useConversations, useMessages, useSendMessage } from '../../hooks/useChatQueries';
+import { useConversations, useSendMessage } from '../../hooks/useChatQueries';
 import { chatService } from '../../services/chat.service';
 import { storage } from '../../utils/storage';
 
 jest.mock('../../services/chat.service', () => ({
   chatService: {
     getConversations: jest.fn(),
-    getMessages: jest.fn(),
     sendMessage: jest.fn(),
   },
 }));
@@ -53,27 +52,6 @@ describe('useConversations', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(result.current.data).toEqual(mockData);
-  });
-});
-
-describe('useMessages', () => {
-  it('calls getMessages with the conversationId and token', async () => {
-    (chatService.getMessages as jest.Mock).mockResolvedValue({ data: { messages: [] } });
-    const { wrapper } = createWrapper();
-
-    const { result } = renderHook(() => useMessages(7), { wrapper });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(chatService.getMessages).toHaveBeenCalledWith(7, 'test-token');
-  });
-
-  it('does NOT call getMessages when conversationId is 0', async () => {
-    const { wrapper } = createWrapper();
-
-    renderHook(() => useMessages(0), { wrapper });
-
-    await new Promise((r) => setTimeout(r, 50));
-    expect(chatService.getMessages).not.toHaveBeenCalled();
   });
 });
 

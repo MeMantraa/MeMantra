@@ -3,7 +3,6 @@ import { queryKeys } from './queryClient';
 import {
   reminderService,
   RemindersResponse,
-  CreateReminderInput,
   UpdateReminderInput,
 } from '../services/reminder.service';
 import { storage } from '../utils/storage';
@@ -22,30 +21,6 @@ export function useAllReminders() {
   });
 }
 
-export function useActiveReminders() {
-  return useQuery<RemindersResponse>({
-    queryKey: queryKeys.reminders.active,
-    queryFn: async () => {
-      const token = await getToken();
-      return reminderService.getActiveReminders(token);
-    },
-  });
-}
-
-export function useCreateReminder() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (data: CreateReminderInput) => {
-      const token = await getToken();
-      return reminderService.createReminder(data, token);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.reminders.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.reminders.active });
-    },
-  });
-}
-
 export function useUpdateReminder() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -55,7 +30,6 @@ export function useUpdateReminder() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.reminders.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.reminders.active });
     },
   });
 }
@@ -69,7 +43,6 @@ export function useDeleteReminder() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.reminders.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.reminders.active });
     },
   });
 }

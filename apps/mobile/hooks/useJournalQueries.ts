@@ -3,8 +3,6 @@ import { queryKeys } from './queryClient';
 import {
   journalService,
   JournalResponse,
-  SingleJournalResponse,
-  JournalStatsResponse,
   CreateJournalPayload,
   UpdateJournalPayload,
   MoodType,
@@ -27,38 +25,6 @@ export function useJournalEntries(options?: {
     queryFn: async () => {
       const token = await getToken();
       return journalService.getJournalEntries(token, options);
-    },
-  });
-}
-
-export function useJournalEntryById(journalId: number) {
-  return useQuery<SingleJournalResponse>({
-    queryKey: queryKeys.journal.detail(journalId),
-    queryFn: async () => {
-      const token = await getToken();
-      return journalService.getJournalEntryById(journalId, token);
-    },
-    enabled: !!journalId,
-  });
-}
-
-export function useJournalEntriesByMantra(mantraId: number) {
-  return useQuery<JournalResponse>({
-    queryKey: queryKeys.journal.byMantra(mantraId),
-    queryFn: async () => {
-      const token = await getToken();
-      return journalService.getJournalEntriesByMantra(mantraId, token);
-    },
-    enabled: !!mantraId,
-  });
-}
-
-export function useJournalStats() {
-  return useQuery<JournalStatsResponse>({
-    queryKey: queryKeys.journal.stats,
-    queryFn: async () => {
-      const token = await getToken();
-      return journalService.getJournalStats(token);
     },
   });
 }

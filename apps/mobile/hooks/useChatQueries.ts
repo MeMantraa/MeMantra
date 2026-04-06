@@ -17,17 +17,6 @@ export function useConversations() {
   });
 }
 
-export function useMessages(conversationId: number) {
-  return useQuery({
-    queryKey: queryKeys.chat.messages(conversationId),
-    queryFn: async () => {
-      const token = await getToken();
-      return chatService.getMessages(conversationId, token);
-    },
-    enabled: !!conversationId,
-  });
-}
-
 export function useSendMessage() {
   const queryClient = useQueryClient();
   return useMutation({

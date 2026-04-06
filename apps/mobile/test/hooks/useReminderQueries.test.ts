@@ -3,8 +3,6 @@ import { renderHook, act, waitFor } from '@testing-library/react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   useAllReminders,
-  useActiveReminders,
-  useCreateReminder,
   useUpdateReminder,
   useDeleteReminder,
 } from '../../hooks/useReminderQueries';
@@ -14,8 +12,6 @@ import { storage } from '../../utils/storage';
 jest.mock('../../services/reminder.service', () => ({
   reminderService: {
     getReminders: jest.fn(),
-    getActiveReminders: jest.fn(),
-    createReminder: jest.fn(),
     updateReminder: jest.fn(),
     deleteReminder: jest.fn(),
   },
@@ -64,54 +60,6 @@ describe('useAllReminders', () => {
   });
 });
 
-describe('useActiveReminders', () => {
-  it('calls getActiveReminders with the token from storage', async () => {
-    (reminderService.getActiveReminders as jest.Mock).mockResolvedValue({
-      data: { reminders: [] },
-    });
-    const { wrapper } = createWrapper();
-
-    const { result } = renderHook(() => useActiveReminders(), { wrapper });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(reminderService.getActiveReminders).toHaveBeenCalledWith('test-token');
-  });
-});
-
-describe('useCreateReminder', () => {
-  it('calls createReminder with the data and token', async () => {
-    (reminderService.createReminder as jest.Mock).mockResolvedValue({ status: 'success' });
-    const { wrapper } = createWrapper();
-    const payload = { mantra_id: 1, frequency: 'daily' as const, time: '08:00' };
-
-    const { result } = renderHook(() => useCreateReminder(), { wrapper });
-
-    await act(async () => {
-      result.current.mutate(payload);
-    });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(reminderService.createReminder).toHaveBeenCalledWith(payload, 'test-token');
-  });
-
-  it('invalidates reminders.all and reminders.active on success', async () => {
-    (reminderService.createReminder as jest.Mock).mockResolvedValue({ status: 'success' });
-    const { wrapper, queryClient } = createWrapper();
-    const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
-    const payload = { mantra_id: 1, frequency: 'daily' as const, time: '08:00' };
-
-    const { result } = renderHook(() => useCreateReminder(), { wrapper });
-
-    await act(async () => {
-      result.current.mutate(payload);
-    });
-
-    await waitFor(() => expect(result.current.isSuccess).toBe(true));
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['reminders'] });
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['reminders', 'active'] });
-  });
-});
-
 describe('useUpdateReminder', () => {
   it('calls updateReminder with the right args and token', async () => {
     (reminderService.updateReminder as jest.Mock).mockResolvedValue({ status: 'success' });
@@ -131,7 +79,7 @@ describe('useUpdateReminder', () => {
     );
   });
 
-  it('invalidates reminders.all and reminders.active on success', async () => {
+  it('invalidates reminders.all on success', async () => {
     (reminderService.updateReminder as jest.Mock).mockResolvedValue({ status: 'success' });
     const { wrapper, queryClient } = createWrapper();
     const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
@@ -144,7 +92,6 @@ describe('useUpdateReminder', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['reminders'] });
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['reminders', 'active'] });
   });
 });
 
@@ -163,7 +110,7 @@ describe('useDeleteReminder', () => {
     expect(reminderService.deleteReminder).toHaveBeenCalledWith(9, 'test-token');
   });
 
-  it('invalidates reminders.all and reminders.active on success', async () => {
+  it('invalidates reminders.all on success', async () => {
     (reminderService.deleteReminder as jest.Mock).mockResolvedValue({ status: 'success' });
     const { wrapper, queryClient } = createWrapper();
     const invalidateSpy = jest.spyOn(queryClient, 'invalidateQueries');
@@ -176,6 +123,5 @@ describe('useDeleteReminder', () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['reminders'] });
-    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['reminders', 'active'] });
   });
 });
