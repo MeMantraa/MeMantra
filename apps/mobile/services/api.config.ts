@@ -61,7 +61,7 @@ const getBaseUrl = () => {
 
   // --- Development mode: use local backend ---
   const autoDetectedIP = getLocalIpAddress();
-  const PORT = '3000';
+  const PORT = '4000';
   const isUsingTunnel = Boolean(Constants.expoConfig?.hostUri?.includes('exp.direct'));
   const shouldUseLocalConfig = Boolean(LOCAL_DEV_IP) && isUsingTunnel;
 
