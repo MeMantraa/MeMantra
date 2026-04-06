@@ -51,20 +51,28 @@ export const ReminderModel = {
       .execute();
   },
 
-  // Get all reminders for a user with linked mantra/collection names
-  async findByUserIdWithNames(
-    userId: number,
-  ): Promise<Array<Reminder & { mantra_title: string | null; collection_name: string | null }>> {
+  // Get all reminders for a user with linked mantra/collection/journal names
+  async findByUserIdWithNames(userId: number): Promise<
+    Array<
+      Reminder & {
+        mantra_title: string | null;
+        collection_name: string | null;
+        journal_title: string | null;
+      }
+    >
+  > {
     return await db
       .selectFrom('Reminder')
       .leftJoin('Mantra', 'Mantra.mantra_id', 'Reminder.mantra_id')
       .leftJoin('Collection', 'Collection.collection_id', 'Reminder.collection_id')
+      .leftJoin('JournalEntry', 'JournalEntry.journal_id', 'Reminder.journal_id')
       .where('Reminder.user_id', '=', userId)
       .select([
         'Reminder.reminder_id',
         'Reminder.user_id',
         'Reminder.mantra_id',
         'Reminder.collection_id',
+        'Reminder.journal_id',
         'Reminder.time',
         'Reminder.frequency',
         'Reminder.status',
@@ -74,30 +82,58 @@ export const ReminderModel = {
         'Reminder.timezone',
         'Mantra.title as mantra_title',
         'Collection.name as collection_name',
+        'JournalEntry.title as journal_title',
       ])
       .orderBy('Reminder.time', 'asc')
       .execute();
   },
 
-  // Get all reminders for a specific mantra
-  async findByMantraId(mantraId: number): Promise<Reminder[]> {
+  // Generic: find reminders by a specific column
+  async findByColumn(
+    column: 'mantra_id' | 'collection_id' | 'journal_id',
+    value: number,
+  ): Promise<Reminder[]> {
     return await db
       .selectFrom('Reminder')
-      .where('mantra_id', '=', mantraId)
+      .where(column, '=', value)
       .selectAll()
       .orderBy('time', 'asc')
       .execute();
   },
 
-  // Get reminders for a specific user and mantra combination
-  async findByUserAndMantra(userId: number, mantraId: number): Promise<Reminder[]> {
+  // Generic: find reminders for a specific user and column combination
+  async findByUserAndColumn(
+    userId: number,
+    column: 'mantra_id' | 'collection_id' | 'journal_id',
+    value: number,
+  ): Promise<Reminder[]> {
     return await db
       .selectFrom('Reminder')
       .where('user_id', '=', userId)
-      .where('mantra_id', '=', mantraId)
+      .where(column, '=', value)
       .selectAll()
       .orderBy('time', 'asc')
       .execute();
+  },
+
+  // Generic: delete all reminders by a specific column
+  async deleteByColumn(
+    column: 'mantra_id' | 'collection_id' | 'journal_id',
+    value: number,
+  ): Promise<number> {
+    const result = await db.deleteFrom('Reminder').where(column, '=', value).executeTakeFirst();
+
+    return Number(result.numDeletedRows);
+  },
+
+  // Get all reminders for a specific mantra
+  async findByMantraId(mantraId: number): Promise<Reminder[]> {
+    return this.findByColumn('mantra_id', mantraId);
+  },
+
+  // Get reminders for a specific user and mantra combination
+  async findByUserAndMantra(userId: number, mantraId: number): Promise<Reminder[]> {
+    return this.findByUserAndColumn(userId, 'mantra_id', mantraId);
   },
 
   // Get active reminders for a user
@@ -171,12 +207,7 @@ export const ReminderModel = {
 
   // Delete all reminders for a mantra (when mantra is deleted)
   async deleteByMantraId(mantraId: number): Promise<number> {
-    const result = await db
-      .deleteFrom('Reminder')
-      .where('mantra_id', '=', mantraId)
-      .executeTakeFirst();
-
-    return Number(result.numDeletedRows);
+    return this.deleteByColumn('mantra_id', mantraId);
   },
 
   // Count reminders for a user
@@ -306,6 +337,7 @@ export const ReminderModel = {
         user_id: result.user_id,
         mantra_id: result.mantra_id,
         collection_id: result.collection_id,
+        journal_id: null,
         time: result.time,
         frequency: result.frequency,
         status: result.status,
@@ -350,6 +382,7 @@ export const ReminderModel = {
       .innerJoin('Mantra', 'Mantra.mantra_id', 'Reminder.mantra_id')
       .where('Reminder.status', '=', 'active')
       .where('Reminder.collection_id', 'is', null)
+      .where('Reminder.journal_id', 'is', null)
       .where((eb) => buildDueReminderFilter(eb, now.toISOString()))
       .select([
         'Reminder.reminder_id',
@@ -421,32 +454,80 @@ export const ReminderModel = {
 
   // Get reminders by collection
   async findByCollectionId(collectionId: number): Promise<Reminder[]> {
-    return await db
-      .selectFrom('Reminder')
-      .where('collection_id', '=', collectionId)
-      .selectAll()
-      .orderBy('time', 'asc')
-      .execute();
+    return this.findByColumn('collection_id', collectionId);
   },
 
   // Get reminders for a specific user and collection combination
   async findByUserAndCollection(userId: number, collectionId: number): Promise<Reminder[]> {
-    return await db
-      .selectFrom('Reminder')
-      .where('user_id', '=', userId)
-      .where('collection_id', '=', collectionId)
-      .selectAll()
-      .orderBy('time', 'asc')
-      .execute();
+    return this.findByUserAndColumn(userId, 'collection_id', collectionId);
   },
 
   // Delete all reminders for a collection (when collection is deleted)
   async deleteByCollectionId(collectionId: number): Promise<number> {
-    const result = await db
-      .deleteFrom('Reminder')
-      .where('collection_id', '=', collectionId)
-      .executeTakeFirst();
+    return this.deleteByColumn('collection_id', collectionId);
+  },
 
-    return Number(result.numDeletedRows);
+  // Get reminders by journal entry
+  async findByJournalId(journalId: number): Promise<Reminder[]> {
+    return this.findByColumn('journal_id', journalId);
+  },
+
+  // Get reminders for a specific user and journal combination
+  async findByUserAndJournal(userId: number, journalId: number): Promise<Reminder[]> {
+    return this.findByUserAndColumn(userId, 'journal_id', journalId);
+  },
+
+  // Delete all reminders for a journal entry (when journal entry is deleted)
+  async deleteByJournalId(journalId: number): Promise<number> {
+    return this.deleteByColumn('journal_id', journalId);
+  },
+
+  /**
+   * Get all due journal reminders with user and journal details
+   * This is an optimized query for journal-based reminders
+   */
+  async findDueJournalRemindersWithDetails(): Promise<
+    Array<{
+      reminder_id: number;
+      user_id: number | null;
+      journal_id: number | null;
+      time: string | null;
+      frequency: string | null;
+      status: string | null;
+      last_sent_at: string | null;
+      user_device_token: string | null;
+      journal_title: string | null;
+      journal_content: string | null;
+      schedule_times: string[] | null;
+      schedule_days: number[] | null;
+      timezone: string | null;
+    }>
+  > {
+    const now = new Date();
+
+    return await db
+      .selectFrom('Reminder')
+      .innerJoin('User', 'User.user_id', 'Reminder.user_id')
+      .innerJoin('JournalEntry', 'JournalEntry.journal_id', 'Reminder.journal_id')
+      .where('Reminder.status', '=', 'active')
+      .where('Reminder.journal_id', 'is not', null)
+      .where((eb) => buildDueReminderFilter(eb, now.toISOString()))
+      .select([
+        'Reminder.reminder_id',
+        'Reminder.user_id',
+        'Reminder.journal_id',
+        'Reminder.time',
+        'Reminder.frequency',
+        'Reminder.status',
+        'Reminder.last_sent_at',
+        'Reminder.schedule_times',
+        'Reminder.schedule_days',
+        'Reminder.timezone',
+        'User.device_token as user_device_token',
+        'JournalEntry.title as journal_title',
+        'JournalEntry.content as journal_content',
+      ])
+      .orderBy('Reminder.time', 'asc')
+      .execute();
   },
 };

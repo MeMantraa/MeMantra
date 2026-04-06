@@ -5,6 +5,7 @@ import CreateReminderScreen from '../../screens/CreateReminderScreen';
 import { reminderService } from '../../services/reminder.service';
 import { mantraService } from '../../services/mantra.service';
 import { collectionService } from '../../services/collection.service';
+import { journalService } from '../../services/journal.service';
 import { storage } from '../../utils/storage';
 
 jest.mock('@expo/vector-icons', () => ({
@@ -59,6 +60,13 @@ jest.mock('../../services/collection.service', () => ({
   },
 }));
 
+jest.mock('../../services/journal.service', () => ({
+  journalService: {
+    getJournalEntries: jest.fn(),
+  },
+  MOOD_OPTIONS: [],
+}));
+
 jest.mock('../../utils/storage', () => ({
   storage: {
     getToken: jest.fn(),
@@ -96,6 +104,10 @@ describe('CreateReminderScreen', () => {
     (collectionService.getUserCollections as jest.Mock).mockResolvedValue({
       status: 'success',
       data: { collections: mockCollections },
+    });
+    (journalService.getJournalEntries as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { entries: [] },
     });
     jest.spyOn(Alert, 'alert').mockImplementation(() => {});
 
@@ -1366,5 +1378,184 @@ describe('CreateReminderScreen', () => {
     const { getByTestId } = render(<CreateReminderScreen />);
     // Instead, just verify the preset change was accepted and no errors occurred
     expect(getByText('Weekends')).toBeTruthy();
+  });
+
+  it('switches to journal type and shows journal entries', async () => {
+    const mockJournalEntries = [
+      {
+        journal_id: 100,
+        title: 'Morning Reflection',
+        content: 'Today I felt grateful',
+        created_at: '2024-01-01T08:00:00Z',
+        updated_at: '2024-01-01T08:00:00Z',
+        user_id: 1,
+        mantra_id: null,
+        mood: null,
+        tags: [],
+        is_private: false,
+      },
+    ];
+
+    (journalService.getJournalEntries as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { entries: mockJournalEntries },
+    });
+
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Journal'));
+
+    await waitFor(() => {
+      expect(getByText('Morning Reflection')).toBeTruthy();
+    });
+  });
+
+  it('preselects journal type when journalId is in route params', async () => {
+    mockRouteParams = { journalId: 100 };
+
+    const mockJournalEntries = [
+      {
+        journal_id: 100,
+        title: 'My Entry',
+        content: 'Content here',
+        created_at: '2024-01-01T08:00:00Z',
+        updated_at: '2024-01-01T08:00:00Z',
+        user_id: 1,
+        mantra_id: null,
+        mood: null,
+        tags: [],
+        is_private: false,
+      },
+    ];
+
+    (journalService.getJournalEntries as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { entries: mockJournalEntries },
+    });
+
+    const { getAllByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      // Entry appears in both the list and the selected preview
+      expect(getAllByText('My Entry').length).toBeGreaterThanOrEqual(1);
+    });
+  });
+
+  it('shows alert when trying to submit journal reminder without selection', async () => {
+    (journalService.getJournalEntries as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { entries: [] },
+    });
+
+    const { getByText, getByTestId } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Journal'));
+
+    // Try to submit without selecting a journal entry
+    fireEvent.press(getByTestId('create-reminder-button'));
+
+    await waitFor(() => {
+      expect(Alert.alert).toHaveBeenCalledWith(
+        'Select a Journal Entry',
+        'Please select a journal entry for this reminder.',
+      );
+    });
+  });
+
+  it('creates a journal reminder successfully', async () => {
+    const mockJournalEntries = [
+      {
+        journal_id: 200,
+        title: 'Evening Thoughts',
+        content: 'Reflecting on the day',
+        created_at: '2024-01-01T20:00:00Z',
+        updated_at: '2024-01-01T20:00:00Z',
+        user_id: 1,
+        mantra_id: null,
+        mood: null,
+        tags: [],
+        is_private: false,
+      },
+    ];
+
+    (journalService.getJournalEntries as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { entries: mockJournalEntries },
+    });
+
+    (reminderService.createReminder as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { reminder: { reminder_id: 99 } },
+    });
+
+    const { getByText, getByTestId } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    // Switch to journal type
+    fireEvent.press(getByText('Journal'));
+
+    await waitFor(() => {
+      expect(getByText('Evening Thoughts')).toBeTruthy();
+    });
+
+    // Select the journal entry
+    fireEvent.press(getByText('Evening Thoughts'));
+
+    // Submit
+    fireEvent.press(getByTestId('create-reminder-button'));
+
+    await waitFor(() => {
+      expect(reminderService.createReminder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          journal_id: 200,
+        }),
+        'test-token',
+      );
+    });
+  });
+
+  it('displays journal entry content as fallback when title is null', async () => {
+    const mockJournalEntries = [
+      {
+        journal_id: 300,
+        title: null,
+        content: 'Some untitled journal content here that should display',
+        created_at: '2024-01-01T08:00:00Z',
+        updated_at: '2024-01-01T08:00:00Z',
+        user_id: 1,
+        mantra_id: null,
+        mood: null,
+        tags: [],
+        is_private: false,
+      },
+    ];
+
+    (journalService.getJournalEntries as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { entries: mockJournalEntries },
+    });
+
+    const { getByText } = render(<CreateReminderScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Be Present')).toBeTruthy();
+    });
+
+    fireEvent.press(getByText('Journal'));
+
+    await waitFor(() => {
+      expect(getByText(/Some untitled journal content/)).toBeTruthy();
+    });
   });
 });

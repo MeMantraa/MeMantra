@@ -471,6 +471,113 @@ describe('useReminders', () => {
     expect(reminderService.deleteReminder).not.toHaveBeenCalled();
   });
 
+  it('populates remindersByJournal map', async () => {
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: {
+        reminders: [
+          {
+            reminder_id: 1,
+            mantra_id: null,
+            collection_id: null,
+            journal_id: 50,
+            status: 'active',
+          },
+        ],
+      },
+    });
+
+    const { result } = renderHook(() => useReminders());
+
+    await waitFor(() => {
+      expect(result.current.remindersByJournal.size).toBe(1);
+    });
+
+    expect(result.current.remindersByJournal.get(50)).toEqual({
+      reminder_id: 1,
+      status: 'active',
+    });
+  });
+
+  it('getReminderForJournal returns the correct reminder', async () => {
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: {
+        reminders: [
+          {
+            reminder_id: 8,
+            mantra_id: null,
+            collection_id: null,
+            journal_id: 25,
+            status: 'active',
+          },
+        ],
+      },
+    });
+
+    const { result } = renderHook(() => useReminders());
+
+    await waitFor(() => {
+      expect(result.current.remindersByJournal.size).toBe(1);
+    });
+
+    expect(result.current.getReminderForJournal(25)).toEqual({
+      reminder_id: 8,
+      status: 'active',
+    });
+    expect(result.current.getReminderForJournal(999)).toBeUndefined();
+  });
+
+  it('handleReminderPress navigates to CreateReminder when no reminder exists for journal', async () => {
+    const mockNavigate = jest.fn();
+    const navigation = { navigate: mockNavigate };
+
+    const { result } = renderHook(() => useReminders());
+
+    await waitFor(() => {
+      expect(reminderService.getReminders).toHaveBeenCalled();
+    });
+
+    act(() => {
+      result.current.handleReminderPress('journal', 50, navigation);
+    });
+
+    expect(mockNavigate).toHaveBeenCalledWith('CreateReminder', { journalId: 50 });
+  });
+
+  it('handleReminderPress shows alert when journal reminder exists', async () => {
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: {
+        reminders: [
+          {
+            reminder_id: 9,
+            mantra_id: null,
+            collection_id: null,
+            journal_id: 30,
+            status: 'active',
+          },
+        ],
+      },
+    });
+
+    const mockNavigate = jest.fn();
+    const navigation = { navigate: mockNavigate };
+
+    const { result } = renderHook(() => useReminders());
+
+    await waitFor(() => {
+      expect(result.current.remindersByJournal.size).toBe(1);
+    });
+
+    act(() => {
+      result.current.handleReminderPress('journal', 30, navigation);
+    });
+
+    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(Alert.alert).toHaveBeenCalledWith('Reminder', undefined, expect.any(Array));
+  });
+
   it('does not update state when response status is not success', async () => {
     (reminderService.getReminders as jest.Mock).mockResolvedValue({
       status: 'error',

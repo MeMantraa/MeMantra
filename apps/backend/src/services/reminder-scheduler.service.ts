@@ -49,6 +49,12 @@ interface CollectionReminderWithDetails extends BaseReminderDetails {
   collection_description: string | null;
 }
 
+interface JournalReminderWithDetails extends BaseReminderDetails {
+  journal_id: number | null;
+  journal_title: string | null;
+  journal_content: string | null;
+}
+
 interface ProcessResult {
   reminderId: number;
   success: boolean;
@@ -117,15 +123,18 @@ export const ReminderSchedulerService = {
       const dueReminders = await ReminderModel.findDueRemindersWithDetails();
       // Get all due collection-based reminders
       const dueCollectionReminders = await ReminderModel.findDueCollectionRemindersWithDetails();
+      // Get all due journal-based reminders
+      const dueJournalReminders = await ReminderModel.findDueJournalRemindersWithDetails();
 
-      const totalDue = dueReminders.length + dueCollectionReminders.length;
+      const totalDue =
+        dueReminders.length + dueCollectionReminders.length + dueJournalReminders.length;
 
       if (totalDue === 0) {
         return results;
       }
 
       console.log(
-        `📬 Processing ${totalDue} due reminder(s) (${dueReminders.length} mantra, ${dueCollectionReminders.length} collection)`,
+        `📬 Processing ${totalDue} due reminder(s) (${dueReminders.length} mantra, ${dueCollectionReminders.length} collection, ${dueJournalReminders.length} journal)`,
       );
 
       // Process mantra-based reminders
@@ -137,6 +146,12 @@ export const ReminderSchedulerService = {
       // Process collection-based reminders
       for (const reminder of dueCollectionReminders) {
         const result = await this.processCollectionReminder(reminder);
+        results.push(result);
+      }
+
+      // Process journal-based reminders
+      for (const reminder of dueJournalReminders) {
+        const result = await this.processJournalReminder(reminder);
         results.push(result);
       }
 
@@ -415,6 +430,46 @@ export const ReminderSchedulerService = {
       collection_name,
       reminder_id,
       collection_id,
+    );
+  },
+
+  /**
+   * Process a single journal-based reminder
+   * @param reminder - Journal reminder with user and journal details
+   */
+  async processJournalReminder(reminder: JournalReminderWithDetails): Promise<ProcessResult> {
+    return this.processReminderGeneric(
+      reminder,
+      'Journal Reminder' as any,
+      (r) => {
+        if (!r.journal_title && !r.journal_content) {
+          console.warn(
+            `⚠️  Journal Reminder ${r.reminder_id}: Journal has no title or content, skipping`,
+          );
+          return 'No journal content';
+        }
+        return null;
+      },
+      (r) => this.sendJournalReminderNotification(r),
+    );
+  },
+
+  /**
+   * Send the actual notification for a journal reminder
+   */
+  async sendJournalReminderNotification(reminder: JournalReminderWithDetails): Promise<void> {
+    const { reminder_id, journal_id, user_device_token, journal_title, journal_content } = reminder;
+
+    if (!user_device_token || !journal_id || (!journal_title && !journal_content)) {
+      throw new Error('Missing required notification data');
+    }
+
+    await NotificationService.sendJournalReminderNotification(
+      user_device_token,
+      journal_title,
+      journal_content ?? '',
+      reminder_id,
+      journal_id,
     );
   },
 
