@@ -24,8 +24,9 @@ describe('ReminderSchedulerService', () => {
     // Reset scheduler state
     ReminderSchedulerService.cronTask = null;
     ReminderSchedulerService.isRunning = false;
-    // Mock collection reminders to return empty by default (for backwards compatibility)
+    // Mock collection and journal reminders to return empty by default (for backwards compatibility)
     mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue([]);
+    mockedReminderModel.findDueJournalRemindersWithDetails.mockResolvedValue([]);
   });
 
   afterEach(() => {

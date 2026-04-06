@@ -226,6 +226,41 @@ export const NotificationService = {
   },
 
   /**
+   * Send journal reminder notification
+   * Deep links to a journal entry
+   * @param deviceToken - Expo push token
+   * @param journalTitle - The journal entry title for notification content
+   * @param journalContent - The journal entry content (used as fallback if no title)
+   * @param reminderId - The reminder ID for deep linking
+   * @param journalId - The journal entry ID for deep linking
+   * @param options - Optional notification content customization
+   * @returns Expo push response
+   */
+  async sendJournalReminderNotification(
+    deviceToken: string,
+    journalTitle: string | null,
+    journalContent: string,
+    reminderId: number,
+    journalId: number,
+    options?: Partial<NotificationContentOptions>,
+  ): Promise<ExpoPushResponse> {
+    const displayText = journalTitle || journalContent.substring(0, 100);
+    const journalText = `Revisit your journal entry: "${displayText}"`;
+
+    const { title, body } = generateNotificationContent({
+      mantraText: journalText,
+      ...options,
+    });
+
+    return await this.sendSimpleNotification(deviceToken, title, body, {
+      type: 'journal_reminder',
+      reminderId,
+      journalId,
+      journalTitle: displayText,
+    });
+  },
+
+  /**
    * Send bulk reminder notifications with enhanced content
    * Supports both mantra-based and collection-based reminders
    * @param notifications - Array of notification details

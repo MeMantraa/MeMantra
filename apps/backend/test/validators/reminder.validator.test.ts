@@ -33,6 +33,18 @@ describe('Reminder Validators', () => {
       expect(result.success).toBe(true);
     });
 
+    it('should validate with journal_id', () => {
+      const data = {
+        body: {
+          journal_id: 10,
+          time: '2030-01-01T10:00:00Z',
+          frequency: 'daily' as const,
+        },
+      };
+      const result = createReminderSchema.safeParse(data);
+      expect(result.success).toBe(true);
+    });
+
     it('should reject when both mantra_id and collection_id are provided', () => {
       const data = {
         body: {
@@ -46,14 +58,39 @@ describe('Reminder Validators', () => {
       expect(result.success).toBe(false);
       if (!result.success) {
         expect(result.error.issues[0].message).toContain(
-          'Exactly one of mantra_id or collection_id must be provided',
+          'Exactly one of mantra_id, collection_id, or journal_id must be provided',
         );
       }
     });
 
-    it('should reject when neither mantra_id nor collection_id is provided', () => {
+    it('should reject when multiple IDs are provided', () => {
       const data = {
         body: {
+          mantra_id: 1,
+          journal_id: 10,
+          time: '2030-01-01T10:00:00Z',
+          frequency: 'daily' as const,
+        },
+      };
+      const result = createReminderSchema.safeParse(data);
+      expect(result.success).toBe(false);
+    });
+
+    it('should reject when no ID is provided', () => {
+      const data = {
+        body: {
+          time: '2030-01-01T10:00:00Z',
+          frequency: 'daily' as const,
+        },
+      };
+      const result = createReminderSchema.safeParse(data);
+      expect(result.success).toBe(false);
+    });
+
+    it('should reject negative journal_id', () => {
+      const data = {
+        body: {
+          journal_id: -1,
           time: '2030-01-01T10:00:00Z',
           frequency: 'daily' as const,
         },

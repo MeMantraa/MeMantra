@@ -51,20 +51,28 @@ export const ReminderModel = {
       .execute();
   },
 
-  // Get all reminders for a user with linked mantra/collection names
-  async findByUserIdWithNames(
-    userId: number,
-  ): Promise<Array<Reminder & { mantra_title: string | null; collection_name: string | null }>> {
+  // Get all reminders for a user with linked mantra/collection/journal names
+  async findByUserIdWithNames(userId: number): Promise<
+    Array<
+      Reminder & {
+        mantra_title: string | null;
+        collection_name: string | null;
+        journal_title: string | null;
+      }
+    >
+  > {
     return await db
       .selectFrom('Reminder')
       .leftJoin('Mantra', 'Mantra.mantra_id', 'Reminder.mantra_id')
       .leftJoin('Collection', 'Collection.collection_id', 'Reminder.collection_id')
+      .leftJoin('JournalEntry', 'JournalEntry.journal_id', 'Reminder.journal_id')
       .where('Reminder.user_id', '=', userId)
       .select([
         'Reminder.reminder_id',
         'Reminder.user_id',
         'Reminder.mantra_id',
         'Reminder.collection_id',
+        'Reminder.journal_id',
         'Reminder.time',
         'Reminder.frequency',
         'Reminder.status',
@@ -74,6 +82,7 @@ export const ReminderModel = {
         'Reminder.timezone',
         'Mantra.title as mantra_title',
         'Collection.name as collection_name',
+        'JournalEntry.title as journal_title',
       ])
       .orderBy('Reminder.time', 'asc')
       .execute();
@@ -306,6 +315,7 @@ export const ReminderModel = {
         user_id: result.user_id,
         mantra_id: result.mantra_id,
         collection_id: result.collection_id,
+        journal_id: null,
         time: result.time,
         frequency: result.frequency,
         status: result.status,
@@ -350,6 +360,7 @@ export const ReminderModel = {
       .innerJoin('Mantra', 'Mantra.mantra_id', 'Reminder.mantra_id')
       .where('Reminder.status', '=', 'active')
       .where('Reminder.collection_id', 'is', null)
+      .where('Reminder.journal_id', 'is', null)
       .where((eb) => buildDueReminderFilter(eb, now.toISOString()))
       .select([
         'Reminder.reminder_id',
@@ -448,5 +459,85 @@ export const ReminderModel = {
       .executeTakeFirst();
 
     return Number(result.numDeletedRows);
+  },
+
+  // Get reminders by journal entry
+  async findByJournalId(journalId: number): Promise<Reminder[]> {
+    return await db
+      .selectFrom('Reminder')
+      .where('journal_id', '=', journalId)
+      .selectAll()
+      .orderBy('time', 'asc')
+      .execute();
+  },
+
+  // Get reminders for a specific user and journal combination
+  async findByUserAndJournal(userId: number, journalId: number): Promise<Reminder[]> {
+    return await db
+      .selectFrom('Reminder')
+      .where('user_id', '=', userId)
+      .where('journal_id', '=', journalId)
+      .selectAll()
+      .orderBy('time', 'asc')
+      .execute();
+  },
+
+  // Delete all reminders for a journal entry (when journal entry is deleted)
+  async deleteByJournalId(journalId: number): Promise<number> {
+    const result = await db
+      .deleteFrom('Reminder')
+      .where('journal_id', '=', journalId)
+      .executeTakeFirst();
+
+    return Number(result.numDeletedRows);
+  },
+
+  /**
+   * Get all due journal reminders with user and journal details
+   * This is an optimized query for journal-based reminders
+   */
+  async findDueJournalRemindersWithDetails(): Promise<
+    Array<{
+      reminder_id: number;
+      user_id: number | null;
+      journal_id: number | null;
+      time: string | null;
+      frequency: string | null;
+      status: string | null;
+      last_sent_at: string | null;
+      user_device_token: string | null;
+      journal_title: string | null;
+      journal_content: string | null;
+      schedule_times: string[] | null;
+      schedule_days: number[] | null;
+      timezone: string | null;
+    }>
+  > {
+    const now = new Date();
+
+    return await db
+      .selectFrom('Reminder')
+      .innerJoin('User', 'User.user_id', 'Reminder.user_id')
+      .innerJoin('JournalEntry', 'JournalEntry.journal_id', 'Reminder.journal_id')
+      .where('Reminder.status', '=', 'active')
+      .where('Reminder.journal_id', 'is not', null)
+      .where((eb) => buildDueReminderFilter(eb, now.toISOString()))
+      .select([
+        'Reminder.reminder_id',
+        'Reminder.user_id',
+        'Reminder.journal_id',
+        'Reminder.time',
+        'Reminder.frequency',
+        'Reminder.status',
+        'Reminder.last_sent_at',
+        'Reminder.schedule_times',
+        'Reminder.schedule_days',
+        'Reminder.timezone',
+        'User.device_token as user_device_token',
+        'JournalEntry.title as journal_title',
+        'JournalEntry.content as journal_content',
+      ])
+      .orderBy('Reminder.time', 'asc')
+      .execute();
   },
 };
