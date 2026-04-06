@@ -1,9 +1,4 @@
-import axios, {
-  InternalAxiosRequestConfig,
-  AxiosResponse,
-  AxiosError,
-  AxiosRequestHeaders,
-} from 'axios';
+import axios, { InternalAxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 import { Platform } from 'react-native';
 import { storage } from '../utils/storage';
 import Constants from 'expo-constants';
@@ -14,7 +9,6 @@ interface RequestMetadata {
 }
 
 interface ExtendedRequestConfig {
-  headers?: AxiosRequestHeaders;
   method?: string;
   url?: string;
   timeout?: number;
@@ -200,8 +194,7 @@ apiClient.interceptors.request.use(
 
     const token = await storage.getToken();
     if (token) {
-      extendedConfig.headers = extendedConfig.headers || {};
-      extendedConfig.headers.Authorization = `Bearer ${token}`;
+      config.headers.set('Authorization', `Bearer ${token}`);
     }
     return config;
   },

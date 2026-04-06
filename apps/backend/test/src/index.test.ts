@@ -11,15 +11,26 @@ jest.mock('../../src/services/recommendation-notification.service', () => ({
 jest.mock('../../src/services/engagement-optimizer.service', () => ({
   EngagementOptimizerService: { start: jest.fn(), stop: jest.fn() },
 }));
+jest.mock('../../src/config/redis.config', () => ({
+  connectRedis: jest.fn(() => Promise.resolve()),
+  disconnectRedis: jest.fn(() => Promise.resolve()),
+}));
+jest.mock('../../src/workers', () => ({
+  createReminderWorker: jest.fn(() => ({ close: jest.fn(() => Promise.resolve()) })),
+  createRecommendationWorker: jest.fn(() => ({ close: jest.fn(() => Promise.resolve()) })),
+  createEngagementOptimizerWorker: jest.fn(() => ({ close: jest.fn(() => Promise.resolve()) })),
+}));
 
 const mockedCreateApp = createApp as jest.Mock;
 
 describe('Server (index.ts)', () => {
   let listenMock: jest.Mock;
+  let listenCallbackPromise: Promise<void>;
 
   beforeEach(() => {
-    listenMock = jest.fn((_port: any, callback?: () => void) => {
-      if (callback) callback();
+    listenCallbackPromise = Promise.resolve();
+    listenMock = jest.fn((_port: any, callback?: () => void | Promise<void>) => {
+      if (callback) listenCallbackPromise = Promise.resolve(callback());
       return {} as any;
     });
     mockedCreateApp.mockReturnValue({ listen: listenMock });
@@ -65,7 +76,7 @@ describe('Server (index.ts)', () => {
   });
 
   describe('scheduler startup', () => {
-    it('should start both schedulers when NODE_ENV is not "test"', () => {
+    it('should start both schedulers when NODE_ENV is not "test"', async () => {
       const { ReminderSchedulerService } = jest.requireMock(
         '../../src/services/reminder-scheduler.service',
       );
@@ -81,6 +92,8 @@ describe('Server (index.ts)', () => {
         process.env.PORT = '3000';
         require('../../src/index');
       });
+
+      await listenCallbackPromise;
 
       expect(ReminderSchedulerService.start).toHaveBeenCalledWith(
         expect.objectContaining({ cronExpression: '* * * * *' }),
@@ -117,7 +130,7 @@ describe('Server (index.ts)', () => {
   });
 
   describe('signal handlers', () => {
-    it('should log and exit with code 0 on SIGTERM', () => {
+    it('should log and exit with code 0 on SIGTERM', async () => {
       const processOnSpy = jest.spyOn(process, 'on');
       const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => undefined as never);
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
@@ -129,7 +142,7 @@ describe('Server (index.ts)', () => {
 
       const sigtermCall = processOnSpy.mock.calls.find((c) => c[0] === 'SIGTERM');
       expect(sigtermCall).toBeDefined();
-      (sigtermCall![1] as () => void)();
+      await (sigtermCall![1] as () => Promise<void>)();
 
       expect(consoleSpy).toHaveBeenCalledWith('SIGTERM received, shutting down gracefully');
       expect(exitSpy).toHaveBeenCalledWith(0);
@@ -139,7 +152,7 @@ describe('Server (index.ts)', () => {
       consoleSpy.mockRestore();
     });
 
-    it('should log and exit with code 0 on SIGINT', () => {
+    it('should log and exit with code 0 on SIGINT', async () => {
       const processOnSpy = jest.spyOn(process, 'on');
       const exitSpy = jest.spyOn(process, 'exit').mockImplementation(() => undefined as never);
       const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
@@ -151,7 +164,7 @@ describe('Server (index.ts)', () => {
 
       const sigintCall = processOnSpy.mock.calls.find((c) => c[0] === 'SIGINT');
       expect(sigintCall).toBeDefined();
-      (sigintCall![1] as () => void)();
+      await (sigintCall![1] as () => Promise<void>)();
 
       expect(consoleSpy).toHaveBeenCalledWith('SIGINT received, shutting down gracefully');
       expect(exitSpy).toHaveBeenCalledWith(0);
