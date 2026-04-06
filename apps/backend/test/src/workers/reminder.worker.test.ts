@@ -31,11 +31,11 @@ describe('createReminderWorker', () => {
     expect(Worker).toHaveBeenCalledWith('reminders', expect.any(Function), expect.any(Object));
   });
 
-  it('creates a Worker with concurrency 1 and limiter { max: 1, duration: 30000 }', () => {
+  it('creates a Worker with concurrency 1 and a lockDuration', () => {
     createReminderWorker();
     const options = (Worker as unknown as jest.Mock).mock.calls[0][2];
     expect(options.concurrency).toBe(1);
-    expect(options.limiter).toEqual({ max: 1, duration: 30_000 });
+    expect(options.lockDuration).toBe(5 * 60 * 1000);
   });
 
   it('processor calls ReminderSchedulerService.processReminders()', async () => {
@@ -65,6 +65,15 @@ describe('createReminderWorker', () => {
     const failedHandler = mockOnFn.mock.calls.find((c) => c[0] === 'failed')[1];
     failedHandler({ id: '456' }, new Error('something went wrong'));
     expect(consoleSpy).toHaveBeenCalledWith('Reminder job 456 failed:', 'something went wrong');
+    consoleSpy.mockRestore();
+  });
+
+  it("'stalled' handler logs the job id", () => {
+    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+    createReminderWorker();
+    const stalledHandler = mockOnFn.mock.calls.find((c) => c[0] === 'stalled')[1];
+    stalledHandler('789');
+    expect(consoleSpy).toHaveBeenCalledWith('Reminder job 789 stalled and will be retried');
     consoleSpy.mockRestore();
   });
 });

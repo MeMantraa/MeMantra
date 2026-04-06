@@ -35,10 +35,11 @@ describe('createRecommendationWorker', () => {
     );
   });
 
-  it('creates a Worker with concurrency 1', () => {
+  it('creates a Worker with concurrency 1 and a lockDuration', () => {
     createRecommendationWorker();
     const options = (Worker as unknown as jest.Mock).mock.calls[0][2];
     expect(options.concurrency).toBe(1);
+    expect(options.lockDuration).toBe(10 * 60 * 1000);
   });
 
   it('processor calls RecommendationNotificationService.processAllUsers()', async () => {
@@ -71,6 +72,15 @@ describe('createRecommendationWorker', () => {
       'Recommendation job 456 failed:',
       'something went wrong',
     );
+    consoleSpy.mockRestore();
+  });
+
+  it("'stalled' handler logs the job id", () => {
+    const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+    createRecommendationWorker();
+    const stalledHandler = mockOnFn.mock.calls.find((c) => c[0] === 'stalled')[1];
+    stalledHandler('789');
+    expect(consoleSpy).toHaveBeenCalledWith('Recommendation job 789 stalled and will be retried');
     consoleSpy.mockRestore();
   });
 });

@@ -130,6 +130,18 @@ describe('cacheResponse middleware', () => {
       expect(buildCacheKey).toHaveBeenCalledWith('/api/collections', 42);
     });
 
+    it('skips caching entirely when perUser is true but user is not authenticated', async () => {
+      cacheGet.mockResolvedValue(null);
+      const { req, res, next } = makeReqRes({ originalUrl: '/api/collections' });
+      // req.user is undefined (no auth)
+
+      await cacheResponse({ perUser: true })(req, res, next);
+
+      expect(next).toHaveBeenCalled();
+      expect(cacheGet).not.toHaveBeenCalled();
+      expect(buildCacheKey).not.toHaveBeenCalled();
+    });
+
     it('omits userId when perUser is false (default)', async () => {
       cacheGet.mockResolvedValue(null);
       const { req, res, next } = makeReqRes({ userId: 42 });

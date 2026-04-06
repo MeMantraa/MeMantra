@@ -11,6 +11,7 @@ export function createRecommendationWorker(): Worker {
     {
       connection,
       concurrency: 1,
+      lockDuration: 10 * 60 * 1000, // 10 min timeout (processes many users)
     },
   );
 
@@ -20,6 +21,10 @@ export function createRecommendationWorker(): Worker {
 
   worker.on('failed', (job, err) => {
     console.error(`Recommendation job ${job?.id} failed:`, err.message);
+  });
+
+  worker.on('stalled', (jobId) => {
+    console.warn(`Recommendation job ${jobId} stalled and will be retried`);
   });
 
   return worker;

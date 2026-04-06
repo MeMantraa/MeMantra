@@ -11,6 +11,7 @@ export function createEngagementOptimizerWorker(): Worker {
     {
       connection,
       concurrency: 1,
+      lockDuration: 15 * 60 * 1000, // 15 min timeout (batch processes all users)
     },
   );
 
@@ -20,6 +21,10 @@ export function createEngagementOptimizerWorker(): Worker {
 
   worker.on('failed', (job, err) => {
     console.error(`Engagement optimizer job ${job?.id} failed:`, err.message);
+  });
+
+  worker.on('stalled', (jobId) => {
+    console.warn(`Engagement optimizer job ${jobId} stalled and will be retried`);
   });
 
   return worker;

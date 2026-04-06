@@ -11,7 +11,7 @@ export function createReminderWorker(): Worker {
     {
       connection,
       concurrency: 1,
-      limiter: { max: 1, duration: 30_000 },
+      lockDuration: 5 * 60 * 1000, // 5 min timeout to prevent indefinite hangs
     },
   );
 
@@ -21,6 +21,10 @@ export function createReminderWorker(): Worker {
 
   worker.on('failed', (job, err) => {
     console.error(`Reminder job ${job?.id} failed:`, err.message);
+  });
+
+  worker.on('stalled', (jobId) => {
+    console.warn(`Reminder job ${jobId} stalled and will be retried`);
   });
 
   return worker;

@@ -1,12 +1,15 @@
 import { Queue, QueueOptions } from 'bullmq';
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+const REDIS_URL =
+  process.env.REDIS_URL ||
+  `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`;
 
 function parseRedisUrl(url: string) {
   const parsed = new URL(url);
   return {
     host: parsed.hostname,
     port: Number(parsed.port) || 6379,
+    ...(parsed.password ? { password: parsed.password } : {}),
   };
 }
 

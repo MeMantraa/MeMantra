@@ -21,6 +21,12 @@ export function cacheResponse(options: CacheOptions = {}): RequestHandler {
   const { ttl = 300, perUser = false } = options;
 
   return async (req: Request, res: Response, next: NextFunction) => {
+    // If per-user caching is requested but user is not authenticated,
+    // skip caching entirely to prevent users sharing a single cache entry.
+    if (perUser && !req.user?.userId) {
+      return next();
+    }
+
     const userId = perUser ? req.user?.userId : undefined;
     const prefix = options.keyPrefix || req.originalUrl;
     const key = buildCacheKey(prefix, userId);

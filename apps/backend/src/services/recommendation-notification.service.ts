@@ -111,21 +111,19 @@ export const RecommendationNotificationService = {
       console.log(`🔔 Sending recommendation notifications to ${eligible.length} user(s)`);
 
       for (const user of eligible) {
+        // Mark as sent BEFORE sending to prevent duplicates if the process crashes
+        // between sending the notification and updating the DB.
+        await UserModel.update(user.user_id, {
+          recommendation_notif_sent_at: new Date().toISOString(),
+        }).catch((err) => {
+          console.error(
+            'Failed to update recommendation_notif_sent_at for user:',
+            sanitizeForLog(user.user_id),
+            err,
+          );
+        });
+
         const result = await this.sendToUser(user.user_id, user.device_token as string);
-
-        if (result.success) {
-          // Persist the send timestamp so the user isn't notified twice today
-          await UserModel.update(user.user_id, {
-            recommendation_notif_sent_at: new Date().toISOString(),
-          }).catch((err) => {
-            console.error(
-              'Failed to update recommendation_notif_sent_at for user:',
-              sanitizeForLog(user.user_id),
-              err,
-            );
-          });
-        }
-
         results.push(result);
       }
 
