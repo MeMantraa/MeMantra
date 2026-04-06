@@ -11,6 +11,9 @@ export function useReminders() {
   const [remindersByCollection, setRemindersByCollection] = useState<Map<number, ReminderInfo>>(
     new Map(),
   );
+  const [remindersByJournal, setRemindersByJournal] = useState<Map<number, ReminderInfo>>(
+    new Map(),
+  );
 
   const loadReminders = useCallback(async () => {
     try {
@@ -20,6 +23,7 @@ export function useReminders() {
       if (res.status === 'success') {
         const mantraMap = new Map<number, ReminderInfo>();
         const collectionMap = new Map<number, ReminderInfo>();
+        const journalMap = new Map<number, ReminderInfo>();
         for (const r of res.data.reminders) {
           const info: ReminderInfo = { reminder_id: r.reminder_id, status: r.status };
           if (r.mantra_id !== null) {
@@ -28,9 +32,13 @@ export function useReminders() {
           if (r.collection_id !== null) {
             collectionMap.set(r.collection_id, info);
           }
+          if (r.journal_id !== null) {
+            journalMap.set(r.journal_id, info);
+          }
         }
         setRemindersByMantra(mantraMap);
         setRemindersByCollection(collectionMap);
+        setRemindersByJournal(journalMap);
       }
     } catch {
       Alert.alert('Error', 'Failed to load reminders. Please try again later.');
@@ -55,6 +63,13 @@ export function useReminders() {
       return remindersByCollection.get(collectionId);
     },
     [remindersByCollection],
+  );
+
+  const getReminderForJournal = useCallback(
+    (journalId: number): ReminderInfo | undefined => {
+      return remindersByJournal.get(journalId);
+    },
+    [remindersByJournal],
   );
 
   const showReminderActions = useCallback(
@@ -103,24 +118,36 @@ export function useReminders() {
   );
 
   const handleReminderPress = useCallback(
-    (type: 'mantra' | 'collection', id: number, navigation: any) => {
-      const map = type === 'mantra' ? remindersByMantra : remindersByCollection;
+    (type: 'mantra' | 'collection' | 'journal', id: number, navigation: any) => {
+      const map =
+        type === 'mantra'
+          ? remindersByMantra
+          : type === 'collection'
+            ? remindersByCollection
+            : remindersByJournal;
       const existing = map.get(id);
       if (existing) {
         showReminderActions(existing);
       } else {
-        const params = type === 'mantra' ? { mantraId: id } : { collectionId: id };
+        const params =
+          type === 'mantra'
+            ? { mantraId: id }
+            : type === 'collection'
+              ? { collectionId: id }
+              : { journalId: id };
         navigation.navigate('CreateReminder', params);
       }
     },
-    [remindersByMantra, remindersByCollection, showReminderActions],
+    [remindersByMantra, remindersByCollection, remindersByJournal, showReminderActions],
   );
 
   return {
     remindersByMantra,
     remindersByCollection,
+    remindersByJournal,
     getReminderForMantra,
     getReminderForCollection,
+    getReminderForJournal,
     showReminderActions,
     handleReminderPress,
     refresh: loadReminders,

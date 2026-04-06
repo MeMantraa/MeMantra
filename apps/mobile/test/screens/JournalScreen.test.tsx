@@ -29,6 +29,23 @@ jest.mock('@react-navigation/native', () => {
   };
 });
 
+const mockHandleReminderPress = jest.fn();
+const mockRemindersByJournal = new Map();
+
+jest.mock('../../hooks/useReminders', () => ({
+  useReminders: () => ({
+    remindersByMantra: new Map(),
+    remindersByCollection: new Map(),
+    remindersByJournal: mockRemindersByJournal,
+    getReminderForMantra: jest.fn(),
+    getReminderForCollection: jest.fn(),
+    getReminderForJournal: jest.fn(),
+    showReminderActions: jest.fn(),
+    handleReminderPress: mockHandleReminderPress,
+    refresh: jest.fn(),
+  }),
+}));
+
 jest.mock('../../context/ThemeContext', () => ({
   useTheme: () => ({
     colors: {
@@ -88,6 +105,7 @@ describe('JournalScreen', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
+    mockRemindersByJournal.clear();
     (storage.getToken as jest.Mock).mockResolvedValue('mock-token');
     jest.spyOn(Alert, 'alert').mockImplementation((title, message, buttons) => {
       if (buttons && buttons.length > 0) {
@@ -318,6 +336,41 @@ describe('JournalScreen', () => {
       expect(getByText('#mindfulness')).toBeTruthy();
       expect(getByText('#peace')).toBeTruthy();
     });
+  });
+
+  it('renders reminder bell icon for each journal entry', async () => {
+    (journalService.getJournalEntries as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { entries: mockEntries, pagination: { total: 2 } },
+    });
+
+    const { getByTestId } = render(<JournalScreen navigation={mockNavigation} route={mockRoute} />);
+
+    await waitFor(() => {
+      expect(getByTestId(`journal-reminder-${mockEntries[0].journal_id}`)).toBeTruthy();
+      expect(getByTestId(`journal-reminder-${mockEntries[1].journal_id}`)).toBeTruthy();
+    });
+  });
+
+  it('calls handleReminderPress when bell icon is pressed', async () => {
+    (journalService.getJournalEntries as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { entries: mockEntries, pagination: { total: 2 } },
+    });
+
+    const { getByTestId } = render(<JournalScreen navigation={mockNavigation} route={mockRoute} />);
+
+    await waitFor(() => {
+      expect(getByTestId(`journal-reminder-${mockEntries[0].journal_id}`)).toBeTruthy();
+    });
+
+    fireEvent.press(getByTestId(`journal-reminder-${mockEntries[0].journal_id}`));
+
+    expect(mockHandleReminderPress).toHaveBeenCalledWith(
+      'journal',
+      mockEntries[0].journal_id,
+      mockNavigation,
+    );
   });
 
   it('truncates long content', async () => {

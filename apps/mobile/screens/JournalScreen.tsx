@@ -13,6 +13,7 @@ import AppText from '../components/UI/textWrapper';
 import { journalService, JournalEntry, MOOD_OPTIONS } from '../services/journal.service';
 import { storage } from '../utils/storage';
 import { useFocusEffect } from '@react-navigation/native';
+import { useReminders } from '../hooks/useReminders';
 
 export default function JournalScreen({ navigation }: any) {
   const { colors } = useTheme();
@@ -20,6 +21,7 @@ export default function JournalScreen({ navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [totalEntries, setTotalEntries] = useState(0);
+  const { remindersByJournal, handleReminderPress } = useReminders();
 
   const loadJournalEntries = async () => {
     try {
@@ -120,6 +122,21 @@ export default function JournalScreen({ navigation }: any) {
               <AppText className="text-2xl">{getMoodEmoji(item.mood)}</AppText>
             </View>
           )}
+          <TouchableOpacity
+            testID={`journal-reminder-${item.journal_id}`}
+            className="p-1"
+            onPress={() => handleReminderPress('journal', item.journal_id, navigation)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons
+              name={
+                remindersByJournal.has(item.journal_id) ? 'notifications' : 'notifications-outline'
+              }
+              size={18}
+              color={colors.text}
+              style={{ opacity: 0.5 }}
+            />
+          </TouchableOpacity>
           <TouchableOpacity
             testID="delete-button"
             className="p-1"
