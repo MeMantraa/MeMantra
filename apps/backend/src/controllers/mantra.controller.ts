@@ -12,6 +12,7 @@ import { UserCategoryScoreModel } from '../models/user-category-score.model';
 import { LikeModel } from '../models/like.model';
 import { sanitizeForLog } from '../utils/sanitize.utils';
 import { cacheDelete } from '../services/cache.service';
+import { logger } from '../utils/logger';
 
 export const MantraController = {
   // GET /api/mantras - List all mantras with optional search and pagination
@@ -41,7 +42,7 @@ export const MantraController = {
         },
       });
     } catch (error) {
-      console.error('Get all mantras error:', error);
+      logger.error('Get all mantras error:', error);
       return res.status(500).json({
         status: 'error',
         message: 'Error retrieving mantras',
@@ -68,7 +69,7 @@ export const MantraController = {
         data: { mantra },
       });
     } catch (error) {
-      console.error('Get mantra by ID error:', error);
+      logger.error('Get mantra by ID error:', error);
       return res.status(500).json({
         status: 'error',
         message: 'Error retrieving mantra',
@@ -102,7 +103,7 @@ export const MantraController = {
         data: { mantra: newMantra },
       });
     } catch (error) {
-      console.error('Create mantra error:', error);
+      logger.error('Create mantra error:', error);
       return res.status(500).json({
         status: 'error',
         message: 'Error creating mantra',
@@ -135,7 +136,7 @@ export const MantraController = {
         data: { mantra: updatedMantra },
       });
     } catch (error) {
-      console.error('Update mantra error:', error);
+      logger.error('Update mantra error:', error);
       return res.status(500).json({
         status: 'error',
         message: 'Error updating mantra',
@@ -166,7 +167,7 @@ export const MantraController = {
         message: 'Mantra deleted successfully',
       });
     } catch (error) {
-      console.error('Delete mantra error:', error);
+      logger.error('Delete mantra error:', error);
       return res.status(500).json({
         status: 'error',
         message: 'Error deleting mantra',
@@ -189,7 +190,7 @@ export const MantraController = {
         },
       });
     } catch (error) {
-      console.error('Get mantras by category error:', error);
+      logger.error('Get mantras by category error:', error);
       return res.status(500).json({
         status: 'error',
         message: 'Error retrieving mantras by category',
@@ -217,7 +218,7 @@ export const MantraController = {
         data: { categories },
       });
     } catch (error) {
-      console.error('Get categories for mantra error:', error);
+      logger.error('Get categories for mantra error:', error);
       return res.status(500).json({
         status: 'error',
         message: 'Error retrieving categories for mantra',
@@ -237,7 +238,7 @@ export const MantraController = {
         data: { mantras },
       });
     } catch (error) {
-      console.error('Get popular mantras error:', error);
+      logger.error('Get popular mantras error:', error);
       return res.status(500).json({
         status: 'error',
         message: 'Error retrieving popular mantras',
@@ -326,7 +327,7 @@ export const MantraController = {
         data: mantrasWithStatus,
       });
     } catch (error) {
-      console.error('Get feed mantras error:', error);
+      logger.error('Get feed mantras error:', error);
       return res.status(500).json({
         status: 'error',
         message: 'Error retrieving feed mantras',
@@ -386,7 +387,7 @@ export const MantraController = {
 
       // Update algorithm: +3 points for all categories of this mantra
       await UserCategoryScoreModel.addScoreForMantra(userId, mantraId, 3).catch((err) => {
-        console.error(
+        logger.error(
           'Failed to update category score for user:',
           sanitizeForLog(userId),
           'mantra:',
@@ -407,7 +408,7 @@ export const MantraController = {
         message: 'Mantra saved successfully',
       });
     } catch (error) {
-      console.error('Save mantra error:', error);
+      logger.error('Save mantra error:', error);
       return res.status(500).json({
         status: 'error',
         message: 'Error saving mantra',
@@ -452,7 +453,7 @@ export const MantraController = {
       // Update algorithm: -3 points (undo save)
       if (removedCount > 0) {
         await UserCategoryScoreModel.removeScoreForMantra(userId, mantraId, 3).catch((err) => {
-          console.error(
+          logger.error(
             'Failed to remove category score for user:',
             sanitizeForLog(userId),
             'mantra:',
@@ -481,7 +482,7 @@ export const MantraController = {
         message: 'Mantra unsaved successfully',
       });
     } catch (error) {
-      console.error('Unsave mantra error:', error);
+      logger.error('Unsave mantra error:', error);
       return res.status(500).json({
         status: 'error',
         message: 'Error unsaving mantra',
@@ -518,7 +519,7 @@ export const MantraController = {
         data: mantras,
       });
     } catch (error) {
-      console.error('Get saved mantras error:', error);
+      logger.error('Get saved mantras error:', error);
       return res.status(500).json({
         status: 'error',
         message: 'Error retrieving saved mantras',
