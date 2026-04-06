@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   splashOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#8E9A86',
+    backgroundColor: '#7BA5B5',
     alignItems: 'center',
     justifyContent: 'center',
   },
