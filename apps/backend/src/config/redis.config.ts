@@ -17,8 +17,12 @@ export function getRedisClient(): Redis {
       lazyConnect: true,
     });
 
+    let errorLogged = false;
     redis.on('error', (err) => {
-      console.error('Redis connection error:', err.message);
+      if (!errorLogged) {
+        console.error('Redis connection error:', err.message);
+        errorLogged = true;
+      }
     });
 
     redis.on('connect', () => {
