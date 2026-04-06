@@ -49,24 +49,28 @@ describe('RemindersScreen', () => {
       user_id: 1,
       mantra_id: 10,
       collection_id: null,
+      journal_id: null,
       time: '2024-06-15T10:00:00Z',
       frequency: 'daily',
       status: 'active',
       last_sent_at: null,
       mantra_title: 'Be Present',
       collection_name: null,
+      journal_title: null,
     },
     {
       reminder_id: 2,
       user_id: 1,
       mantra_id: null,
       collection_id: 5,
+      journal_id: null,
       time: '2024-06-15T14:30:00Z',
       frequency: 'weekly',
       status: 'paused',
       last_sent_at: null,
       mantra_title: null,
       collection_name: 'Morning Mantras',
+      journal_title: null,
     },
   ];
 
@@ -91,7 +95,9 @@ describe('RemindersScreen', () => {
     await waitFor(() => {
       expect(getByText('No reminders yet')).toBeTruthy();
       expect(
-        getByText('Create a reminder to get notified about your favourite mantras or collections.'),
+        getByText(
+          'Create a reminder to get notified about your favourite mantras, collections, or journal entries.',
+        ),
       ).toBeTruthy();
       expect(getByText('Create Reminder')).toBeTruthy();
     });

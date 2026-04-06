@@ -29,6 +29,20 @@ jest.mock('@react-navigation/native', () => {
   };
 });
 
+jest.mock('../../hooks/useReminders', () => ({
+  useReminders: () => ({
+    remindersByMantra: new Map(),
+    remindersByCollection: new Map(),
+    remindersByJournal: new Map(),
+    getReminderForMantra: jest.fn(),
+    getReminderForCollection: jest.fn(),
+    getReminderForJournal: jest.fn(),
+    showReminderActions: jest.fn(),
+    handleReminderPress: jest.fn(),
+    refresh: jest.fn(),
+  }),
+}));
+
 jest.mock('../../context/ThemeContext', () => ({
   useTheme: () => ({
     colors: {
