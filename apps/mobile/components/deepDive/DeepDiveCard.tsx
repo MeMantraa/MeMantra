@@ -3,7 +3,7 @@ import { View } from 'react-native';
 import AppText from '../UI/textWrapper';
 
 type DeepDiveCardProps = {
-  label: string;
+  label?: string;
   children: React.ReactNode;
   muted?: boolean;
   accentColor: string;
@@ -38,17 +38,19 @@ export default function DeepDiveCard({
         elevation: 2,
       }}
     >
-      <AppText
-        style={{
-          color: muted ? textColor : accentColor,
-          opacity: muted ? 0.72 : 0.9,
-          fontSize: 11,
-          letterSpacing: 1.05,
-          marginBottom: 7,
-        }}
-      >
-        {label.toUpperCase()}
-      </AppText>
+      {label ? (
+        <AppText
+          style={{
+            color: muted ? textColor : accentColor,
+            opacity: muted ? 0.72 : 0.9,
+            fontSize: 11,
+            letterSpacing: 1.05,
+            marginBottom: 7,
+          }}
+        >
+          {label.toUpperCase()}
+        </AppText>
+      ) : null}
       {children}
     </View>
   );

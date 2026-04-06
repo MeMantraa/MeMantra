@@ -15,8 +15,8 @@ type ThemeContextType = {
 };
 
 const ThemeContext = createContext<ThemeContextType>({
-  theme: 'default',
-  colors: themes.default,
+  theme: 'ocean',
+  colors: themes.ocean,
   setTheme: () => {},
   resetToDefault: () => {}, // Add this
 });
@@ -24,7 +24,7 @@ const ThemeContext = createContext<ThemeContextType>({
 const THEME_STORAGE_KEY = '@app_theme';
 
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setThemeState] = useState<ThemeName>('default');
+  const [theme, setThemeState] = useState<ThemeName>('ocean');
   const [authToken, setAuthToken] = useState<string | null>(null);
 
   // Watch for auth token changes
@@ -50,7 +50,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     const loadTheme = async () => {
       if (!authToken) {
-        setThemeState('default');
+        setThemeState('ocean');
         await AsyncStorage.removeItem(THEME_STORAGE_KEY);
         return;
       }
@@ -58,7 +58,9 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       // Login fetch user theme
       try {
         const response = await userService.getTheme(authToken);
-        const serverTheme = response.data.theme as ThemeName;
+        const rawTheme = response.data.theme as ThemeName;
+        // Migrate users still on the old 'default' (Sage Green) to Ocean Blue
+        const serverTheme = rawTheme === 'default' ? 'ocean' : rawTheme;
         if (serverTheme in themes) {
           setThemeState(serverTheme);
           await AsyncStorage.setItem(THEME_STORAGE_KEY, serverTheme);
@@ -91,7 +93,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const resetToDefault = () => {
-    setThemeState('default');
+    setThemeState('ocean');
     AsyncStorage.removeItem(THEME_STORAGE_KEY);
   };
 

@@ -1,6 +1,6 @@
 import React from 'react';
-import { render, fireEvent } from '@testing-library/react-native';
-import { View, FlatList, Animated } from 'react-native';
+import { render, fireEvent, waitFor } from '@testing-library/react-native';
+import { View, FlatList, Animated, Share } from 'react-native';
 import MantraCarousel from '../../components/carousel';
 import type { Mantra } from '../../services/mantra.service';
 
@@ -228,6 +228,38 @@ describe('MantraCarousel', () => {
     rerender(<MantraCarousel item={newItem} />);
 
     expect(getByText('New Mantra')).toBeTruthy();
+  });
+
+  it('calls Share.share when external share button is pressed', async () => {
+    const shareSpy = jest
+      .spyOn(Share, 'share')
+      .mockResolvedValue({ action: 'sharedAction' } as any);
+    const { getByTestId } = render(<MantraCarousel item={mockItem} />);
+
+    fireEvent.press(getByTestId('more-button'));
+    fireEvent.press(getByTestId('external-share-button'));
+
+    await waitFor(() => {
+      expect(shareSpy).toHaveBeenCalledWith({
+        message: '"Be present"\n\nShared from MeMantra',
+      });
+    });
+
+    shareSpy.mockRestore();
+  });
+
+  it('does not throw when external share is cancelled', async () => {
+    const shareSpy = jest.spyOn(Share, 'share').mockRejectedValue(new Error('cancelled'));
+    const { getByTestId } = render(<MantraCarousel item={mockItem} />);
+
+    fireEvent.press(getByTestId('more-button'));
+    fireEvent.press(getByTestId('external-share-button'));
+
+    await waitFor(() => {
+      expect(shareSpy).toHaveBeenCalled();
+    });
+
+    shareSpy.mockRestore();
   });
 
   it('re-renders when like status changes (memo dependency)', () => {

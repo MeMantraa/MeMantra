@@ -177,7 +177,6 @@ export default function DeepDiveReader({
           ) : (
             <>
               <DeepDiveCard
-                label="Summary"
                 accentColor={colors.secondary}
                 textColor={colors.text}
                 backgroundColor={colors.primaryDark + '2d'}
@@ -192,7 +191,6 @@ export default function DeepDiveReader({
 
               {sections.explanation ? (
                 <DeepDiveCard
-                  label="Explanation"
                   accentColor={colors.secondary}
                   textColor={colors.text}
                   backgroundColor={colors.primaryDark + '22'}
@@ -208,7 +206,6 @@ export default function DeepDiveReader({
 
               {sections.example ? (
                 <DeepDiveCard
-                  label="Example"
                   accentColor={colors.secondary}
                   textColor={colors.text}
                   backgroundColor={colors.primaryDark + '22'}
