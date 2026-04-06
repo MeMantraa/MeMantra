@@ -98,7 +98,7 @@ describe('redis.config', () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
       mockInstance.connect.mockRejectedValue(new Error('ECONNREFUSED'));
       const { connectRedis } = require('../../../src/config/redis.config');
-      await expect(connectRedis()).resolves.toBeUndefined();
+      await expect(connectRedis()).resolves.toBe(false);
       expect(consoleSpy).toHaveBeenCalledWith(
         expect.stringContaining('Redis unavailable'),
         expect.stringContaining('ECONNREFUSED'),
