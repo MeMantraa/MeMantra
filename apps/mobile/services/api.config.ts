@@ -133,6 +133,7 @@ const emitApiPerformanceEvent = async (params: {
   const config = params.config;
   const skip = config?.metadata?.skipPerformanceMonitoring || config?.skipPerformanceMonitoring;
   if (skip) return;
+  if (typeof apiClient.post !== 'function') return;
   await apiClient.post(
     '/performance/event',
     {
