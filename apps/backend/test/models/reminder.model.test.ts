@@ -31,6 +31,7 @@ describe('ReminderModel', () => {
         user_id: 1,
         mantra_id: 5,
         collection_id: null,
+        journal_id: null,
         time: '2024-12-01T09:00:00Z',
         frequency: 'daily',
         status: 'active',
@@ -63,6 +64,7 @@ describe('ReminderModel', () => {
         user_id: 1,
         mantra_id: 5,
         collection_id: null,
+        journal_id: null,
         time: '2024-12-01T09:00:00Z',
         frequency: 'daily',
         status: 'active',
@@ -110,6 +112,7 @@ describe('ReminderModel', () => {
           user_id: 1,
           mantra_id: 5,
           collection_id: null,
+          journal_id: null,
           time: '2024-12-01T09:00:00Z',
           frequency: 'daily',
           status: 'active',
@@ -123,6 +126,7 @@ describe('ReminderModel', () => {
           user_id: 1,
           mantra_id: 10,
           collection_id: null,
+          journal_id: null,
           time: '2024-12-01T18:00:00Z',
           frequency: 'weekly',
           status: 'active',
@@ -159,6 +163,7 @@ describe('ReminderModel', () => {
           user_id: 1,
           mantra_id: 5,
           collection_id: null,
+          journal_id: null,
           time: '2024-12-01T09:00:00Z',
           frequency: 'daily',
           status: 'active',
@@ -194,6 +199,7 @@ describe('ReminderModel', () => {
           user_id: 1,
           mantra_id: 5,
           collection_id: null,
+          journal_id: null,
           time: '2024-12-01T09:00:00Z',
           frequency: 'daily',
           status: 'active',
@@ -233,6 +239,7 @@ describe('ReminderModel', () => {
         user_id: 1,
         mantra_id: 5,
         collection_id: null,
+        journal_id: null,
         time: '2024-12-01T10:00:00Z',
         frequency: 'weekly',
         status: 'active',
@@ -267,6 +274,7 @@ describe('ReminderModel', () => {
         user_id: 1,
         mantra_id: 5,
         collection_id: null,
+        journal_id: null,
         time: '2024-12-01T09:00:00Z',
         frequency: 'daily',
         status: 'paused',
@@ -379,6 +387,7 @@ describe('ReminderModel', () => {
           user_id: 1,
           mantra_id: 5,
           collection_id: null,
+          journal_id: null,
           time: new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
           frequency: 'daily',
           status: 'active',
@@ -416,6 +425,7 @@ describe('ReminderModel', () => {
           user_id: 1,
           mantra_id: 5,
           collection_id: null,
+          journal_id: null,
           time: '2024-12-01T09:00:00Z',
           frequency: 'daily',
           status: 'active',
@@ -451,6 +461,7 @@ describe('ReminderModel', () => {
           user_id: 1,
           mantra_id: 5,
           collection_id: null,
+          journal_id: null,
           time: '2024-12-01T09:00:00Z',
           frequency: 'daily',
           status: 'active',
@@ -487,6 +498,7 @@ describe('ReminderModel', () => {
           user_id: 1,
           mantra_id: 5,
           collection_id: null,
+          journal_id: null,
           time: '2024-12-01T09:00:00Z',
           frequency: 'daily',
           status: 'active',
@@ -540,6 +552,7 @@ describe('ReminderModel', () => {
           user_id: 1,
           mantra_id: 5,
           collection_id: null,
+          journal_id: null,
           time: '2024-12-01T09:00:00Z',
           frequency: 'once',
           status: 'active',
@@ -575,6 +588,7 @@ describe('ReminderModel', () => {
         user_id: 1,
         mantra_id: 5,
         collection_id: null,
+        journal_id: null,
         time: '2024-12-01T09:00:00Z',
         frequency: 'daily',
         status: 'active',
@@ -597,7 +611,9 @@ describe('ReminderModel', () => {
 
       expect(db.updateTable).toHaveBeenCalledWith('Reminder');
       expect(mockChain.where).toHaveBeenCalledWith('reminder_id', '=', 1);
-      expect(mockChain.set).toHaveBeenCalledWith(expect.objectContaining({ last_sent_at: expect.any(String) }));
+      expect(mockChain.set).toHaveBeenCalledWith(
+        expect.objectContaining({ last_sent_at: expect.any(String) }),
+      );
       expect(result).toEqual(mockReminder);
     });
   });
@@ -609,6 +625,7 @@ describe('ReminderModel', () => {
         user_id: 1,
         mantra_id: 5,
         collection_id: null,
+        journal_id: null,
         time: '2024-12-01T09:00:00Z',
         frequency: 'once',
         status: 'completed',
@@ -631,10 +648,12 @@ describe('ReminderModel', () => {
 
       expect(db.updateTable).toHaveBeenCalledWith('Reminder');
       expect(mockChain.where).toHaveBeenCalledWith('reminder_id', '=', 1);
-      expect(mockChain.set).toHaveBeenCalledWith(expect.objectContaining({
-        status: 'completed',
-        last_sent_at: expect.any(String)
-      }));
+      expect(mockChain.set).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'completed',
+          last_sent_at: expect.any(String),
+        }),
+      );
       expect(result?.status).toBe('completed');
     });
   });
@@ -646,6 +665,7 @@ describe('ReminderModel', () => {
         user_id: 1,
         mantra_id: 5,
         collection_id: null,
+        journal_id: null,
         time: '2024-12-01T09:00:00Z',
         frequency: 'daily',
         status: 'active',
@@ -735,6 +755,7 @@ describe('ReminderModel', () => {
           reminder_id: 2,
           user_id: 1,
           collection_id: 10,
+          journal_id: null,
           time: '2024-12-01T09:00:00Z',
           frequency: 'daily',
           status: 'active',
@@ -772,6 +793,7 @@ describe('ReminderModel', () => {
           user_id: 1,
           mantra_id: null,
           collection_id: 10,
+          journal_id: null,
           time: '2024-12-01T09:00:00Z',
           frequency: 'daily',
           status: 'active',
@@ -808,6 +830,7 @@ describe('ReminderModel', () => {
           user_id: 1,
           mantra_id: null,
           collection_id: 10,
+          journal_id: null,
           time: '2024-12-01T09:00:00Z',
           frequency: 'daily',
           status: 'active',
@@ -860,6 +883,7 @@ describe('ReminderModel', () => {
           user_id: 1,
           mantra_id: 5,
           collection_id: null,
+          journal_id: null,
           time: '2024-12-01T09:00:00Z',
           frequency: 'daily',
           status: 'active',
@@ -872,6 +896,7 @@ describe('ReminderModel', () => {
           user_id: 1,
           mantra_id: null,
           collection_id: 10,
+          journal_id: null,
           time: '2024-12-01T18:00:00Z',
           frequency: 'weekly',
           status: 'active',
@@ -894,9 +919,22 @@ describe('ReminderModel', () => {
       const result = await ReminderModel.findByUserIdWithNames(1);
 
       expect(db.selectFrom).toHaveBeenCalledWith('Reminder');
-      expect(mockChain.leftJoin).toHaveBeenCalledTimes(2);
-      expect(mockChain.leftJoin).toHaveBeenCalledWith('Mantra', 'Mantra.mantra_id', 'Reminder.mantra_id');
-      expect(mockChain.leftJoin).toHaveBeenCalledWith('Collection', 'Collection.collection_id', 'Reminder.collection_id');
+      expect(mockChain.leftJoin).toHaveBeenCalledTimes(3);
+      expect(mockChain.leftJoin).toHaveBeenCalledWith(
+        'Mantra',
+        'Mantra.mantra_id',
+        'Reminder.mantra_id',
+      );
+      expect(mockChain.leftJoin).toHaveBeenCalledWith(
+        'Collection',
+        'Collection.collection_id',
+        'Reminder.collection_id',
+      );
+      expect(mockChain.leftJoin).toHaveBeenCalledWith(
+        'JournalEntry',
+        'JournalEntry.journal_id',
+        'Reminder.journal_id',
+      );
       expect(mockChain.where).toHaveBeenCalledWith('Reminder.user_id', '=', 1);
       expect(mockChain.orderBy).toHaveBeenCalledWith('Reminder.time', 'asc');
       expect(result).toEqual(mockResults);
@@ -939,4 +977,3 @@ describe('ReminderModel', () => {
     });
   });
 });
-
