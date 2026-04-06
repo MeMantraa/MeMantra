@@ -25,13 +25,11 @@ app.listen(PORT, async () => {
   console.log(`Health check: http://localhost:${PORT}/health`);
   console.log(`Schedulers enabled: ${shouldRunSchedulers}`);
 
-  // Connect to Redis
-  await connectRedis().catch((err) => {
-    console.warn('Redis connection failed, caching disabled:', err.message);
-  });
+  // Connect to Redis (returns false if unavailable)
+  const redisConnected = await connectRedis();
 
-  // Disable background schedulers in test or hosted web-service processes when requested.
-  if (shouldRunSchedulers) {
+  // Only start workers/schedulers when Redis is available and schedulers are enabled.
+  if (shouldRunSchedulers && redisConnected) {
     // Start BullMQ workers to process background jobs
     workers.push(
       createReminderWorker(),
@@ -52,6 +50,8 @@ app.listen(PORT, async () => {
     EngagementOptimizerService.start({
       cronExpression: '0 3 * * *',
     });
+  } else if (!redisConnected) {
+    console.log('Redis unavailable — workers and schedulers disabled');
   } else {
     console.log('Background schedulers are disabled for this process');
   }

@@ -30,17 +30,32 @@ export const QUEUE_NAMES = {
   ENGAGEMENT_OPTIMIZER: 'engagement-optimizer',
 } as const;
 
-export const reminderQueue = new Queue(QUEUE_NAMES.REMINDERS, {
-  connection,
-  ...defaultOpts,
-});
+// Lazy-initialized queues — only created when first accessed so the app
+// can start even when Redis is unavailable (caching simply stays disabled).
+let _reminderQueue: Queue | null = null;
+let _recommendationQueue: Queue | null = null;
+let _engagementOptimizerQueue: Queue | null = null;
 
-export const recommendationQueue = new Queue(QUEUE_NAMES.RECOMMENDATIONS, {
-  connection,
-  ...defaultOpts,
-});
+export function getReminderQueue(): Queue {
+  if (!_reminderQueue) {
+    _reminderQueue = new Queue(QUEUE_NAMES.REMINDERS, { connection, ...defaultOpts });
+  }
+  return _reminderQueue;
+}
 
-export const engagementOptimizerQueue = new Queue(QUEUE_NAMES.ENGAGEMENT_OPTIMIZER, {
-  connection,
-  ...defaultOpts,
-});
+export function getRecommendationQueue(): Queue {
+  if (!_recommendationQueue) {
+    _recommendationQueue = new Queue(QUEUE_NAMES.RECOMMENDATIONS, { connection, ...defaultOpts });
+  }
+  return _recommendationQueue;
+}
+
+export function getEngagementOptimizerQueue(): Queue {
+  if (!_engagementOptimizerQueue) {
+    _engagementOptimizerQueue = new Queue(QUEUE_NAMES.ENGAGEMENT_OPTIMIZER, {
+      connection,
+      ...defaultOpts,
+    });
+  }
+  return _engagementOptimizerQueue;
+}

@@ -6,7 +6,7 @@ import {
   stopScheduler,
   getSchedulerStatus,
 } from '../utils/cron-scheduler';
-import { engagementOptimizerQueue } from '../config/queue.config';
+import { getEngagementOptimizerQueue } from '../config/queue.config';
 import * as cron from 'node-cron';
 
 interface ProcessUserResult {
@@ -23,7 +23,9 @@ export const EngagementOptimizerService = {
   /** Start the engagement optimizer scheduler. */
   start(config: SchedulerConfig = {}): void {
     startScheduler(this, config, '0 3 * * *', 'Engagement optimizer scheduler', () =>
-      engagementOptimizerQueue.add('process-engagement', { triggeredAt: new Date().toISOString() }),
+      getEngagementOptimizerQueue().add('process-engagement', {
+        triggeredAt: new Date().toISOString(),
+      }),
     );
   },
 

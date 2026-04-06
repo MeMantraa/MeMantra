@@ -28,12 +28,17 @@ export function getRedisClient(): Redis {
   return redis;
 }
 
-export async function connectRedis(): Promise<void> {
+export async function connectRedis(): Promise<boolean> {
   try {
     const client = getRedisClient();
     await client.connect();
+    return true;
   } catch (err) {
-    console.warn('⚠️  Redis unavailable — caching disabled. Error:', (err as Error).message);
+    console.warn(
+      '⚠️  Redis unavailable — caching and queues disabled. Error:',
+      (err as Error).message,
+    );
+    return false;
   }
 }
 

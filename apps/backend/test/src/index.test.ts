@@ -12,7 +12,7 @@ jest.mock('../../src/services/engagement-optimizer.service', () => ({
   EngagementOptimizerService: { start: jest.fn(), stop: jest.fn() },
 }));
 jest.mock('../../src/config/redis.config', () => ({
-  connectRedis: jest.fn(() => Promise.resolve()),
+  connectRedis: jest.fn(() => Promise.resolve(true)),
   disconnectRedis: jest.fn(() => Promise.resolve()),
 }));
 jest.mock('../../src/workers', () => ({
