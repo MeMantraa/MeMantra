@@ -529,6 +529,66 @@ describe('RemindersScreen', () => {
     });
   });
 
+  it('displays journal type reminder correctly', async () => {
+    const journalReminder = {
+      reminder_id: 5,
+      user_id: 1,
+      mantra_id: null,
+      collection_id: null,
+      journal_id: 7,
+      time: '2024-06-15T10:00:00Z',
+      frequency: 'daily',
+      status: 'active',
+      last_sent_at: null,
+      mantra_title: null,
+      collection_name: null,
+      journal_title: 'My Journal Entry',
+    };
+
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { reminders: [journalReminder] },
+    });
+
+    const { getByText } = render(<RemindersScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Journal')).toBeTruthy();
+      expect(getByText('My Journal Entry')).toBeTruthy();
+    });
+  });
+
+  it('displays journal reminder without title (no linked name shown)', async () => {
+    const journalReminder = {
+      reminder_id: 6,
+      user_id: 1,
+      mantra_id: null,
+      collection_id: null,
+      journal_id: 8,
+      time: '2024-06-15T10:00:00Z',
+      frequency: 'weekly',
+      status: 'active',
+      last_sent_at: null,
+      mantra_title: null,
+      collection_name: null,
+      journal_title: null,
+    };
+
+    (reminderService.getReminders as jest.Mock).mockResolvedValue({
+      status: 'success',
+      data: { reminders: [journalReminder] },
+    });
+
+    const { getByText, queryByText } = render(<RemindersScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Journal')).toBeTruthy();
+    });
+
+    // No linked name should be shown
+    expect(queryByText('My Journal Entry')).toBeNull();
+  });
+
   it('displays "No times set" for routine reminders without schedule_times', async () => {
     const routineReminder = {
       reminder_id: 4,

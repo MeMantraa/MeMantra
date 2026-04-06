@@ -807,6 +807,275 @@ describe('ReminderSchedulerService', () => {
     });
   });
 
+  describe('processJournalReminders', () => {
+    it('should process journal reminders and send notifications', async () => {
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+
+      const mockJournalReminders = [
+        {
+          reminder_id: 3,
+          user_id: 1,
+          journal_id: 7,
+          time: yesterday.toISOString(),
+          frequency: 'daily',
+          status: 'active',
+          last_sent_at: yesterday.toISOString(),
+          user_device_token: 'ExponentPushToken[zzz]',
+          journal_title: 'My Journal Entry',
+          journal_content: 'Some content here',
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
+        },
+      ];
+
+      mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue([]);
+      mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue([]);
+      mockedReminderModel.findDueJournalRemindersWithDetails.mockResolvedValue(
+        mockJournalReminders,
+      );
+      mockedReminderModel.updateLastSentAt.mockResolvedValue(undefined);
+      mockedNotificationService.sendJournalReminderNotification.mockResolvedValue({
+        data: [{ status: 'ok' }],
+      });
+
+      const consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+
+      const results = await ReminderSchedulerService.processReminders();
+
+      expect(results).toHaveLength(1);
+      expect(results[0].success).toBe(true);
+      expect(mockedNotificationService.sendJournalReminderNotification).toHaveBeenCalledWith(
+        'ExponentPushToken[zzz]',
+        'My Journal Entry',
+        'Some content here',
+        3,
+        7,
+      );
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should skip journal reminders without device token', async () => {
+      const mockJournalReminders = [
+        {
+          reminder_id: 3,
+          user_id: 1,
+          journal_id: 7,
+          time: new Date().toISOString(),
+          frequency: 'once',
+          status: 'active',
+          last_sent_at: null,
+          user_device_token: null,
+          journal_title: 'My Journal Entry',
+          journal_content: 'Some content',
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
+        },
+      ];
+
+      mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue([]);
+      mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue([]);
+      mockedReminderModel.findDueJournalRemindersWithDetails.mockResolvedValue(
+        mockJournalReminders,
+      );
+
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      jest.spyOn(console, 'log').mockImplementation();
+
+      const results = await ReminderSchedulerService.processReminders();
+
+      expect(results).toHaveLength(1);
+      expect(results[0].success).toBe(false);
+      expect(results[0].error).toBe('No device token');
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should skip journal reminders without title or content', async () => {
+      const mockJournalReminders = [
+        {
+          reminder_id: 3,
+          user_id: 1,
+          journal_id: 7,
+          time: new Date().toISOString(),
+          frequency: 'once',
+          status: 'active',
+          last_sent_at: null,
+          user_device_token: 'ExponentPushToken[zzz]',
+          journal_title: null,
+          journal_content: null,
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
+        },
+      ];
+
+      mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue([]);
+      mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue([]);
+      mockedReminderModel.findDueJournalRemindersWithDetails.mockResolvedValue(
+        mockJournalReminders,
+      );
+
+      const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+      jest.spyOn(console, 'log').mockImplementation();
+
+      const results = await ReminderSchedulerService.processReminders();
+
+      expect(results).toHaveLength(1);
+      expect(results[0].success).toBe(false);
+      expect(results[0].error).toBe('No journal content');
+
+      consoleSpy.mockRestore();
+    });
+
+    it('should mark one-time journal reminders as completed after sending', async () => {
+      const mockJournalReminders = [
+        {
+          reminder_id: 3,
+          user_id: 1,
+          journal_id: 7,
+          time: new Date().toISOString(),
+          frequency: 'once',
+          status: 'active',
+          last_sent_at: null,
+          user_device_token: 'ExponentPushToken[zzz]',
+          journal_title: 'My Journal',
+          journal_content: 'Content',
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
+        },
+      ];
+
+      mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue([]);
+      mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue([]);
+      mockedReminderModel.findDueJournalRemindersWithDetails.mockResolvedValue(
+        mockJournalReminders,
+      );
+      mockedReminderModel.markAsCompleted.mockResolvedValue(undefined);
+      mockedNotificationService.sendJournalReminderNotification.mockResolvedValue({
+        data: [{ status: 'ok' }],
+      });
+
+      jest.spyOn(console, 'log').mockImplementation();
+
+      await ReminderSchedulerService.processReminders();
+
+      expect(mockedReminderModel.markAsCompleted).toHaveBeenCalledWith(3);
+    });
+
+    it('should handle journal notification send errors gracefully', async () => {
+      const mockJournalReminders = [
+        {
+          reminder_id: 3,
+          user_id: 1,
+          journal_id: 7,
+          time: new Date().toISOString(),
+          frequency: 'once',
+          status: 'active',
+          last_sent_at: null,
+          user_device_token: 'ExponentPushToken[zzz]',
+          journal_title: 'My Journal',
+          journal_content: 'Content',
+          schedule_times: null,
+          schedule_days: null,
+          timezone: null,
+        },
+      ];
+
+      mockedReminderModel.findDueRemindersWithDetails.mockResolvedValue([]);
+      mockedReminderModel.findDueCollectionRemindersWithDetails.mockResolvedValue([]);
+      mockedReminderModel.findDueJournalRemindersWithDetails.mockResolvedValue(
+        mockJournalReminders,
+      );
+      mockedNotificationService.sendJournalReminderNotification.mockRejectedValue(
+        new Error('API error'),
+      );
+
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      jest.spyOn(console, 'log').mockImplementation();
+
+      const results = await ReminderSchedulerService.processReminders();
+
+      expect(results).toHaveLength(1);
+      expect(results[0].success).toBe(false);
+      expect(results[0].error).toBe('API error');
+
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('sendJournalReminderNotification error throw', () => {
+    it('should throw when user_device_token is missing', async () => {
+      const reminder = {
+        reminder_id: 3,
+        user_id: 1,
+        journal_id: 7,
+        time: new Date().toISOString(),
+        frequency: 'daily',
+        status: 'active',
+        last_sent_at: null,
+        user_device_token: null,
+        journal_title: 'Title',
+        journal_content: 'Content',
+        schedule_times: null,
+        schedule_days: null,
+        timezone: null,
+      };
+
+      await expect(
+        ReminderSchedulerService.sendJournalReminderNotification(reminder),
+      ).rejects.toThrow('Missing required notification data');
+    });
+
+    it('should throw when journal_id is missing', async () => {
+      const reminder = {
+        reminder_id: 3,
+        user_id: 1,
+        journal_id: null,
+        time: new Date().toISOString(),
+        frequency: 'daily',
+        status: 'active',
+        last_sent_at: null,
+        user_device_token: 'ExponentPushToken[zzz]',
+        journal_title: 'Title',
+        journal_content: 'Content',
+        schedule_times: null,
+        schedule_days: null,
+        timezone: null,
+      };
+
+      await expect(
+        ReminderSchedulerService.sendJournalReminderNotification(reminder),
+      ).rejects.toThrow('Missing required notification data');
+    });
+
+    it('should throw when both journal_title and journal_content are missing', async () => {
+      const reminder = {
+        reminder_id: 3,
+        user_id: 1,
+        journal_id: 7,
+        time: new Date().toISOString(),
+        frequency: 'daily',
+        status: 'active',
+        last_sent_at: null,
+        user_device_token: 'ExponentPushToken[zzz]',
+        journal_title: null,
+        journal_content: null,
+        schedule_times: null,
+        schedule_days: null,
+        timezone: null,
+      };
+
+      await expect(
+        ReminderSchedulerService.sendJournalReminderNotification(reminder),
+      ).rejects.toThrow('Missing required notification data');
+    });
+  });
+
   describe('validateReminderBase', () => {
     it('should return null for valid reminder with device token', () => {
       const reminder = {

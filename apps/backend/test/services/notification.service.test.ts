@@ -38,7 +38,7 @@ describe('NotificationService', () => {
             Accept: 'application/json',
             'Content-Type': 'application/json',
           }),
-        }
+        },
       );
       expect(result).toEqual(mockResponse.data);
     });
@@ -65,7 +65,7 @@ describe('NotificationService', () => {
       expect(mockedAxios.post).toHaveBeenCalledWith(
         'https://exp.host/--/api/v2/push/send',
         mockMessages,
-        expect.any(Object)
+        expect.any(Object),
       );
       expect(result.data).toHaveLength(2);
     });
@@ -78,7 +78,7 @@ describe('NotificationService', () => {
       };
 
       await expect(NotificationService.sendPushNotification(mockMessage)).rejects.toThrow(
-        'Invalid Expo push token: InvalidToken'
+        'Invalid Expo push token: InvalidToken',
       );
     });
 
@@ -92,7 +92,7 @@ describe('NotificationService', () => {
       mockedAxios.post.mockRejectedValue(new Error('Network error'));
 
       await expect(NotificationService.sendPushNotification(mockMessage)).rejects.toThrow(
-        'Network error'
+        'Network error',
       );
     });
   });
@@ -111,7 +111,7 @@ describe('NotificationService', () => {
         'ExponentPushToken[xxx]',
         'Title',
         'Body',
-        { key: 'value' }
+        { key: 'value' },
       );
 
       expect(mockedAxios.post).toHaveBeenCalledWith(
@@ -127,7 +127,7 @@ describe('NotificationService', () => {
             channelId: 'default',
           },
         ],
-        expect.any(Object)
+        expect.any(Object),
       );
       expect(result).toEqual(mockResponse.data);
     });
@@ -141,11 +141,7 @@ describe('NotificationService', () => {
 
       mockedAxios.post.mockResolvedValue(mockResponse);
 
-      await NotificationService.sendSimpleNotification(
-        'ExponentPushToken[xxx]',
-        'Title',
-        'Body'
-      );
+      await NotificationService.sendSimpleNotification('ExponentPushToken[xxx]', 'Title', 'Body');
 
       expect(mockedAxios.post).toHaveBeenCalledWith(
         'https://exp.host/--/api/v2/push/send',
@@ -160,7 +156,7 @@ describe('NotificationService', () => {
             channelId: 'default',
           },
         ],
-        expect.any(Object)
+        expect.any(Object),
       );
     });
   });
@@ -183,7 +179,7 @@ describe('NotificationService', () => {
         mockTokens,
         'Bulk Title',
         'Bulk Body',
-        { type: 'bulk' }
+        { type: 'bulk' },
       );
 
       expect(mockedAxios.post).toHaveBeenCalledWith(
@@ -208,7 +204,7 @@ describe('NotificationService', () => {
             channelId: 'default',
           },
         ],
-        expect.any(Object)
+        expect.any(Object),
       );
       expect(result.data).toHaveLength(2);
     });
@@ -225,11 +221,7 @@ describe('NotificationService', () => {
       mockedAxios.post.mockResolvedValue(mockResponse);
 
       const mantraText = 'I am strong and capable';
-      await NotificationService.sendReminderNotification(
-        'ExponentPushToken[xxx]',
-        mantraText,
-        123
-      );
+      await NotificationService.sendReminderNotification('ExponentPushToken[xxx]', mantraText, 123);
 
       expect(mockedAxios.post).toHaveBeenCalledWith(
         'https://exp.host/--/api/v2/push/send',
@@ -249,7 +241,7 @@ describe('NotificationService', () => {
             channelId: 'default',
           },
         ],
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -267,7 +259,7 @@ describe('NotificationService', () => {
         'ExponentPushToken[xxx]',
         mantraText,
         123,
-        456
+        456,
       );
 
       expect(mockedAxios.post).toHaveBeenCalledWith(
@@ -288,7 +280,7 @@ describe('NotificationService', () => {
             channelId: 'default',
           },
         ],
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -302,11 +294,7 @@ describe('NotificationService', () => {
       mockedAxios.post.mockResolvedValue(mockResponse);
 
       const longMantra = 'A'.repeat(150);
-      await NotificationService.sendReminderNotification(
-        'ExponentPushToken[xxx]',
-        longMantra,
-        123
-      );
+      await NotificationService.sendReminderNotification('ExponentPushToken[xxx]', longMantra, 123);
 
       const calledWith = mockedAxios.post.mock.calls[0][1] as any[];
       expect(calledWith[0].body).toBe('A'.repeat(97) + '...');
@@ -357,7 +345,7 @@ describe('NotificationService', () => {
             Accept: 'application/json',
             'Content-Type': 'application/json',
           }),
-        }
+        },
       );
       expect(result).toEqual(mockReceipts.data);
     });
@@ -441,7 +429,7 @@ describe('NotificationService', () => {
       await NotificationService.sendEnhancedReminderNotification(
         'ExponentPushToken[xxx]',
         mantraText,
-        123
+        123,
       );
 
       expect(mockedAxios.post).toHaveBeenCalled();
@@ -466,7 +454,7 @@ describe('NotificationService', () => {
         mantraText,
         123,
         456,
-        { categoryName: 'confidence' }
+        { categoryName: 'confidence' },
       );
 
       expect(mockedAxios.post).toHaveBeenCalled();
@@ -491,7 +479,7 @@ describe('NotificationService', () => {
         'I am confident',
         123,
         undefined,
-        { categoryName: 'confidence' }
+        { categoryName: 'confidence' },
       );
 
       expect(mockedAxios.post).toHaveBeenCalled();
@@ -511,7 +499,7 @@ describe('NotificationService', () => {
         'Test mantra',
         123,
         undefined,
-        { ctaStyle: 'encouraging' }
+        { ctaStyle: 'encouraging' },
       );
 
       expect(mockedAxios.post).toHaveBeenCalled();
@@ -532,7 +520,7 @@ describe('NotificationService', () => {
         'Test',
         123,
         undefined,
-        { customTitle }
+        { customTitle },
       );
 
       const calledWith = mockedAxios.post.mock.calls[0][1] as any[];
@@ -587,7 +575,7 @@ describe('NotificationService', () => {
             }),
           }),
         ]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -641,7 +629,7 @@ describe('NotificationService', () => {
             }),
           }),
         ]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -702,7 +690,7 @@ describe('NotificationService', () => {
             }),
           }),
         ]),
-        expect.any(Object)
+        expect.any(Object),
       );
     });
 
@@ -758,7 +746,7 @@ describe('NotificationService', () => {
         'ExponentPushToken[xxx]',
         'My Collection',
         123,
-        456
+        456,
       );
 
       expect(mockedAxios.post).toHaveBeenCalled();
@@ -783,7 +771,7 @@ describe('NotificationService', () => {
         'My Collection',
         123,
         456,
-        5
+        5,
       );
 
       expect(mockedAxios.post).toHaveBeenCalled();
@@ -805,7 +793,7 @@ describe('NotificationService', () => {
         'ExponentPushToken[xxx]',
         'Morning Mantras',
         123,
-        456
+        456,
       );
 
       expect(mockedAxios.post).toHaveBeenCalled();
@@ -828,7 +816,79 @@ describe('NotificationService', () => {
         123,
         456,
         undefined,
-        { ctaStyle: 'encouraging' }
+        { ctaStyle: 'encouraging' },
+      );
+
+      expect(mockedAxios.post).toHaveBeenCalled();
+    });
+  });
+
+  describe('sendJournalReminderNotification', () => {
+    it('should send journal reminder notification with title', async () => {
+      const mockResponse = {
+        data: {
+          data: [{ status: 'ok', id: 'receipt-id' }],
+        },
+      };
+
+      mockedAxios.post.mockResolvedValue(mockResponse);
+
+      await NotificationService.sendJournalReminderNotification(
+        'ExponentPushToken[xxx]',
+        'My Journal Entry',
+        'Some content here',
+        123,
+        456,
+      );
+
+      expect(mockedAxios.post).toHaveBeenCalled();
+      const calledWith = mockedAxios.post.mock.calls[0][1] as any[];
+      expect(calledWith[0].data.type).toBe('journal_reminder');
+      expect(calledWith[0].data.reminderId).toBe(123);
+      expect(calledWith[0].data.journalId).toBe(456);
+      expect(calledWith[0].data.journalTitle).toBe('My Journal Entry');
+    });
+
+    it('should use content substring as fallback when title is null', async () => {
+      const mockResponse = {
+        data: {
+          data: [{ status: 'ok', id: 'receipt-id' }],
+        },
+      };
+
+      mockedAxios.post.mockResolvedValue(mockResponse);
+
+      const longContent = 'A'.repeat(200);
+      await NotificationService.sendJournalReminderNotification(
+        'ExponentPushToken[xxx]',
+        null,
+        longContent,
+        123,
+        456,
+      );
+
+      expect(mockedAxios.post).toHaveBeenCalled();
+      const calledWith = mockedAxios.post.mock.calls[0][1] as any[];
+      // displayText should be content.substring(0, 100)
+      expect(calledWith[0].data.journalTitle).toBe('A'.repeat(100));
+    });
+
+    it('should accept custom options for content generation', async () => {
+      const mockResponse = {
+        data: {
+          data: [{ status: 'ok', id: 'receipt-id' }],
+        },
+      };
+
+      mockedAxios.post.mockResolvedValue(mockResponse);
+
+      await NotificationService.sendJournalReminderNotification(
+        'ExponentPushToken[xxx]',
+        'My Journal',
+        'Content',
+        123,
+        456,
+        { ctaStyle: 'encouraging' },
       );
 
       expect(mockedAxios.post).toHaveBeenCalled();
@@ -869,7 +929,7 @@ describe('NotificationService', () => {
           headers: expect.objectContaining({
             Authorization: 'Bearer test-token-123',
           }),
-        }
+        },
       );
     });
 
@@ -907,7 +967,7 @@ describe('NotificationService', () => {
           headers: expect.objectContaining({
             Authorization: 'Bearer test-token-456',
           }),
-        }
+        },
       );
     });
   });
@@ -924,9 +984,7 @@ describe('NotificationService', () => {
           details: { error: 'DeviceNotRegistered' },
         },
       ];
-      const messages = [
-        { to: 'ExponentPushToken[expired]', title: 'Test', body: 'Body' },
-      ];
+      const messages = [{ to: 'ExponentPushToken[expired]', title: 'Test', body: 'Body' }];
 
       await NotificationService.handleTicketErrors(tickets, messages);
 
@@ -935,12 +993,8 @@ describe('NotificationService', () => {
     });
 
     it('should not clear token for successful tickets', async () => {
-      const tickets = [
-        { status: 'ok' as const, id: 'receipt-1' },
-      ];
-      const messages = [
-        { to: 'ExponentPushToken[valid]', title: 'Test', body: 'Body' },
-      ];
+      const tickets = [{ status: 'ok' as const, id: 'receipt-1' }];
+      const messages = [{ to: 'ExponentPushToken[valid]', title: 'Test', body: 'Body' }];
 
       await NotificationService.handleTicketErrors(tickets, messages);
 
@@ -957,9 +1011,7 @@ describe('NotificationService', () => {
           details: { error: 'DeviceNotRegistered' },
         },
       ];
-      const messages = [
-        { to: 'ExponentPushToken[orphan]', title: 'Test', body: 'Body' },
-      ];
+      const messages = [{ to: 'ExponentPushToken[orphan]', title: 'Test', body: 'Body' }];
 
       await NotificationService.handleTicketErrors(tickets, messages);
 
@@ -976,9 +1028,7 @@ describe('NotificationService', () => {
           details: { error: 'DeviceNotRegistered' },
         },
       ];
-      const messages = [
-        { to: 'ExponentPushToken[broken]', title: 'Test', body: 'Body' },
-      ];
+      const messages = [{ to: 'ExponentPushToken[broken]', title: 'Test', body: 'Body' }];
 
       // Should not throw
       await NotificationService.handleTicketErrors(tickets, messages);
