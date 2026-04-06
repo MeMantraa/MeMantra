@@ -45,6 +45,23 @@ describe('DeepDiveCard', () => {
     expect(label.props.style.opacity).toBe(0.9);
   });
 
+  it('renders without label when label is omitted', () => {
+    const { queryByText } = render(
+      <DeepDiveCard
+        accentColor="#00ff00"
+        textColor="#ffffff"
+        backgroundColor="#111111"
+        borderColor="#222222"
+      >
+        <View />
+      </DeepDiveCard>,
+    );
+
+    expect(queryByText('SUMMARY')).toBeNull();
+    expect(queryByText('EXPLANATION')).toBeNull();
+    expect(queryByText('EXAMPLE')).toBeNull();
+  });
+
   it('uses text label color when muted', () => {
     const { getByText } = render(
       <DeepDiveCard

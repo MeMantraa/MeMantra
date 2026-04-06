@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Animated,
   Easing,
+  Share,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Mantra } from '../services/mantra.service';
@@ -56,13 +57,13 @@ const MantraCarousel = memo(
     const deepDiveBarAnim = useRef(new Animated.Value(0)).current;
     const dotAnim = useRef(new Animated.Value(0)).current;
     const { colors } = useTheme();
-    const moreMenuExpandedHeight = onPress ? 166 : 112;
+    const moreMenuExpandedHeight = onPress ? 220 : 166;
     const reservedRightSpace = 0;
     const deepDiveHeaderInsetLeft = showButtons ? 54 : 0;
     const deepDiveHeaderInsetTop = showButtons ? 6 : 0;
     const firstPageMaxWidth = showButtons ? SCREEN_WIDTH - 120 : SCREEN_WIDTH - 48;
     const isDeepDivePage = currentIndex > 0;
-    const deepDiveMenuExpandedWidth = onPress ? 152 : 104;
+    const deepDiveMenuExpandedWidth = onPress ? 200 : 152;
     const deepDiveHeightRatio =
       SCREEN_HEIGHT < 700 ? 0.69 : SCREEN_HEIGHT < 820 ? 0.65 : SCREEN_HEIGHT < 920 ? 0.62 : 0.6;
     const deepDiveActionBarBottom = SCREEN_HEIGHT < 760 ? 118 : 106;
@@ -126,6 +127,16 @@ const MantraCarousel = memo(
       if (onShare) onShare(item.mantra_id);
     };
 
+    const handleExternalShare = async () => {
+      try {
+        await Share.share({
+          message: `"${item.title}"\n\nShared from MeMantra`,
+        });
+      } catch {
+        // user cancelled or share failed silently
+      }
+    };
+
     const handleJournal = () => {
       if (onJournal) onJournal(item.mantra_id, item.title);
     };
@@ -185,11 +196,7 @@ const MantraCarousel = memo(
             paddingTop: isDeepDivePage ? 52 : 96,
             marginBottom: isDeepDivePage ? 0 : 6,
           }}
-        >
-          <AppText style={{ color: colors.text }} className="text-6xl opacity-35">
-            " "
-          </AppText>
-        </View>
+        />
 
         <View style={{ width: SCREEN_WIDTH }} className="justify-center items-center">
           <FlatList
@@ -377,6 +384,19 @@ const MantraCarousel = memo(
                 >
                   <Ionicons name="paper-plane-outline" size={20} color={colors.text} />
                 </TouchableOpacity>
+                <View style={{ width: 8 }} />
+                <TouchableOpacity
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    handleExternalShare();
+                    setIsMoreExpanded(false);
+                  }}
+                  testID="external-share-button"
+                  className="w-10 h-10 rounded-full items-center justify-center"
+                  style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}
+                >
+                  <Ionicons name="share-outline" size={20} color={colors.text} />
+                </TouchableOpacity>
               </Animated.View>
 
               <View
@@ -500,10 +520,22 @@ const MantraCarousel = memo(
                           setIsMoreExpanded(false);
                         }}
                         testID="share-button"
-                        className="w-12 h-12 rounded-full items-center justify-center"
+                        className="w-12 h-12 rounded-full items-center justify-center mb-2"
                         style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}
                       >
                         <Ionicons name="paper-plane-outline" size={24} color={colors.text} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          handleExternalShare();
+                          setIsMoreExpanded(false);
+                        }}
+                        testID="external-share-button"
+                        className="w-12 h-12 rounded-full items-center justify-center"
+                        style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)' }}
+                      >
+                        <Ionicons name="share-outline" size={24} color={colors.text} />
                       </TouchableOpacity>
                     </View>
                   </Animated.View>
