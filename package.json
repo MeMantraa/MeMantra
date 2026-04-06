@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "run:full-prod-flow": "pnpm install && pnpm build && pnpm test && sh -ec 'pnpm --filter backend start:prod & BACKEND_PID=$!; trap \"kill $BACKEND_PID 2>/dev/null; wait $BACKEND_PID 2>/dev/null\" EXIT; sleep 3; kill -0 $BACKEND_PID; pnpm ios:build'",
     "test": "turbo run test --continue -- --coverage",
     "typecheck": "turbo run typecheck",
     "dev": "turbo run dev",
@@ -56,6 +57,11 @@
   },
   "private": "true",
   "packageManager": "pnpm@9.15.9",
+  "pnpm": {
+    "overrides": {
+      "react-server-dom-webpack": "19.1.0"
+    }
+  },
   "dependencies": {},
   "optionalDependencies": {
     "esbuild-windows-64": "0.15.18"
