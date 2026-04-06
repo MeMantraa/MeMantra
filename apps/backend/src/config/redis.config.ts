@@ -5,6 +5,11 @@ const REDIS_URL =
   `redis://${process.env.REDIS_HOST || 'localhost'}:${process.env.REDIS_PORT || 6379}`;
 
 let redis: Redis | null = null;
+let redisAvailable = false;
+
+export function isRedisAvailable(): boolean {
+  return redisAvailable;
+}
 
 export function getRedisClient(): Redis {
   if (!redis) {
@@ -36,11 +41,12 @@ export async function connectRedis(): Promise<boolean> {
   try {
     const client = getRedisClient();
     await client.connect();
+    redisAvailable = true;
     return true;
   } catch (err) {
+    redisAvailable = false;
     console.warn(
-      '⚠️  Redis unavailable — caching and queues disabled. Error:',
-      (err as Error).message,
+      `⚠️  Redis connection failed (${(err as Error).message}) — falling back to regular database connection without caching.`,
     );
     return false;
   }
@@ -50,5 +56,6 @@ export async function disconnectRedis(): Promise<void> {
   if (redis) {
     await redis.quit();
     redis = null;
+    redisAvailable = false;
   }
 }

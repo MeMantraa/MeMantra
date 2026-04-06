@@ -94,16 +94,30 @@ describe('redis.config', () => {
       expect(mockInstance.connect).toHaveBeenCalled();
     });
 
+    it('sets isRedisAvailable to true on successful connect', async () => {
+      const { connectRedis, isRedisAvailable } = require('../../../src/config/redis.config');
+      await connectRedis();
+      expect(isRedisAvailable()).toBe(true);
+    });
+
     it('logs a warning and does not throw when connect() rejects', async () => {
       const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
       mockInstance.connect.mockRejectedValue(new Error('ECONNREFUSED'));
       const { connectRedis } = require('../../../src/config/redis.config');
       await expect(connectRedis()).resolves.toBe(false);
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Redis connection failed'));
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Redis unavailable'),
-        expect.stringContaining('ECONNREFUSED'),
+        expect.stringContaining('falling back to regular database connection'),
       );
       consoleSpy.mockRestore();
+    });
+
+    it('sets isRedisAvailable to false when connect() rejects', async () => {
+      jest.spyOn(console, 'warn').mockImplementation();
+      mockInstance.connect.mockRejectedValue(new Error('ECONNREFUSED'));
+      const { connectRedis, isRedisAvailable } = require('../../../src/config/redis.config');
+      await connectRedis();
+      expect(isRedisAvailable()).toBe(false);
     });
   });
 
@@ -113,6 +127,18 @@ describe('redis.config', () => {
       getRedisClient();
       await disconnectRedis();
       expect(mockInstance.quit).toHaveBeenCalled();
+    });
+
+    it('sets isRedisAvailable to false after disconnect', async () => {
+      const {
+        connectRedis,
+        disconnectRedis,
+        isRedisAvailable,
+      } = require('../../../src/config/redis.config');
+      await connectRedis();
+      expect(isRedisAvailable()).toBe(true);
+      await disconnectRedis();
+      expect(isRedisAvailable()).toBe(false);
     });
 
     it('creates a new client after disconnect (singleton is nullified)', async () => {

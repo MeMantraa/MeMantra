@@ -10,7 +10,7 @@ const mockSet = jest.fn();
 const mockDel = jest.fn();
 const mockScan = jest.fn();
 
-let mockStatus = 'ready';
+let mockAvailable = true;
 
 jest.mock('../../../src/config/redis.config', () => ({
   getRedisClient: jest.fn(() => ({
@@ -18,16 +18,14 @@ jest.mock('../../../src/config/redis.config', () => ({
     set: mockSet,
     del: mockDel,
     scan: mockScan,
-    get status() {
-      return mockStatus;
-    },
   })),
+  isRedisAvailable: jest.fn(() => mockAvailable),
 }));
 
 describe('cache.service', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    mockStatus = 'ready';
+    mockAvailable = true;
   });
 
   describe('cacheGet', () => {
@@ -44,7 +42,7 @@ describe('cache.service', () => {
     });
 
     it('returns null when Redis is not ready', async () => {
-      mockStatus = 'connecting';
+      mockAvailable = false;
       expect(await cacheGet('key')).toBeNull();
       expect(mockGet).not.toHaveBeenCalled();
     });
@@ -69,7 +67,7 @@ describe('cache.service', () => {
     });
 
     it('does nothing when Redis is not ready', async () => {
-      mockStatus = 'connecting';
+      mockAvailable = false;
       await cacheSet('key', 'value');
       expect(mockSet).not.toHaveBeenCalled();
     });
@@ -126,7 +124,7 @@ describe('cache.service', () => {
     });
 
     it('does nothing when Redis is not ready', async () => {
-      mockStatus = 'connecting';
+      mockAvailable = false;
       await cacheDelete('key');
       expect(mockDel).not.toHaveBeenCalled();
     });
