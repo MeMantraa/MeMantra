@@ -5,6 +5,7 @@ import logo from '../assets/logo.png';
 import { authService } from '../services/auth.service';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
+import { storage } from '../utils/storage';
 
 export default function VerifyCodeScreen({ route, navigation }: any) {
   const { email, flow = 'forgotPassword' } = route.params;
@@ -16,6 +17,11 @@ export default function VerifyCodeScreen({ route, navigation }: any) {
   const { colors } = useTheme();
 
   const inputRefs = useRef<Array<TextInput | null>>([]);
+
+  // Persist verification state so the user returns here if they leave the app
+  useEffect(() => {
+    storage.savePendingVerification(email, flow);
+  }, [email, flow]);
 
   // Countdown for resend cooldown
   useEffect(() => {
@@ -67,6 +73,7 @@ export default function VerifyCodeScreen({ route, navigation }: any) {
         : await authService.verifyResetCode(email, finalCode);
 
       if (response.status === 'success') {
+        await storage.clearPendingVerification();
         if (isSignupFlow) {
           navigation.navigate('CompleteSignUp', { email, code: finalCode });
         } else {
