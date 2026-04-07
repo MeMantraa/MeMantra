@@ -11,13 +11,7 @@ jest.mock('../../../components/UI/textWrapper', () => {
 describe('DeepDiveCard', () => {
   it('renders uppercase label and child content', () => {
     const { getByText } = render(
-      <DeepDiveCard
-        label="Summary"
-        accentColor="#ff8800"
-        textColor="#ffffff"
-        backgroundColor="#111111"
-        borderColor="#222222"
-      >
+      <DeepDiveCard label="Summary" accentColor="#ff8800" textColor="#ffffff" borderColor="#222222">
         <View>
           <View />
         </View>
@@ -29,13 +23,7 @@ describe('DeepDiveCard', () => {
 
   it('uses accent label color when not muted', () => {
     const { getByText } = render(
-      <DeepDiveCard
-        label="Example"
-        accentColor="#00ff00"
-        textColor="#ffffff"
-        backgroundColor="#111111"
-        borderColor="#222222"
-      >
+      <DeepDiveCard label="Example" accentColor="#00ff00" textColor="#ffffff" borderColor="#222222">
         <View />
       </DeepDiveCard>,
     );
@@ -47,12 +35,7 @@ describe('DeepDiveCard', () => {
 
   it('renders without label when label is omitted', () => {
     const { queryByText } = render(
-      <DeepDiveCard
-        accentColor="#00ff00"
-        textColor="#ffffff"
-        backgroundColor="#111111"
-        borderColor="#222222"
-      >
+      <DeepDiveCard accentColor="#00ff00" textColor="#ffffff" borderColor="#222222">
         <View />
       </DeepDiveCard>,
     );
@@ -69,7 +52,6 @@ describe('DeepDiveCard', () => {
         muted
         accentColor="#00ff00"
         textColor="#cccccc"
-        backgroundColor="#111111"
         borderColor="#222222"
       >
         <View />
