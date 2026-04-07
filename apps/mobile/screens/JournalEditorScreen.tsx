@@ -5,7 +5,6 @@ import {
   TouchableOpacity,
   ScrollView,
   KeyboardAvoidingView,
-  Platform,
   Alert,
   ActivityIndicator,
 } from 'react-native';
@@ -85,7 +84,7 @@ export default function JournalEditorScreen({ navigation, route }: any) {
     <KeyboardAvoidingView
       className="flex-1"
       style={{ backgroundColor: colors.primary }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      behavior="padding"
     >
       {/* Header */}
       <View className="pt-16 pb-4 px-5 flex-row items-center justify-between">

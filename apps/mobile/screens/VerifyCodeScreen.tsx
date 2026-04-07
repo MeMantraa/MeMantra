@@ -1,6 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState, useRef, useEffect } from 'react';
-import { View, TouchableOpacity, Image, Alert, TextInput } from 'react-native';
+import {
+  View,
+  TouchableOpacity,
+  Image,
+  Alert,
+  TextInput,
+  KeyboardAvoidingView,
+  ScrollView,
+} from 'react-native';
 import logo from '../assets/logo.png';
 import { authService } from '../services/auth.service';
 import { useTheme } from '../context/ThemeContext';
@@ -143,79 +151,89 @@ export default function VerifyCodeScreen({ route, navigation }: any) {
 
   return (
     <>
-      <View className="flex-1" style={{ backgroundColor: colors.primary }}>
-        <View className="flex-1 justify-center items-center p-[24px]">
-          <View className="mb-[30px] -mt-[35px] items-center">
-            <Image source={logo} className="w-[200px] h-[200px]" resizeMode="contain" />
-          </View>
-
-          <View className="w-full max-w-[400px]">
-            <AppText className="text-[#ffffff] text-[24px] font-bold text-center mb-[10px]">
-              {isSignupFlow ? 'Verify your email' : 'Enter Verification Code'}
-            </AppText>
-            <AppText className="text-[#ffffff] text-[14px] text-center mb-[30px] opacity-80">
-              {isSignupFlow
-                ? `We've sent a 6-digit code to ${email}. Enter it below to continue.`
-                : `We've sent a 6-digit code to ${email}`}
-            </AppText>
-            <AppText className="text-[#ffffff] text-[12px] text-center mb-[20px] opacity-70">
-              Code expires in 10 minutes
-            </AppText>
-
-            {/* 6-digit code input */}
-            <View className="flex-row justify-between mb-[30px]">
-              {code.map((digit, index) => (
-                <TextInput
-                  key={`digit-${index}`}
-                  ref={(ref) => {
-                    inputRefs.current[index] = ref;
-                  }}
-                  className="bg-[#ffffff] rounded-[12px] text-[24px] font-bold text-center border border-[#e0e0e0]"
-                  style={{
-                    width: 50,
-                    height: 60,
-                    color: '#000000', // Black text for visibility
-                  }}
-                  value={digit}
-                  onChangeText={(text) => handleCodeChange(text, index)}
-                  onKeyPress={(e) => handleKeyPress(e, index)}
-                  keyboardType="number-pad"
-                  maxLength={1}
-                  editable={!loading}
-                  selectTextOnFocus
-                />
-              ))}
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior="padding"
+        style={{ backgroundColor: colors.primary }}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View className="flex-1 justify-center items-center p-[24px]">
+            <View className="mb-[30px] -mt-[35px] items-center">
+              <Image source={logo} className="w-[200px] h-[200px]" resizeMode="contain" />
             </View>
 
-            <TouchableOpacity
-              style={{ backgroundColor: colors.secondary }}
-              className="rounded-[30px] p-[14px] items-center mt-[8px]"
-              onPress={() => handleVerifyCode()}
-              disabled={loading || code.includes('')}
-            >
-              <AppText className="text-[#ffffff] text-[18px] font-semibold">
-                {loading ? 'Verifying...' : 'Verify Code'}
+            <View className="w-full max-w-[400px]">
+              <AppText className="text-[#ffffff] text-[24px] font-bold text-center mb-[10px]">
+                {isSignupFlow ? 'Verify your email' : 'Enter Verification Code'}
               </AppText>
-            </TouchableOpacity>
+              <AppText className="text-[#ffffff] text-[14px] text-center mb-[30px] opacity-80">
+                {isSignupFlow
+                  ? `We've sent a 6-digit code to ${email}. Enter it below to continue.`
+                  : `We've sent a 6-digit code to ${email}`}
+              </AppText>
+              <AppText className="text-[#ffffff] text-[12px] text-center mb-[20px] opacity-70">
+                Code expires in 10 minutes
+              </AppText>
 
-            <TouchableOpacity
-              className="items-center mt-[20px]"
-              onPress={handleResendCode}
-              disabled={resendCooldown > 0 || loading}
-            >
-              <AppText
-                className={`text-[14px] ${resendCooldown > 0 ? 'opacity-50' : ''}`}
-                style={{ color: '#fff' }}
+              {/* 6-digit code input */}
+              <View className="flex-row justify-between mb-[30px]">
+                {code.map((digit, index) => (
+                  <TextInput
+                    key={`digit-${index}`}
+                    ref={(ref) => {
+                      inputRefs.current[index] = ref;
+                    }}
+                    className="bg-[#ffffff] rounded-[12px] text-[24px] font-bold text-center border border-[#e0e0e0]"
+                    style={{
+                      width: 50,
+                      height: 60,
+                      color: '#000000', // Black text for visibility
+                    }}
+                    value={digit}
+                    onChangeText={(text) => handleCodeChange(text, index)}
+                    onKeyPress={(e) => handleKeyPress(e, index)}
+                    keyboardType="number-pad"
+                    maxLength={1}
+                    editable={!loading}
+                    selectTextOnFocus
+                  />
+                ))}
+              </View>
+
+              <TouchableOpacity
+                style={{ backgroundColor: colors.secondary }}
+                className="rounded-[30px] p-[14px] items-center mt-[8px]"
+                onPress={() => handleVerifyCode()}
+                disabled={loading || code.includes('')}
               >
-                Didn't receive the code?{' '}
-                <AppText className="text-[#ffffff] text-[14px] font-bold">
-                  {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
+                <AppText className="text-[#ffffff] text-[18px] font-semibold">
+                  {loading ? 'Verifying...' : 'Verify Code'}
                 </AppText>
-              </AppText>
-            </TouchableOpacity>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="items-center mt-[20px]"
+                onPress={handleResendCode}
+                disabled={resendCooldown > 0 || loading}
+              >
+                <AppText
+                  className={`text-[14px] ${resendCooldown > 0 ? 'opacity-50' : ''}`}
+                  style={{ color: '#fff' }}
+                >
+                  Didn't receive the code?{' '}
+                  <AppText className="text-[#ffffff] text-[14px] font-bold">
+                    {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend Code'}
+                  </AppText>
+                </AppText>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
       <StatusBar style="auto" />
     </>
   );

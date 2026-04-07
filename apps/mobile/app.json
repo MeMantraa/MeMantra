@@ -21,6 +21,7 @@
         "backgroundColor": "#7BA5B5"
       },
       "edgeToEdgeEnabled": true,
+      "softwareKeyboardLayoutMode": "pan",
       "predictiveBackGestureEnabled": false,
       "package": "com.memantra.mobile",
       "googleServicesFile": "./google-services.json"

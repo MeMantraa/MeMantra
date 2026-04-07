@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, Alert } from 'react-native';
+import { View, TouchableOpacity, Alert, KeyboardAvoidingView, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { authService } from '../services/auth.service';
 import { storage } from '../utils/storage';
@@ -55,47 +55,59 @@ export default function UpdatePasswordScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.primary }]}>
-      {/* Back Button */}
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <AppText style={[styles.backText, { color: colors.text }]}>Back</AppText>
-      </TouchableOpacity>
-
-      <AppText style={[styles.title, { color: colors.text }]}>Update Password</AppText>
-
-      <AppTextInput
-        style={[styles.input, { borderColor: colors.primaryDark, color: colors.text }]}
-        secureTextEntry
-        placeholder="Current password"
-        placeholderTextColor={colors.placeholderText}
-        value={oldPassword}
-        onChangeText={setOldPassword}
-      />
-
-      <AppTextInput
-        style={[styles.input, { borderColor: colors.primaryDark, color: colors.text }]}
-        secureTextEntry
-        placeholder="New password"
-        placeholderTextColor={colors.placeholderText}
-        value={password}
-        onChangeText={setPassword}
-      />
-
-      <AppTextInput
-        style={[styles.input, { borderColor: colors.primaryDark, color: colors.text }]}
-        secureTextEntry
-        placeholder="Confirm password"
-        placeholderTextColor={colors.placeholderText}
-        value={confirm}
-        onChangeText={setConfirm}
-      />
-
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: colors.primaryDark }]}
-        onPress={handleUpdate}
+    <KeyboardAvoidingView
+      className="flex-1"
+      behavior="padding"
+      style={{ backgroundColor: colors.primary }}
+    >
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <AppText style={[styles.buttonText, { color: colors.text }]}>Save Password</AppText>
-      </TouchableOpacity>
-    </View>
+        <View style={[styles.container, { backgroundColor: colors.primary }]}>
+          {/* Back Button */}
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <AppText style={[styles.backText, { color: colors.text }]}>Back</AppText>
+          </TouchableOpacity>
+
+          <AppText style={[styles.title, { color: colors.text }]}>Update Password</AppText>
+
+          <AppTextInput
+            style={[styles.input, { borderColor: colors.primaryDark, color: colors.text }]}
+            secureTextEntry
+            placeholder="Current password"
+            placeholderTextColor={colors.placeholderText}
+            value={oldPassword}
+            onChangeText={setOldPassword}
+          />
+
+          <AppTextInput
+            style={[styles.input, { borderColor: colors.primaryDark, color: colors.text }]}
+            secureTextEntry
+            placeholder="New password"
+            placeholderTextColor={colors.placeholderText}
+            value={password}
+            onChangeText={setPassword}
+          />
+
+          <AppTextInput
+            style={[styles.input, { borderColor: colors.primaryDark, color: colors.text }]}
+            secureTextEntry
+            placeholder="Confirm password"
+            placeholderTextColor={colors.placeholderText}
+            value={confirm}
+            onChangeText={setConfirm}
+          />
+
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: colors.primaryDark }]}
+            onPress={handleUpdate}
+          >
+            <AppText style={[styles.buttonText, { color: colors.text }]}>Save Password</AppText>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

@@ -1,6 +1,13 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { View, TouchableOpacity, Image, ScrollView, Alert } from 'react-native';
+import {
+  View,
+  TouchableOpacity,
+  Image,
+  ScrollView,
+  Alert,
+  KeyboardAvoidingView,
+} from 'react-native';
 import logo from '../assets/logo.png';
 import { authService } from '../services/auth.service';
 import { storage } from '../utils/storage';
@@ -84,8 +91,16 @@ export default function SignUpScreen({ navigation }: any) {
 
   return (
     <>
-      <View className="flex-1" style={{ backgroundColor: colors.primary }}>
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }} showsVerticalScrollIndicator={false}>
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior="padding"
+        style={{ backgroundColor: colors.primary }}
+      >
+        <ScrollView
+          contentContainerStyle={{ flexGrow: 1 }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           <View className="flex-1 justify-center items-center p-[24px] pt-[60px] pb-[40px]">
             <View className="mb-[20px] items-center">
               <Image source={logo} className="w-[200px] h-[200px]" />
@@ -152,7 +167,7 @@ export default function SignUpScreen({ navigation }: any) {
             </View>
           </View>
         </ScrollView>
-      </View>
+      </KeyboardAvoidingView>
       <StatusBar style="auto" />
     </>
   );

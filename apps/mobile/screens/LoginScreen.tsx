@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useState } from 'react';
-import { View, Image, Alert, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { View, Image, Alert, KeyboardAvoidingView, ScrollView } from 'react-native';
 import logo from '../assets/logo.png';
 import { authService } from '../services/auth.service';
 import { storage } from '../utils/storage';
@@ -66,7 +66,7 @@ export default function LoginScreen({ navigation }: any) {
     <>
       <KeyboardAvoidingView
         className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior="padding"
         style={{ backgroundColor: colors.primary }}
       >
         <ScrollView

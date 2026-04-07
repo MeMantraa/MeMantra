@@ -1,12 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import {
-  View,
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableOpacity,
-  Alert,
-} from 'react-native';
+import { View, FlatList, KeyboardAvoidingView, TouchableOpacity, Alert } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { ChatBubble } from '../components/chat/ChatBubble';
@@ -262,10 +255,7 @@ export default function ConversationScreen({ route, navigation }: any) {
       </View>
 
       {/* Messages Area with KeyboardAvoidingView */}
-      <KeyboardAvoidingView
-        className="flex-1"
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      >
+      <KeyboardAvoidingView className="flex-1" behavior="padding">
         {renderContent()}
 
         <ChatInput onSend={handleSend} replyingTo={replyingTo} onCancelReply={handleCancelReply} />
