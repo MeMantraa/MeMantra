@@ -21,15 +21,32 @@ export default function VerifyCodeScreen({ route, navigation }: any) {
 
   const [code, setCode] = useState(['', '', '', '', '', '']);
   const [loading, setLoading] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(60); // Start with 60 seconds cooldown
+  const [resendCooldown, setResendCooldown] = useState(60);
+  const [codeExpiresAt, setCodeExpiresAt] = useState(Date.now() + 10 * 60 * 1000);
+  const [secondsLeft, setSecondsLeft] = useState(10 * 60);
   const { colors } = useTheme();
 
   const inputRefs = useRef<Array<TextInput | null>>([]);
 
-  // Persist verification state so the user returns here if they leave the app
+  // Persist verification state and sync the expiry timer with what's in storage
   useEffect(() => {
-    storage.savePendingVerification(email, flow);
+    storage.getPendingVerification().then((pending) => {
+      if (pending) {
+        setCodeExpiresAt(pending.expiresAt);
+      } else {
+        storage.savePendingVerification(email, flow);
+      }
+    });
   }, [email, flow]);
+
+  // Live countdown tied to codeExpiresAt — resets whenever a new code is sent
+  useEffect(() => {
+    setSecondsLeft(Math.max(0, Math.floor((codeExpiresAt - Date.now()) / 1000)));
+    const interval = setInterval(() => {
+      setSecondsLeft(Math.max(0, Math.floor((codeExpiresAt - Date.now()) / 1000)));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [codeExpiresAt]);
 
   // Countdown for resend cooldown
   useEffect(() => {
@@ -124,6 +141,8 @@ export default function VerifyCodeScreen({ route, navigation }: any) {
 
       if (response.status === 'success') {
         Alert.alert('Success', 'A new verification code has been sent to your email');
+        storage.savePendingVerification(email, flow);
+        setCodeExpiresAt(Date.now() + 10 * 60 * 1000);
         setResendCooldown(60);
         setCode(['', '', '', '', '', '']);
         inputRefs.current[0]?.focus();
@@ -175,8 +194,16 @@ export default function VerifyCodeScreen({ route, navigation }: any) {
                   ? `We've sent a 6-digit code to ${email}. Enter it below to continue.`
                   : `We've sent a 6-digit code to ${email}`}
               </AppText>
-              <AppText className="text-[#ffffff] text-[12px] text-center mb-[20px] opacity-70">
-                Code expires in 10 minutes
+              <AppText
+                className="text-[12px] text-center mb-[20px]"
+                style={{
+                  color: secondsLeft < 60 ? '#ff6b6b' : '#ffffff',
+                  opacity: secondsLeft < 60 ? 1 : 0.7,
+                }}
+              >
+                {secondsLeft > 0
+                  ? `Code expires in ${Math.floor(secondsLeft / 60)}:${(secondsLeft % 60).toString().padStart(2, '0')}`
+                  : 'Code has expired — please request a new one'}
               </AppText>
 
               {/* 6-digit code input */}

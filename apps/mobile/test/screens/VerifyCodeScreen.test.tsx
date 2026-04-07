@@ -9,6 +9,7 @@ jest.mock('../../utils/storage', () => ({
   storage: {
     savePendingVerification: jest.fn(() => Promise.resolve()),
     clearPendingVerification: jest.fn(() => Promise.resolve()),
+    getPendingVerification: jest.fn(() => Promise.resolve(null)),
   },
 }));
 
@@ -80,7 +81,7 @@ describe('VerifyCodeScreen', () => {
 
     expect(getByText('Enter Verification Code')).toBeTruthy();
     expect(getByText("We've sent a 6-digit code to user@example.com")).toBeTruthy();
-    expect(getByText('Code expires in 10 minutes')).toBeTruthy();
+    expect(getByText(/Code expires in \d+:\d{2}/)).toBeTruthy();
     expect(getByText('Verify Code')).toBeTruthy();
     expect(getByText(/Didn't receive the code?/)).toBeTruthy();
 
@@ -751,13 +752,15 @@ describe('VerifyCodeScreen', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it('saves pending verification state on mount', () => {
+  it('saves pending verification state on mount', async () => {
     render(<VerifyCodeScreen route={mockRoute} navigation={mockNavigation} />);
 
-    expect(storage.savePendingVerification).toHaveBeenCalledWith(
-      'user@example.com',
-      'forgotPassword',
-    );
+    await waitFor(() => {
+      expect(storage.savePendingVerification).toHaveBeenCalledWith(
+        'user@example.com',
+        'forgotPassword',
+      );
+    });
   });
 
   it('clears pending verification state after successful verification', async () => {
@@ -799,5 +802,99 @@ describe('VerifyCodeScreen', () => {
     });
 
     expect(getByText(/Resend in 58s/)).toBeTruthy();
+  });
+
+  it('restores expiry timer from storage when pending verification exists', async () => {
+    const futureExpiry = Date.now() + 5 * 60 * 1000; // 5 minutes remaining
+    (storage.getPendingVerification as jest.Mock).mockResolvedValueOnce({
+      email: 'user@example.com',
+      flow: 'forgotPassword',
+      expiresAt: futureExpiry,
+    });
+
+    const { getByText } = render(
+      <VerifyCodeScreen route={mockRoute} navigation={mockNavigation} />,
+    );
+
+    await waitFor(() => {
+      expect(getByText(/Code expires in 4:\d{2}|5:00/)).toBeTruthy();
+    });
+  });
+
+  it('navigates to CompleteSignUp on successful signup flow verification', async () => {
+    (authService.verifySignupCode as jest.Mock).mockResolvedValue({
+      status: 'success',
+      message: 'Code verified',
+    });
+
+    const signupRoute = { params: { email: 'user@example.com', flow: 'signup' } };
+    const container = render(<VerifyCodeScreen route={signupRoute} navigation={mockNavigation} />);
+
+    const inputs = container.getAllByDisplayValue('');
+    fireEvent.changeText(inputs[0], '1');
+    fireEvent.changeText(inputs[1], '2');
+    fireEvent.changeText(inputs[2], '3');
+    fireEvent.changeText(inputs[3], '4');
+    fireEvent.changeText(inputs[4], '5');
+    fireEvent.changeText(inputs[5], '6');
+
+    await waitFor(() => {
+      expect(mockNavigation.navigate).toHaveBeenCalledWith('CompleteSignUp', {
+        email: 'user@example.com',
+        code: '123456',
+      });
+    });
+  });
+
+  it('resends signup code when in signup flow', async () => {
+    (authService.sendSignupCode as jest.Mock).mockResolvedValue({
+      status: 'success',
+      message: 'Code sent',
+    });
+
+    const signupRoute = { params: { email: 'user@example.com', flow: 'signup' } };
+    const container = render(<VerifyCodeScreen route={signupRoute} navigation={mockNavigation} />);
+
+    for (let i = 0; i < 60; i++) {
+      act(() => {
+        jest.advanceTimersByTime(1000);
+      });
+    }
+
+    await waitFor(() => {
+      const button = getResendButton(container);
+      if (button) fireEvent.press(button);
+    });
+
+    await waitFor(() => {
+      expect(authService.sendSignupCode).toHaveBeenCalledWith('user@example.com');
+    });
+  });
+
+  it('does not resend code when cooldown is still active', async () => {
+    const container = render(<VerifyCodeScreen route={mockRoute} navigation={mockNavigation} />);
+
+    // Cooldown is 60s on mount — pressing resend should do nothing
+    const resendText = container.getByText(/Resend in 60s/);
+    fireEvent.press(resendText);
+
+    expect(authService.forgotPassword).not.toHaveBeenCalled();
+  });
+
+  it('shows expired message when code timer reaches zero', async () => {
+    const expiredExpiry = Date.now() - 1000; // already expired
+    (storage.getPendingVerification as jest.Mock).mockResolvedValueOnce({
+      email: 'user@example.com',
+      flow: 'forgotPassword',
+      expiresAt: expiredExpiry,
+    });
+
+    const { getByText } = render(
+      <VerifyCodeScreen route={mockRoute} navigation={mockNavigation} />,
+    );
+
+    await waitFor(() => {
+      expect(getByText('Code has expired — please request a new one')).toBeTruthy();
+    });
   });
 });

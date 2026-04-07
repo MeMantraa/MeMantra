@@ -85,7 +85,11 @@ export const storage = {
     await AsyncStorage.setItem(PENDING_VERIFICATION_KEY, JSON.stringify(data));
   },
 
-  async getPendingVerification(): Promise<{ email: string; flow: string } | null> {
+  async getPendingVerification(): Promise<{
+    email: string;
+    flow: string;
+    expiresAt: number;
+  } | null> {
     const raw = await AsyncStorage.getItem(PENDING_VERIFICATION_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw) as PendingVerification;
@@ -93,7 +97,7 @@ export const storage = {
       await AsyncStorage.removeItem(PENDING_VERIFICATION_KEY);
       return null;
     }
-    return { email: data.email, flow: data.flow };
+    return { email: data.email, flow: data.flow, expiresAt: data.expiresAt };
   },
 
   async clearPendingVerification(): Promise<void> {

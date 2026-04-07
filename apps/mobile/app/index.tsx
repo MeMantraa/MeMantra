@@ -68,27 +68,6 @@ export default function MainNavigator() {
     checkAuth();
   }, []);
 
-  // Navigate back to verification screen if there's a pending code
-  useEffect(() => {
-    if (!pendingVerification || isLoggedIn) return;
-
-    const navigateToPendingVerification = async () => {
-      let attempts = 0;
-      while (!isNavigationReady() && attempts < 20) {
-        await new Promise((resolve) => setTimeout(resolve, 100));
-        attempts++;
-      }
-      if (isNavigationReady()) {
-        navigateFromOutside('VerifyCode', {
-          email: pendingVerification.email,
-          flow: pendingVerification.flow,
-        });
-      }
-    };
-
-    navigateToPendingVerification();
-  }, [pendingVerification, isLoggedIn]);
-
   // Set up push notifications when user is logged in
   useEffect(() => {
     if (isLoggedIn) {
@@ -286,7 +265,7 @@ export default function MainNavigator() {
     <ThemeProvider>
       <SavedProvider>
         <Stack.Navigator
-          initialRouteName={isLoggedIn ? 'MainApp' : 'Login'}
+          initialRouteName={pendingVerification ? 'VerifyCode' : isLoggedIn ? 'MainApp' : 'Login'}
           screenOptions={{
             headerShown: false,
           }}
@@ -352,6 +331,7 @@ export default function MainNavigator() {
           <Stack.Screen
             name="VerifyCode"
             component={VerifyCodeScreen}
+            initialParams={pendingVerification ?? undefined}
             options={{ headerTitle: 'Verify Code' }}
           />
           <Stack.Screen
