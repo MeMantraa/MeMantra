@@ -18,7 +18,7 @@
     "build": "expo export",
     "lint": "eslint . --ext .js,.jsx,.ts,.tsx",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "jest --coverage"
+    "test": "jest --coverage --watchman=false"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
@@ -36,7 +36,7 @@
     "expo-device": "^8.0.9",
     "expo-file-system": "~19.0.21",
     "expo-font": "~14.0.11",
-    "expo-image-manipulator": "^13.0.6",
+    "expo-image-manipulator": "13.0.6",
     "expo-image-picker": "^17.0.10",
     "expo-notifications": "^0.32.13",
     "expo-secure-store": "~15.0.8",

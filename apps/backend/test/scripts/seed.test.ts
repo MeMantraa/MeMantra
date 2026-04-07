@@ -33,15 +33,16 @@ describe('seedDatabase script', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
-    process.env = { 
-      ...originalEnv, 
-      SEED_ADMIN_PASSWORD: 'TestPassword123!' 
+
+    process.env = {
+      ...originalEnv,
+      SEED_ADMIN_EMAIL: '',
+      SEED_ADMIN_USERNAME: '',
+      SEED_ADMIN_PASSWORD: 'TestPassword123!',
     };
-    
-    processExitSpy = jest.spyOn(process, 'exit').mockImplementation((() => {
-    }) as any);
-    
+
+    processExitSpy = jest.spyOn(process, 'exit').mockImplementation((() => {}) as any);
+
     consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
     consoleLogSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
   });
@@ -55,10 +56,10 @@ describe('seedDatabase script', () => {
 
   it('should use existing admin and existing mantra', async () => {
     const mockAdmin = { user_id: 1, email: 'admin@memantra.com' };
-    const mockMantra = { 
-      mantra_id: 100, 
-      title: 'Pressure Is a Privilege', 
-      background_author: 'Billy Jean King' 
+    const mockMantra = {
+      mantra_id: 100,
+      title: 'Pressure Is a Privilege',
+      background_author: 'Billy Jean King',
     };
 
     (UserModel.findByEmail as jest.Mock).mockResolvedValue(mockAdmin);
@@ -93,11 +94,11 @@ describe('seedDatabase script', () => {
 
   it('should create new admin and new mantra if not existing', async () => {
     const mockAdmin = { user_id: 10, email: 'admin@memantra.com', username: 'admin' };
-    const mockMantra = { 
-      mantra_id: 200, 
+    const mockMantra = {
+      mantra_id: 200,
       title: 'Pressure Is a Privilege',
       background_author: 'Billy Jean King',
-      is_active: true
+      is_active: true,
     };
 
     const mockInsertChain = {
@@ -108,7 +109,7 @@ describe('seedDatabase script', () => {
     (UserModel.findByEmail as jest.Mock).mockResolvedValue(null);
     (UserModel.create as jest.Mock).mockResolvedValue(mockAdmin);
     (db.insertInto as jest.Mock).mockReturnValue(mockInsertChain);
-    
+
     const mockSelectFrom = jest.fn((table: string) => {
       if (table === 'Mantra') {
         return {
@@ -138,14 +139,14 @@ describe('seedDatabase script', () => {
         username: 'admin',
         email: 'admin@memantra.com',
         password: 'TestPassword123!',
-      })
+      }),
     );
     expect(db.insertInto).toHaveBeenCalledWith('Admin');
     expect(MantraModel.create).toHaveBeenCalledWith(
       expect.objectContaining({
         title: 'Pressure Is a Privilege',
         created_by: mockAdmin.user_id,
-      })
+      }),
     );
     expect(processExitSpy).toHaveBeenCalledWith(0);
   });
@@ -156,7 +157,9 @@ describe('seedDatabase script', () => {
     const { seedDatabase } = await import('../../src/scripts/seed');
     await seedDatabase();
 
-    expect(consoleErrorSpy).toHaveBeenCalledWith(expect.stringContaining('Seed failed with error:'));
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      expect.stringContaining('Seed failed with error:'),
+    );
     expect(processExitSpy).toHaveBeenCalledWith(1);
   });
 
