@@ -9,6 +9,7 @@ jest.mock('../../utils/storage', () => ({
   storage: {
     savePendingVerification: jest.fn(() => Promise.resolve()),
     clearPendingVerification: jest.fn(() => Promise.resolve()),
+    getPendingVerification: jest.fn(() => Promise.resolve(null)),
   },
 }));
 
@@ -80,7 +81,7 @@ describe('VerifyCodeScreen', () => {
 
     expect(getByText('Enter Verification Code')).toBeTruthy();
     expect(getByText("We've sent a 6-digit code to user@example.com")).toBeTruthy();
-    expect(getByText('Code expires in 10 minutes')).toBeTruthy();
+    expect(getByText(/Code expires in \d+:\d{2}/)).toBeTruthy();
     expect(getByText('Verify Code')).toBeTruthy();
     expect(getByText(/Didn't receive the code?/)).toBeTruthy();
 
@@ -751,13 +752,15 @@ describe('VerifyCodeScreen', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it('saves pending verification state on mount', () => {
+  it('saves pending verification state on mount', async () => {
     render(<VerifyCodeScreen route={mockRoute} navigation={mockNavigation} />);
 
-    expect(storage.savePendingVerification).toHaveBeenCalledWith(
-      'user@example.com',
-      'forgotPassword',
-    );
+    await waitFor(() => {
+      expect(storage.savePendingVerification).toHaveBeenCalledWith(
+        'user@example.com',
+        'forgotPassword',
+      );
+    });
   });
 
   it('clears pending verification state after successful verification', async () => {
