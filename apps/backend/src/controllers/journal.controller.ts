@@ -7,6 +7,7 @@ import {
 } from '../validators/journal.validator';
 import { UserCategoryScoreModel } from '../models/user-category-score.model';
 import { sanitizeForLog } from '../utils/sanitize.utils';
+import { cacheDelete } from '../services/cache.service';
 
 export const JournalController = {
   // GET /api/journal - Get all journal entries for the authenticated user
@@ -167,6 +168,8 @@ export const JournalController = {
         );
       }
 
+      await cacheDelete(`cache:/api/journal*user:${userId}*`);
+
       return res.status(201).json({
         status: 'success',
         message: 'Journal entry created successfully',
@@ -205,6 +208,8 @@ export const JournalController = {
         });
       }
 
+      await cacheDelete(`cache:/api/journal*user:${userId}*`);
+
       return res.status(200).json({
         status: 'success',
         message: 'Journal entry updated successfully',
@@ -240,6 +245,8 @@ export const JournalController = {
           message: 'Journal entry not found or access denied',
         });
       }
+
+      await cacheDelete(`cache:/api/journal*user:${userId}*`);
 
       return res.status(200).json({
         status: 'success',

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { CategoryController } from '../controllers/category.controller';
 import { validateRequest } from '../middleware/validate.middleware';
 import { authenticate } from '../middleware/auth.middleware';
+import { cacheResponse } from '../middleware/cache.middleware';
 import {
   createCategorySchema,
   updateCategorySchema,
@@ -12,20 +13,31 @@ import {
 
 const router = Router();
 
-// Public routes
-router.get('/', CategoryController.getAllCategories);
+// Public routes — categories rarely change, cache for 10 min
+router.get(
+  '/',
+  cacheResponse({ ttl: 600, keyPrefix: '/api/categories' }),
+  CategoryController.getAllCategories,
+);
 
 router.get(
   '/type/:type',
   validateRequest(categoryTypeSchema),
+  cacheResponse({ ttl: 600 }),
   CategoryController.getCategoriesByType,
 );
 
-router.get('/:id', validateRequest(categoryIdSchema), CategoryController.getCategoryById);
+router.get(
+  '/:id',
+  validateRequest(categoryIdSchema),
+  cacheResponse({ ttl: 600 }),
+  CategoryController.getCategoryById,
+);
 
 router.get(
   '/:id/mantras',
   validateRequest(categoryIdSchema),
+  cacheResponse({ ttl: 300 }),
   CategoryController.getMantrasInCategory,
 );
 

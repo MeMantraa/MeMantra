@@ -145,7 +145,6 @@ export default function DeepDiveReader({
               label="References"
               accentColor={colors.secondary}
               textColor={colors.text}
-              backgroundColor={colors.primaryDark + '22'}
               borderColor={colors.text + '26'}
               muted
             >
@@ -179,7 +178,6 @@ export default function DeepDiveReader({
               <DeepDiveCard
                 accentColor={colors.secondary}
                 textColor={colors.text}
-                backgroundColor={colors.primaryDark + '2d'}
                 borderColor={colors.text + '30'}
               >
                 <View style={{ width: '100%' }}>
@@ -193,7 +191,6 @@ export default function DeepDiveReader({
                 <DeepDiveCard
                   accentColor={colors.secondary}
                   textColor={colors.text}
-                  backgroundColor={colors.primaryDark + '22'}
                   borderColor={colors.text + '26'}
                 >
                   <View style={{ width: '100%' }}>
@@ -208,7 +205,6 @@ export default function DeepDiveReader({
                 <DeepDiveCard
                   accentColor={colors.secondary}
                   textColor={colors.text}
-                  backgroundColor={colors.primaryDark + '22'}
                   borderColor={colors.text + '26'}
                   muted
                 >

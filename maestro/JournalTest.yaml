@@ -1,0 +1,64 @@
+appId: com.memantra.mobile
+---
+- launchApp:
+    clearState: true
+
+# Login
+- tapOn: Email
+- inputText: e2eTestUser@gmail.com
+- hideKeyboard
+- tapOn: Password
+- inputText: TestPassword123!
+- hideKeyboard
+- longPressOn: Login
+- tapOn:
+    text: 'Not Now'
+    optional: true
+
+# Navigate to Journal screen via bottom tab (4th tab)
+- tapOn:
+    point: 70%,97%
+
+# Tap create button
+- tapOn:
+    id: create-journal-button
+
+# Fill in journal entry - tap title area
+- tapOn:
+    point: 50%,15%
+- inputText: E2E Test Journal Entry
+- hideKeyboard
+
+# Tap body area
+- tapOn:
+    point: 50%,35%
+- inputText: This is an automated E2E test journal entry.
+- hideKeyboard
+
+# Select a mood - Happy is first mood button
+- tapOn:
+    point: 10%,72%
+
+# Save button top-right
+- tapOn:
+    point: 90%,8%
+
+# Dismiss success popup
+- tapOn: ok
+
+# Verify the entry appears in the list
+- assertVisible: E2E Test Journal Entry
+
+# Tap into the entry
+- tapOn: E2E Test Journal Entry
+
+# Delete it
+- tapOn:
+    id: delete-button
+
+# Confirm delete popup
+- tapOn: Delete
+
+# Verify we're back on the journal list
+- assertVisible:
+    id: journal-flatlist

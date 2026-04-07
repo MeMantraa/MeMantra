@@ -6,6 +6,7 @@ import { EmailVerificationTokenModel } from '../models/email-verification-token.
 import { generateToken } from '../utils/jwt.utils';
 import { LoginInput } from '../validators/auth.validator';
 import { emailService } from '../services/email.service';
+import { logger } from '../utils/logger';
 
 // Standard JSON error response
 function errorResponse(
@@ -156,7 +157,7 @@ export const AuthController = {
         },
       });
     } catch (error) {
-      console.error('Registration error:', error);
+      logger.error('Registration error:', error);
       return res.status(500).json({
         status: 'error',
         message: 'Error registering user',
@@ -205,7 +206,7 @@ export const AuthController = {
         },
       });
     } catch (error) {
-      console.error('Login error:', error);
+      logger.error('Login error:', error);
       return res.status(500).json({
         status: 'error',
         message: 'Error during login',
@@ -245,7 +246,7 @@ export const AuthController = {
         },
       });
     } catch (error) {
-      console.error('Get user profile error:', error);
+      logger.error('Get user profile error:', error);
       return res.status(500).json({
         status: 'error',
         message: 'Error retrieving user profile',
@@ -275,7 +276,7 @@ export const AuthController = {
         message: 'Password updated',
       });
     } catch (err) {
-      console.error('Update password error:', err);
+      logger.error('Update password error:', err);
       return res.status(500).json({ status: 'error', message: 'Failed to update password' });
     }
   },
@@ -292,7 +293,7 @@ export const AuthController = {
 
       return res.status(200).json({ status: 'success', message: 'Account deleted' });
     } catch (err) {
-      console.error('Delete account error:', err);
+      logger.error('Delete account error:', err);
       return res.status(500).json({ status: 'error', message: 'Failed to delete account' });
     }
   },
@@ -334,7 +335,7 @@ export const AuthController = {
         data: { email },
       });
     } catch (error) {
-      console.error('Update email error:', error);
+      logger.error('Update email error:', error);
       return res.status(500).json({
         status: 'error',
         message: 'Error updating email',
@@ -394,7 +395,7 @@ export const AuthController = {
 
       return successResponse(res, 'Verification code sent to your email');
     } catch (error) {
-      console.error('Forgot password error:', error);
+      logger.error('Forgot password error:', error);
       return errorResponse(res, 500, 'Error processing password reset request');
     }
   },
@@ -426,7 +427,7 @@ export const AuthController = {
 
       return successResponse(res, 'Code verified successfully', { email: user.email });
     } catch (error) {
-      console.error('Verify code error:', error);
+      logger.error('Verify code error:', error);
       return errorResponse(res, 500, 'Error verifying code');
     }
   },
@@ -473,7 +474,7 @@ export const AuthController = {
         message: 'Password reset successfully',
       });
     } catch (error) {
-      console.error('Reset password error:', error);
+      logger.error('Reset password error:', error);
       return res.status(500).json({
         status: 'error',
         message: 'Error resetting password',
@@ -531,7 +532,7 @@ export const AuthController = {
 
       return successResponse(res, 'Verification code sent to your email');
     } catch (error) {
-      console.error('Send signup code error:', error);
+      logger.error('Send signup code error:', error);
       return errorResponse(res, 500, 'Error sending verification code');
     }
   },
@@ -563,7 +564,7 @@ export const AuthController = {
 
       return successResponse(res, 'Email verified successfully', { email: trimmedEmail });
     } catch (error) {
-      console.error('Verify signup code error:', error);
+      logger.error('Verify signup code error:', error);
       return errorResponse(res, 500, 'Error verifying code');
     }
   },

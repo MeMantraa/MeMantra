@@ -3,6 +3,14 @@ import { render, fireEvent, waitFor, act } from '@testing-library/react-native';
 import { Alert } from 'react-native';
 import VerifyCodeScreen from '../../screens/VerifyCodeScreen';
 import { authService } from '../../services/auth.service';
+import { storage } from '../../utils/storage';
+
+jest.mock('../../utils/storage', () => ({
+  storage: {
+    savePendingVerification: jest.fn(() => Promise.resolve()),
+    clearPendingVerification: jest.fn(() => Promise.resolve()),
+  },
+}));
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   default: {
@@ -741,6 +749,36 @@ describe('VerifyCodeScreen', () => {
     });
 
     consoleErrorSpy.mockRestore();
+  });
+
+  it('saves pending verification state on mount', () => {
+    render(<VerifyCodeScreen route={mockRoute} navigation={mockNavigation} />);
+
+    expect(storage.savePendingVerification).toHaveBeenCalledWith(
+      'user@example.com',
+      'forgotPassword',
+    );
+  });
+
+  it('clears pending verification state after successful verification', async () => {
+    (authService.verifyResetCode as jest.Mock).mockResolvedValue({
+      status: 'success',
+      message: 'Code verified successfully!',
+    });
+
+    const container = render(<VerifyCodeScreen route={mockRoute} navigation={mockNavigation} />);
+    const inputs = container.getAllByDisplayValue('');
+
+    fireEvent.changeText(inputs[0], '1');
+    fireEvent.changeText(inputs[1], '2');
+    fireEvent.changeText(inputs[2], '3');
+    fireEvent.changeText(inputs[3], '4');
+    fireEvent.changeText(inputs[4], '5');
+    fireEvent.changeText(inputs[5], '6');
+
+    await waitFor(() => {
+      expect(storage.clearPendingVerification).toHaveBeenCalled();
+    });
   });
 
   it('decrements cooldown timer every second', () => {

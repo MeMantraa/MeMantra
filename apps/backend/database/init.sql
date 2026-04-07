@@ -139,6 +139,21 @@ CREATE INDEX idx_performance_event_kind
 CREATE INDEX idx_performance_event_source
   ON "PerformanceEvent" ("source");
 
+CREATE INDEX idx_reminder_status_time
+  ON "Reminder" ("status", "time");
+
+CREATE UNIQUE INDEX idx_like_user_mantra
+  ON "Like" ("user_id", "mantra_id");
+
+CREATE INDEX idx_collection_user_id
+  ON "Collection" ("user_id");
+
+CREATE INDEX idx_collection_mantra_collection_id
+  ON "CollectionMantra" ("collection_id");
+
+CREATE INDEX idx_recommendation_log_user_id
+  ON "RecommendationLog" ("user_id", "timestamp" DESC);
+
 ALTER TABLE "Admin" ADD FOREIGN KEY ("admin_id") REFERENCES "User" ("user_id");
 
 ALTER TABLE "Mantra" ADD FOREIGN KEY ("created_by") REFERENCES "Admin" ("admin_id");

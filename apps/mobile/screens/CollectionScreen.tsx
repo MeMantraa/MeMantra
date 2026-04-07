@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   View,
   FlatList,
@@ -10,9 +10,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
-import { collectionService, Collection } from '../services/collection.service';
-import { storage } from '../utils/storage';
+import { Collection } from '../services/collection.service';
 import { useReminders } from '../hooks/useReminders';
+import { useFocusEffect } from '@react-navigation/native';
+import { useUserCollections, useDeleteCollection } from '../hooks';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ITEM_MARGIN = 12;
@@ -21,49 +22,27 @@ const ITEM_SIZE = (SCREEN_WIDTH - ITEM_MARGIN * (NUM_COLUMNS + 1)) / NUM_COLUMNS
 
 export default function CollectionsScreen({ navigation }: any) {
   const { colors } = useTheme();
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data, isLoading, isRefetching, refetch } = useUserCollections();
+  const deleteCollection = useDeleteCollection();
   const { remindersByCollection, handleReminderPress } = useReminders();
 
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      loadCollections();
+  const collections = useMemo(() => {
+    const raw = data?.data?.collections ?? [];
+    return [...raw].sort((a, b) => {
+      if (a.name === 'Saved Mantras') return -1;
+      if (b.name === 'Saved Mantras') return 1;
+      return 0;
     });
+  }, [data]);
 
-    return unsubscribe;
-  }, [navigation]);
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
 
   const handleCollectionReminder = (collection: Collection) => {
     handleReminderPress('collection', collection.collection_id, navigation);
-  };
-
-  const loadCollections = async () => {
-    try {
-      const token = (await storage.getToken()) || 'mock-token';
-      const response = await collectionService.getUserCollections(token);
-
-      if (response.status === 'success' && response.data) {
-        // Sort collections: "Saved Mantras" first, then others (using immutable sort)
-        const sorted = [...response.data.collections].sort((a, b) => {
-          if (a.name === 'Saved Mantras') return -1;
-          if (b.name === 'Saved Mantras') return 1;
-          return 0;
-        });
-        setCollections(sorted);
-      }
-    } catch (err) {
-      console.error('Error fetching collections:', err);
-      Alert.alert('Error', 'Failed to load collections');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    loadCollections();
   };
 
   const handleCollectionPress = (collection: Collection) => {
@@ -71,21 +50,6 @@ export default function CollectionsScreen({ navigation }: any) {
       collectionId: collection.collection_id,
       collectionName: collection.name,
     });
-  };
-
-  const performDeleteCollection = async (collection: Collection) => {
-    try {
-      const token = (await storage.getToken()) || 'mock-token';
-      await collectionService.deleteCollection(collection.collection_id, token);
-
-      // Remove from local state
-      setCollections((prev) => prev.filter((c) => c.collection_id !== collection.collection_id));
-
-      Alert.alert('Success', 'Collection deleted successfully');
-    } catch (err) {
-      console.error('Error deleting collection:', err);
-      Alert.alert('Error', 'Failed to delete collection');
-    }
   };
 
   const handleDeleteCollection = (collection: Collection) => {
@@ -101,7 +65,10 @@ export default function CollectionsScreen({ navigation }: any) {
           text: 'Delete',
           style: 'destructive',
           onPress: () => {
-            void performDeleteCollection(collection);
+            deleteCollection.mutate(collection.collection_id, {
+              onSuccess: () => Alert.alert('Success', 'Collection deleted successfully'),
+              onError: () => Alert.alert('Error', 'Failed to delete collection'),
+            });
           },
         },
       ],
@@ -183,7 +150,7 @@ export default function CollectionsScreen({ navigation }: any) {
     </View>
   );
 
-  if (loading) {
+  if (isLoading) {
     return (
       <View className="flex-1" style={{ backgroundColor: colors.primary }}>
         <View className="pt-[60px] pb-4 px-[30px]" style={{ backgroundColor: colors.primary }}>
@@ -233,8 +200,8 @@ export default function CollectionsScreen({ navigation }: any) {
             paddingHorizontal: ITEM_MARGIN,
           }}
           contentContainerStyle={{ paddingTop: ITEM_MARGIN }}
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
+          refreshing={isRefetching}
+          onRefresh={refetch}
         />
       )}
     </View>

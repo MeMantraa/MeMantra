@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { CollectionModel } from '../models/collection.model';
 import { CreateCollectionInput, UpdateCollectionInput } from '../validators/collection.validator';
 import type { Collection } from '../types/database.types';
+import { cacheDelete } from '../services/cache.service';
 
 // --- Utility helpers ---
 const handleError = (res: Response, message: string, error?: unknown, status = 500) => {
@@ -103,6 +104,8 @@ export const CollectionController = {
         data.icon,
       );
 
+      await cacheDelete(`cache:/api/collections*user:${userId}*`);
+
       return res.status(201).json({
         status: 'success',
         message: 'Collection created successfully',
@@ -127,6 +130,8 @@ export const CollectionController = {
 
       const updatedCollection = await CollectionModel.update(Number(id), updateData);
 
+      await cacheDelete(`cache:/api/collections*user:${userId}*`);
+
       return res.status(200).json({
         status: 'success',
         message: 'Collection updated successfully',
@@ -149,6 +154,8 @@ export const CollectionController = {
       if (!verifyOwnership(res, collection, userId)) return;
 
       await CollectionModel.delete(Number(id));
+
+      await cacheDelete(`cache:/api/collections*user:${userId}*`);
 
       return res.status(200).json({
         status: 'success',
@@ -182,6 +189,8 @@ export const CollectionController = {
       }
 
       await CollectionModel.addMantra(Number(id), Number(mantraId), userId);
+
+      await cacheDelete(`cache:/api/collections*user:${userId}*`);
 
       return res.status(200).json({
         status: 'success',
@@ -224,6 +233,8 @@ export const CollectionController = {
           message: 'Mantra not found in collection',
         });
       }
+
+      await cacheDelete(`cache:/api/collections*user:${userId}*`);
 
       return res.status(200).json({
         status: 'success',

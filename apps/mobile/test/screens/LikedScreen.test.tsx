@@ -1,20 +1,16 @@
 import React from 'react';
 import { render, waitFor } from '@testing-library/react-native';
 import LikedScreen from '../../screens/LikedScreen';
-import { mantraService } from '../../services/mantra.service';
+import { useLikedMantras } from '../../hooks';
+
+jest.mock('../../hooks', () => ({
+  useLikedMantras: jest.fn(),
+}));
 
 jest.mock('../../context/ThemeContext', () => ({
   useTheme: () => ({
     colors: { primary: '#9AA793', secondary: '#FFD700', primaryDark: '#1a1a1a', text: '#ffffff' },
   }),
-}));
-
-jest.mock('../../services/mantra.service', () => ({
-  mantraService: { getLikedMantras: jest.fn() },
-}));
-
-jest.mock('../../utils/storage', () => ({
-  storage: { getToken: jest.fn().mockResolvedValue('mock-token') },
 }));
 
 jest.mock('@expo/vector-icons', () => ({
@@ -34,58 +30,54 @@ const mockLikedMantras = [
   { mantra_id: 2, title: 'Mantra Two', key_takeaway: 'takeaway', created_at: '', is_active: true },
 ];
 
+const mockRefetch = jest.fn();
+
 describe('LikedScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-  });
-
-  it('shows loading indicator initially', async () => {
-    (mantraService.getLikedMantras as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { mantras: [] },
+    (useLikedMantras as jest.Mock).mockReturnValue({
+      data: { status: 'success', data: { mantras: mockLikedMantras } },
+      isLoading: false,
+      isRefetching: false,
+      refetch: mockRefetch,
     });
-    render(<LikedScreen navigation={navigation} />);
-    await waitFor(() => expect(mantraService.getLikedMantras).toHaveBeenCalledTimes(1));
   });
 
-  it('renders liked mantras after loading', async () => {
-    (mantraService.getLikedMantras as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { mantras: mockLikedMantras },
+  it('shows loading indicator when loading', () => {
+    (useLikedMantras as jest.Mock).mockReturnValue({
+      data: undefined,
+      isLoading: true,
+      isRefetching: false,
+      refetch: mockRefetch,
+    });
+    const { UNSAFE_root } = render(<LikedScreen navigation={navigation} />);
+    expect(UNSAFE_root).toBeTruthy();
+  });
+
+  it('renders liked mantras after loading', () => {
+    const { UNSAFE_getByProps } = render(<LikedScreen navigation={navigation} />);
+    expect(UNSAFE_getByProps({ testID: 'liked-mantra-list' })).toBeTruthy();
+  });
+
+  it('shows empty state when no liked mantras', () => {
+    (useLikedMantras as jest.Mock).mockReturnValue({
+      data: { status: 'success', data: { mantras: [] } },
+      isLoading: false,
+      isRefetching: false,
+      refetch: mockRefetch,
     });
     const { UNSAFE_getByProps } = render(<LikedScreen navigation={navigation} />);
-    await waitFor(() => expect(UNSAFE_getByProps({ testID: 'liked-mantra-list' })).toBeTruthy());
+    expect(UNSAFE_getByProps({ children: 'No Liked Mantras' })).toBeTruthy();
   });
 
-  it('shows empty state when no liked mantras', async () => {
-    (mantraService.getLikedMantras as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { mantras: [] },
-    });
+  it('calls navigation.goBack when back button is pressed', () => {
     const { UNSAFE_getByProps } = render(<LikedScreen navigation={navigation} />);
-    await waitFor(() => expect(UNSAFE_getByProps({ children: 'No Liked Mantras' })).toBeTruthy());
-  });
-
-  it('calls navigation.goBack when back button is pressed', async () => {
-    (mantraService.getLikedMantras as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { mantras: [] },
-    });
-    const { UNSAFE_getByProps } = render(<LikedScreen navigation={navigation} />);
-    // back button rendered by Ionicons (mocked to null) — trigger via the TouchableOpacity
-    // We test loading completes and back press works
-    await waitFor(() => expect(mantraService.getLikedMantras).toHaveBeenCalledTimes(1));
     UNSAFE_getByProps({ testID: 'back-button' }).props.onPress();
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
 
-  it('navigates to Focus screen when a mantra card is tapped', async () => {
-    (mantraService.getLikedMantras as jest.Mock).mockResolvedValue({
-      status: 'success',
-      data: { mantras: mockLikedMantras },
-    });
+  it('navigates to Focus screen when a mantra card is tapped', () => {
     const { UNSAFE_getByProps } = render(<LikedScreen navigation={navigation} />);
-    await waitFor(() => expect(UNSAFE_getByProps({ children: 'Mantra One' })).toBeTruthy());
     const mantraCard = UNSAFE_getByProps({ children: 'Mantra One' });
     let pressableNode: any = mantraCard;
     while (pressableNode && typeof pressableNode.props?.onPress !== 'function') {

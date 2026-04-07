@@ -25,7 +25,10 @@
       "distribution": "internal"
     },
     "production": {
-      "distribution": "store"
+      "distribution": "store",
+      "cache": {
+        "disabled": true
+      }
     }
   }
 }

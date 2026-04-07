@@ -3,6 +3,7 @@ import { MantraController } from '../controllers/mantra.controller';
 import { validateRequest } from '../middleware/validate.middleware';
 import { authenticate } from '../middleware/auth.middleware';
 import { requireAdmin } from '../middleware/admin.middleware';
+import { cacheResponse } from '../middleware/cache.middleware';
 import {
   createMantraSchema,
   updateMantraSchema,
@@ -14,10 +15,19 @@ import {
 const router = Router();
 
 // Feed route
-router.get('/feed', authenticate, MantraController.getFeedMantras);
+router.get(
+  '/feed',
+  authenticate,
+  cacheResponse({ ttl: 120, perUser: true, keyPrefix: '/api/mantras/feed' }),
+  MantraController.getFeedMantras,
+);
 
 // Popular mantras
-router.get('/popular', MantraController.getPopularMantras);
+router.get(
+  '/popular',
+  cacheResponse({ ttl: 600, keyPrefix: '/api/mantras/popular' }),
+  MantraController.getPopularMantras,
+);
 
 // Save/Unsave mantra (bookmark functionality)
 router.post('/:mantraId/save', authenticate, MantraController.saveMantra);
@@ -41,10 +51,20 @@ router.get(
 router.get('/saved', authenticate, MantraController.getSavedMantras);
 
 // List all mantras (public)
-router.get('/', validateRequest(mantraQuerySchema), MantraController.getAllMantras);
+router.get(
+  '/',
+  validateRequest(mantraQuerySchema),
+  cacheResponse({ ttl: 300, keyPrefix: '/api/mantras' }),
+  MantraController.getAllMantras,
+);
 
 // Get single mantra by ID
-router.get('/:id', validateRequest(mantraIdSchema), MantraController.getMantraById);
+router.get(
+  '/:id',
+  validateRequest(mantraIdSchema),
+  cacheResponse({ ttl: 300 }),
+  MantraController.getMantraById,
+);
 
 // Protected routes (require authentication + admin)
 router.post(
