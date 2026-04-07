@@ -158,6 +158,77 @@ export const createApp = () => {
 </html>`);
   });
 
+  // Account Deletion Request (public HTML page)
+  app.get('/delete-account', (_req, res) => {
+    res.send(`<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MeMantra - Delete Account</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; color: #333; line-height: 1.7; }
+    .header { background: #7BA5B5; padding: 40px 20px; text-align: center; color: #fff; }
+    .header h1 { font-size: 28px; margin-bottom: 4px; }
+    .header p { opacity: 0.85; font-size: 14px; }
+    .container { max-width: 800px; margin: 30px auto; padding: 30px; background: #fff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    h2 { color: #7BA5B5; margin: 24px 0 12px; font-size: 20px; }
+    h2:first-child { margin-top: 0; }
+    p, li { font-size: 15px; margin-bottom: 10px; }
+    ul { padding-left: 24px; margin-bottom: 14px; }
+    .warning { background: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 16px; margin: 20px 0; }
+    .warning strong { color: #856404; }
+    .email-link { color: #7BA5B5; font-weight: bold; text-decoration: none; }
+    .email-link:hover { text-decoration: underline; }
+    .steps { background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0; }
+    .steps ol { padding-left: 24px; }
+    .steps li { margin-bottom: 8px; }
+    .footer { text-align: center; padding: 20px; font-size: 13px; color: #888; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>MeMantra</h1>
+    <p>Account Deletion Request</p>
+  </div>
+  <div class="container">
+    <h2>Request Account Deletion</h2>
+    <p>We're sorry to see you go. If you'd like to delete your MeMantra account and all associated data, please follow the steps below.</p>
+
+    <div class="steps">
+      <h2>How to Request Deletion</h2>
+      <ol>
+        <li>Send an email to <a href="mailto:jamie@whereithrive.ca?subject=MeMantra%20Account%20Deletion%20Request" class="email-link">jamie@whereithrive.ca</a></li>
+        <li>Use the subject line: <strong>"MeMantra Account Deletion Request"</strong></li>
+        <li>Include the <strong>email address</strong> associated with your MeMantra account</li>
+        <li>We will process your request within <strong>30 days</strong></li>
+      </ol>
+    </div>
+
+    <h2>What Data Will Be Deleted</h2>
+    <p>Upon account deletion, the following data will be permanently removed:</p>
+    <ul>
+      <li>Your account information (username, email, password)</li>
+      <li>Journal entries</li>
+      <li>Chat conversation history</li>
+      <li>Mantra likes, collections, and ratings</li>
+      <li>Notification preferences and push tokens</li>
+      <li>Category preferences and engagement data</li>
+    </ul>
+
+    <div class="warning">
+      <strong>Please note:</strong> Account deletion is permanent and cannot be undone. All your data will be permanently removed from our servers and cannot be recovered.
+    </div>
+
+    <h2>Contact</h2>
+    <p>If you have any questions about the deletion process, please contact us at <a href="mailto:jamie@whereithrive.ca" class="email-link">jamie@whereithrive.ca</a>.</p>
+  </div>
+  <div class="footer">&copy; 2026 MeMantra. All rights reserved.</div>
+</body>
+</html>`);
+  });
+
   // API routes
   app.use('/api', apiRoutes);
   app.get('/api/v1/hello', (_req, res) => {
