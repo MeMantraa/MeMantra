@@ -5,12 +5,14 @@ export type Reminder = {
   user_id: number | null;
   mantra_id: number | null;
   collection_id: number | null;
+  journal_id: number | null;
   time: string | null;
   frequency: string | null;
   status: string | null;
   last_sent_at: string | null;
   mantra_title: string | null;
   collection_name: string | null;
+  journal_title: string | null;
   schedule_times: string[] | null;
   schedule_days: number[] | null;
   timezone: string | null;
@@ -39,6 +41,7 @@ export interface MessageResponse {
 export interface CreateReminderInput {
   mantra_id?: number;
   collection_id?: number;
+  journal_id?: number;
   time?: string;
   frequency: 'once' | 'daily' | 'weekly' | 'monthly' | 'custom' | 'routine';
   status?: 'active' | 'paused';
@@ -50,6 +53,7 @@ export interface CreateReminderInput {
 export interface UpdateReminderInput {
   mantra_id?: number;
   collection_id?: number;
+  journal_id?: number;
   time?: string;
   frequency?: 'once' | 'daily' | 'weekly' | 'monthly' | 'custom' | 'routine';
   status?: 'active' | 'paused' | 'completed';

@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import {
   View,
   FlatList,
@@ -10,74 +10,36 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
-import { journalService, JournalEntry, MOOD_OPTIONS } from '../services/journal.service';
-import { storage } from '../utils/storage';
+import { JournalEntry, MOOD_OPTIONS } from '../services/journal.service';
 import { useFocusEffect } from '@react-navigation/native';
+import { useJournalEntries, useDeleteJournalEntry } from '../hooks';
+import { useReminders } from '../hooks/useReminders';
 
 export default function JournalScreen({ navigation }: any) {
   const { colors } = useTheme();
-  const [entries, setEntries] = useState<JournalEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [totalEntries, setTotalEntries] = useState(0);
+  const { data, isLoading, isRefetching, refetch } = useJournalEntries();
+  const deleteEntry = useDeleteJournalEntry();
+  const { remindersByJournal, handleReminderPress } = useReminders();
 
-  const loadJournalEntries = async () => {
-    try {
-      const token = (await storage.getToken()) || '';
-      if (!token) {
-        navigation.navigate('Login');
-        return;
-      }
-
-      const response = await journalService.getJournalEntries(token);
-
-      if (response.status === 'success') {
-        setEntries(response.data.entries);
-        setTotalEntries(response.data.pagination?.total || response.data.entries.length);
-      }
-    } catch (err) {
-      console.error('Error fetching journal entries:', err);
-      Alert.alert('Error', 'Failed to load journal entries');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  const entries = data?.data?.entries ?? [];
+  const totalEntries = data?.data?.pagination?.total ?? entries.length;
 
   useFocusEffect(
     useCallback(() => {
-      loadJournalEntries();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []),
+      refetch();
+    }, [refetch]),
   );
 
-  const handleRefresh = () => {
-    setRefreshing(true);
-    loadJournalEntries();
-  };
-
-  const performDeletion = async (journalId: number) => {
-    try {
-      const token = (await storage.getToken()) || '';
-      const response = await journalService.deleteJournalEntry(journalId, token);
-      if (response.status === 'success') {
-        setEntries((prev) => prev.filter((e) => e.journal_id !== journalId));
-        setTotalEntries((prev) => prev - 1);
-      }
-    } catch (err) {
-      console.error('Error deleting journal entry:', err);
-      Alert.alert('Error', 'Failed to delete journal entry');
-    }
-  };
-
-  const handleDeleteEntry = async (journalId: number) => {
+  const handleDelete = (journalId: number) => {
     Alert.alert('Delete Entry', 'Are you sure you want to delete this journal entry?', [
       { text: 'Cancel', style: 'cancel' },
       {
         text: 'Delete',
         style: 'destructive',
         onPress: () => {
-          void performDeletion(journalId);
+          deleteEntry.mutate(journalId, {
+            onError: () => Alert.alert('Error', 'Failed to delete journal entry'),
+          });
         },
       },
     ]);
@@ -121,9 +83,24 @@ export default function JournalScreen({ navigation }: any) {
             </View>
           )}
           <TouchableOpacity
+            testID={`journal-reminder-${item.journal_id}`}
+            className="p-1"
+            onPress={() => handleReminderPress('journal', item.journal_id, navigation)}
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons
+              name={
+                remindersByJournal.has(item.journal_id) ? 'notifications' : 'notifications-outline'
+              }
+              size={18}
+              color={colors.text}
+              style={{ opacity: 0.5 }}
+            />
+          </TouchableOpacity>
+          <TouchableOpacity
             testID="delete-button"
             className="p-1"
-            onPress={() => handleDeleteEntry(item.journal_id)}
+            onPress={() => handleDelete(item.journal_id)}
             hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
           >
             <Ionicons name="trash-outline" size={18} color={colors.text} style={{ opacity: 0.5 }} />
@@ -178,7 +155,7 @@ export default function JournalScreen({ navigation }: any) {
     </TouchableOpacity>
   );
 
-  if (loading) {
+  if (isLoading) {
     return (
       <View className="flex-1" style={{ backgroundColor: colors.primary }}>
         <View className="pt-[60px] pb-4 px-[30px]" style={{ backgroundColor: colors.primary }}>
@@ -249,8 +226,8 @@ export default function JournalScreen({ navigation }: any) {
           contentContainerStyle={{ paddingVertical: 8 }}
           refreshControl={
             <RefreshControl
-              refreshing={refreshing}
-              onRefresh={handleRefresh}
+              refreshing={isRefetching}
+              onRefresh={refetch}
               tintColor={colors.secondary}
               colors={[colors.secondary]}
             />

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { RatingModel } from '../models/rating.model';
 import { UserCategoryScoreModel } from '../models/user-category-score.model';
 import { sanitizeForLog } from '../utils/sanitize.utils';
+import { cacheDelete } from '../services/cache.service';
 
 export const RatingController = {
   /**
@@ -66,6 +67,11 @@ export const RatingController = {
           },
         );
       }
+
+      await cacheDelete(
+        `cache:/api/ratings*user:${userId}*`,
+        `cache:/api/ratings*mantra:${mantra_id}*`,
+      );
 
       return res.status(200).json({
         status: 'success',
@@ -176,6 +182,11 @@ export const RatingController = {
           message: 'Rating not found',
         });
       }
+
+      await cacheDelete(
+        `cache:/api/ratings*user:${userId}*`,
+        `cache:/api/ratings*mantra:${rating.mantra_id}*`,
+      );
 
       return res.status(200).json({
         status: 'success',

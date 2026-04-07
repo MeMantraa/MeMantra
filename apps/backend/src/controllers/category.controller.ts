@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { CategoryModel } from '../models/category.model';
 import { CreateCategoryInput, UpdateCategoryInput } from '../validators/category.validator';
+import { cacheDelete } from '../services/cache.service';
 
 export const CategoryController = {
   // GET /api/categories - List all categories
@@ -82,6 +83,8 @@ export const CategoryController = {
 
       const newCategory = await CategoryModel.create(categoryData);
 
+      await cacheDelete('cache:/api/categories*');
+
       return res.status(201).json({
         status: 'success',
         message: 'Category created successfully',
@@ -118,6 +121,8 @@ export const CategoryController = {
 
       const updatedCategory = await CategoryModel.update(Number(id), updateData);
 
+      await cacheDelete('cache:/api/categories*');
+
       return res.status(200).json({
         status: 'success',
         message: 'Category updated successfully',
@@ -153,6 +158,8 @@ export const CategoryController = {
 
       await CategoryModel.softDelete(Number(id));
 
+      await cacheDelete('cache:/api/categories*');
+
       return res.status(200).json({
         status: 'success',
         message: 'Category deleted successfully',
@@ -178,6 +185,8 @@ export const CategoryController = {
 
       await CategoryModel.addMantraToCategory(Number(mantraId), Number(id));
 
+      await cacheDelete('cache:/api/categories*', `cache:/api/mantras*`);
+
       return res.status(200).json({
         status: 'success',
         message: 'Mantra added to category successfully',
@@ -202,6 +211,8 @@ export const CategoryController = {
       const { id, mantraId } = req.params;
 
       await CategoryModel.removeMantraFromCategory(Number(mantraId), Number(id));
+
+      await cacheDelete('cache:/api/categories*', `cache:/api/mantras*`);
 
       return res.status(200).json({
         status: 'success',

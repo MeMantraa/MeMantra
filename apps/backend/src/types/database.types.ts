@@ -106,6 +106,7 @@ export interface ReminderTable {
   user_id: number | null;
   mantra_id: number | null;
   collection_id: number | null;
+  journal_id: number | null;
   time: string | null;
   frequency: string | null;
   status: string | null;

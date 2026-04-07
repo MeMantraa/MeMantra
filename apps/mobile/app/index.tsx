@@ -10,6 +10,11 @@ import { engagementService } from '../services/engagement.service';
 import { mantraService, Mantra } from '../services/mantra.service';
 import { navigateFromOutside, isNavigationReady } from '../services/api.config';
 
+interface PendingVerification {
+  email: string;
+  flow: string;
+}
+
 // Import screens
 import Login from '../screens/LoginScreen';
 import SignUpEmailScreen from '../screens/SignUpEmailScreen';
@@ -41,6 +46,7 @@ const Stack = createStackNavigator();
 
 export default function MainNavigator() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [pendingVerification, setPendingVerification] = useState<PendingVerification | null>(null);
   const notificationListener = useRef<Notifications.EventSubscription | undefined>(undefined);
   const responseListener = useRef<Notifications.EventSubscription | undefined>(undefined);
 
@@ -49,6 +55,10 @@ export default function MainNavigator() {
       try {
         const token = await storage.getToken();
         setIsLoggedIn(!!token);
+        if (!token) {
+          const pending = await storage.getPendingVerification();
+          setPendingVerification(pending);
+        }
       } catch (err) {
         console.error('Failed to read token from storage', err);
         setIsLoggedIn(false);
@@ -57,6 +67,27 @@ export default function MainNavigator() {
 
     checkAuth();
   }, []);
+
+  // Navigate back to verification screen if there's a pending code
+  useEffect(() => {
+    if (!pendingVerification || isLoggedIn) return;
+
+    const navigateToPendingVerification = async () => {
+      let attempts = 0;
+      while (!isNavigationReady() && attempts < 20) {
+        await new Promise((resolve) => setTimeout(resolve, 100));
+        attempts++;
+      }
+      if (isNavigationReady()) {
+        navigateFromOutside('VerifyCode', {
+          email: pendingVerification.email,
+          flow: pendingVerification.flow,
+        });
+      }
+    };
+
+    navigateToPendingVerification();
+  }, [pendingVerification, isLoggedIn]);
 
   // Set up push notifications when user is logged in
   useEffect(() => {

@@ -9,9 +9,9 @@ interface RequestMetadata {
 }
 
 interface ExtendedRequestConfig {
-  headers?: any;
   method?: string;
   url?: string;
+  timeout?: number;
   metadata?: RequestMetadata;
   skipPerformanceMonitoring?: boolean;
 }
@@ -106,7 +106,9 @@ if (!API_BASE_URL) {
   );
 }
 
-console.log('✅ API Base URL:', API_BASE_URL);
+if (__DEV__) {
+  console.log('✅ API Base URL:', API_BASE_URL);
+}
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -131,8 +133,7 @@ const emitApiPerformanceEvent = async (params: {
   const config = params.config;
   const skip = config?.metadata?.skipPerformanceMonitoring || config?.skipPerformanceMonitoring;
   if (skip) return;
-  if (typeof (apiClient as any).post !== 'function') return;
-
+  if (typeof apiClient.post !== 'function') return;
   await apiClient.post(
     '/performance/event',
     {
@@ -153,7 +154,7 @@ const emitApiPerformanceEvent = async (params: {
     {
       skipPerformanceMonitoring: true,
       timeout: 3000,
-    } as any,
+    } as ExtendedRequestConfig,
   );
 };
 
@@ -194,8 +195,7 @@ apiClient.interceptors.request.use(
 
     const token = await storage.getToken();
     if (token) {
-      extendedConfig.headers = extendedConfig.headers || {};
-      extendedConfig.headers.Authorization = `Bearer ${token}`;
+      config.headers.set('Authorization', `Bearer ${token}`);
     }
     return config;
   },
@@ -217,8 +217,10 @@ apiClient.interceptors.response.use(
     });
     return response;
   },
-  async (error: any) => {
-    const config: ExtendedRequestConfig | undefined = error?.config;
+  async (error: AxiosError) => {
+    const config: ExtendedRequestConfig | undefined = error?.config as
+      | ExtendedRequestConfig
+      | undefined;
     const startedAt = config?.metadata?.startTime || Date.now();
 
     await emitApiPerformanceEvent({
@@ -230,8 +232,6 @@ apiClient.interceptors.response.use(
     });
 
     if (error.response?.status === 401) {
-      console.log('Unauthorized access - token expired or invalid');
-
       try {
         await storage.clearAll();
       } catch (storageError) {

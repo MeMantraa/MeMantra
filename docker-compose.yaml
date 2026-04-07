@@ -14,6 +14,7 @@ services:
       CI: '1'
       HUSKY: '0'
       DB_HOST: db
+      REDIS_URL: redis://redis:6379
       PNPM_HOME: /root/.local/share/pnpm
       PNPM_CONFIG_STORE_DIR: /root/.local/share/pnpm/store
     entrypoint: ['/bin/sh', '-lc']
@@ -34,6 +35,21 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  #Redis cache
+  redis:
+    image: redis:7-alpine
+    ports:
+      - '${REDIS_PORT:-6379}:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   mobile:
     build:
@@ -125,6 +141,7 @@ services:
 volumes:
   postgres_data:
   pgadmin_data:
+  redis_data:
   root_node_modules:
   backend_node_modules:
   mobile_node_modules:

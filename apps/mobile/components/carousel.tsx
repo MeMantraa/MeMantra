@@ -193,7 +193,7 @@ const MantraCarousel = memo(
       >
         <View
           style={{
-            paddingTop: isDeepDivePage ? 52 : 96,
+            paddingTop: isDeepDivePage ? 72 : 96,
             marginBottom: isDeepDivePage ? 0 : 6,
           }}
         />
@@ -332,12 +332,13 @@ const MantraCarousel = memo(
                   marginBottom: 10,
                   backgroundColor: colors.primaryDark + 'F5',
                   borderRadius: 999,
-                  paddingHorizontal: 8,
+                  paddingHorizontal: 6,
                   height: 56,
                   width: moreAnim.interpolate({
                     inputRange: [0, 1],
                     outputRange: [0, deepDiveMenuExpandedWidth],
                   }),
+                  justifyContent: 'center',
                   opacity: moreAnim,
                   overflow: 'hidden',
                   flexDirection: 'row',

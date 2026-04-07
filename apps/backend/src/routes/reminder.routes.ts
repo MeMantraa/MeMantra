@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { ReminderController } from '../controllers/reminder.controller';
 import { validateRequest } from '../middleware/validate.middleware';
 import { authenticate } from '../middleware/auth.middleware';
+import { cacheResponse } from '../middleware/cache.middleware';
 import {
   createReminderSchema,
   updateReminderSchema,
@@ -16,9 +17,17 @@ const router = Router();
 // All reminder routes require authentication
 router.use(authenticate);
 
-router.get('/', ReminderController.getUserReminders);
+router.get(
+  '/',
+  cacheResponse({ ttl: 120, perUser: true, keyPrefix: '/api/reminders' }),
+  ReminderController.getUserReminders,
+);
 
-router.get('/active', ReminderController.getActiveReminders);
+router.get(
+  '/active',
+  cacheResponse({ ttl: 120, perUser: true, keyPrefix: '/api/reminders/active' }),
+  ReminderController.getActiveReminders,
+);
 
 router.get(
   '/upcoming',

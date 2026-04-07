@@ -1,0 +1,69 @@
+appId: com.memantra.mobile
+---
+# Send a message to test_password user
+- launchApp:
+    clearState: true
+
+# Login
+- tapOn: Email
+- inputText: e2eTestUser@gmail.com
+- hideKeyboard
+- tapOn: Password
+- inputText: TestPassword123!
+- hideKeyboard
+- longPressOn: Login
+- tapOn:
+    text: 'Not Now'
+    optional: true
+
+# Wait for feed to load
+- assertVisible:
+    id: feed-list
+
+# Navigate to Chat tab
+- tapOn:
+    point: 50%,97%
+
+# Wait for Messages screen
+- extendedWaitUntil:
+    visible:
+      text: 'Messages'
+    timeout: 10000
+
+# Tap the "+" to start a new conversation
+- tapOn: '+'
+
+# Wait for New Conversation screen
+- extendedWaitUntil:
+    visible:
+      text: 'New Conversation'
+    timeout: 10000
+
+# Search for the target user
+- tapOn: 'Search users...'
+- inputText: test_password
+- hideKeyboard
+
+# Wait for search results to appear
+- extendedWaitUntil:
+    visible:
+      text: 'test_password'
+    timeout: 10000
+
+# Tap the user row in the results list
+- tapOn:
+    point: 50%,25%
+
+# Wait for conversation screen to load
+- extendedWaitUntil:
+    visible:
+      id: send-button
+    timeout: 15000
+
+# Type a message
+- tapOn: 'Type a message...'
+- inputText: Hello from E2E test!
+
+# Send the message
+- tapOn:
+    id: send-button

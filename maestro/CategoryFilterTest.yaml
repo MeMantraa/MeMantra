@@ -1,0 +1,51 @@
+appId: com.memantra.mobile
+---
+# Category filter — apply a category filter and verify feed updates
+- launchApp:
+    clearState: true
+
+# Login
+- tapOn: Email
+- inputText: e2eTestUser@gmail.com
+- hideKeyboard
+- tapOn: Password
+- inputText: TestPassword123!
+- hideKeyboard
+- longPressOn: Login
+- tapOn:
+    text: 'Not Now'
+    optional: true
+
+# Wait for feed
+- assertVisible:
+    id: feed-list
+
+# Open category filter (funnel icon top-left)
+- tapOn:
+    id: category-filter-btn
+
+# Verify filter sheet is visible
+- assertVisible:
+    id: category-filter-sheet
+
+# Select the first category (tap first item in the list)
+- tapOn:
+    point: 50%,45%
+
+# Apply filter
+- tapOn:
+    id: apply-filter-btn
+
+# Verify feed is still visible (filtered)
+- assertVisible:
+    id: feed-list
+
+# Re-open filter and clear
+- tapOn:
+    id: category-filter-btn
+- tapOn:
+    id: clear-filter-btn
+- tapOn:
+    id: apply-filter-btn
+- assertVisible:
+    id: feed-list

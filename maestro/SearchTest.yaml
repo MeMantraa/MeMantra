@@ -1,0 +1,31 @@
+appId: com.memantra.mobile
+---
+# Search — open search, type a query, verify results appear
+- launchApp:
+    clearState: true
+
+# Login
+- tapOn: Email
+- inputText: e2eTestUser@gmail.com
+- hideKeyboard
+- tapOn: Password
+- inputText: TestPassword123!
+- hideKeyboard
+- longPressOn: Login
+- tapOn:
+    text: 'Not Now'
+    optional: true
+
+# Open search (navigates to Search screen with auto-focused input)
+- tapOn:
+    id: search-toggle-button
+
+- inputText: confidence
+
+# Verify results count text appears
+- assertVisible: 'confidence'
+
+# Go back to feed
+- tapOn: 'Go back'
+- assertVisible:
+    id: feed-list

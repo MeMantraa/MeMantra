@@ -1,17 +1,10 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  FlatList,
-  TouchableOpacity,
-  Dimensions,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import React from 'react';
+import { View, FlatList, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
-import { Mantra, mantraService } from '../services/mantra.service';
-import { storage } from '../utils/storage';
+import { Mantra } from '../services/mantra.service';
+import { useLikedMantras } from '../hooks';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ITEM_MARGIN = 12;
@@ -20,34 +13,8 @@ const ITEM_SIZE = (SCREEN_WIDTH - ITEM_MARGIN * (NUM_COLUMNS + 1)) / NUM_COLUMNS
 
 export default function LikedScreen({ navigation }: any) {
   const { colors } = useTheme();
-  const [mantras, setMantras] = useState<Mantra[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  useEffect(() => {
-    loadLikedMantras();
-  }, []);
-
-  const loadLikedMantras = async () => {
-    try {
-      const token = (await storage.getToken()) || 'mock-token';
-      const response = await mantraService.getLikedMantras(token);
-      if (response.status === 'success') {
-        setMantras(response.data.mantras);
-      }
-    } catch (err) {
-      console.error('Error fetching liked mantras:', err);
-      Alert.alert('Error', 'Failed to load liked mantras');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    loadLikedMantras();
-  };
+  const { data, isLoading, isRefetching, refetch } = useLikedMantras();
+  const mantras = data?.data?.mantras ?? [];
 
   const renderItem = ({ item }: { item: Mantra }) => (
     <TouchableOpacity
@@ -70,7 +37,7 @@ export default function LikedScreen({ navigation }: any) {
     </TouchableOpacity>
   );
 
-  if (loading) {
+  if (isLoading) {
     return (
       <View className="flex-1" style={{ backgroundColor: colors.primary }}>
         <View className="pt-16 pb-4 px-5 flex-row items-center">
@@ -130,8 +97,8 @@ export default function LikedScreen({ navigation }: any) {
           numColumns={NUM_COLUMNS}
           columnWrapperStyle={{ justifyContent: 'space-between', paddingHorizontal: ITEM_MARGIN }}
           contentContainerStyle={{ padding: ITEM_MARGIN }}
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
+          refreshing={isRefetching}
+          onRefresh={refetch}
         />
       )}
     </View>

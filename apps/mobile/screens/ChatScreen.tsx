@@ -1,43 +1,23 @@
-import React, { useState, useEffect } from 'react';
-import { View, TouchableOpacity, Alert } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, TouchableOpacity } from 'react-native';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import ChatList from '../components/chat/ChatList';
-import { Conversation } from '../types/chat.types';
-import { chatService } from '../services/chat.service';
-import { storage } from '../utils/storage';
+import { useConversations } from '../hooks';
 
 export default function ChatScreen({ navigation }: any) {
   const { colors } = useTheme();
-  const [conversations, setConversations] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: conversations = [], isLoading, refetch } = useConversations();
 
-  useEffect(() => {
-    loadConversations();
-    const unsubscribe = navigation.addListener('focus', () => {
-      loadConversations();
-    });
-    return unsubscribe;
-  }, [navigation]);
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
 
-  const loadConversations = async () => {
-    try {
-      setLoading(true);
-      const token = await storage.getToken();
-      const data = await chatService.getConversations(token || 'mock-token');
-      setConversations(data);
-    } catch (err) {
-      console.error('Error loading conversations:', err);
-      Alert.alert('Error', 'Failed to load conversations. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleConversationPress = (conversation: Conversation) => {
-    navigation.navigate('Conversation', {
-      conversation,
-    });
+  const handleConversationPress = (conversation: any) => {
+    navigation.navigate('Conversation', { conversation });
   };
 
   const handleNewConversation = () => {
@@ -54,11 +34,10 @@ export default function ChatScreen({ navigation }: any) {
 
       <ChatList
         conversations={conversations}
-        loading={loading}
+        loading={isLoading}
         onConversationPress={handleConversationPress}
       />
 
-      {/* Floating Action Button for New Conversation */}
       <TouchableOpacity
         className="absolute bottom-5 right-5 w-14 h-14 rounded-[28px] items-center justify-center shadow-lg"
         style={{ backgroundColor: colors.secondary }}

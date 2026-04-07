@@ -1,19 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import {
-  View,
-  FlatList,
-  TouchableOpacity,
-  Dimensions,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import React from 'react';
+import { View, FlatList, TouchableOpacity, Dimensions, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { Mantra } from '../services/mantra.service';
-import { collectionService } from '../services/collection.service';
-import { storage } from '../utils/storage';
 import { useReminders } from '../hooks/useReminders';
+import { useCollectionById } from '../hooks';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const ITEM_MARGIN = 12;
@@ -24,37 +16,10 @@ export default function BookmarkScreen({ navigation, route }: any) {
   const { colors } = useTheme();
   const { collectionId = 0, collectionName = '' } = route?.params ?? {};
 
-  const [mantras, setMantras] = useState<Mantra[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data, isLoading, isRefetching, refetch } = useCollectionById(collectionId);
+  const mantras = data?.data?.mantras ?? [];
   const { remindersByMantra, getReminderForCollection, handleReminderPress } = useReminders();
   const collectionReminder = getReminderForCollection(collectionId);
-
-  useEffect(() => {
-    loadCollectionMantras();
-  }, [collectionId]);
-
-  const loadCollectionMantras = async () => {
-    try {
-      const token = (await storage.getToken()) || 'mock-token';
-      const response = await collectionService.getCollectionById(collectionId, token);
-
-      if (response.status === 'success' && response.data) {
-        setMantras(response.data.mantras);
-      }
-    } catch (err) {
-      console.error('Error fetching collection mantras:', err);
-      Alert.alert('Error', 'Failed to load mantras');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    loadCollectionMantras();
-  };
 
   const handleMantraReminder = (mantraId: number) => {
     handleReminderPress('mantra', mantraId, navigation);
@@ -102,7 +67,7 @@ export default function BookmarkScreen({ navigation, route }: any) {
     </View>
   );
 
-  if (loading) {
+  if (isLoading) {
     return (
       <View className="flex-1" style={{ backgroundColor: colors.primary }}>
         <View
@@ -192,8 +157,8 @@ export default function BookmarkScreen({ navigation, route }: any) {
           numColumns={NUM_COLUMNS}
           columnWrapperStyle={{ justifyContent: 'space-between', marginBottom: ITEM_MARGIN }}
           contentContainerStyle={{ padding: ITEM_MARGIN }}
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
+          refreshing={isRefetching}
+          onRefresh={refetch}
         />
       )}
     </View>

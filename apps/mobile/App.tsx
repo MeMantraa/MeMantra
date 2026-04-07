@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { Animated, AppState, AppStateStatus, Image, StyleSheet } from 'react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import MainNavigator from './app/index';
@@ -10,6 +11,7 @@ import LibreBaskerville from './assets/fonts/LibreBaskerville-Regular.ttf';
 import * as Font from 'expo-font';
 import { setNavigationRef } from './services/api.config';
 import { engagementService } from './services/engagement.service';
+import { queryClient } from './hooks/queryClient';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -88,45 +90,47 @@ export default function App() {
   }, [appIsReady, fadeAnim, isSplashVisible]);
 
   return (
-    <GestureHandlerRootView style={styles.container}>
-      <NavigationContainer
-        ref={navigationRef}
-        onReady={() => {
-          setNavigationRef(navigationRef.current);
-          const initialRoute = navigationRef.current?.getCurrentRoute?.()?.name || null;
-          previousRouteRef.current = initialRoute;
-          routeChangeStartRef.current = Date.now();
-        }}
-        onStateChange={() => {
-          const currentRoute = navigationRef.current?.getCurrentRoute?.()?.name || null;
-          if (!currentRoute) return;
+    <QueryClientProvider client={queryClient}>
+      <GestureHandlerRootView style={styles.container}>
+        <NavigationContainer
+          ref={navigationRef}
+          onReady={() => {
+            setNavigationRef(navigationRef.current);
+            const initialRoute = navigationRef.current?.getCurrentRoute?.()?.name || null;
+            previousRouteRef.current = initialRoute;
+            routeChangeStartRef.current = Date.now();
+          }}
+          onStateChange={() => {
+            const currentRoute = navigationRef.current?.getCurrentRoute?.()?.name || null;
+            if (!currentRoute) return;
 
-          if (previousRouteRef.current !== currentRoute) {
-            const now = Date.now();
-            engagementService.trackPerformanceEvent({
-              kind: 'mobile_screen',
-              name: currentRoute,
-              duration_ms: now - routeChangeStartRef.current,
-              status: 'success',
-              screen: currentRoute,
-              metadata: {
-                from_screen: previousRouteRef.current,
-              },
-            });
+            if (previousRouteRef.current !== currentRoute) {
+              const now = Date.now();
+              engagementService.trackPerformanceEvent({
+                kind: 'mobile_screen',
+                name: currentRoute,
+                duration_ms: now - routeChangeStartRef.current,
+                status: 'success',
+                screen: currentRoute,
+                metadata: {
+                  from_screen: previousRouteRef.current,
+                },
+              });
 
-            previousRouteRef.current = currentRoute;
-            routeChangeStartRef.current = now;
-          }
-        }}
-      >
-        {appIsReady && <MainNavigator />}
-      </NavigationContainer>
-      {isSplashVisible && (
-        <Animated.View style={[styles.splashOverlay, { opacity: fadeAnim }]} pointerEvents="none">
-          <Image source={splashLogo} style={styles.splashImage} resizeMode="contain" />
-        </Animated.View>
-      )}
-    </GestureHandlerRootView>
+              previousRouteRef.current = currentRoute;
+              routeChangeStartRef.current = now;
+            }
+          }}
+        >
+          {appIsReady && <MainNavigator />}
+        </NavigationContainer>
+        {isSplashVisible && (
+          <Animated.View style={[styles.splashOverlay, { opacity: fadeAnim }]} pointerEvents="none">
+            <Image source={splashLogo} style={styles.splashImage} resizeMode="contain" />
+          </Animated.View>
+        )}
+      </GestureHandlerRootView>
+    </QueryClientProvider>
   );
 }
 
@@ -134,7 +138,7 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   splashOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: '#8E9A86',
+    backgroundColor: '#7BA5B5',
     alignItems: 'center',
     justifyContent: 'center',
   },

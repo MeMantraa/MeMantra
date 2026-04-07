@@ -240,12 +240,13 @@ describe('api.config', () => {
       mockStorage.getToken.mockResolvedValueOnce('valid-jwt-token');
 
       const handler = requestHandlers[0];
-      const config = { url: '/mantras', headers: {} };
+      const setMock = jest.fn();
+      const config = { url: '/mantras', headers: { set: setMock } };
 
-      const result = await handler.fulfilled(config);
+      await handler.fulfilled(config);
 
       expect(mockStorage.getToken).toHaveBeenCalled();
-      expect(result.headers.Authorization).toBe('Bearer valid-jwt-token');
+      expect(setMock).toHaveBeenCalledWith('Authorization', 'Bearer valid-jwt-token');
       consoleSpy.mockRestore();
     });
 
@@ -254,12 +255,13 @@ describe('api.config', () => {
       mockStorage.getToken.mockResolvedValueOnce(null);
 
       const handler = requestHandlers[0];
-      const config = { url: '/mantras', headers: {} };
+      const setMock = jest.fn();
+      const config = { url: '/mantras', headers: { set: setMock } };
 
-      const result = await handler.fulfilled(config);
+      await handler.fulfilled(config);
 
       expect(mockStorage.getToken).toHaveBeenCalled();
-      expect(result.headers.Authorization).toBeUndefined();
+      expect(setMock).not.toHaveBeenCalled();
       consoleSpy.mockRestore();
     });
 
@@ -268,12 +270,12 @@ describe('api.config', () => {
       mockStorage.getToken.mockResolvedValueOnce('token-123');
 
       const handler = requestHandlers[0];
-      const config = { url: '/mantras' }; // No headers property
+      const setMock = jest.fn();
+      const config = { url: '/mantras', headers: { set: setMock } };
 
-      const result = await handler.fulfilled(config);
+      await handler.fulfilled(config);
 
-      expect(result.headers).toBeDefined();
-      expect(result.headers.Authorization).toBe('Bearer token-123');
+      expect(setMock).toHaveBeenCalledWith('Authorization', 'Bearer token-123');
       consoleSpy.mockRestore();
     });
   });

@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { JournalController } from '../controllers/journal.controller';
 import { validateRequest } from '../middleware/validate.middleware';
 import { authenticate } from '../middleware/auth.middleware';
+import { cacheResponse } from '../middleware/cache.middleware';
 import {
   createJournalSchema,
   updateJournalSchema,
@@ -16,17 +17,27 @@ const router = Router();
 router.use(authenticate);
 
 // GET /api/journal/stats - Get journal statistics (must be before /:journalId)
-router.get('/stats', JournalController.getJournalStats);
+router.get(
+  '/stats',
+  cacheResponse({ ttl: 120, perUser: true, keyPrefix: '/api/journal/stats' }),
+  JournalController.getJournalStats,
+);
 
 // GET /api/journal/mantra/:mantraId - Get journal entries for a specific mantra
 router.get(
   '/mantra/:mantraId',
   validateRequest(mantraIdParamSchema),
+  cacheResponse({ ttl: 120, perUser: true }),
   JournalController.getJournalEntriesByMantra,
 );
 
 // GET /api/journal - Get all journal entries with filtering
-router.get('/', validateRequest(journalQuerySchema), JournalController.getAllJournalEntries);
+router.get(
+  '/',
+  validateRequest(journalQuerySchema),
+  cacheResponse({ ttl: 120, perUser: true, keyPrefix: '/api/journal' }),
+  JournalController.getAllJournalEntries,
+);
 
 // GET /api/journal/:journalId - Get a single journal entry
 router.get('/:journalId', validateRequest(journalIdSchema), JournalController.getJournalEntryById);

@@ -46,10 +46,7 @@ const mockMantra = (id: number) => ({
   created_at: new Date().toISOString() as string | null,
 });
 
-const mockUser = (
-  id: number,
-  overrides: Partial<User> = {},
-): User => ({
+const mockUser = (id: number, overrides: Partial<User> = {}): User => ({
   user_id: id,
   username: `user${id}`,
   email: `user${id}@example.com`,
@@ -177,9 +174,7 @@ describe('RecommendationNotificationService', () => {
       RecommendationNotificationService.stop();
 
       expect(RecommendationNotificationService.isRunning).toBe(false);
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '🛑 Recommendation notification scheduler stopped',
-      );
+      expect(consoleSpy).toHaveBeenCalledWith('🛑 Recommendation notification scheduler stopped');
 
       consoleSpy.mockRestore();
     });
@@ -237,8 +232,7 @@ describe('RecommendationNotificationService', () => {
     });
 
     it('should return the current UTC hour and minute when timezone is UTC', () => {
-      const { hour, minute } =
-        RecommendationNotificationService.getCurrentTimeInTimezone('UTC');
+      const { hour, minute } = RecommendationNotificationService.getCurrentTimeInTimezone('UTC');
       const now = new Date();
 
       expect(hour).toBe(now.getUTCHours());
@@ -253,7 +247,7 @@ describe('RecommendationNotificationService', () => {
       const utcTotal = utc.hour * 60 + utc.minute;
       const tokyoTotal = tokyo.hour * 60 + tokyo.minute;
       // Difference should be 9 h = 540 min (mod 1440 for midnight wrap)
-      const diff = ((tokyoTotal - utcTotal) + 1440) % 1440;
+      const diff = (tokyoTotal - utcTotal + 1440) % 1440;
       expect(diff).toBe(540);
     });
   });
@@ -267,7 +261,7 @@ describe('RecommendationNotificationService', () => {
       if (getTimeSpy) getTimeSpy.mockRestore();
     });
 
-    it('should return true when it is 9:00 AM in the user\'s timezone and never sent', () => {
+    it("should return true when it is 9:00 AM in the user's timezone and never sent", () => {
       getTimeSpy = jest
         .spyOn(RecommendationNotificationService, 'getCurrentTimeInTimezone')
         .mockReturnValue({ hour: 9, minute: 0 });
@@ -295,7 +289,7 @@ describe('RecommendationNotificationService', () => {
       expect(RecommendationNotificationService.shouldSendToUser(mockUser(1))).toBe(true);
     });
 
-    it('should return false when a notification was already sent today in the user\'s timezone', () => {
+    it("should return false when a notification was already sent today in the user's timezone", () => {
       getTimeSpy = jest
         .spyOn(RecommendationNotificationService, 'getCurrentTimeInTimezone')
         .mockReturnValue({ hour: 9, minute: 0 });
@@ -377,7 +371,9 @@ describe('RecommendationNotificationService', () => {
 
       const result = await RecommendationNotificationService.sendToUser(1, DEVICE_TOKEN);
 
-      expect(mockedRecommendationEngine.generateRecommendations).toHaveBeenCalledWith(1, { limit: 1 });
+      expect(mockedRecommendationEngine.generateRecommendations).toHaveBeenCalledWith(1, {
+        limit: 1,
+      });
       expect(mockedGenerateNotificationContent).toHaveBeenCalledWith({
         mantraText: 'Takeaway 42',
         categoryName: 'Mindfulness',
@@ -565,7 +561,9 @@ describe('RecommendationNotificationService', () => {
       expect(results).toHaveLength(1);
       expect(results[0]).toEqual({ userId: 1, success: true });
       expect(mockedRecommendationEngine.generateRecommendations).toHaveBeenCalledTimes(1);
-      expect(mockedRecommendationEngine.generateRecommendations).toHaveBeenCalledWith(1, { limit: 1 });
+      expect(mockedRecommendationEngine.generateRecommendations).toHaveBeenCalledWith(1, {
+        limit: 1,
+      });
 
       consoleSpy.mockRestore();
     });
@@ -575,9 +573,7 @@ describe('RecommendationNotificationService', () => {
       shouldSendSpy = jest
         .spyOn(RecommendationNotificationService, 'shouldSendToUser')
         .mockReturnValue(true);
-      mockedRecommendationEngine.generateRecommendations.mockResolvedValue([
-        mockRecommendation(5),
-      ]);
+      mockedRecommendationEngine.generateRecommendations.mockResolvedValue([mockRecommendation(5)]);
       mockedNotificationService.sendSimpleNotification.mockResolvedValue({
         data: [{ status: 'ok' }],
       });
@@ -592,7 +588,7 @@ describe('RecommendationNotificationService', () => {
       );
     });
 
-    it('should not persist recommendation_notif_sent_at when send fails', async () => {
+    it('should still persist recommendation_notif_sent_at even when send fails (prevents duplicates on crash)', async () => {
       mockedUserModel.findAllWithDeviceTokens.mockResolvedValue([mockUser(1)]);
       shouldSendSpy = jest
         .spyOn(RecommendationNotificationService, 'shouldSendToUser')
@@ -603,7 +599,10 @@ describe('RecommendationNotificationService', () => {
 
       await RecommendationNotificationService.processAllUsers();
 
-      expect(mockedUserModel.update).not.toHaveBeenCalled();
+      expect(mockedUserModel.update).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({ recommendation_notif_sent_at: expect.any(String) }),
+      );
     });
 
     it('should continue processing remaining users when one fails', async () => {
@@ -616,9 +615,9 @@ describe('RecommendationNotificationService', () => {
         .spyOn(RecommendationNotificationService, 'shouldSendToUser')
         .mockReturnValue(true);
       mockedRecommendationEngine.generateRecommendations
-        .mockResolvedValueOnce([])                               // user 1: no results
+        .mockResolvedValueOnce([]) // user 1: no results
         .mockResolvedValueOnce([mockRecommendation(20, 'Calm')]) // user 2: success
-        .mockRejectedValueOnce(new Error('Engine error'));        // user 3: throws
+        .mockRejectedValueOnce(new Error('Engine error')); // user 3: throws
 
       mockedNotificationService.sendSimpleNotification.mockResolvedValue({
         data: [{ status: 'ok' }],
@@ -630,7 +629,11 @@ describe('RecommendationNotificationService', () => {
       const results = await RecommendationNotificationService.processAllUsers();
 
       expect(results).toHaveLength(3);
-      expect(results[0]).toEqual({ userId: 1, success: false, error: 'No recommendations available' });
+      expect(results[0]).toEqual({
+        userId: 1,
+        success: false,
+        error: 'No recommendations available',
+      });
       expect(results[1]).toEqual({ userId: 2, success: true });
       expect(results[2]).toEqual({ userId: 3, success: false, error: 'Engine error' });
     });
@@ -642,7 +645,7 @@ describe('RecommendationNotificationService', () => {
         .mockReturnValue(true);
       mockedRecommendationEngine.generateRecommendations
         .mockResolvedValueOnce([mockRecommendation(1)]) // success
-        .mockResolvedValueOnce([]);                      // failure
+        .mockResolvedValueOnce([]); // failure
 
       mockedNotificationService.sendSimpleNotification.mockResolvedValue({
         data: [{ status: 'ok' }],
@@ -652,9 +655,7 @@ describe('RecommendationNotificationService', () => {
 
       await RecommendationNotificationService.processAllUsers();
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining('1 sent, 1 failed'),
-      );
+      expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('1 sent, 1 failed'));
 
       consoleSpy.mockRestore();
     });

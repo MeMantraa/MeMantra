@@ -1,14 +1,14 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { View, TouchableOpacity, FlatList, Alert, ActivityIndicator } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import type { StackNavigationProp } from '@react-navigation/stack';
 import type { RootStackParamList } from '../src/navigation/types';
-import { storage } from '../utils/storage';
-import { reminderService, Reminder } from '../services/reminder.service';
+import { Reminder } from '../services/reminder.service';
 import { scheduleSuggestionsService } from '../services/schedule-suggestions.service';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
+import { useAllReminders, useUpdateReminder, useDeleteReminder } from '../hooks';
 
 type RemindersNavProp = StackNavigationProp<RootStackParamList>;
 
@@ -25,7 +25,6 @@ function sortRemindersByStatus(reminders: Reminder[]): Reminder[] {
         return 99;
     }
   };
-
   return [...reminders].sort((a, b) => getStatusPriority(a.status) - getStatusPriority(b.status));
 }
 
@@ -53,45 +52,25 @@ function formatScheduleTimes(times: string[] | null): string {
 export default function RemindersScreen() {
   const navigation = useNavigation<RemindersNavProp>();
   const { colors } = useTheme();
-  const [reminders, setReminders] = useState<Reminder[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const loadReminders = useCallback(async () => {
-    try {
-      setLoading(true);
-      const token = await storage.getToken();
-      if (!token) return;
+  const { data, isLoading, refetch } = useAllReminders();
+  const updateReminder = useUpdateReminder();
+  const deleteReminder = useDeleteReminder();
 
-      const response = await reminderService.getReminders(token);
-      if (response.status === 'success') {
-        setReminders(sortRemindersByStatus(response.data.reminders));
-      }
-    } catch (error) {
-      console.error('Error loading reminders:', error);
-      Alert.alert('Error', 'Failed to load reminders');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const reminders = useMemo(() => sortRemindersByStatus(data?.data?.reminders ?? []), [data]);
 
   useFocusEffect(
     useCallback(() => {
-      loadReminders();
-    }, [loadReminders]),
+      refetch();
+    }, [refetch]),
   );
 
-  const handleToggleStatus = async (reminder: Reminder) => {
-    try {
-      const token = await storage.getToken();
-      if (!token) return;
-
-      const newStatus = reminder.status === 'active' ? 'paused' : 'active';
-      await reminderService.updateReminder(reminder.reminder_id, { status: newStatus }, token);
-      await loadReminders();
-    } catch (error) {
-      console.error('Error updating reminder:', error);
-      Alert.alert('Error', 'Failed to update reminder');
-    }
+  const handleToggleStatus = (reminder: Reminder) => {
+    const newStatus = reminder.status === 'active' ? 'paused' : 'active';
+    updateReminder.mutate(
+      { reminderId: reminder.reminder_id, data: { status: newStatus } },
+      { onError: () => Alert.alert('Error', 'Failed to update reminder') },
+    );
   };
 
   const handleDelete = (reminder: Reminder) => {
@@ -101,17 +80,9 @@ export default function RemindersScreen() {
         text: 'Delete',
         style: 'destructive',
         onPress: () => {
-          void (async () => {
-            try {
-              const token = await storage.getToken();
-              if (!token) return;
-              await reminderService.deleteReminder(reminder.reminder_id, token);
-              await loadReminders();
-            } catch (error) {
-              console.error('Error deleting reminder:', error);
-              Alert.alert('Error', 'Failed to delete reminder');
-            }
-          })();
+          deleteReminder.mutate(reminder.reminder_id, {
+            onError: () => Alert.alert('Error', 'Failed to delete reminder'),
+          });
         },
       },
     ]);
@@ -119,8 +90,14 @@ export default function RemindersScreen() {
 
   const renderReminder = ({ item }: { item: Reminder }) => {
     const isMantra = item.mantra_id !== null;
-    const typeLabel = isMantra ? 'Mantra' : 'Collection';
-    const linkedName = isMantra ? item.mantra_title : item.collection_name;
+    const isJournal = item.journal_id !== null;
+    const typeLabel = isMantra ? 'Mantra' : isJournal ? 'Journal' : 'Collection';
+    const typeIcon = isMantra ? 'leaf-outline' : isJournal ? 'book-outline' : 'folder-outline';
+    const linkedName = isMantra
+      ? item.mantra_title
+      : isJournal
+        ? item.journal_title
+        : item.collection_name;
     const isActive = item.status === 'active';
     const isCompleted = item.status === 'completed';
     const isRoutine = item.frequency === 'routine';
@@ -133,14 +110,10 @@ export default function RemindersScreen() {
         {/* Header row: type badge + status badge */}
         <View className="flex-row justify-between items-center mb-3">
           <View
-            className="flex-row items-center gap-1 px-2.5 py-1 rounded-xl"
+            className="flex-row items-center gap-2 px-2.5 py-1 rounded-xl"
             style={{ backgroundColor: colors.primaryDark + '22' }}
           >
-            <Ionicons
-              name={isMantra ? 'leaf-outline' : 'folder-outline'}
-              size={14}
-              color={colors.primaryDark}
-            />
+            <Ionicons name={typeIcon as any} size={14} color={colors.primaryDark} />
             <AppText className="text-xs" style={{ color: colors.primaryDark }}>
               {typeLabel}
             </AppText>
@@ -215,7 +188,7 @@ export default function RemindersScreen() {
         {!isCompleted && (
           <View className="flex-row border-t border-[#F3F4F6] pt-3 gap-4">
             <TouchableOpacity
-              className="flex-row items-center gap-1"
+              className="flex-row items-center gap-2"
               onPress={() => handleToggleStatus(item)}
             >
               <Ionicons
@@ -228,7 +201,7 @@ export default function RemindersScreen() {
               </AppText>
             </TouchableOpacity>
             <TouchableOpacity
-              className="flex-row items-center gap-1"
+              className="flex-row items-center gap-2"
               onPress={() => handleDelete(item)}
             >
               <Ionicons name="trash-outline" size={20} color="#EF4444" />
@@ -270,7 +243,7 @@ export default function RemindersScreen() {
       </View>
 
       {/* Content */}
-      {loading ? (
+      {isLoading ? (
         <ActivityIndicator size="large" color={colors.text} className="mt-10" />
       ) : reminders.length === 0 ? (
         <View className="flex-1 justify-center items-center px-10">
@@ -282,7 +255,8 @@ export default function RemindersScreen() {
             className="text-[15px] text-center leading-[22px] mb-6 opacity-80"
             style={{ color: colors.text }}
           >
-            Create a reminder to get notified about your favourite mantras or collections.
+            Create a reminder to get notified about your favourite mantras, collections, or journal
+            entries.
           </AppText>
           <TouchableOpacity
             className="py-3.5 px-8 rounded-xl"
