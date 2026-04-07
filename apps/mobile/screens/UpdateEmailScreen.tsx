@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TouchableOpacity, Alert } from 'react-native';
+import { View, TouchableOpacity, Alert, KeyboardAvoidingView, ScrollView } from 'react-native';
 import { storage } from '../utils/storage';
 import { useNavigation } from '@react-navigation/native';
 import { authService } from '../services/auth.service';
@@ -55,53 +55,65 @@ export default function UpdateEmailScreen() {
   };
 
   return (
-    <View
-      className="flex-1 pt-16 px-10"
-      style={[styles.container, { backgroundColor: colors.primary }]}
+    <KeyboardAvoidingView
+      className="flex-1"
+      behavior="padding"
+      style={{ backgroundColor: colors.primary }}
     >
-      {/* Back Button */}
-      <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-        <AppText style={[styles.backText, { color: colors.text }]}>Back</AppText>
-      </TouchableOpacity>
-
-      <AppText style={[styles.title, { color: colors.text }]}>Update Email</AppText>
-
-      <AppTextInput
-        style={[styles.input, { borderColor: colors.primaryDark, color: colors.text }]}
-        value={oldEmail}
-        onChangeText={setOldEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        placeholder="Current email"
-        placeholderTextColor={colors.placeholderText}
-      />
-
-      <AppTextInput
-        style={[styles.input, { borderColor: colors.primaryDark, color: colors.text }]}
-        value={password}
-        onChangeText={setPassword}
-        autoCapitalize="none"
-        placeholder="Current password"
-        placeholderTextColor={colors.placeholderText}
-        secureTextEntry
-      />
-
-      <AppTextInput
-        style={[styles.input, { borderColor: colors.primaryDark, color: colors.text }]}
-        value={newEmail}
-        onChangeText={setNewEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        placeholder="New email"
-        placeholderTextColor={colors.placeholderText}
-      />
-
-      <TouchableOpacity
-        style={[styles.button, { backgroundColor: colors.primaryDark }]}
-        onPress={handleUpdate}
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <AppText style={[styles.buttonText, { color: colors.text }]}>Save Email</AppText>
-      </TouchableOpacity>
-    </View>
+        <View
+          className="flex-1 pt-16 px-10"
+          style={[styles.container, { backgroundColor: colors.primary }]}
+        >
+          {/* Back Button */}
+          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+            <AppText style={[styles.backText, { color: colors.text }]}>Back</AppText>
+          </TouchableOpacity>
+
+          <AppText style={[styles.title, { color: colors.text }]}>Update Email</AppText>
+
+          <AppTextInput
+            style={[styles.input, { borderColor: colors.primaryDark, color: colors.text }]}
+            value={oldEmail}
+            onChangeText={setOldEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            placeholder="Current email"
+            placeholderTextColor={colors.placeholderText}
+          />
+
+          <AppTextInput
+            style={[styles.input, { borderColor: colors.primaryDark, color: colors.text }]}
+            value={password}
+            onChangeText={setPassword}
+            autoCapitalize="none"
+            placeholder="Current password"
+            placeholderTextColor={colors.placeholderText}
+            secureTextEntry
+          />
+
+          <AppTextInput
+            style={[styles.input, { borderColor: colors.primaryDark, color: colors.text }]}
+            value={newEmail}
+            onChangeText={setNewEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            placeholder="New email"
+            placeholderTextColor={colors.placeholderText}
+          />
+
+          <TouchableOpacity
+            style={[styles.button, { backgroundColor: colors.primaryDark }]}
+            onPress={handleUpdate}
+          >
+            <AppText style={[styles.buttonText, { color: colors.text }]}>Save Email</AppText>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
