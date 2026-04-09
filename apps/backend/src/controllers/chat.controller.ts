@@ -3,6 +3,7 @@ import { ConversationModel } from '../models/conversation.model';
 import { MessageModel } from '../models/message.model';
 import { MessageReactionModel } from '../models/messageReaction.model';
 import { UserModel } from '../models/user.model';
+import { UserBlockModel } from '../models/userBlock.model';
 
 export const ChatController = {
   // GET /api/chat/users - Get all users for chat purposes (authenticated users only)
@@ -186,6 +187,21 @@ export const ChatController = {
           status: 'error',
           message: 'Access denied',
         });
+      }
+
+      // Check if either user has blocked the other
+      const convo = await ConversationModel.findById(conversation_id);
+      if (convo) {
+        const otherUserId = convo.user1_id === userId ? convo.user2_id : convo.user1_id;
+        const senderBlockedByRecipient = await UserBlockModel.isBlocked(otherUserId, userId);
+        const recipientBlockedBySender = await UserBlockModel.isBlocked(userId, otherUserId);
+
+        if (senderBlockedByRecipient || recipientBlockedBySender) {
+          return res.status(403).json({
+            status: 'error',
+            message: 'Cannot send messages to this user',
+          });
+        }
       }
 
       // If replying to a message, verify it exists and belongs to the same conversation
