@@ -667,3 +667,220 @@ describe('userBlockService', () => {
     });
   });
 });
+
+describe('messageReportService - Additional Edge Cases', () => {
+  const mockToken = 'test-token-edge';
+  const mockApiClient = apiClient as jest.Mocked<typeof apiClient>;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should handle all reason types in reportMessage', async () => {
+    const reasons: Array<
+      | 'inappropriate_language'
+      | 'harassment'
+      | 'spam'
+      | 'offensive_content'
+      | 'misinformation'
+      | 'other'
+    > = [
+      'inappropriate_language',
+      'harassment',
+      'spam',
+      'offensive_content',
+      'misinformation',
+      'other',
+    ];
+
+    for (const reason of reasons) {
+      mockApiClient.post.mockResolvedValueOnce({
+        data: { status: 'success', data: { report: { report_id: 1, reason } } },
+      });
+
+      const result = await messageReportService.reportMessage(
+        { message_id: 1, conversation_id: 1, reason },
+        mockToken,
+      );
+
+      expect(result.status).toBe('success');
+    }
+  });
+
+  it('should handle maximum pagination limits in getAllReports', async () => {
+    mockApiClient.get.mockResolvedValueOnce({
+      data: {
+        status: 'success',
+        data: { reports: [], pagination: { limit: 100, offset: 1000, total: 5000 } },
+      },
+    });
+
+    const result = await messageReportService.getAllReports(mockToken, undefined, 100, 1000);
+
+    expect(result.data.pagination.total).toBe(5000);
+    expect(result.data.pagination.limit).toBe(100);
+  });
+
+  it('should handle all valid status transitions in updateReportStatus', async () => {
+    const transitions = [
+      { from: 'pending', to: 'accepted' },
+      { from: 'pending', to: 'denied' },
+      { from: 'accepted', to: 'reviewed' },
+      { from: 'denied', to: 'reviewed' },
+    ];
+
+    for (const transition of transitions) {
+      mockApiClient.put.mockResolvedValueOnce({
+        data: { status: 'success', data: { report: { report_id: 1, status: transition.to } } },
+      });
+
+      const result = await messageReportService.updateReportStatus(1, transition.to, mockToken);
+
+      expect(result.data?.report.status).toBe(transition.to);
+    }
+  });
+
+  it('should handle review notes with special characters', async () => {
+    const specialNotes = 'User violated policy with "quotes" and <tags> & symbols @#$%';
+
+    mockApiClient.put.mockResolvedValueOnce({
+      data: { status: 'success', data: { report: { report_id: 1, review_notes: specialNotes } } },
+    });
+
+    const result = await messageReportService.updateReportStatus(
+      1,
+      'accepted',
+      mockToken,
+      specialNotes,
+    );
+
+    expect(result.status).toBe('success');
+    expect(mockApiClient.put).toHaveBeenCalledWith(
+      '/moderation/message/1',
+      { status: 'accepted', review_notes: specialNotes },
+      { headers: { Authorization: `Bearer ${mockToken}` } },
+    );
+  });
+
+  it('should handle concurrent API calls', async () => {
+    mockApiClient.post.mockResolvedValue({
+      data: { status: 'success', data: { report: { report_id: 1 } } },
+    });
+
+    const calls = Array.from({ length: 5 }, (_, i) =>
+      messageReportService.reportMessage(
+        { message_id: i, conversation_id: i, reason: 'spam' as const },
+        mockToken,
+      ),
+    );
+
+    const results = await Promise.all(calls);
+
+    expect(results).toHaveLength(5);
+    expect(results.every((r) => r.status === 'success')).toBe(true);
+  });
+
+  it('should handle empty report list', async () => {
+    mockApiClient.get.mockResolvedValueOnce({
+      data: {
+        status: 'success',
+        data: { reports: [], pagination: { limit: 50, offset: 0, total: 0 } },
+      },
+    });
+
+    const result = await messageReportService.getAllReports(mockToken);
+
+    expect(result.data.reports).toHaveLength(0);
+    expect(result.data.pagination.total).toBe(0);
+  });
+
+  it('should preserve token format in headers', async () => {
+    const bearerToken = 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
+
+    mockApiClient.get.mockResolvedValueOnce({
+      data: { status: 'success', data: { reports: [] } },
+    });
+
+    await messageReportService.getAllReports(bearerToken);
+
+    expect(mockApiClient.get).toHaveBeenCalledWith(
+      '/moderation/message',
+      expect.objectContaining({
+        headers: { Authorization: `Bearer ${bearerToken}` },
+      }),
+    );
+  });
+});
+
+describe('userBlockService - Additional Edge Cases', () => {
+  const mockToken = 'test-token-block';
+  const mockApiClient = apiClient as jest.Mocked<typeof apiClient>;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('should handle large user IDs', async () => {
+    const largeUserId = 999999999;
+
+    mockApiClient.post.mockResolvedValueOnce({
+      data: { status: 'success', data: { blocked: true } },
+    });
+
+    const result = await userBlockService.blockUser(largeUserId, mockToken);
+
+    expect(mockApiClient.post).toHaveBeenCalledWith(
+      `/moderation/block/${largeUserId}`,
+      {},
+      { headers: { Authorization: `Bearer ${mockToken}` } },
+    );
+    expect(result.data?.blocked).toBe(true);
+  });
+
+  it('should handle rapid block/unblock operations', async () => {
+    mockApiClient.post.mockResolvedValueOnce({
+      data: { status: 'success' },
+    });
+    mockApiClient.delete.mockResolvedValueOnce({
+      data: { status: 'success' },
+    });
+
+    await userBlockService.blockUser(2, mockToken);
+    const result = await userBlockService.unblockUser(2, mockToken);
+
+    expect(result.status).toBe('success');
+    expect(mockApiClient.post).toHaveBeenCalledTimes(1);
+    expect(mockApiClient.delete).toHaveBeenCalledTimes(1);
+  });
+
+  it('should handle getBlockedUsers with many results', async () => {
+    const manyBlocks = Array.from({ length: 50 }, (_, i) => ({
+      block_id: i,
+      blocked_id: 100 + i,
+    }));
+
+    mockApiClient.get.mockResolvedValueOnce({
+      data: { status: 'success', data: { blockedUsers: manyBlocks } },
+    });
+
+    const result = await userBlockService.getBlockedUsers(mockToken);
+
+    expect(result.data?.blockedUsers).toHaveLength(50);
+    expect(result.data?.blockedUsers[0].block_id).toBe(0);
+    expect(result.data?.blockedUsers[49].block_id).toBe(49);
+  });
+
+  it('should handle concurrent block status checks', async () => {
+    mockApiClient.get.mockResolvedValue({
+      data: { status: 'success', data: { blocked: true } },
+    });
+
+    const userIds = [2, 3, 4, 5, 6];
+    const checks = userIds.map((id) => userBlockService.isBlocked(id, mockToken));
+
+    const results = await Promise.all(checks);
+
+    expect(results).toHaveLength(5);
+    expect(results.every((r) => r.data?.blocked === true)).toBe(true);
+  });
+});
