@@ -722,12 +722,13 @@ describe('messageReportService - Additional Edge Cases', () => {
   });
 
   it('should handle all valid status transitions in updateReportStatus', async () => {
-    const transitions = [
-      { from: 'pending', to: 'accepted' },
-      { from: 'pending', to: 'denied' },
-      { from: 'accepted', to: 'reviewed' },
-      { from: 'denied', to: 'reviewed' },
-    ];
+    const transitions: Array<{ from: string; to: 'denied' | 'pending' | 'accepted' | 'reviewed' }> =
+      [
+        { from: 'pending', to: 'accepted' },
+        { from: 'pending', to: 'denied' },
+        { from: 'accepted', to: 'reviewed' },
+        { from: 'denied', to: 'reviewed' },
+      ];
 
     for (const transition of transitions) {
       mockApiClient.put.mockResolvedValueOnce({
@@ -866,8 +867,8 @@ describe('userBlockService - Additional Edge Cases', () => {
     const result = await userBlockService.getBlockedUsers(mockToken);
 
     expect(result.data?.blockedUsers).toHaveLength(50);
-    expect(result.data?.blockedUsers[0].block_id).toBe(0);
-    expect(result.data?.blockedUsers[49].block_id).toBe(49);
+    expect(result.data?.blockedUsers?.[0].block_id).toBe(0);
+    expect(result.data?.blockedUsers?.[49].block_id).toBe(49);
   });
 
   it('should handle concurrent block status checks', async () => {
