@@ -26,6 +26,7 @@
     },
     "production": {
       "distribution": "store",
+      "autoIncrement": true,
       "cache": {
         "disabled": true
       }
