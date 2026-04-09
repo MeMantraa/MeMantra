@@ -120,6 +120,28 @@ describe('MessageReportController', () => {
 
       expect(mockResponse.status).toHaveBeenCalledWith(403);
     });
+
+    it('should handle errors and return 500', async () => {
+      mockRequest.body = {
+        message_id: 10,
+        conversation_id: 5,
+        reason: 'spam',
+      };
+
+      (MessageModel.findById as jest.Mock).mockRejectedValue(new Error('Database error'));
+
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      await MessageReportController.reportMessage(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'error',
+          message: 'Failed to submit report',
+        }),
+      );
+      consoleSpy.mockRestore();
+    });
   });
 
   describe('getAllReports', () => {
@@ -161,6 +183,23 @@ describe('MessageReportController', () => {
 
       expect(MessageReportModel.findAll).toHaveBeenCalledWith('pending', 50, 0);
     });
+
+    it('should handle errors and return 500', async () => {
+      mockRequest.query = { limit: '50', offset: '0' };
+      (MessageReportModel.findAll as jest.Mock).mockRejectedValue(new Error('Database error'));
+
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      await MessageReportController.getAllReports(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'error',
+          message: 'Failed to fetch reports',
+        }),
+      );
+      consoleSpy.mockRestore();
+    });
   });
 
   describe('getReportById', () => {
@@ -186,6 +225,32 @@ describe('MessageReportController', () => {
       await MessageReportController.getReportById(mockRequest as Request, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(404);
+    });
+
+    it('should return 401 if not authenticated', async () => {
+      mockRequest.user = undefined;
+      mockRequest.params = { id: '1' };
+
+      await MessageReportController.getReportById(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(401);
+    });
+
+    it('should handle errors and return 500', async () => {
+      mockRequest.params = { id: '1' };
+      (MessageReportModel.findById as jest.Mock).mockRejectedValue(new Error('Database error'));
+
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      await MessageReportController.getReportById(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'error',
+          message: 'Failed to fetch report',
+        }),
+      );
+      consoleSpy.mockRestore();
     });
   });
 
@@ -245,6 +310,40 @@ describe('MessageReportController', () => {
 
       expect(mockResponse.status).toHaveBeenCalledWith(404);
     });
+
+    it('should return 401 if not authenticated', async () => {
+      mockRequest.user = undefined;
+      mockRequest.params = { id: '1' };
+      mockRequest.body = { status: 'accepted' };
+
+      await MessageReportController.updateReportStatus(
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(401);
+    });
+
+    it('should handle errors and return 500', async () => {
+      mockRequest.params = { id: '1' };
+      mockRequest.body = { status: 'accepted' };
+      (MessageReportModel.updateStatus as jest.Mock).mockRejectedValue(new Error('Database error'));
+
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      await MessageReportController.updateReportStatus(
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'error',
+          message: 'Failed to update report',
+        }),
+      );
+      consoleSpy.mockRestore();
+    });
   });
 
   describe('deleteReport', () => {
@@ -269,6 +368,23 @@ describe('MessageReportController', () => {
       await MessageReportController.deleteReport(mockRequest as Request, mockResponse as Response);
 
       expect(mockResponse.status).toHaveBeenCalledWith(401);
+    });
+
+    it('should handle errors and return 500', async () => {
+      mockRequest.params = { id: '1' };
+      (MessageReportModel.deleteReport as jest.Mock).mockRejectedValue(new Error('Database error'));
+
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      await MessageReportController.deleteReport(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'error',
+          message: 'Failed to delete report',
+        }),
+      );
+      consoleSpy.mockRestore();
     });
   });
 });
@@ -323,6 +439,32 @@ describe('UserBlockController', () => {
 
       expect(mockResponse.status).toHaveBeenCalledWith(404);
     });
+
+    it('should return 401 if not authenticated', async () => {
+      mockRequest.user = undefined;
+      mockRequest.params = { userId: '2' };
+
+      await UserBlockController.blockUser(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(401);
+    });
+
+    it('should handle errors and return 500', async () => {
+      mockRequest.params = { userId: '2' };
+      (UserModel.findById as jest.Mock).mockRejectedValue(new Error('Database error'));
+
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      await UserBlockController.blockUser(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'error',
+          message: 'Failed to block user',
+        }),
+      );
+      consoleSpy.mockRestore();
+    });
   });
 
   describe('unblockUser', () => {
@@ -339,6 +481,32 @@ describe('UserBlockController', () => {
         expect.objectContaining({ status: 'success' }),
       );
     });
+
+    it('should return 401 if not authenticated', async () => {
+      mockRequest.user = undefined;
+      mockRequest.params = { userId: '2' };
+
+      await UserBlockController.unblockUser(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(401);
+    });
+
+    it('should handle errors and return 500', async () => {
+      mockRequest.params = { userId: '2' };
+      (UserBlockModel.unblockUser as jest.Mock).mockRejectedValue(new Error('Database error'));
+
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      await UserBlockController.unblockUser(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'error',
+          message: 'Failed to unblock user',
+        }),
+      );
+      consoleSpy.mockRestore();
+    });
   });
 
   describe('getBlockedUsers', () => {
@@ -353,6 +521,30 @@ describe('UserBlockController', () => {
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'success' }),
       );
+    });
+
+    it('should return 401 if not authenticated', async () => {
+      mockRequest.user = undefined;
+
+      await UserBlockController.getBlockedUsers(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(401);
+    });
+
+    it('should handle errors and return 500', async () => {
+      (UserBlockModel.getBlockedUsers as jest.Mock).mockRejectedValue(new Error('Database error'));
+
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      await UserBlockController.getBlockedUsers(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'error',
+          message: 'Failed to fetch blocked users',
+        }),
+      );
+      consoleSpy.mockRestore();
     });
   });
 
@@ -370,6 +562,32 @@ describe('UserBlockController', () => {
           data: { blocked: true },
         }),
       );
+    });
+
+    it('should return 401 if not authenticated', async () => {
+      mockRequest.user = undefined;
+      mockRequest.params = { userId: '2' };
+
+      await UserBlockController.isBlocked(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(401);
+    });
+
+    it('should handle errors and return 500', async () => {
+      mockRequest.params = { userId: '2' };
+      (UserBlockModel.isBlocked as jest.Mock).mockRejectedValue(new Error('Database error'));
+
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      await UserBlockController.isBlocked(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.status).toHaveBeenCalledWith(500);
+      expect(mockResponse.json).toHaveBeenCalledWith(
+        expect.objectContaining({
+          status: 'error',
+          message: 'Failed to check block status',
+        }),
+      );
+      consoleSpy.mockRestore();
     });
   });
 });
