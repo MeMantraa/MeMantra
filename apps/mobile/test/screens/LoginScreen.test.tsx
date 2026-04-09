@@ -14,6 +14,7 @@ jest.mock('../../utils/storage', () => ({
   storage: {
     saveToken: jest.fn(),
     saveUserData: jest.fn(),
+    hasAcceptedTerms: jest.fn().mockResolvedValue(true),
   },
 }));
 
