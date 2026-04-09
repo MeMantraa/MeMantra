@@ -21,9 +21,15 @@ export const ReportController = {
         });
       }
 
+      // Sanitize user input before logging to prevent log injection
+      const sanitize = (val: unknown) =>
+        String(val)
+          .replace(/[\n\r\t]/g, ' ')
+          .slice(0, 500);
+
       // Log the report for review
       console.log(
-        `[REPORT] User ${userId} reported message ${message_id} in conversation ${conversation_id}. Reason: ${reason || 'No reason provided'}`,
+        `[REPORT] User ${userId} reported message ${sanitize(message_id)} in conversation ${sanitize(conversation_id)}. Reason: ${sanitize(reason || 'No reason provided')}`,
       );
 
       return res.status(200).json({
