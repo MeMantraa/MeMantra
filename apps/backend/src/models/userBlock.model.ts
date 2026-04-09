@@ -51,7 +51,17 @@ export const UserBlockModel = {
   },
 
   async getBlockedUsers(userId: number) {
-    return db.selectFrom('UserBlock').selectAll().where('blocker_id', '=', userId).execute();
+    return db
+      .selectFrom('UserBlock')
+      .innerJoin('User', 'User.user_id', 'UserBlock.blocked_id')
+      .where('blocker_id', '=', userId)
+      .select([
+        'UserBlock.block_id',
+        'UserBlock.blocked_id as user_id',
+        'User.username',
+        'UserBlock.created_at as blocked_at',
+      ])
+      .execute();
   },
 
   async getBlockingUsers(userId: number) {

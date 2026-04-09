@@ -129,15 +129,16 @@ describe('UserBlockModel', () => {
   });
 
   describe('getBlockedUsers', () => {
-    it('should return all users blocked by a user', async () => {
+    it('should return all users blocked by a user with usernames', async () => {
       const mockBlocks = [
-        { block_id: 1, blocked_id: 2 },
-        { block_id: 2, blocked_id: 3 },
+        { block_id: 1, user_id: 2, username: 'user2', blocked_at: '2024-01-01' },
+        { block_id: 2, user_id: 3, username: 'user3', blocked_at: '2024-01-02' },
       ];
 
       const mockChain = {
-        selectAll: jest.fn().mockReturnThis(),
+        innerJoin: jest.fn().mockReturnThis(),
         where: jest.fn().mockReturnThis(),
+        select: jest.fn().mockReturnThis(),
         execute: jest.fn().mockResolvedValue(mockBlocks),
       };
 
@@ -145,6 +146,11 @@ describe('UserBlockModel', () => {
 
       const result = await UserBlockModel.getBlockedUsers(1);
 
+      expect(mockChain.innerJoin).toHaveBeenCalledWith(
+        'User',
+        'User.user_id',
+        'UserBlock.blocked_id',
+      );
       expect(mockChain.where).toHaveBeenCalledWith('blocker_id', '=', 1);
       expect(result).toEqual(mockBlocks);
     });
