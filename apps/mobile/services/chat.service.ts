@@ -286,9 +286,13 @@ const realChatService = {
     payload: { message_id: number; conversation_id: number; reason?: string },
     token: string,
   ): Promise<void> {
-    await apiClient.post('/report', payload, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    await apiClient.post(
+      '/moderation/message',
+      { ...payload, reason: payload.reason || 'other' },
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
   },
 };
 
