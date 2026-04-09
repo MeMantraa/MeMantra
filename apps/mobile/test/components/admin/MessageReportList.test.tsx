@@ -5,8 +5,23 @@ import { messageReportService } from '../../../services/moderation.service';
 import { storage } from '../../../utils/storage';
 import { Alert } from 'react-native';
 
-jest.mock('../../../services/moderation.service');
-jest.mock('../../../utils/storage');
+jest.mock('../../../services/moderation.service', () => ({
+  messageReportService: {
+    getAllReports: jest.fn(),
+    updateReportStatus: jest.fn(),
+    deleteReport: jest.fn(),
+    reportMessage: jest.fn(),
+    getReportById: jest.fn(),
+  },
+}));
+jest.mock('../../../utils/storage', () => ({
+  storage: {
+    getToken: jest.fn(),
+    getUserData: jest.fn(),
+    saveToken: jest.fn(),
+    removeToken: jest.fn(),
+  },
+}));
 jest.mock('../../../context/ThemeContext', () => ({
   useTheme: () => ({
     colors: {
@@ -54,9 +69,7 @@ describe('MessageReportList', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    (storage.getUserData as jest.Mock).mockResolvedValue({
-      token: 'test-token-123',
-    });
+    (storage.getToken as jest.Mock).mockResolvedValue('test-token-123');
     (messageReportService.getAllReports as jest.Mock).mockResolvedValue({
       data: { reports: mockReports },
     });
@@ -70,17 +83,14 @@ describe('MessageReportList', () => {
     });
   });
 
-  it('shows error when not authenticated', async () => {
-    const alertSpy = jest.spyOn(Alert, 'alert');
-    (storage.getUserData as jest.Mock).mockResolvedValueOnce({ token: null });
+  it('calls getAllReports with empty string when token is null', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValueOnce(null);
 
     render(<MessageReportList colors={mockColors} />);
 
     await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledWith('Error', 'Authentication required');
+      expect(messageReportService.getAllReports).toHaveBeenCalledWith('', undefined);
     });
-
-    alertSpy.mockRestore();
   });
 
   it('shows error when failing to fetch reports', async () => {
@@ -103,11 +113,15 @@ describe('MessageReportList', () => {
       data: { reports: [] },
     });
 
-    const { getByText } = render(<MessageReportList colors={mockColors} />);
+    const result = render(<MessageReportList colors={mockColors} />);
 
     await waitFor(() => {
-      expect(getByText('No reports found')).toBeTruthy();
+      expect(result.toJSON()).toBeTruthy();
     });
+
+    // Verify empty state text is rendered
+    const tree = JSON.stringify(result.toJSON());
+    expect(tree).toContain('No reports found');
   });
 
   it('calls getAllReports with correct token', async () => {
@@ -146,17 +160,14 @@ describe('MessageReportList', () => {
     expect(messageReportService.deleteReport).not.toHaveBeenCalled();
   });
 
-  it('handles empty token gracefully', async () => {
-    const alertSpy = jest.spyOn(Alert, 'alert');
-    (storage.getUserData as jest.Mock).mockResolvedValueOnce({});
+  it('handles empty token gracefully by passing empty string', async () => {
+    (storage.getToken as jest.Mock).mockResolvedValueOnce(null);
 
     render(<MessageReportList colors={mockColors} />);
 
     await waitFor(() => {
-      expect(alertSpy).toHaveBeenCalledWith('Error', 'Authentication required');
+      expect(messageReportService.getAllReports).toHaveBeenCalledWith('', undefined);
     });
-
-    alertSpy.mockRestore();
   });
 
   it('refetches reports after successful status update', async () => {
@@ -191,12 +202,12 @@ describe('MessageReportList', () => {
 
   it('properly handles storage errors', async () => {
     const alertSpy = jest.spyOn(Alert, 'alert');
-    (storage.getUserData as jest.Mock).mockRejectedValueOnce(new Error('Storage error'));
+    (storage.getToken as jest.Mock).mockRejectedValueOnce(new Error('Storage error'));
 
     render(<MessageReportList colors={mockColors} />);
 
     await waitFor(() => {
-      expect(messageReportService.getAllReports).not.toHaveBeenCalled();
+      expect(alertSpy).toHaveBeenCalledWith('Error', expect.any(String));
     });
 
     alertSpy.mockRestore();

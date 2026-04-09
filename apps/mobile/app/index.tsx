@@ -40,6 +40,7 @@ import RemindersScreen from '../screens/RemindersScreen';
 import CreateReminderScreen from '../screens/CreateReminderScreen';
 import MantraAlgorithmScreen from '../screens/MantraAlgorithmScreen';
 import ThemesScreen from '../screens/ThemesScreen';
+import BlockedUsersScreen from '../screens/BlockedUsersScreen';
 import SearchScreen from '../screens/SearchScreen';
 import TermsOfUseScreen from '../screens/TermsOfUseScreen';
 
@@ -416,6 +417,7 @@ export default function MainNavigator() {
           <Stack.Screen name="CreateReminder" component={CreateReminderScreen} />
           <Stack.Screen name="MantraAlgorithm" component={MantraAlgorithmScreen} />
           <Stack.Screen name="Themes" component={ThemesScreen} options={{ headerShown: false }} />
+          <Stack.Screen name="BlockedUsers" component={BlockedUsersScreen} />
           <Stack.Screen
             name="Search"
             component={SearchScreen}

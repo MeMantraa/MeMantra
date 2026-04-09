@@ -6,6 +6,7 @@ import { ChatBubble } from '../components/chat/ChatBubble';
 import ChatInput from '../components/chat/ChatInput';
 import { Message, Conversation, MessageReaction } from '../types/chat.types';
 import { chatService } from '../services/chat.service';
+import { userBlockService } from '../services/moderation.service';
 import { storage } from '../utils/storage';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -188,6 +189,31 @@ export default function ConversationScreen({ route, navigation }: any) {
     );
   };
 
+  const handleBlockUser = () => {
+    Alert.alert(
+      'Block User',
+      `Are you sure you want to block ${conversation.participant_username}? You will no longer receive messages from this user.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Block',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const token = await storage.getToken();
+              await userBlockService.blockUser(conversation.participant_id, token || '');
+              Alert.alert('Blocked', `${conversation.participant_username} has been blocked.`);
+              navigation.goBack();
+            } catch (err) {
+              console.error('Error blocking user:', err);
+              Alert.alert('Error', 'Failed to block user. Please try again.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const handleReaction = async (messageId: number, emoji: string) => {
     try {
       const token = await storage.getToken();
@@ -307,13 +333,22 @@ export default function ConversationScreen({ route, navigation }: any) {
             {conversation.participant_username}
           </AppText>
 
-          <TouchableOpacity
-            onPress={handleDeleteConversation}
-            className="absolute right-0 p-1"
-            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-          >
-            <Ionicons name="trash-outline" size={22} color={colors.white} />
-          </TouchableOpacity>
+          <View className="absolute right-0 flex-row" style={{ gap: 12 }}>
+            <TouchableOpacity
+              onPress={handleBlockUser}
+              className="p-1"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="ban-outline" size={22} color={colors.white} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={handleDeleteConversation}
+              className="p-1"
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="trash-outline" size={22} color={colors.white} />
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 

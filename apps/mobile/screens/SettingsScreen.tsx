@@ -75,6 +75,7 @@ export default function SettingsScreen() {
           label="Update Password"
           onPress={() => navigation.navigate('UpdatePassword')}
         />
+        <SettingsOption label="Blocked Users" onPress={() => navigation.navigate('BlockedUsers')} />
         <SettingsOption label="Delete Account" onPress={confirmDeleteAccount} destructive />
         <SettingsOption label="Sign Out" onPress={handleLogout} />
       </View>

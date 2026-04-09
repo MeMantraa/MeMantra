@@ -37,14 +37,7 @@ export default function MessageReportList({ colors }: MessageReportListProps) {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const userData = await storage.getUserData();
-      const token = (userData?.token as string) || '';
-
-      if (!token) {
-        Alert.alert('Error', 'Authentication required');
-        return;
-      }
-
+      const token = (await storage.getToken()) || '';
       const response = await messageReportService.getAllReports(token, selectedStatus);
       setReports(response.data.reports || []);
     } catch (error: any) {
@@ -57,14 +50,7 @@ export default function MessageReportList({ colors }: MessageReportListProps) {
   const handleStatusChange = async (reportId: number, newStatus: string) => {
     try {
       setStatusChangeLoading(true);
-      const userData = await storage.getUserData();
-      const token = (userData?.token as string) || '';
-
-      if (!token) {
-        Alert.alert('Error', 'Authentication required');
-        return;
-      }
-
+      const token = (await storage.getToken()) || '';
       await messageReportService.updateReportStatus(reportId, newStatus as any, token);
       Alert.alert('Success', 'Report status updated');
       setSelectedReport(null);
@@ -83,14 +69,7 @@ export default function MessageReportList({ colors }: MessageReportListProps) {
         text: 'Delete',
         onPress: async () => {
           try {
-            const userData = await storage.getUserData();
-            const token = (userData?.token as string) || '';
-
-            if (!token) {
-              Alert.alert('Error', 'Authentication required');
-              return;
-            }
-
+            const token = (await storage.getToken()) || '';
             await messageReportService.deleteReport(reportId, token);
             Alert.alert('Success', 'Report deleted');
             fetchReports();
