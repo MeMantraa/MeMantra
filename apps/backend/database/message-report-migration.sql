@@ -27,8 +27,8 @@ END $$;
 -- Create MessageReport table
 CREATE TABLE IF NOT EXISTS "MessageReport" (
     "report_id" SERIAL PRIMARY KEY,
-    "message_id" INTEGER NOT NULL REFERENCES message(message_id) ON DELETE CASCADE,
-    "conversation_id" INTEGER NOT NULL REFERENCES conversation(conversation_id) ON DELETE CASCADE,
+    "message_id" INTEGER NOT NULL REFERENCES "Message"(message_id) ON DELETE CASCADE,
+    "conversation_id" INTEGER NOT NULL REFERENCES "Conversation"(conversation_id) ON DELETE CASCADE,
     "reported_by_id" INTEGER NOT NULL REFERENCES "User"(user_id) ON DELETE CASCADE,
     "reason" report_reason NOT NULL,
     "description" TEXT,
