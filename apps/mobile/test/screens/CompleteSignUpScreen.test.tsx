@@ -191,7 +191,7 @@ describe('CompleteSignUpScreen', () => {
       });
       expect(mockNavigation.reset).toHaveBeenCalledWith({
         index: 0,
-        routes: [{ name: 'MainApp' }],
+        routes: [{ name: 'TermsOfUse' }],
       });
     });
   });

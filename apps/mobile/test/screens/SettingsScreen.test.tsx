@@ -58,6 +58,7 @@ describe('SettingsScreen', () => {
       expect(getByText('Back')).toBeTruthy();
       expect(getByText('Update Email')).toBeTruthy();
       expect(getByText('Update Password')).toBeTruthy();
+      expect(getByText('Blocked Users')).toBeTruthy();
       expect(getByText('Delete Account')).toBeTruthy();
       expect(getByText('Sign Out')).toBeTruthy();
     });
@@ -83,6 +84,19 @@ describe('SettingsScreen', () => {
     fireEvent.press(updateEmailButton);
 
     expect(mockNavigate).toHaveBeenCalledWith('UpdateEmail');
+  });
+
+  it('navigates to BlockedUsers screen when Blocked Users is pressed', async () => {
+    const { getByText } = render(<SettingsScreen />);
+
+    await waitFor(() => {
+      expect(getByText('Blocked Users')).toBeTruthy();
+    });
+
+    const blockedUsersButton = getByText('Blocked Users');
+    fireEvent.press(blockedUsersButton);
+
+    expect(mockNavigate).toHaveBeenCalledWith('BlockedUsers');
   });
 
   it('navigates to UpdatePassword screen when Update Password is pressed', async () => {

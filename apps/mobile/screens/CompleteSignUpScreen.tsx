@@ -67,9 +67,10 @@ export default function CompleteSignUpScreen({ route, navigation }: any) {
           );
         });
 
+        // New users must accept terms before accessing the app
         navigation.reset({
           index: 0,
-          routes: [{ name: 'MainApp' }],
+          routes: [{ name: 'TermsOfUse' }],
         });
       }
     } catch (error: any) {

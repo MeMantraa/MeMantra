@@ -5,11 +5,13 @@ import { ConversationModel } from '../../src/models/conversation.model';
 import { MessageModel } from '../../src/models/message.model';
 import { MessageReactionModel } from '../../src/models/messageReaction.model';
 import { UserModel } from '../../src/models/user.model';
+import { UserBlockModel } from '../../src/models/userBlock.model';
 
 jest.mock('../../src/models/conversation.model');
 jest.mock('../../src/models/message.model');
 jest.mock('../../src/models/messageReaction.model');
 jest.mock('../../src/models/user.model');
+jest.mock('../../src/models/userBlock.model');
 
 const app = express();
 app.use(express.json());
@@ -220,6 +222,12 @@ describe('ChatController', () => {
     it('should send message successfully', async () => {
       const mockMessage = { message_id: 1, content: 'Hello', sender_id: 1, conversation_id: 1 };
       (ConversationModel.isParticipant as jest.Mock).mockResolvedValue(true);
+      (ConversationModel.findById as jest.Mock).mockResolvedValue({
+        conversation_id: 1,
+        user1_id: 1,
+        user2_id: 2,
+      });
+      (UserBlockModel.isBlocked as jest.Mock).mockResolvedValue(false);
       (MessageModel.create as jest.Mock).mockResolvedValue(mockMessage);
       (ConversationModel.updateTimestamp as jest.Mock).mockResolvedValue(undefined);
 
@@ -230,6 +238,44 @@ describe('ChatController', () => {
       expect(res.status).toBe(201);
       expect(res.body.status).toBe('success');
       expect(res.body.data.message).toEqual(mockMessage);
+    });
+
+    it('should return 403 if sender is blocked by recipient', async () => {
+      (ConversationModel.isParticipant as jest.Mock).mockResolvedValue(true);
+      (ConversationModel.findById as jest.Mock).mockResolvedValue({
+        conversation_id: 1,
+        user1_id: 1,
+        user2_id: 2,
+      });
+      (UserBlockModel.isBlocked as jest.Mock)
+        .mockResolvedValueOnce(true) // recipient blocked sender
+        .mockResolvedValueOnce(false);
+
+      const res = await request(app)
+        .post('/api/chat/messages')
+        .send({ conversation_id: 1, content: 'Hello' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.message).toBe('Cannot send messages to this user');
+    });
+
+    it('should return 403 if sender has blocked recipient', async () => {
+      (ConversationModel.isParticipant as jest.Mock).mockResolvedValue(true);
+      (ConversationModel.findById as jest.Mock).mockResolvedValue({
+        conversation_id: 1,
+        user1_id: 1,
+        user2_id: 2,
+      });
+      (UserBlockModel.isBlocked as jest.Mock)
+        .mockResolvedValueOnce(false) // recipient has not blocked sender
+        .mockResolvedValueOnce(true); // sender has blocked recipient
+
+      const res = await request(app)
+        .post('/api/chat/messages')
+        .send({ conversation_id: 1, content: 'Hello' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.message).toBe('Cannot send messages to this user');
     });
 
     it('should return 400 if conversation_id missing', async () => {
@@ -261,6 +307,12 @@ describe('ChatController', () => {
       const mockReplyToMessage = { message_id: 1, conversation_id: 1, content: 'Original' };
       const mockMessage = { message_id: 2, content: 'Reply', sender_id: 1, conversation_id: 1 };
       (ConversationModel.isParticipant as jest.Mock).mockResolvedValue(true);
+      (ConversationModel.findById as jest.Mock).mockResolvedValue({
+        conversation_id: 1,
+        user1_id: 1,
+        user2_id: 2,
+      });
+      (UserBlockModel.isBlocked as jest.Mock).mockResolvedValue(false);
       (MessageModel.findById as jest.Mock).mockResolvedValue(mockReplyToMessage);
       (MessageModel.create as jest.Mock).mockResolvedValue(mockMessage);
       (ConversationModel.updateTimestamp as jest.Mock).mockResolvedValue(undefined);
@@ -275,6 +327,12 @@ describe('ChatController', () => {
 
     it('should return 404 if reply to message not found', async () => {
       (ConversationModel.isParticipant as jest.Mock).mockResolvedValue(true);
+      (ConversationModel.findById as jest.Mock).mockResolvedValue({
+        conversation_id: 1,
+        user1_id: 1,
+        user2_id: 2,
+      });
+      (UserBlockModel.isBlocked as jest.Mock).mockResolvedValue(false);
       (MessageModel.findById as jest.Mock).mockResolvedValue(null);
 
       const res = await request(app)
@@ -288,6 +346,12 @@ describe('ChatController', () => {
     it('should return 400 if reply message is from different conversation', async () => {
       const mockReplyToMessage = { message_id: 1, conversation_id: 2, content: 'Original' };
       (ConversationModel.isParticipant as jest.Mock).mockResolvedValue(true);
+      (ConversationModel.findById as jest.Mock).mockResolvedValue({
+        conversation_id: 1,
+        user1_id: 1,
+        user2_id: 2,
+      });
+      (UserBlockModel.isBlocked as jest.Mock).mockResolvedValue(false);
       (MessageModel.findById as jest.Mock).mockResolvedValue(mockReplyToMessage);
 
       const res = await request(app)

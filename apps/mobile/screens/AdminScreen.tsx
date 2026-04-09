@@ -25,8 +25,9 @@ import AppText from '../components/UI/textWrapper';
 import { EngagementAnalytics, engagementService } from '../services/engagement.service';
 import FeatureFlagsPanel from '../components/admin/FeatureFlagsPanel';
 import { PerformanceSummary, performanceService } from '../services/performance.service';
+import MessageReportList from '../components/admin/MessageReportList';
 
-type AdminMode = 'mantras' | 'users' | 'categories' | 'analytics' | 'features';
+type AdminMode = 'mantras' | 'users' | 'categories' | 'analytics' | 'features' | 'reports';
 type ActionMode = 'add' | 'manage';
 
 const AdminScreen: React.FC = () => {
@@ -843,9 +844,16 @@ const AdminScreen: React.FC = () => {
         </AppText>
 
         {/* Mode Toggle */}
-        <View
-          className="flex-row p-1 rounded-full mb-4"
-          style={{ backgroundColor: `${colors.primaryDark}55` }}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="mb-4"
+          style={{ flexGrow: 0 }}
+          contentContainerStyle={{
+            backgroundColor: `${colors.primaryDark}55`,
+            borderRadius: 9999,
+            padding: 4,
+          }}
         >
           {(
             [
@@ -854,11 +862,12 @@ const AdminScreen: React.FC = () => {
               { key: 'users', label: 'Users' },
               { key: 'analytics', label: 'Analytics' },
               { key: 'features', label: 'Features' },
+              { key: 'reports', label: 'Reports' },
             ] as const
           ).map(({ key, label }) => (
             <TouchableOpacity
               key={key}
-              className="flex-1 rounded-full py-3"
+              className="rounded-full py-3 px-4"
               onPress={() => {
                 setMode(key);
                 if (key !== 'analytics' && key !== 'features') {
@@ -874,15 +883,16 @@ const AdminScreen: React.FC = () => {
               <AppText
                 className="text-center font-semibold text-xs"
                 style={{ color: mode === key ? colors.primaryDark : colors.text }}
+                numberOfLines={1}
               >
                 {label}
               </AppText>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
 
         {/* Action Toggle: Add vs Manage (hidden for analytics) */}
-        {mode !== 'analytics' && mode !== 'features' && (
+        {mode !== 'analytics' && mode !== 'features' && mode !== 'reports' && (
           <View
             className="flex-row p-1 rounded-full mb-6"
             style={{ backgroundColor: `${colors.primaryDark}33` }}
@@ -1052,6 +1062,9 @@ const AdminScreen: React.FC = () => {
             onChangeUserSearchQuery={setFeatureUserSearchQuery}
           />
         )}
+
+        {/* Message Reports */}
+        {mode === 'reports' && <MessageReportList colors={colors} />}
 
         {/* Analytics */}
         {mode === 'analytics' && (

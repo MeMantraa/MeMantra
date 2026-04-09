@@ -120,6 +120,7 @@ describe('storage utility', () => {
 
       expect(mockSecureStore.deleteItemAsync).toHaveBeenCalledWith('auth_token');
       expect(mockAsyncStorage.removeItem).toHaveBeenCalledWith('@user_data');
+      expect(mockAsyncStorage.removeItem).toHaveBeenCalledWith('@terms_accepted');
     });
 
     it('returns user_id from stored user data', async () => {
@@ -147,6 +148,33 @@ describe('storage utility', () => {
       const userId = await storage.getUserId();
 
       expect(userId).toBeNull();
+    });
+
+    it('returns false when terms have not been accepted', async () => {
+      const storage = loadStorageModule('ios');
+      mockAsyncStorage.getItem.mockResolvedValueOnce(null);
+
+      const result = await storage.hasAcceptedTerms();
+
+      expect(result).toBe(false);
+      expect(mockAsyncStorage.getItem).toHaveBeenCalledWith('@terms_accepted');
+    });
+
+    it('returns true when terms have been accepted', async () => {
+      const storage = loadStorageModule('ios');
+      mockAsyncStorage.getItem.mockResolvedValueOnce('true');
+
+      const result = await storage.hasAcceptedTerms();
+
+      expect(result).toBe(true);
+    });
+
+    it('saves terms accepted flag', async () => {
+      const storage = loadStorageModule('ios');
+
+      await storage.setTermsAccepted();
+
+      expect(mockAsyncStorage.setItem).toHaveBeenCalledWith('@terms_accepted', 'true');
     });
   });
 

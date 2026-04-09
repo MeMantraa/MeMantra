@@ -12,8 +12,11 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.memantra.mobile",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "MeMantra needs access to your camera so you can take a photo to use as your profile picture.",
+        "NSPhotoLibraryUsageDescription": "MeMantra needs access to your photo library so you can choose a photo to use as your profile picture."
+      },
+      "buildNumber": "2"
     },
     "android": {
       "adaptiveIcon": {
@@ -23,7 +26,8 @@
       "edgeToEdgeEnabled": true,
       "softwareKeyboardLayoutMode": "pan",
       "predictiveBackGestureEnabled": false,
-      "package": "com.memantra.mobile",
+      "versionCode": 2,
+      "package": "com.memantra.app",
       "googleServicesFile": "./google-services.json"
     },
     "web": {

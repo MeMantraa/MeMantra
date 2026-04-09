@@ -3,11 +3,16 @@ import { render, fireEvent, waitFor } from '@testing-library/react-native';
 import { ChatBubble } from '../../../components/chat/ChatBubble';
 import { Message } from '../../../types/chat.types';
 import { useNavigation } from '@react-navigation/native';
-import { Animated } from 'react-native';
+import { ActionSheetIOS, Animated } from 'react-native';
 
 jest.mock('@react-navigation/native', () => ({
   useNavigation: jest.fn(),
 }));
+
+// Mock ActionSheetIOS to auto-select "React" (index 1) so emoji picker opens
+jest.spyOn(ActionSheetIOS, 'showActionSheetWithOptions').mockImplementation((_opts, callback) => {
+  callback(1);
+});
 
 jest.mock('../../../context/ThemeContext', () => ({
   useTheme: () => ({
