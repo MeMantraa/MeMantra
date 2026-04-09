@@ -134,6 +134,60 @@ export default function ConversationScreen({ route, navigation }: any) {
     return messages.find((m) => m.message_id === messageId) || null;
   };
 
+  const handleReport = async (msg: Message) => {
+    Alert.alert(
+      'Report Message',
+      'Are you sure you want to report this message as objectionable?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Report',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const token = await storage.getToken();
+              await chatService.reportMessage(
+                {
+                  message_id: msg.message_id,
+                  conversation_id: conversation.conversation_id,
+                },
+                token || '',
+              );
+              Alert.alert('Reported', 'Thank you. Our team will review this within 24 hours.');
+            } catch (err) {
+              console.error('Error reporting message:', err);
+              Alert.alert('Error', 'Failed to submit report. Please try again.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
+  const handleDeleteConversation = () => {
+    Alert.alert(
+      'Delete Conversation',
+      'Are you sure you want to delete this entire conversation? This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const token = await storage.getToken();
+              await chatService.deleteConversation(conversation.conversation_id, token || '');
+              navigation.goBack();
+            } catch (err) {
+              console.error('Error deleting conversation:', err);
+              Alert.alert('Error', 'Failed to delete conversation. Please try again.');
+            }
+          },
+        },
+      ],
+    );
+  };
+
   const handleReaction = async (messageId: number, emoji: string) => {
     try {
       const token = await storage.getToken();
@@ -222,6 +276,7 @@ export default function ConversationScreen({ route, navigation }: any) {
               onSwipeReply={handleSwipeReply}
               replyToMessage={getReplyToMessage(item.reply_to_message_id)}
               onReaction={handleReaction}
+              onReport={handleReport}
               currentUserId={currentUserId}
             />
           </>
@@ -251,6 +306,14 @@ export default function ConversationScreen({ route, navigation }: any) {
           <AppText className="text-2xl font-semibold" style={{ color: colors.white }}>
             {conversation.participant_username}
           </AppText>
+
+          <TouchableOpacity
+            onPress={handleDeleteConversation}
+            className="absolute right-0 p-1"
+            hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          >
+            <Ionicons name="trash-outline" size={22} color={colors.white} />
+          </TouchableOpacity>
         </View>
       </View>
 

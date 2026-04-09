@@ -185,6 +185,21 @@ const mockChatService = {
       setTimeout(() => resolve([]), 200);
     });
   },
+
+  async deleteConversation(conversationId: number, token: string): Promise<void> {
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(), 200);
+    });
+  },
+
+  async reportMessage(
+    payload: { message_id: number; conversation_id: number; reason?: string },
+    token: string,
+  ): Promise<void> {
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(), 200);
+    });
+  },
 };
 
 /**
@@ -259,6 +274,21 @@ const realChatService = {
       headers: { Authorization: `Bearer ${token}` },
     });
     return response.data.data.reactions;
+  },
+
+  async deleteConversation(conversationId: number, token: string): Promise<void> {
+    await apiClient.delete(`/chat/conversations/${conversationId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  async reportMessage(
+    payload: { message_id: number; conversation_id: number; reason?: string },
+    token: string,
+  ): Promise<void> {
+    await apiClient.post('/report', payload, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
   },
 };
 

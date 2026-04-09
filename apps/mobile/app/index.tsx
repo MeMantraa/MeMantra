@@ -41,11 +41,13 @@ import CreateReminderScreen from '../screens/CreateReminderScreen';
 import MantraAlgorithmScreen from '../screens/MantraAlgorithmScreen';
 import ThemesScreen from '../screens/ThemesScreen';
 import SearchScreen from '../screens/SearchScreen';
+import TermsOfUseScreen from '../screens/TermsOfUseScreen';
 
 const Stack = createStackNavigator();
 
 export default function MainNavigator() {
   const [isLoggedIn, setIsLoggedIn] = useState<boolean | null>(null);
+  const [hasAcceptedTerms, setHasAcceptedTerms] = useState<boolean>(true);
   const [pendingVerification, setPendingVerification] = useState<PendingVerification | null>(null);
   const notificationListener = useRef<Notifications.EventSubscription | undefined>(undefined);
   const responseListener = useRef<Notifications.EventSubscription | undefined>(undefined);
@@ -55,7 +57,10 @@ export default function MainNavigator() {
       try {
         const token = await storage.getToken();
         setIsLoggedIn(!!token);
-        if (!token) {
+        if (token) {
+          const termsAccepted = await storage.hasAcceptedTerms();
+          setHasAcceptedTerms(termsAccepted);
+        } else {
           const pending = await storage.getPendingVerification();
           setPendingVerification(pending);
         }
@@ -265,7 +270,15 @@ export default function MainNavigator() {
     <ThemeProvider>
       <SavedProvider>
         <Stack.Navigator
-          initialRouteName={pendingVerification ? 'VerifyCode' : isLoggedIn ? 'MainApp' : 'Login'}
+          initialRouteName={
+            pendingVerification
+              ? 'VerifyCode'
+              : isLoggedIn
+                ? hasAcceptedTerms
+                  ? 'MainApp'
+                  : 'TermsOfUse'
+                : 'Login'
+          }
           screenOptions={{
             headerShown: false,
           }}
@@ -285,6 +298,11 @@ export default function MainNavigator() {
                 close: { animation: 'timing', config: { duration: 400 } },
               },
             }}
+          />
+          <Stack.Screen
+            name="TermsOfUse"
+            component={TermsOfUseScreen}
+            options={{ headerShown: false }}
           />
           <Stack.Screen
             name="Login"

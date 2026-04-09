@@ -42,9 +42,10 @@ export default function LoginScreen({ navigation }: any) {
           );
         });
 
+        const termsAccepted = await storage.hasAcceptedTerms();
         navigation.reset({
           index: 0,
-          routes: [{ name: 'MainApp' }],
+          routes: [{ name: termsAccepted ? 'MainApp' : 'TermsOfUse' }],
         });
       } else {
         Alert.alert('Login Failed', response.message || 'Please try again.');

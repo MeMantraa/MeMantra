@@ -15,6 +15,7 @@ export interface UserData {
 const AUTH_TOKEN_KEY = 'auth_token';
 const USER_DATA_KEY = '@user_data';
 const PENDING_VERIFICATION_KEY = '@pending_verification';
+const TERMS_ACCEPTED_KEY = '@terms_accepted';
 
 interface PendingVerification {
   email: string;
@@ -70,10 +71,20 @@ export const storage = {
     await AsyncStorage.removeItem(USER_DATA_KEY);
   },
 
+  async hasAcceptedTerms(): Promise<boolean> {
+    const value = await AsyncStorage.getItem(TERMS_ACCEPTED_KEY);
+    return value === 'true';
+  },
+
+  async setTermsAccepted(): Promise<void> {
+    await AsyncStorage.setItem(TERMS_ACCEPTED_KEY, 'true');
+  },
+
   async clearAll(): Promise<void> {
     await this.removeToken();
     await AsyncStorage.removeItem(USER_DATA_KEY);
     await AsyncStorage.removeItem(PENDING_VERIFICATION_KEY);
+    await AsyncStorage.removeItem(TERMS_ACCEPTED_KEY);
   },
 
   async savePendingVerification(email: string, flow: string): Promise<void> {

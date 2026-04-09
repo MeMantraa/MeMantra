@@ -7,6 +7,9 @@ import {
   Animated,
   PanResponder,
   Text,
+  ActionSheetIOS,
+  Platform,
+  Alert,
 } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import AppText from '../UI/textWrapper';
@@ -19,6 +22,7 @@ interface ChatBubbleProps {
   onSwipeReply?: (message: Message) => void;
   replyToMessage?: Message | null;
   onReaction?: (messageId: number, emoji: string) => void;
+  onReport?: (message: Message) => void;
   currentUserId?: number;
 }
 
@@ -30,6 +34,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   onSwipeReply,
   replyToMessage,
   onReaction,
+  onReport,
   currentUserId,
 }) => {
   const { colors } = useTheme();
@@ -79,7 +84,32 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   };
 
   const handleLongPress = () => {
-    setShowEmojiPicker(true);
+    if (Platform.OS === 'ios') {
+      ActionSheetIOS.showActionSheetWithOptions(
+        {
+          options: ['Cancel', 'React', 'Report'],
+          cancelButtonIndex: 0,
+          destructiveButtonIndex: 2,
+        },
+        (buttonIndex) => {
+          if (buttonIndex === 1) {
+            setShowEmojiPicker(true);
+          } else if (buttonIndex === 2 && onReport) {
+            onReport(message);
+          }
+        },
+      );
+    } else {
+      Alert.alert('Message Options', 'Choose an action', [
+        { text: 'React', onPress: () => setShowEmojiPicker(true) },
+        {
+          text: 'Report',
+          style: 'destructive',
+          onPress: () => onReport?.(message),
+        },
+        { text: 'Cancel', style: 'cancel' },
+      ]);
+    }
   };
 
   const renderReactions = () => {

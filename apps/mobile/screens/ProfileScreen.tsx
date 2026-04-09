@@ -12,6 +12,7 @@ import {
   ActionSheetIOS,
   Platform,
   Alert,
+  Linking,
 } from 'react-native';
 import AppText from '../components/UI/textWrapper';
 import { profileSettingsStyles as styles } from '../styles/profileSettings.styles';
@@ -256,6 +257,19 @@ export default function ProfileScreen() {
           >
             <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
               Themes
+            </AppText>
+            <Ionicons name="chevron-forward" size={24} color={colors.white} />
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              { marginBottom: 10, flexDirection: 'row', justifyContent: 'space-between' },
+              styles.button,
+              { backgroundColor: colors.primaryDark },
+            ]}
+            onPress={() => Linking.openURL('https://memantra.onrender.com/terms-of-use')}
+          >
+            <AppText className="text-[16px] pt-0.5" style={{ color: colors.text }}>
+              Terms of Use
             </AppText>
             <Ionicons name="chevron-forward" size={24} color={colors.white} />
           </TouchableOpacity>
