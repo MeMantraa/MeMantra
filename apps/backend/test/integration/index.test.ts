@@ -21,7 +21,7 @@ describe('Backend API', () => {
 
     it('should return valid timestamp format', async () => {
       const response = await request(app).get('/health');
-      
+
       const timestamp = new Date(response.body.timestamp);
       expect(timestamp).toBeInstanceOf(Date);
       expect(timestamp.toString()).not.toBe('Invalid Date');
@@ -29,7 +29,7 @@ describe('Backend API', () => {
 
     it('should return numeric uptime', async () => {
       const response = await request(app).get('/health');
-      
+
       expect(typeof response.body.uptime).toBe('number');
       expect(response.body.uptime).toBeGreaterThan(0);
     });
@@ -40,8 +40,8 @@ describe('Backend API', () => {
       const response = await request(app).get('/api/v1/hello');
 
       expect(response.status).toBe(200);
-      expect(response.body).toEqual({ 
-        message: 'Hello from MeMantra API!' 
+      expect(response.body).toEqual({
+        message: 'Hello from MeMantra API!',
       });
     });
 
@@ -49,6 +49,19 @@ describe('Backend API', () => {
       const response = await request(app).get('/api/v1/hello');
 
       expect(response.headers['content-type']).toMatch(/json/);
+    });
+  });
+
+  describe('GET /terms-of-use', () => {
+    it('should return 200 and HTML content', async () => {
+      const response = await request(app).get('/terms-of-use');
+
+      expect(response.status).toBe(200);
+      expect(response.headers['content-type']).toMatch(/html/);
+      expect(response.text).toContain('Terms of Use');
+      expect(response.text).toContain('Zero-Tolerance Content Policy');
+      expect(response.text).toContain('Reporting Objectionable Content');
+      expect(response.text).toContain('Account Termination');
     });
   });
 
