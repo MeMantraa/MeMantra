@@ -17,6 +17,7 @@ import engagementRoutes from './engagement.routes';
 import performanceRoutes from './performance.routes';
 import profileRoutes from './profile.routes';
 import reportRoutes from './report.routes';
+import messageReportRoutes from './messageReport.routes';
 
 const router = Router();
 
@@ -69,5 +70,7 @@ router.use('/performance', performanceRoutes);
 router.use('/profile', profileRoutes);
 // Report routes
 router.use('/report', reportRoutes);
+// Message Report and User Block routes
+router.use('/moderation', messageReportRoutes);
 
 export default router;

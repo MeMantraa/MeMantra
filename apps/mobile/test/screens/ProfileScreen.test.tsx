@@ -4,7 +4,7 @@ import ProfileScreen from '../../screens/ProfileScreen';
 import { storage } from '../../utils/storage';
 import { userService } from '../../services/user.service';
 import { photoUploadUtils } from '../../utils/photoUpload';
-import { Alert, ActionSheetIOS, Platform } from 'react-native';
+import { Alert, ActionSheetIOS, Linking, Platform } from 'react-native';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
   default: {

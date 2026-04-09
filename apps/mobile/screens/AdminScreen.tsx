@@ -25,8 +25,9 @@ import AppText from '../components/UI/textWrapper';
 import { EngagementAnalytics, engagementService } from '../services/engagement.service';
 import FeatureFlagsPanel from '../components/admin/FeatureFlagsPanel';
 import { PerformanceSummary, performanceService } from '../services/performance.service';
+import MessageReportList from '../components/admin/MessageReportList';
 
-type AdminMode = 'mantras' | 'users' | 'categories' | 'analytics' | 'features';
+type AdminMode = 'mantras' | 'users' | 'categories' | 'analytics' | 'features' | 'reports';
 type ActionMode = 'add' | 'manage';
 
 const AdminScreen: React.FC = () => {
@@ -854,6 +855,7 @@ const AdminScreen: React.FC = () => {
               { key: 'users', label: 'Users' },
               { key: 'analytics', label: 'Analytics' },
               { key: 'features', label: 'Features' },
+              { key: 'reports', label: 'Reports' },
             ] as const
           ).map(({ key, label }) => (
             <TouchableOpacity
@@ -1052,6 +1054,9 @@ const AdminScreen: React.FC = () => {
             onChangeUserSearchQuery={setFeatureUserSearchQuery}
           />
         )}
+
+        {/* Message Reports */}
+        {mode === 'reports' && <MessageReportList colors={colors} />}
 
         {/* Analytics */}
         {mode === 'analytics' && (

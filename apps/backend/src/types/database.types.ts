@@ -22,6 +22,8 @@ export interface Database {
   EngagementEvent: EngagementEventTable;
   PerformanceEvent: PerformanceEventTable;
   EmailVerificationToken: EmailVerificationTokenTable;
+  MessageReport: MessageReportTable;
+  UserBlock: UserBlockTable;
 }
 
 export interface UserTable {
@@ -294,4 +296,33 @@ export type NewPerformanceEvent = Insertable<PerformanceEventTable>;
 export type PerformanceEventUpdate = Updateable<PerformanceEventTable>;
 
 export type EmailVerificationToken = Selectable<EmailVerificationTokenTable>;
+
+export interface MessageReportTable {
+  report_id: Generated<number>;
+  message_id: number;
+  conversation_id: number;
+  reported_by_id: number;
+  reason: string;
+  description: string | null;
+  status: string;
+  reviewed_by_id: number | null;
+  review_notes: string | null;
+  created_at: Generated<string>;
+  reviewed_at: string | null;
+}
+
+export type MessageReport = Selectable<MessageReportTable>;
+export type NewMessageReport = Insertable<MessageReportTable>;
+export type MessageReportUpdate = Updateable<MessageReportTable>;
+
+export interface UserBlockTable {
+  block_id: Generated<number>;
+  blocker_id: number;
+  blocked_id: number;
+  created_at: Generated<string>;
+}
+
+export type UserBlock = Selectable<UserBlockTable>;
+export type NewUserBlock = Insertable<UserBlockTable>;
+export type UserBlockUpdate = Updateable<UserBlockTable>;
 export type NewEmailVerificationToken = Insertable<EmailVerificationTokenTable>;
