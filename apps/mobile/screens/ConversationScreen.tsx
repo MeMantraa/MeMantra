@@ -1,5 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, FlatList, KeyboardAvoidingView, TouchableOpacity, Alert } from 'react-native';
+import {
+  View,
+  FlatList,
+  KeyboardAvoidingView,
+  TouchableOpacity,
+  Alert,
+  Modal,
+  Pressable,
+} from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 import AppText from '../components/UI/textWrapper';
 import { ChatBubble } from '../components/chat/ChatBubble';
@@ -20,7 +28,17 @@ export default function ConversationScreen({ route, navigation }: any) {
   const [loading, setLoading] = useState(true);
   const [currentUserId, setCurrentUserId] = useState<number>(1);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [reportingMessage, setReportingMessage] = useState<Message | null>(null);
   const flatListRef = useRef<FlatList>(null);
+
+  const REPORT_REASONS = [
+    { label: 'Inappropriate Language', value: 'inappropriate_language' },
+    { label: 'Harassment', value: 'harassment' },
+    { label: 'Spam', value: 'spam' },
+    { label: 'Offensive Content', value: 'offensive_content' },
+    { label: 'Misinformation', value: 'misinformation' },
+    { label: 'Other', value: 'other' },
+  ] as const;
 
   useEffect(() => {
     loadMessages();
@@ -135,34 +153,29 @@ export default function ConversationScreen({ route, navigation }: any) {
     return messages.find((m) => m.message_id === messageId) || null;
   };
 
-  const handleReport = async (msg: Message) => {
-    Alert.alert(
-      'Report Message',
-      'Are you sure you want to report this message as objectionable?',
-      [
-        { text: 'Cancel', style: 'cancel' },
+  const handleReport = (msg: Message) => {
+    setReportingMessage(msg);
+  };
+
+  const submitReport = async (reason: string) => {
+    if (!reportingMessage) return;
+    try {
+      const token = await storage.getToken();
+      await chatService.reportMessage(
         {
-          text: 'Report',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const token = await storage.getToken();
-              await chatService.reportMessage(
-                {
-                  message_id: msg.message_id,
-                  conversation_id: conversation.conversation_id,
-                },
-                token || '',
-              );
-              Alert.alert('Reported', 'Thank you. Our team will review this within 24 hours.');
-            } catch (err) {
-              console.error('Error reporting message:', err);
-              Alert.alert('Error', 'Failed to submit report. Please try again.');
-            }
-          },
+          message_id: reportingMessage.message_id,
+          conversation_id: conversation.conversation_id,
+          reason,
         },
-      ],
-    );
+        token || '',
+      );
+      setReportingMessage(null);
+      Alert.alert('Reported', 'Thank you. Our team will review this within 24 hours.');
+    } catch (err) {
+      console.error('Error reporting message:', err);
+      setReportingMessage(null);
+      Alert.alert('Error', 'Failed to submit report. Please try again.');
+    }
   };
 
   const handleDeleteConversation = () => {
@@ -358,6 +371,55 @@ export default function ConversationScreen({ route, navigation }: any) {
 
         <ChatInput onSend={handleSend} replyingTo={replyingTo} onCancelReply={handleCancelReply} />
       </KeyboardAvoidingView>
+
+      {/* Report Reason Picker Modal */}
+      <Modal
+        visible={!!reportingMessage}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setReportingMessage(null)}
+      >
+        <Pressable
+          className="flex-1 justify-end bg-black/50"
+          onPress={() => setReportingMessage(null)}
+        >
+          <Pressable
+            className="w-full rounded-t-2xl p-6"
+            style={{ backgroundColor: colors.primary }}
+            onPress={() => {}}
+          >
+            <AppText className="text-xl font-bold mb-2" style={{ color: colors.white }}>
+              Report Message
+            </AppText>
+            <AppText className="text-sm mb-5" style={{ color: `${colors.white}88` }}>
+              Why are you reporting this message?
+            </AppText>
+
+            {REPORT_REASONS.map((reason) => (
+              <TouchableOpacity
+                key={reason.value}
+                className="p-4 rounded-lg mb-2"
+                style={{ backgroundColor: `${colors.primaryDark}55` }}
+                onPress={() => submitReport(reason.value)}
+              >
+                <AppText className="font-semibold" style={{ color: colors.white }}>
+                  {reason.label}
+                </AppText>
+              </TouchableOpacity>
+            ))}
+
+            <TouchableOpacity
+              className="mt-2 p-4 rounded-lg items-center"
+              style={{ backgroundColor: `${colors.white}20` }}
+              onPress={() => setReportingMessage(null)}
+            >
+              <AppText className="font-semibold" style={{ color: colors.white }}>
+                Cancel
+              </AppText>
+            </TouchableOpacity>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }

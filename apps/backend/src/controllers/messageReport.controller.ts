@@ -184,6 +184,15 @@ export const MessageReportController = {
         });
       }
 
+      // Get the report first to access message_id
+      const existingReport = await MessageReportModel.findById(Number(id));
+      if (!existingReport) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Report not found',
+        });
+      }
+
       const report = await MessageReportModel.updateStatus(
         Number(id),
         status,
@@ -191,16 +200,17 @@ export const MessageReportController = {
         review_notes || undefined,
       );
 
-      if (!report) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Report not found',
-        });
+      // If report is accepted, delete the reported message
+      if (status === 'accepted' && existingReport.message_id) {
+        await MessageModel.delete(existingReport.message_id);
       }
 
       return res.status(200).json({
         status: 'success',
-        message: 'Report updated successfully',
+        message:
+          status === 'accepted'
+            ? 'Report accepted and message deleted'
+            : 'Report updated successfully',
         data: { report },
       });
     } catch (error) {
