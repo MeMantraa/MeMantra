@@ -258,10 +258,16 @@ describe('MessageReportController', () => {
     it('should update report status', async () => {
       mockRequest.params = { id: '1' };
       mockRequest.body = { status: 'accepted', review_notes: 'Approved' };
+      (MessageReportModel.findById as jest.Mock).mockResolvedValue({
+        report_id: 1,
+        message_id: 10,
+        status: 'pending',
+      });
       (MessageReportModel.updateStatus as jest.Mock).mockResolvedValue({
         report_id: 1,
         status: 'accepted',
       });
+      (MessageModel.delete as jest.Mock).mockResolvedValue(true);
 
       await MessageReportController.updateReportStatus(
         mockRequest as Request,
@@ -272,6 +278,7 @@ describe('MessageReportController', () => {
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({ status: 'success' }),
       );
+      expect(MessageModel.delete).toHaveBeenCalledWith(10);
     });
 
     it('should return 400 if status is missing', async () => {
@@ -301,7 +308,7 @@ describe('MessageReportController', () => {
     it('should return 404 if report not found', async () => {
       mockRequest.params = { id: '999' };
       mockRequest.body = { status: 'accepted' };
-      (MessageReportModel.updateStatus as jest.Mock).mockResolvedValue(null);
+      (MessageReportModel.findById as jest.Mock).mockResolvedValue(null);
 
       await MessageReportController.updateReportStatus(
         mockRequest as Request,
@@ -309,6 +316,28 @@ describe('MessageReportController', () => {
       );
 
       expect(mockResponse.status).toHaveBeenCalledWith(404);
+    });
+
+    it('should not delete message when status is denied', async () => {
+      mockRequest.params = { id: '1' };
+      mockRequest.body = { status: 'denied' };
+      (MessageReportModel.findById as jest.Mock).mockResolvedValue({
+        report_id: 1,
+        message_id: 10,
+        status: 'pending',
+      });
+      (MessageReportModel.updateStatus as jest.Mock).mockResolvedValue({
+        report_id: 1,
+        status: 'denied',
+      });
+
+      await MessageReportController.updateReportStatus(
+        mockRequest as Request,
+        mockResponse as Response,
+      );
+
+      expect(mockResponse.status).toHaveBeenCalledWith(200);
+      expect(MessageModel.delete).not.toHaveBeenCalled();
     });
 
     it('should return 401 if not authenticated', async () => {
@@ -327,7 +356,7 @@ describe('MessageReportController', () => {
     it('should handle errors and return 500', async () => {
       mockRequest.params = { id: '1' };
       mockRequest.body = { status: 'accepted' };
-      (MessageReportModel.updateStatus as jest.Mock).mockRejectedValue(new Error('Database error'));
+      (MessageReportModel.findById as jest.Mock).mockRejectedValue(new Error('Database error'));
 
       const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       await MessageReportController.updateReportStatus(
