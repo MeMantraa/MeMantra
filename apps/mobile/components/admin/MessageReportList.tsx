@@ -92,7 +92,12 @@ export default function MessageReportList({ colors }: MessageReportListProps) {
   return (
     <View className="flex-1">
       {/* Status Filter */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4 px-4">
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        className="mb-4 px-4"
+        style={{ flexGrow: 0 }}
+      >
         {['All', 'pending', 'accepted', 'denied', 'reviewed'].map((status) => (
           <TouchableOpacity
             key={status}

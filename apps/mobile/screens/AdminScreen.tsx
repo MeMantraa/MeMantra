@@ -844,9 +844,16 @@ const AdminScreen: React.FC = () => {
         </AppText>
 
         {/* Mode Toggle */}
-        <View
-          className="flex-row p-1 rounded-full mb-4"
-          style={{ backgroundColor: `${colors.primaryDark}55` }}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          className="mb-4"
+          style={{ flexGrow: 0 }}
+          contentContainerStyle={{
+            backgroundColor: `${colors.primaryDark}55`,
+            borderRadius: 9999,
+            padding: 4,
+          }}
         >
           {(
             [
@@ -860,7 +867,7 @@ const AdminScreen: React.FC = () => {
           ).map(({ key, label }) => (
             <TouchableOpacity
               key={key}
-              className="flex-1 rounded-full py-3"
+              className="rounded-full py-3 px-4"
               onPress={() => {
                 setMode(key);
                 if (key !== 'analytics' && key !== 'features') {
@@ -876,15 +883,16 @@ const AdminScreen: React.FC = () => {
               <AppText
                 className="text-center font-semibold text-xs"
                 style={{ color: mode === key ? colors.primaryDark : colors.text }}
+                numberOfLines={1}
               >
                 {label}
               </AppText>
             </TouchableOpacity>
           ))}
-        </View>
+        </ScrollView>
 
         {/* Action Toggle: Add vs Manage (hidden for analytics) */}
-        {mode !== 'analytics' && mode !== 'features' && (
+        {mode !== 'analytics' && mode !== 'features' && mode !== 'reports' && (
           <View
             className="flex-row p-1 rounded-full mb-6"
             style={{ backgroundColor: `${colors.primaryDark}33` }}
