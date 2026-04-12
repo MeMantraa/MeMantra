@@ -9,6 +9,8 @@ describe('api.config', () => {
     envApiBaseUrl?: string,
   ) => {
     jest.resetModules();
+    const previousNodeEnv = runtimeProcess.env.NODE_ENV;
+    runtimeProcess.env.NODE_ENV = 'development';
     if (envApiBaseUrl === undefined) {
       delete runtimeProcess.env.EXPO_PUBLIC_API_BASE_URL;
     } else {
@@ -69,6 +71,10 @@ describe('api.config', () => {
       },
     }));
 
+    jest.doMock('../../services/api.config.local', () => ({
+      LOCAL_DEV_IP: null,
+    }));
+
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
     const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
 
@@ -86,6 +92,7 @@ describe('api.config', () => {
         isNavigationReady,
       } = require('../../services/api.config'));
     });
+    runtimeProcess.env.NODE_ENV = previousNodeEnv;
 
     return {
       mockCreate,
@@ -99,35 +106,45 @@ describe('api.config', () => {
       consoleSpy,
       consoleWarnSpy,
       mockStorage,
+      restoreEnv: () => {
+        runtimeProcess.env.NODE_ENV = previousNodeEnv;
+      },
     };
   };
 
   it('configures base URL for Android', () => {
-    const { mockCreate, consoleSpy } = loadModule('android');
+    const { mockCreate, consoleSpy, restoreEnv } = loadModule('android');
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({ baseURL: 'http://10.0.2.2:4000/api' }),
     );
+    restoreEnv();
     consoleSpy.mockRestore();
   });
 
   it('configures base URL for iOS', () => {
-    const { mockCreate, consoleSpy } = loadModule('ios');
+    const { mockCreate, consoleSpy, restoreEnv } = loadModule('ios');
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({ baseURL: 'http://localhost:4000/api' }),
     );
+    restoreEnv();
     consoleSpy.mockRestore();
   });
 
   it('prefers EXPO_PUBLIC_API_BASE_URL when provided', () => {
-    const { mockCreate, consoleSpy } = loadModule('web', null, 'https://staging.example.com');
+    const { mockCreate, consoleSpy, restoreEnv } = loadModule(
+      'web',
+      null,
+      'https://staging.example.com',
+    );
     expect(mockCreate).toHaveBeenCalledWith(
       expect.objectContaining({ baseURL: 'https://staging.example.com/api' }),
     );
+    restoreEnv();
     consoleSpy.mockRestore();
   });
 
   it('passes through request and handles errors via interceptors', async () => {
-    const { requestHandlers, consoleSpy } = loadModule('ios');
+    const { requestHandlers, consoleSpy, restoreEnv } = loadModule('ios');
     const handler = requestHandlers[0];
 
     const config = { url: '/health' };
@@ -135,11 +152,13 @@ describe('api.config', () => {
 
     await expect(handler.rejected(new Error('bad request'))).rejects.toThrow('bad request');
 
+    restoreEnv();
     consoleSpy.mockRestore();
   });
 
   it('returns responses and handles unauthorized errors', async () => {
-    const { responseHandlers, setNavigationRef, consoleSpy, mockStorage } = loadModule('android');
+    const { responseHandlers, setNavigationRef, consoleSpy, mockStorage, restoreEnv } =
+      loadModule('android');
     const handler = responseHandlers[0];
 
     const response = { data: 'ok' };
@@ -162,28 +181,31 @@ describe('api.config', () => {
       routes: [{ name: 'Login' }],
     });
 
+    restoreEnv();
     consoleSpy.mockRestore();
   });
 
   describe('IP Detection', () => {
     it('uses auto-detected IP for iOS when hostUri is provided without tunnel', () => {
-      const { mockCreate, consoleSpy } = loadModule('ios', '192.168.1.100:8081');
+      const { mockCreate, consoleSpy, restoreEnv } = loadModule('ios', '192.168.1.100:8081');
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({ baseURL: 'http://192.168.1.100:4000/api' }),
       );
+      restoreEnv();
       consoleSpy.mockRestore();
     });
 
     it('uses auto-detected IP for Android when hostUri is provided without tunnel', () => {
-      const { mockCreate, consoleSpy } = loadModule('android', '192.168.1.100:8081');
+      const { mockCreate, consoleSpy, restoreEnv } = loadModule('android', '192.168.1.100:8081');
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({ baseURL: 'http://192.168.1.100:4000/api' }),
       );
+      restoreEnv();
       consoleSpy.mockRestore();
     });
 
     it('detects Expo tunnel and warns user', () => {
-      const { mockCreate, consoleSpy, consoleWarnSpy } = loadModule(
+      const { mockCreate, consoleSpy, consoleWarnSpy, restoreEnv } = loadModule(
         'ios',
         '8-o8wbg-test-8081.exp.direct',
       );
@@ -197,46 +219,51 @@ describe('api.config', () => {
         expect.objectContaining({ baseURL: 'http://localhost:4000/api' }),
       );
 
+      restoreEnv();
       consoleSpy.mockRestore();
       consoleWarnSpy.mockRestore();
     });
 
     it('falls back to Android emulator IP when no hostUri', () => {
-      const { mockCreate, consoleSpy } = loadModule('android', null);
+      const { mockCreate, consoleSpy, restoreEnv } = loadModule('android', null);
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({ baseURL: 'http://10.0.2.2:4000/api' }),
       );
+      restoreEnv();
       consoleSpy.mockRestore();
     });
 
     it('falls back to localhost for iOS when no hostUri', () => {
-      const { mockCreate, consoleSpy } = loadModule('ios', null);
+      const { mockCreate, consoleSpy, restoreEnv } = loadModule('ios', null);
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({ baseURL: 'http://localhost:4000/api' }),
       );
+      restoreEnv();
       consoleSpy.mockRestore();
     });
 
     it('configures base URL for web platform', () => {
-      const { mockCreate, consoleSpy } = loadModule('web', null);
+      const { mockCreate, consoleSpy, restoreEnv } = loadModule('web', null);
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({ baseURL: 'http://localhost:4000/api' }),
       );
+      restoreEnv();
       consoleSpy.mockRestore();
     });
 
     it('uses detected IP for web platform when hostUri is provided', () => {
-      const { mockCreate, consoleSpy } = loadModule('web', '192.168.1.50:8081');
+      const { mockCreate, consoleSpy, restoreEnv } = loadModule('web', '192.168.1.50:8081');
       expect(mockCreate).toHaveBeenCalledWith(
         expect.objectContaining({ baseURL: 'http://192.168.1.50:4000/api' }),
       );
+      restoreEnv();
       consoleSpy.mockRestore();
     });
   });
 
   describe('Request Interceptor - Token Attachment', () => {
     it('attaches Authorization header when token exists', async () => {
-      const { requestHandlers, consoleSpy, mockStorage } = loadModule('ios');
+      const { requestHandlers, consoleSpy, mockStorage, restoreEnv } = loadModule('ios');
       mockStorage.getToken.mockResolvedValueOnce('valid-jwt-token');
 
       const handler = requestHandlers[0];
@@ -247,11 +274,12 @@ describe('api.config', () => {
 
       expect(mockStorage.getToken).toHaveBeenCalled();
       expect(setMock).toHaveBeenCalledWith('Authorization', 'Bearer valid-jwt-token');
+      restoreEnv();
       consoleSpy.mockRestore();
     });
 
     it('does not attach Authorization header when no token', async () => {
-      const { requestHandlers, consoleSpy, mockStorage } = loadModule('ios');
+      const { requestHandlers, consoleSpy, mockStorage, restoreEnv } = loadModule('ios');
       mockStorage.getToken.mockResolvedValueOnce(null);
 
       const handler = requestHandlers[0];
@@ -262,11 +290,12 @@ describe('api.config', () => {
 
       expect(mockStorage.getToken).toHaveBeenCalled();
       expect(setMock).not.toHaveBeenCalled();
+      restoreEnv();
       consoleSpy.mockRestore();
     });
 
     it('creates headers object if not present', async () => {
-      const { requestHandlers, consoleSpy, mockStorage } = loadModule('ios');
+      const { requestHandlers, consoleSpy, mockStorage, restoreEnv } = loadModule('ios');
       mockStorage.getToken.mockResolvedValueOnce('token-123');
 
       const handler = requestHandlers[0];
@@ -276,6 +305,7 @@ describe('api.config', () => {
       await handler.fulfilled(config);
 
       expect(setMock).toHaveBeenCalledWith('Authorization', 'Bearer token-123');
+      restoreEnv();
       consoleSpy.mockRestore();
     });
   });

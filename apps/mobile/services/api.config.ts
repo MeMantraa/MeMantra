@@ -17,6 +17,11 @@ interface ExtendedRequestConfig {
 }
 
 const runtimeProcess = globalThis.process;
+const isTest = runtimeProcess?.env?.NODE_ENV === 'test';
+const isDevRuntime =
+  typeof __DEV__ !== 'undefined'
+    ? __DEV__
+    : runtimeProcess?.env?.NODE_ENV !== 'production' && runtimeProcess?.env?.NODE_ENV !== 'test';
 
 const normalizeBaseUrl = (value: string): string => {
   const trimmedValue = value.trim().replace(/\/$/, '');
@@ -53,9 +58,13 @@ const getLocalIpAddress = (): string | null => {
 const PRODUCTION_API_URL = 'https://memantra.onrender.com/api';
 
 const getBaseUrl = () => {
-  // In production/preview builds, always use the hosted backend.
+  // Keep tests deterministic and avoid Expo/native runtime detection in Jest.
+  if (isTest) {
+    return normalizeBaseUrl(ENV_API_BASE_URL || 'http://localhost:4000/api');
+  }
 
-  if (!__DEV__) {
+  // In production/preview builds, always use the hosted backend.
+  if (!isDevRuntime) {
     return PRODUCTION_API_URL;
   }
 
@@ -106,7 +115,7 @@ if (!API_BASE_URL) {
   );
 }
 
-if (__DEV__) {
+if (isDevRuntime) {
   console.log('✅ API Base URL:', API_BASE_URL);
 }
 
