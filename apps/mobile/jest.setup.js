@@ -1,6 +1,13 @@
 require('@testing-library/jest-native/extend-expect');
 const { cleanup, configure } = require('@testing-library/react-native');
 
+// Force Axios away from fetch adapter in Jest; Expo's fetch/stream polyfill
+// can throw during module import in Node test runtime.
+global.fetch = undefined;
+global.Request = undefined;
+global.Response = undefined;
+global.Headers = undefined;
+
 // React Native 0.81+ can try to evaluate NativeModules while formatting query errors
 // in @testing-library/react-native. Ensure a bridge config exists in Jest.
 if (!global.__fbBatchedBridgeConfig) {
@@ -185,6 +192,11 @@ jest.mock(
       getUserData: jest.fn(() => Promise.resolve(null)),
       getUserId: jest.fn(() => Promise.resolve(null)),
       removeUserData: jest.fn(() => Promise.resolve()),
+      hasAcceptedTerms: jest.fn(() => Promise.resolve(false)),
+      setTermsAccepted: jest.fn(() => Promise.resolve()),
+      savePendingVerification: jest.fn(() => Promise.resolve()),
+      getPendingVerification: jest.fn(() => Promise.resolve(null)),
+      clearPendingVerification: jest.fn(() => Promise.resolve()),
       clearAll: jest.fn(() => Promise.resolve()),
     },
   }),
