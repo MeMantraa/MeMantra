@@ -71,9 +71,13 @@ describe('api.config', () => {
       },
     }));
 
-    jest.doMock('../../services/api.config.local', () => ({
-      LOCAL_DEV_IP: null,
-    }));
+    jest.doMock(
+      '../../services/api.config.local',
+      () => ({
+        LOCAL_DEV_IP: null,
+      }),
+      { virtual: true },
+    );
 
     const consoleSpy = jest.spyOn(console, 'log').mockImplementation(() => {});
     const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
