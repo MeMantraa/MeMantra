@@ -17,11 +17,9 @@ interface ExtendedRequestConfig {
 }
 
 const runtimeProcess = globalThis.process;
+const nodeEnv = runtimeProcess?.env?.NODE_ENV ?? 'development';
 const isTest = runtimeProcess?.env?.NODE_ENV === 'test';
-const isDevRuntime =
-  typeof __DEV__ !== 'undefined'
-    ? __DEV__
-    : runtimeProcess?.env?.NODE_ENV !== 'production' && runtimeProcess?.env?.NODE_ENV !== 'test';
+const isDevRuntime = typeof __DEV__ !== 'undefined' ? __DEV__ : nodeEnv === 'development';
 
 const normalizeBaseUrl = (value: string): string => {
   const trimmedValue = value.trim().replace(/\/$/, '');

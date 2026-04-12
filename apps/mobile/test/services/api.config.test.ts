@@ -7,10 +7,17 @@ describe('api.config', () => {
     platform: 'android' | 'ios' | 'web' = 'web',
     hostUri: string | null = null,
     envApiBaseUrl?: string,
+    nodeEnv: 'development' | 'production' | 'test' = 'development',
+    devFlag?: boolean,
   ) => {
     jest.resetModules();
     const previousNodeEnv = runtimeProcess.env.NODE_ENV;
-    runtimeProcess.env.NODE_ENV = 'development';
+    const hadDevFlag = Object.prototype.hasOwnProperty.call(globalThis, '__DEV__');
+    const previousDevFlag = (globalThis as { __DEV__?: boolean }).__DEV__;
+    runtimeProcess.env.NODE_ENV = nodeEnv;
+    if (typeof devFlag === 'boolean') {
+      (globalThis as { __DEV__?: boolean }).__DEV__ = devFlag;
+    }
     if (envApiBaseUrl === undefined) {
       delete runtimeProcess.env.EXPO_PUBLIC_API_BASE_URL;
     } else {
@@ -97,6 +104,13 @@ describe('api.config', () => {
       } = require('../../services/api.config'));
     });
     runtimeProcess.env.NODE_ENV = previousNodeEnv;
+    if (typeof devFlag === 'boolean') {
+      if (hadDevFlag) {
+        (globalThis as { __DEV__?: boolean }).__DEV__ = previousDevFlag;
+      } else {
+        delete (globalThis as { __DEV__?: boolean }).__DEV__;
+      }
+    }
 
     return {
       mockCreate,
@@ -112,6 +126,13 @@ describe('api.config', () => {
       mockStorage,
       restoreEnv: () => {
         runtimeProcess.env.NODE_ENV = previousNodeEnv;
+        if (typeof devFlag === 'boolean') {
+          if (hadDevFlag) {
+            (globalThis as { __DEV__?: boolean }).__DEV__ = previousDevFlag;
+          } else {
+            delete (globalThis as { __DEV__?: boolean }).__DEV__;
+          }
+        }
       },
     };
   };
@@ -145,6 +166,27 @@ describe('api.config', () => {
     );
     restoreEnv();
     consoleSpy.mockRestore();
+  });
+
+  it('uses production API URL when NODE_ENV is production', () => {
+    const { mockCreate, consoleSpy, restoreEnv } = loadModule(
+      'ios',
+      null,
+      undefined,
+      'production',
+      false,
+    );
+    expect(mockCreate).toHaveBeenCalledWith(
+      expect.objectContaining({ baseURL: 'https://memantra.onrender.com/api' }),
+    );
+    restoreEnv();
+    consoleSpy.mockRestore();
+  });
+
+  it('throws for unsupported platform in development mode', () => {
+    expect(() =>
+      loadModule('windows' as unknown as 'android', '192.168.1.50:8081', undefined, 'development'),
+    ).toThrow('Unsupported platform: windows');
   });
 
   it('passes through request and handles errors via interceptors', async () => {
