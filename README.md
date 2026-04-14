@@ -225,8 +225,5 @@ Add video links (YouTube/Drive/Zoom) for each release:
 - [Deployment Plan & Infrastructure](https://github.com/YFrancis10/MeMantra/wiki/Deployment-Plan-&-Infrastructure)
 - [Missing Knowledge & Independent Learning](https://github.com/YFrancis10/MeMantra/wiki/Missing-Knowledge-&-Independent-Learning)
 - [Iteration & Release Notes](https://github.com/YFrancis10/MeMantra/wiki/Iteration-&-Release-Notes)
-- [Overall Summary](https://github.com/YFrancis10/MeMantra/wiki/Overall-Summary) _(later in project)_
-- [Velocity & Contractor Estimate](https://github.com/YFrancis10/MeMantra/wiki/Velocity-&-Contractor-Estimate) _(later in project)_
-- [Retrospective](https://github.com/YFrancis10/MeMantra/wiki/Retrospective)
 - [Breakdown by Individual](https://github.com/YFrancis10/MeMantra/wiki/Breakdown-by-Individual)
 - [Designs & Mockups](https://github.com/YFrancis10/MeMantra/wiki/Designs-&-Mockups)
