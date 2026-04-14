@@ -100,13 +100,19 @@ We use **GitHub Actions** to maintain quality and stability:
 
 ---
 
-## Deployment Status & Policy
-
-- **Current status:** `docker-compose.yaml` is the local development stack. It is intentionally dev-oriented and uses bind mounts and startup-time installs for fast iteration.
-- **Staging policy:** `docker-compose.staging.yml` is the production-style validation stack. It uses built images for backend and mobile, no source bind mounts, database healthchecks, and restart policies.
-- **Production policy:** `docker-compose.prod.yml` mirrors the staging shape with production-oriented image/runtime settings. For local validation it currently reuses `apps/backend/.env` and `apps/mobile/.env`; in a real deployment those should be replaced with environment-specific secrets and values.
-- **Database bootstrap policy:** the containerized database initializes from `apps/backend/database/init.sql` only. Other SQL files in `apps/backend/database/` are treated as manual migrations, not automatic bootstrap scripts.
-- **Render policy:** the backend can be deployed as a Docker-based Render web service using [`render.yaml`](/c:/Users/Philippe/MeMantra/render.yaml) and [`apps/backend/dockerfile`](/c:/Users/Philippe/MeMantra/apps/backend/dockerfile). Use a managed database there, and set `RUN_SCHEDULERS=false` unless you deliberately want the web service process running background jobs.
+## Deployment Status & Policy                                                                                                                                    
+                                                                                                                                                                   
+  - **Current status:** MeMantra is **live on the App Store** — [Download on the App Store](https://apps.apple.com/us/app/memantra/id6761772637). The app is       
+  currently under review on the **Google Play Store**.
+  - **Backend:** The Express API is deployed on **Render** with auto-deploy on every push to `main`. Health checks via `/health`.                                  
+  - **Database:** Managed **Neon PostgreSQL** with TLS connections.                                                                                              
+  - **Mobile builds:** Built and submitted via **Expo Application Services (EAS)** with `autoIncrement: true` for iOS build numbers.                               
+  - **Local development:** `docker-compose.yaml` is the local development stack. It is intentionally dev-oriented and uses bind mounts and startup-time installs   
+  for fast iteration.
+  - **Staging policy:** `docker-compose.staging.yml` is the production-style validation stack. It uses built images for backend and mobile, no source bind mounts,
+  database healthchecks, and restart policies.
+  - **Database bootstrap policy:** the containerized database initializes from `apps/backend/database/init.sql` only. Other SQL files in `apps/backend/database/`
+  are treated as manual migrations, not automatic bootstrap scripts.
 
 ---
 
