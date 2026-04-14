@@ -127,97 +127,87 @@ Add video links (YouTube/Drive/Zoom) for each release:
 
 ---
 
-## Repository Layout
+  ## Repository Layout
+                                                                                                                                                                   
+  | Path                         | Notes                                                                                      |                                  
+  | ---------------------------- | ------------------------------------------------------------------------------------------ |                                    
+  | `apps/mobile`                | Expo app (screens, components, services, NativeWind styles, Jest + Maestro tests).         |                                    
+  | `apps/backend`               | Express API, Kysely models, validators, database docs, Jest tests, and backend Dockerfile. |                                    
+  | `apps/backend/database`      | SQL schema, reset scripts, and DB onboarding guide.                                        |                                    
+  | `docs/`                      | Docker guides, prototypes, diagrams, and design assets.                                    |                                    
+  | `maestro/`                   | E2E test scripts (Login, SignUp, Collections, Journal, Reminders, Search, Chat, etc.).     |
+  | `docker-compose.yaml`        | Local development stack (backend + mobile + Postgres + optional pgAdmin + tests).          |
+  | `docker-compose.staging.yml` | Staging-oriented stack with immutable backend/mobile images.                               |
+  | `docker-compose.prod.yml`    | Production-oriented stack with immutable backend/mobile images.                            |
+  | `turbo.json`                 | Pipeline definitions for `build`, `test`, `lint`, `dev`, etc.                              |
 
-| Path                         | Notes                                                                                      |
-| ---------------------------- | ------------------------------------------------------------------------------------------ |
-| `apps/mobile`                | Expo app (screens, components, services, NativeWind styles, Jest + Maestro tests).         |
-| `apps/backend`               | Express API, Kysely models, validators, database docs, Jest tests, and backend Dockerfile. |
-| `apps/backend/database`      | SQL schema, reset scripts, and DB onboarding guide.                                        |
-| `docs/`                      | Docker guides, prototypes, diagrams, and supplemental docs created for this request.       |
-| `maestro/`                   | E2E scripts (`test.yaml`).                                                                 |
-| `docker-compose.yaml`        | Local development stack (backend + mobile + Postgres + optional pgAdmin + tests).          |
-| `docker-compose.staging.yml` | Staging-oriented stack with immutable backend/mobile images.                               |
-| `docker-compose.prod.yml`    | Production-oriented stack with immutable backend/mobile images.                            |
-| `turbo.json`                 | Pipeline definitions for `build`, `test`, `lint`, `dev`, etc.                              |
+  ---
 
----
+  ## Local Development Quick Start
 
-## Local Development Quick Start
+  ### Prerequisites
 
-### Prerequisites
+  - Node.js 22 LTS + pnpm `9.15.9` (install via `corepack enable && corepack prepare pnpm@9.15.9 --activate`)
+  - Watchman (macOS) & Xcode CLT for iOS, Android SDK/Emulator for Android
+  - Expo CLI (`npm i -g expo` optional but handy)
+  - PostgreSQL (local or hosted Neon). Docker Desktop is recommended for running the Compose stack.
+  - Git + curl + openssl (for scripts/tests)
 
-- Node.js 22 LTS + pnpm `9.15.9` (install via `corepack enable && corepack prepare pnpm@9.15.9 --activate`)
-- Watchman (macOS) & Xcode CLT for iOS, Android SDK/Emulator for Android
-- Expo CLI (`npm i -g expo` optional but handy)
-- PostgreSQL (local or hosted Neon). Docker Desktop is recommended for running the Compose stack.
-- Git + curl + openssl (for scripts/tests)
+  ### Bootstrap the monorepo
 
-### Bootstrap the monorepo
+  ```bash
+  git clone https://github.com/MeMantra/MeMantra.git
+  cd MeMantra
+  pnpm install          # installs all workspaces via Turbo
+  cp apps/backend/.env.example apps/backend/.env
+  # fill in DB + OAuth credentials (see Environment Configuration below)
+  ```
 
-```bash
-git clone https://github.com/YFrancis10/MeMantra.git
-cd MeMantra
-pnpm install          # installs all workspaces via Turbo
-cp apps/backend/.env.example apps/backend/.env
-# fill in DB + OAuth credentials (see Environment Configuration below)
-```
+  ### Make sure Postgres is reachable
 
-### Make sure Postgres is reachable
+  - **Local DB:** start PostgreSQL and load `apps/backend/database/init.sql`.
+  - **Hosted Neon:** paste the shared `DATABASE_URL` into `apps/backend/.env`.
+  - **Dockerized:** run `docker compose up -d` to boot backend + Postgres.
+  - **Staging-like:** use `apps/backend/.env` and `apps/mobile/.env`, then run `docker compose -f docker-compose.staging.yml up -d --build`.
+  - **Production-like:** use `apps/backend/.env` and `apps/mobile/.env`, then run `docker compose -f docker-compose.prod.yml up -d --build`.
 
-- **Local DB:** start PostgreSQL and load `apps/backend/database/init.sql`.
-- **Hosted Neon:** paste the shared `DATABASE_URL` into `apps/backend/.env`.
-- **Dockerized:** run `docker compose up -d` to boot backend + Postgres.
-- **Staging-like:** use `apps/backend/.env` and `apps/mobile/.env`, then run `docker compose -f docker-compose.staging.yml up -d --build`.
-- **Production-like:** use `apps/backend/.env` and `apps/mobile/.env`, then run `docker compose -f docker-compose.prod.yml up -d --build`.
+  ---
 
----
+  ## App Runtimes
 
-## App Runtimes
+  ### Mobile app (Expo)
 
-### Mobile app (Expo)
+  ```bash
+  pnpm dev:mobile         # expo start
+  pnpm --filter mobile ios    # run on iOS simulator
+  pnpm --filter mobile android
+  pnpm --filter mobile test   # jest + RTL
+  pnpm --filter mobile typecheck
+  ```
 
-```bash
-pnpm dev:mobile         # expo start
-pnpm --filter mobile ios    # run on iOS simulator
-pnpm --filter mobile android
-pnpm --filter mobile test   # jest + RTL
-pnpm --filter mobile typecheck
-```
+  ### Backend API
 
-### Backend API
+  ```bash
+  pnpm --filter backend dev      # nodemon + ts-node
+  pnpm --filter backend build
+  pnpm --filter backend start    # runs dist build
+  pnpm --filter backend test     # Jest + Supertest
+  pnpm --filter backend typecheck
+  ```
 
-```bash
-pnpm --filter backend dev      # nodemon + ts-node
-pnpm --filter backend build
-pnpm --filter backend start    # runs dist build
-pnpm --filter backend test     # Jest + Supertest
-pnpm --filter backend typecheck
-```
+  ---
 
----
+  ## Tooling & Scripts
 
-## Tooling & Scripts
-
-| Scope   | Command                                                                  | Description                                                  |
-| ------- | ------------------------------------------------------------------------ | ------------------------------------------------------------ |
-| Root    | `pnpm dev`                                                               | Runs all `dev` pipelines (mobile + backend when configured). |
-| Root    | `pnpm lint` / `pnpm test` / `pnpm typecheck`                             | Turbo fan-out across workspaces.                             |
-| Backend | `pnpm --filter backend db:generate-types`                                | Runs `kysely-codegen` against the configured DB.             |
-| Backend | `pnpm --filter backend build && pnpm --filter backend start`             | Production build.                                            |
-| Mobile  | `pnpm --filter mobile setup:android && pnpm --filter mobile run:android` | Clean native build for Android.                              |
-| Mobile  | `pnpm --filter mobile web`                                               | Launch web/devtools view.                                    |
-| Repo    | `maestro test maestro/test.yaml`                                         | Run E2E smoke using the Maestro script.                      |
-
----
-
-pnpm --filter backend dev # nodemon + ts-node
-pnpm --filter backend build
-pnpm --filter backend start # runs dist build
-pnpm --filter backend test # Jest + Supertest
-pnpm --filter backend typecheck
-
----
+  | Scope   | Command                                                                  | Description                                                  |
+  | ------- | ------------------------------------------------------------------------ | ------------------------------------------------------------ |
+  | Root    | `pnpm dev`                                                               | Runs all `dev` pipelines (mobile + backend when configured). |
+  | Root    | `pnpm lint` / `pnpm test` / `pnpm typecheck`                             | Turbo fan-out across workspaces.                             |
+  | Backend | `pnpm --filter backend db:generate-types`                                | Runs `kysely-codegen` against the configured DB.             |
+  | Backend | `pnpm --filter backend build && pnpm --filter backend start`             | Production build.                                            |
+  | Mobile  | `pnpm --filter mobile setup:android && pnpm --filter mobile run:android` | Clean native build for Android.                              |
+  | Mobile  | `pnpm --filter mobile web`                                               | Launch web/devtools view.                                    |
+  | Repo    | `maestro test maestro/`                                                  | Run E2E smoke tests using Maestro.                           |
 
 ## Wiki Table of Contents
 
