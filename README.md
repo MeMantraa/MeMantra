@@ -77,7 +77,8 @@
 
 ## Release 3 Presentation/Demo
 
-[Release 3 Demo]<br>
+[Release 3 Demo](https://drive.google.com/file/d/1OvO00lXj-lOKEiiccMCLktGjTCpdQev3/view)<br>
+[App Store Download](https://apps.apple.com/us/app/memantra/id6761772637)
 
 ## Release 3 Slides
 
@@ -97,18 +98,13 @@
 
   ### Top 5 Tests
 
-  | File path with clickable link            | Purpose (1 line description)                                  |
-  | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-  | [apps/mobile/test/screens/adminScreen.test.tsx](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/test/screens/adminScreen.test.tsx)              |
-  Verify admin controls like user/mantra management             |
-  | [apps/mobile/test/screens/homeScreen.test.tsx](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/test/screens/homeScreen.test.tsx)                |
-  Verify mantra feed rendering and recommendations              |
-  |  [apps/mobile/test/screens/CreateReminderScreen.test.tsx](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/test/screens/CreateReminderScreen.test.tsx)
-  | Reminder form validation and scheduling                      |
-  | [apps/backend/test/services/reminder-scheduler.service.test.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/test/services/reminder-scheduler.s
-  ervice.test.ts) | Verify scheduling logic and notifications for reminders       |
-  | [apps/backend/test/controllers/mantra.controller.test.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/test/controllers/mantra.controller.test.
-  ts) | Verify mantra CRUD and filters etc.                           |
+  | File path with clickable link            | Purpose (1 line description)    |
+  | ------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+  | [apps/mobile/test/screens/adminScreen.test.tsx](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/test/screens/adminScreen.test.tsx) |Verify admin controls like user/mantra management|
+  | [apps/mobile/test/screens/homeScreen.test.tsx](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/test/screens/homeScreen.test.tsx) Verify mantra feed rendering and recommendations |
+  | [apps/mobile/test/screens/CreateReminderScreen.test.tsx](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/test/screens/CreateReminderScreen.test.tsx) | Reminder form validation and scheduling |
+  | [apps/backend/test/services/reminder-scheduler.service.test.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/test/services/reminder-scheduler.service.test.ts) | Verify scheduling logic and notifications for reminders       |
+  | [apps/backend/test/controllers/mantra.controller.test.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/test/controllers/mantra.controller.test.ts) | Verify mantra CRUD and filters etc.                        |
 ---
 
 
