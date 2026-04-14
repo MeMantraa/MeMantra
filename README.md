@@ -148,16 +148,6 @@ We use **GitHub Actions** to maintain quality and stability:
 
 ---
 
-## Release Demos
-
-Add video links (YouTube/Drive/Zoom) for each release:
-
-- [Release 1 Demo](https://drive.google.com/file/d/1zlSbubmLPZzgIaNzuCQcqTayMiFuy-BO/view)
-- [Release 2 Demo](https://drive.google.com/file/d/1vS2S6Cnms2yjnlFLUvKy-Zr_2-aZawmF/view)
-- **Release 3 Demo:** _coming soon_
-
----
-
   ## Repository Layout
                                                                                                                                                                    
   | Path                         | Notes                                                                                      |                                  
