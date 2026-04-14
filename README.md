@@ -73,6 +73,54 @@
 | [chat-controller-test](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/controllers/chat.controller.ts)        | Ensures proper authentication, authorization, and data validation for the entire chat feature.                            |
 
 ---
+# RELEASE 3
+
+## Release 3 Presentation/Demo
+
+[Release 3 Demo]<br>
+
+## Release 3 Slides
+
+[Google Slides](https://docs.google.com/presentation/d/1CF5Y3LZrYGX3qI-uuq6DAO1p6WA3h__xITd92HFVHy0/edit?usp=sharing)
+
+## Important files (Release 3)
+
+### Top 5 Files                                                                                                                                                  
+                                                                                                                                  
+  | File path with clickable link                                                                                                                              |
+  Purpose (1 line description)                                  |                                                                           
+  | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |   
+  ------------------------------------------------------------- |
+  | [apps/mobile/app/index.tsx](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/app/index.tsx)                                                     |   
+  App entry point with all auth, routing, navigation            |                                                                                                
+  | [apps/mobile/services/api.config.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/services/api.config.ts)                                   |   
+  Central API config                                            |                                                                                                
+  | [apps/backend/src/types/database.types.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/types/database.types.ts)                       |   
+  Kysely type definitions, kept current                         |
+  | [apps/backend/src/services/recommendation-notification.service.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/services/recommendation-not
+  ification.service.ts) | Personalized recommendation-based push notifications          |
+  | [apps/backend/src/models/user.model.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/models/user.model.ts)                             |
+  User model and related DB queries                             |
+
+  ### Top 5 Tests
+
+  | File path with clickable link                                                                                                                              |
+  Purpose (1 line description)                                  |
+  | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  ------------------------------------------------------------- |
+  | [apps/mobile/test/screens/adminScreen.test.tsx](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/test/screens/adminScreen.test.tsx)              |
+  Verify admin controls like user/mantra management             |
+  | [apps/mobile/test/screens/homeScreen.test.tsx](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/test/screens/homeScreen.test.tsx)                |
+  Verify mantra feed rendering and recommendations              |
+  |
+  [apps/mobile/test/screens/CreateReminderScreen.test.tsx](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/test/screens/CreateReminderScreen.test.tsx)
+  | Reminder form validation and scheduling                       |
+  | [apps/backend/test/services/reminder-scheduler.service.test.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/test/services/reminder-scheduler.s
+  ervice.test.ts) | Verify scheduling logic and notifications for reminders       |
+  | [apps/backend/test/controllers/mantra.controller.test.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/test/controllers/mantra.controller.test.
+  ts) | Verify mantra CRUD and filters etc.                           |
+---
+
 
 ## Quick Links
 
