@@ -90,14 +90,10 @@
   | File path with clickable link                                                                                   |Purpose (1 line description)    
   | ------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
   | [apps/mobile/app/index.tsx](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/app/index.tsx)   |  App entry point with all auth, routing, navigation            |               
-  | [apps/mobile/services/api.config.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/services/api.config.ts)                                   |   
-  Central API config    |                                                                                                
-  | [apps/backend/src/types/database.types.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/types/database.types.ts)                       |   
-  Kysely type definitions, kept current                         |
-  | [apps/backend/src/services/recommendation-notification.service.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/services/recommendation-not
-  ification.service.ts) | Personalized recommendation-based push notifications          |
-  | [apps/backend/src/models/user.model.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/models/user.model.ts)                             |
-  User model and related DB queries                             |
+  | [apps/mobile/services/api.config.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/services/api.config.ts)    |  Central API config    |     
+  | [apps/backend/src/types/database.types.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/types/database.types.ts)   | Kysely type definitions, kept current   |
+  | [apps/backend/src/services/recommendation-notification.service.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/services/recommendation-notification.service.ts) | Personalized recommendation-based push notifications |
+  | [apps/backend/src/models/user.model.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/models/user.model.ts) | User model and related DB queries |
 
   ### Top 5 Tests
 
