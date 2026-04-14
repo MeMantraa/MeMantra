@@ -78,9 +78,7 @@
 
 - **[Project Board](https://github.com/users/YFrancis10/projects/1)**
 - **[Wiki](https://github.com/YFrancis10/MeMantra/wiki)**
-- **Milestones (Iterations):** <ADD LINK TO /milestones>
-- **Latest Release:** <ADD LINK AFTER FIRST TAG>
-- **Issue Tracker:** <ADD LINK TO /issues>
+- **[Download MeMantra](https://apps.apple.com/us/app/memantra/id6761772637)**
 
 ---
 
@@ -122,8 +120,7 @@ Add video links (YouTube/Drive/Zoom) for each release:
 
 - [Release 1 Demo](https://drive.google.com/file/d/1zlSbubmLPZzgIaNzuCQcqTayMiFuy-BO/view)
 - [Release 2 Demo](https://drive.google.com/file/d/1vS2S6Cnms2yjnlFLUvKy-Zr_2-aZawmF/view)
-- **Release 3 (Release 1) Demo:** _coming soon_
-- **Final Release Demo:** _coming soon_
+- **Release 3 Demo:** _coming soon_
 
 ---
 
