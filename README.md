@@ -64,7 +64,7 @@
 
 ### Top 5 test files
 
-| File path with clickable link                                                                                                  | Purpose (1 line description)                                                                                              |
+| File path with clickable link                                                                                                  | Purpose (1 line description)                                                                                             |
 | ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------- |
 | [reminder-test](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/test/services/reminder-scheduler.service.test.ts) | Validates scheduling logic, notification delivery for both individual mantras and collections, and proper error handling. |
 | [notif-test](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/test/services/notification.service.test.ts)          | Ensures reliable communication with Expo's notification infrastructure and proper message formatting.                     |
@@ -87,14 +87,11 @@
 
 ### Top 5 Files                                                                                                                                                  
                                                                                                                                   
-  | File path with clickable link                                                                                                                              |
-  Purpose (1 line description)                                  |                                                                           
-  | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |   
-  ------------------------------------------------------------- |
-  | [apps/mobile/app/index.tsx](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/app/index.tsx)                                                     |   
-  App entry point with all auth, routing, navigation            |                                                                                                
+  | File path with clickable link                                                                                   |Purpose (1 line description)    
+  | ------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
+  | [apps/mobile/app/index.tsx](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/app/index.tsx)   |  App entry point with all auth, routing, navigation            |               
   | [apps/mobile/services/api.config.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/services/api.config.ts)                                   |   
-  Central API config                                            |                                                                                                
+  Central API config    |                                                                                                
   | [apps/backend/src/types/database.types.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/types/database.types.ts)                       |   
   Kysely type definitions, kept current                         |
   | [apps/backend/src/services/recommendation-notification.service.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/src/services/recommendation-not
@@ -104,17 +101,14 @@
 
   ### Top 5 Tests
 
-  | File path with clickable link                                                                                                                              |
-  Purpose (1 line description)                                  |
-  | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-  ------------------------------------------------------------- |
+  | File path with clickable link            | Purpose (1 line description)                                  |
+  | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
   | [apps/mobile/test/screens/adminScreen.test.tsx](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/test/screens/adminScreen.test.tsx)              |
   Verify admin controls like user/mantra management             |
   | [apps/mobile/test/screens/homeScreen.test.tsx](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/test/screens/homeScreen.test.tsx)                |
   Verify mantra feed rendering and recommendations              |
-  |
-  [apps/mobile/test/screens/CreateReminderScreen.test.tsx](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/test/screens/CreateReminderScreen.test.tsx)
-  | Reminder form validation and scheduling                       |
+  |  [apps/mobile/test/screens/CreateReminderScreen.test.tsx](https://github.com/MeMantraa/MeMantra/blob/main/apps/mobile/test/screens/CreateReminderScreen.test.tsx)
+  | Reminder form validation and scheduling                      |
   | [apps/backend/test/services/reminder-scheduler.service.test.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/test/services/reminder-scheduler.s
   ervice.test.ts) | Verify scheduling logic and notifications for reminders       |
   | [apps/backend/test/controllers/mantra.controller.test.ts](https://github.com/MeMantraa/MeMantra/blob/main/apps/backend/test/controllers/mantra.controller.test.
